@@ -14,19 +14,19 @@ export async function GET() {
     })
 
     const results = response.results
-      // ✅ 先过滤 Status 为 Published 的页面
+      // ✅ 过滤状态为 Published 的页面
       .filter((page) => {
         const props = (page as PageObjectResponse).properties
         const status =
           props.Status?.type === 'select' ? props.Status.select?.name || '' : ''
         return status.toLowerCase() === 'published'
       })
-      // ✅ 映射成前端所需结构
+      // ✅ 映射字段，新增 pageId
       .map((page) => {
         const props = (page as PageObjectResponse).properties
 
         return {
-          id: page.id,
+          pageId: page.id, // ⬅️ 关键新增字段
           title:
             props.Title?.type === 'title'
               ? props.Title.title?.[0]?.plain_text || ''

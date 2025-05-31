@@ -16,9 +16,11 @@
     "framer-motion": "^12.15.0",
     "lucide-react": "^0.511.0",
     "next": "15.3.3",
+    "notion-client": "^7.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-icons": "^5.5.0",
+    "react-notion-x": "^7.3.0",
     "tailwind-merge": "^3.3.0"
   },
   "devDependencies": {
