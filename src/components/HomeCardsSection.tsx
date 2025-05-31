@@ -87,7 +87,7 @@ function CardColumn({ cards }: { cards: typeof techCards }) {
 // ✅ 主组件导出
 export default function HomeCardsSection() {
   return (
-    <section className="py-2 px-6 max-w-7xl mx-auto">
+    <section className="pt-[400px] px-6 max-w-7xl mx-auto">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <CardColumn cards={techCards} />
         <CardColumn cards={tutorCards} />

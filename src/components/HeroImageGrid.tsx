@@ -26,8 +26,8 @@ export default function HeroImageGrid() {
     <motion.section
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.06, ease: 'linear' }}
-      className="max-w-7xl mx-auto px-6 mb-12"
+      transition={{ duration: 1, ease: 'easeOut' }}
+      className="fixed top-16 z-40 w-full bg-white px-6 pt-4 pb-6 shadow-md border-b border-gray-200"
     >
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {heroCards.map((card, index) => (
@@ -35,12 +35,12 @@ export default function HeroImageGrid() {
             key={index}
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: index * 0.2 }}
+            transition={{ duration: 1, delay: index * 0.1 }}
             whileHover={{ scale: 1.03 }}
             className="rounded-2xl shadow-md overflow-hidden border border-gray-200 flex flex-col cursor-pointer transition-transform"
           >
             {/* Image 80% height */}
-            <div className="relative h-48 w-full bg-white">
+            <div className="relative h-[200px] w-full bg-white">
               <Image
                 src={card.image}
                 alt={card.title}
@@ -51,7 +51,7 @@ export default function HeroImageGrid() {
             </div>
 
             {/* Caption 20% height */}
-            <div className="bg-white p-4 text-sm text-gray-700 font-medium h-20 flex items-center justify-center text-center">
+            <div className="bg-white px-4 py-2 text-sm text-gray-700 font-medium min-h-[80px] flex items-center justify-center text-center">
               {card.caption}
             </div>
           </motion.div>
