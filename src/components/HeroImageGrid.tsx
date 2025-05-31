@@ -27,7 +27,7 @@ export default function HeroImageGrid() {
     initial={{ opacity: 0, y: 30 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 1, ease: 'easeOut' }}
-    className="fixed top-16 z-40 w-full bg-white px-6 pt-4 pb-6 shadow-md border-b border-gray-200"
+    className="relative w-full bg-white px-6 pt-24 pb-6 shadow-md border-b border-gray-200"
   >
     {/* 卡片网格 */}
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
