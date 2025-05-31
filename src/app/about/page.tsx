@@ -1,4 +1,4 @@
-export default function AboutPage() {
+export default function AboutPage(): JSX.Element {
   return (
     <main className="min-h-screen bg-white flex items-center justify-center p-6">
       <div className="max-w-2xl w-full text-center fade-in">

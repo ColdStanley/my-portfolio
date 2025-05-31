@@ -1,4 +1,3 @@
-// ✅ 更新版：支持 Notion 动态内容、分类三列展示、卡片高度自适应
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -13,7 +12,9 @@ interface CardItem {
   subtext: string
   link: string
   imageUrl: string
-  category: string // technology / knowledge / life（注意小写）
+  category: string // technology / knowledge / life
+  slug: string
+  section: string
 }
 
 function CardColumn({ cards, title }: { cards: CardItem[], title: string }) {
@@ -66,7 +67,9 @@ export default function HomeCardsSection() {
     fetch('/api/notion')
       .then((res) => res.json())
       .then((data) => {
-        const cardItems = data.data.filter((item: any) => item.section === 'Cards')
+        const cardItems: CardItem[] = data.data.filter(
+          (item: CardItem) => item.section === 'Cards'
+        )
         setCards(cardItems)
       })
   }, [])

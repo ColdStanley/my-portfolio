@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import Link from 'next/link'
 
 export default function TutorSection() {
   return (
@@ -20,12 +21,12 @@ export default function TutorSection() {
           Teaching is not just about knowledge transfer, it’s about empowering people to solve real-world problems on
           their own.
         </p>
-        <a
+        <Link
           href="/tutor"
           className="inline-block bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition hover:scale-105 duration-200 shadow-sm"
         >
           Learn more
-        </a>
+        </Link>
       </section>
     </motion.section>
   )
