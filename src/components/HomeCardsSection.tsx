@@ -8,14 +8,14 @@ import Image from 'next/image'; // ✅ 用于处理图片
 const techCards = [
   {
     title: 'Technology1',
-    content: "I've worked across hardware, software, AI, consulting, and more—rising from engineer to regional lead.",
+    content: "I have worked across hardware, software, AI, consulting, and more—rising from engineer to regional lead.",
     subtext: 'From American, Japanese to Singaporean tech firms and unicorns.',
     link: '/tech-career',
     image: '/images/tech-HW.png'
   },
   {
     title: 'Technology2',
-    content: "I've worked across hardware, software, AI, consulting, and more—rising from engineer to regional lead. ".repeat(3),
+    content: "I have worked across hardware, software, AI, consulting, and more—rising from engineer to regional lead. ".repeat(3),
     subtext: 'From American, Japanese to Singaporean tech firms and unicorns.',
     link: '/tech-career',
   },
@@ -25,7 +25,7 @@ const tutorCards = [
   {
     title: 'Tutor',
     content: 'I help beginners master Python and Excel through real-world projects and 1-on-1 coaching.',
-    subtext: "It's about clarity, practice, and growing confidence.",
+    subtext: "It is about clarity, practice, and growing confidence.",
     link: '/tutor',
   },
 ];

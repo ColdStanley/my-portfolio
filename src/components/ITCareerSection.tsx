@@ -13,9 +13,9 @@ export default function ITCareerSection() {
       <section className="bg-white rounded-2xl shadow-lg p-10 max-w-7xl mx-auto mb-16">
         <h2 className="text-3xl font-bold text-purple-700 mb-6">My Journey in Tech</h2>
         <p className="text-lg text-gray-700 leading-relaxed mb-4">
-          I&apos;ve worked across a wide range of products, including hardware, software,
-          full-stack solutions, big data platforms, artificial intelligence, and consulting services.
+        {"I've worked across a wide range of products, including hardware, software, full-stack solutions, big data platforms, artificial intelligence, and consulting services."}
         </p>
+
         <p className="text-lg text-gray-700 leading-relaxed mb-4">
           My career spans American, Japanese, and Singaporean companies,
           from tech giants to fast-growing unicorn startups.
