@@ -1,3 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
 @import "tailwindcss";
 
 :root {
@@ -23,4 +28,41 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ✅ 插入在这里 —— 自定义动画和 hover 效果 */
+@layer utilities {
+  .fade-in {
+    @apply opacity-0 translate-y-4 transition-all duration-700 ease-out;
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .hover-card {
+    @apply transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-xl;
+  }
+}
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.8s ease-out both;
 }

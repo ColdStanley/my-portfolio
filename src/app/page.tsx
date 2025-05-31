@@ -1,10 +1,13 @@
+import HomeCardsSection from "@/components/HomeCardsSection";
+import HeroImageGrid from "../components/HeroImageGrid";
 
-export default function Home() {
+
+export default function HomePage() {
   return (
-    <main style={{ padding: '2rem' }}>
-      <h1>Hello, I&rsquo;m Stanley!</h1>
-      <p>I&rsquo;m a content creator, data analyst, and Python tutor based in Canada.</p>
-      <p>This is my personal website where I share my work and journey.</p>
+    <main className="min-h-screen bg-white pt-1">
+      <HeroImageGrid /> 
+      <hr className="my-8 border-t border-gray-200 max-w-6xl mx-auto" />
+      <HomeCardsSection />
     </main>
-  );
+  )
 }
