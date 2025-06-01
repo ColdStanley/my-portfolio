@@ -17,49 +17,27 @@ interface CardData {
   body: string
 }
 
-interface Params {
-  category: string
-  slug: string
-}
-
 export default function DetailPage() {
-  const params = useParams() as Params
-  const { category, slug } = params
+  const { category, slug } = useParams() as { category: string; slug: string }
 
   const [item, setItem] = useState<CardData | null>(null)
   const [pageContent, setPageContent] = useState<string>('')
 
-useEffect(() => {
-  fetch('/api/notion')
-    .then((res) => res.json())
-    .then((data) => {
-      console.log('🗂 所有卡片数据：', data.data)
-
-      const found = data.data.find((i: CardData) => {
-        const matched = 
-          i.slug.toLowerCase() === slug.toLowerCase() &&
-          i.category.toLowerCase() === category.toLowerCase()
-
-        if (matched) {
-          console.log('✅ 找到匹配项：', i)
-        }
-
-        return matched
+  // 获取 Notion 卡片信息
+  useEffect(() => {
+    fetch('/api/notion')
+      .then((res) => res.json())
+      .then((data) => {
+        const found = data.data.find(
+          (i: CardData) =>
+            i.slug.toLowerCase() === slug.toLowerCase() &&
+            i.category.toLowerCase() === category.toLowerCase()
+        )
+        setItem(found || null)
       })
+  }, [category, slug])
 
-      if (!found) {
-        console.warn('⚠️ 未找到匹配项。slug:', slug, 'category:', category)
-      }
-
-      setItem(found || null)
-    })
-    .catch((err) => {
-      console.error('❌ 获取卡片数据失败：', err)
-    })
-}, [category, slug])
-
-
-  // ✅ Step 2: 根据 pageId 获取 Notion 渲染 HTML
+  // 获取页面内容（不含表格）
   useEffect(() => {
     if (item?.pageId) {
       fetch(`/api/notion/page?pageId=${item.pageId}`)
@@ -89,7 +67,7 @@ useEffect(() => {
         </div>
       )}
 
-      {/* ✅ Notion HTML 渲染内容（含 YouTube 视频） */}
+      {/* Notion 主要内容 */}
       <div
         className="prose prose-lg max-w-none text-gray-800 dark:text-gray-200"
         dangerouslySetInnerHTML={{ __html: pageContent }}
@@ -97,4 +75,3 @@ useEffect(() => {
     </div>
   )
 }
-

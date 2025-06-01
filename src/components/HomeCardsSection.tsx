@@ -20,10 +20,13 @@ interface CardItem {
 function CardColumn({ cards, title }: { cards: CardItem[], title: string }) {
   return (
     <div className="flex flex-col gap-6">
-      <h2 className="text-xl font-bold text-purple-700 mb-2 text-center">{title}</h2>
+      <h2 className="text-lg font-semibold text-purple-800 text-center bg-white border border-purple-200 rounded-xl px-4 py-3 shadow-sm w-full">
+        {title}
+      </h2>
+
       {cards.map((card, idx) => (
         <motion.div
-          key={card.id}
+          key={card.id || card.slug || `card-${idx}`}
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: idx * 0.1 }}
@@ -35,6 +38,7 @@ function CardColumn({ cards, title }: { cards: CardItem[], title: string }) {
             <p className="text-gray-700 mb-2 leading-relaxed whitespace-pre-line">{card.content}</p>
             <p className="text-sm text-gray-500 italic">{card.subtext}</p>
           </div>
+
           <div className="flex items-center justify-between mt-6">
             <Link
               href={`/${card.category}/${card.slug}`}
@@ -42,14 +46,15 @@ function CardColumn({ cards, title }: { cards: CardItem[], title: string }) {
             >
               Learn more
             </Link>
+
             {card.imageUrl && (
-              <div className="h-10 w-auto ml-4 flex-shrink-0">
+              <div className="h-10 w-10 ml-4 flex-shrink-0 bg-white rounded-md overflow-hidden flex items-center justify-center border border-gray-200 shadow-sm">
                 <Image
                   src={card.imageUrl}
                   alt={card.title}
-                  height={40}
-                  width={100}
-                  className="h-10 w-auto object-contain"
+                  width={32}
+                  height={32}
+                  className="object-contain"
                 />
               </div>
             )}
@@ -79,7 +84,7 @@ export default function HomeCardsSection() {
   const lifeCards = cards.filter(c => c.category === 'life')
 
   return (
-    <section id="home-cards" className="pt-8 px-6 max-w-7xl mx-auto">
+    <section id="home-cards" className="pt-4 px-6 max-w-7xl mx-auto">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <CardColumn cards={techCards} title="Technology" />
         <CardColumn cards={knowCards} title="Knowledge" />

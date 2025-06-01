@@ -2,7 +2,8 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import NavBar from "../components/NavBar"
-import Footer from "../components/Footer" // ✅ 添加 Footer 引入
+import Footer from "../components/Footer"
+import { Toaster } from "sonner"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,15 +22,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="pt-24 font-sans bg-white text-gray-900">
         <NavBar />
         {children}
-        <Footer /> {/* ✅ 添加 Footer */}
+        <Footer />
+        <Toaster richColors position="top-center" />
       </body>
     </html>
   )
