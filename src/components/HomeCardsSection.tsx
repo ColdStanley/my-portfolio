@@ -8,14 +8,14 @@ import Image from 'next/image'
 interface CardItem {
   id: string
   title: string
-  content: string // ✅ 来自 Notion 的 Description 字段
+  content: string
   subtext: string
   link: string
   imageUrl: string
-  category: string // technology / knowledge / life
+  category: string
   slug: string
   section: string
-  tech?: string[] // ✅ 技术标签
+  tech?: string[]
 }
 
 function CardColumn({ cards, title }: { cards: CardItem[], title: string }) {
@@ -37,12 +37,9 @@ function CardColumn({ cards, title }: { cards: CardItem[], title: string }) {
           <div className="flex-1">
             <h3 className="text-xl font-bold text-purple-700 mb-2">{card.title}</h3>
 
-            {/* ✅ 使用 Notion 的 Description 字段 */}
             <p className="text-gray-700 mb-2 leading-relaxed whitespace-pre-line">{card.content}</p>
-
             <p className="text-sm text-gray-500 italic">{card.subtext}</p>
 
-            {/* ✅ 技术标签区域 */}
             {card.tech && card.tech.length > 0 && (
               <div className="flex flex-wrap gap-2 my-4">
                 {card.tech.map((tag, i) => (
@@ -59,23 +56,23 @@ function CardColumn({ cards, title }: { cards: CardItem[], title: string }) {
 
           <div className="flex items-center justify-between mt-6">
             <Link
-              href={`/${card.category}/${card.slug}`}
+              href={`/${card.category}/${card.slug}?id=${card.pageId}`}
               className="bg-purple-600 text-white px-4 py-2 rounded-md text-sm hover:bg-purple-700 hover:scale-105 hover:shadow-lg transition-all duration-300"
             >
               Learn more
             </Link>
 
-           {card.imageUrl && (
-  <div className="h-10 w-20 ml-4 flex-shrink-0 bg-white rounded-md overflow-hidden border border-gray-200 shadow-sm relative">
-    <Image
-      src={card.imageUrl}
-      alt={card.title}
-      fill
-      className="object-contain p-1"
-    />
-  </div>
-)}
-
+            {/* ✅ 图片宽高与 Learn more 按钮一致 */}
+            {card.imageUrl && (
+              <div className="w-[96px] h-[40px] ml-4 flex-shrink-0 bg-white rounded-md overflow-hidden border border-gray-200 shadow-sm relative">
+                <Image
+                  src={card.imageUrl}
+                  alt={card.title}
+                  fill
+                  className="object-contain p-1"
+                />
+              </div>
+            )}
           </div>
         </motion.div>
       ))}

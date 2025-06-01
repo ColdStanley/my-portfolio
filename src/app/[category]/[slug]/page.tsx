@@ -22,9 +22,12 @@ export default function DetailPage() {
 
   const [item, setItem] = useState<CardData | null>(null)
   const [pageContent, setPageContent] = useState<string>('')
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   // 获取 Notion 卡片信息
   useEffect(() => {
+    setIsLoading(true)
     fetch('/api/notion')
       .then((res) => res.json())
       .then((data) => {
@@ -33,7 +36,16 @@ export default function DetailPage() {
             i.slug.toLowerCase() === slug.toLowerCase() &&
             i.category.toLowerCase() === category.toLowerCase()
         )
-        setItem(found || null)
+        if (found) {
+          setItem(found)
+        } else {
+          setError('Page not found.')
+        }
+        setIsLoading(false)
+      })
+      .catch(() => {
+        setError('Failed to load content.')
+        setIsLoading(false)
       })
   }, [category, slug])
 
@@ -45,10 +57,36 @@ export default function DetailPage() {
         .then((data) => {
           setPageContent(data.html || '')
         })
+        .catch(() => {
+          setError('Failed to load page content.')
+        })
     }
   }, [item?.pageId])
 
-  if (!item) return <div className="p-10 text-gray-500">Loading...</div>
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[40vh] text-sm text-gray-500 gap-3">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
+        <span>Loading page content…</span>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center text-gray-500 py-20">
+        🚫 {error}
+      </div>
+    )
+  }
+
+  if (!item) {
+    return (
+      <div className="text-center text-gray-500 py-20">
+        🚫 Page data not found.
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-3xl mx-auto p-8">
