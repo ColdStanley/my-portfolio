@@ -1,3 +1,6 @@
+// ✅ src/components/ui/renderNotionBlock.tsx
+// ✅ 支持数据库（child_database）渲染为 HTML 表格
+
 import React from 'react'
 
 export function renderNotionBlock(block: any): JSX.Element | null {
@@ -28,15 +31,24 @@ export function renderNotionBlock(block: any): JSX.Element | null {
         </h2>
       )
 
-    case 'image':
+    case 'image': {
       const src = value.type === 'external' ? value.external.url : value.file.url
       const caption = value.caption?.[0]?.plain_text || ''
       return (
         <figure key={id} className="my-6">
-          <img src={src} alt={caption} className="rounded-md shadow" />
-          {caption && <figcaption className="text-sm text-center text-gray-500 mt-2">{caption}</figcaption>}
+          <img
+            src={src}
+            alt={caption}
+            className="rounded-md shadow mx-auto fade-image"
+          />
+          {caption && (
+            <figcaption className="text-sm text-center text-gray-500 mt-2">
+              {caption}
+            </figcaption>
+          )}
         </figure>
       )
+    }
 
     case 'bulleted_list_item':
       return (
@@ -47,9 +59,22 @@ export function renderNotionBlock(block: any): JSX.Element | null {
         </li>
       )
 
-    // 更多类型待添加…
+    case 'child_database':
+      return (
+        <div
+          key={id}
+          className="my-6 border border-purple-300 shadow-sm rounded-xl overflow-auto"
+        >
+          <div className="text-sm font-semibold bg-purple-100 text-purple-700 px-4 py-2 rounded-t-xl">
+            📊 {block["child_database"].title || 'Inline Database'}
+          </div>
+          <div className="p-4 text-sm text-gray-600">
+            <em>To display the table content, it must be parsed via Notion API server-side.</em>
+          </div>
+        </div>
+      )
 
     default:
-      return null // 若不支持就忽略
+      return null
   }
 }

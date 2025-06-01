@@ -25,12 +25,13 @@ export default function DetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // 获取 Notion 卡片信息
+  // 获取 Notion 卡片基本信息
   useEffect(() => {
     setIsLoading(true)
+    setError(null)
     fetch('/api/notion')
-      .then((res) => res.json())
-      .then((data) => {
+      .then(res => res.json())
+      .then(data => {
         const found = data.data.find(
           (i: CardData) =>
             i.slug.toLowerCase() === slug.toLowerCase() &&
@@ -49,12 +50,12 @@ export default function DetailPage() {
       })
   }, [category, slug])
 
-  // 获取页面内容（不含表格）
+  // 获取 Notion 渲染内容
   useEffect(() => {
     if (item?.pageId) {
       fetch(`/api/notion/page?pageId=${item.pageId}`)
-        .then((res) => res.json())
-        .then((data) => {
+        .then(res => res.json())
+        .then(data => {
           setPageContent(data.html || '')
         })
         .catch(() => {
@@ -74,7 +75,7 @@ export default function DetailPage() {
 
   if (error) {
     return (
-      <div className="text-center text-gray-500 py-20">
+      <div className="text-center text-red-500 py-20">
         🚫 {error}
       </div>
     )
@@ -83,13 +84,13 @@ export default function DetailPage() {
   if (!item) {
     return (
       <div className="text-center text-gray-500 py-20">
-        🚫 Page data not found.
+        ⚠️ Page data not available.
       </div>
     )
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-8">
+    <div className="max-w-3xl mx-auto p-8 fade-in">
       <h1 className="text-3xl font-bold text-purple-700 mb-4">{item.title}</h1>
       <p className="text-gray-600 italic mb-6">{item.subtext}</p>
 
@@ -99,15 +100,16 @@ export default function DetailPage() {
             src={item.imageUrl}
             alt={item.title}
             fill
-            className="object-cover"
+            className="object-cover fade-image"
             sizes="100vw"
           />
         </div>
       )}
 
-      {/* Notion 主要内容 */}
-      <div
-        className="prose prose-lg max-w-none text-gray-800 dark:text-gray-200"
+      {/* 渲染 Notion 富文本（包含表格） */}
+      <article
+        className="prose prose-lg max-w-none text-gray-800 dark:text-gray-200 [&_table]:w-full [&_th]:bg-gray-100 [&_td]:p-2 [&_th]:p-2 border-collapse border border-gray-300"
+        aria-label="Notion page content"
         dangerouslySetInnerHTML={{ __html: pageContent }}
       />
     </div>
