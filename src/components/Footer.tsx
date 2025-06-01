@@ -3,39 +3,37 @@
 import { Github, Linkedin, Mail } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
-
+import { motion } from 'framer-motion'
 
 export default function Footer() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
 
-
   const handleSubscribe = async (e: React.FormEvent) => {
-  e.preventDefault()
-  if (!email) return
+    e.preventDefault()
+    if (!email) return
 
-  setLoading(true) // 🔁 开始 loading
-  try {
-    const res = await fetch('/api/subscribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    })
+    setLoading(true)
+    try {
+      const res = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
 
-    if (res.ok) {
-      toast.success(`✅ Thanks for subscribing: ${email}`)
-      setEmail('')
-    } else {
-      toast.error('❌ Subscribe failed. Please try again later.')
+      if (res.ok) {
+        toast.success(`✅ Thanks for subscribing: ${email}`)
+        setEmail('')
+      } else {
+        toast.error('❌ Subscribe failed. Please try again later.')
+      }
+    } catch (error) {
+      toast.error('❌ Network error. Please try again.')
+      console.error('Subscribe error:', error)
+    } finally {
+      setLoading(false)
     }
-  } catch (error) {
-    toast.error('❌ Network error. Please try again.')
-    console.error('Subscribe error:', error)
-  } finally {
-    setLoading(false) // ✅ 结束 loading
   }
-}
-
 
   return (
     <footer className="w-full border-t border-gray-200 bg-gradient-to-t from-white to-purple-50 mt-16">
@@ -109,21 +107,33 @@ export default function Footer() {
                 type="submit"
                 disabled={loading}
                 className={`px-4 py-2 rounded-md text-white transition-all ${
-                    loading
+                  loading
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-purple-600 hover:bg-purple-700'
                 }`}
-                >
+              >
                 {loading ? 'Submitting...' : 'Subscribe'}
-                </button>
-
+              </button>
             </form>
           </div>
         </div>
 
         {/* 底部版权说明 */}
-        <div className="text-center text-xs text-gray-500 pt-6 border-t border-gray-100">
-          © 2025 Stanley. Built with ❤️ using Next.js and Tailwind CSS.
+        <div className="text-center text-xs text-gray-500 pt-6 border-t border-gray-100 font-medium">
+          © 2025 Built with ❤️ using Next.js and Tailwind CSS by{' '}
+          <motion.span
+            className="font-bold text-purple-700 inline-block"
+            animate={{
+              y: [0, -2, 2, 0],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          >
+            Stanley
+          </motion.span>
         </div>
       </div>
     </footer>

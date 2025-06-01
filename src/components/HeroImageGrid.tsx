@@ -1,119 +1,136 @@
 'use client'
 
-import { motion } from 'framer-motion'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 
-const heroCards = [
+const heroSections = [
   {
-    title: 'Technology Exploration',
+    title: 'Technology',
+    subtitle: 'Through Real Projects',
     image: '/images/tech-banner.png',
-    caption: 'Through Real Projects',
-    imageFirst: true,
+    link: '/technology',
+    colorClass: 'text-violet-500',
   },
   {
-    title: 'Knowledge Sharing',
+    title: 'Knowledge',
+    subtitle: 'Curated by Theme',
     image: '/images/knowledge-banner.png',
-    caption: 'Curated by Theme',
-    imageFirst: false,
+    link: '/knowledge',
+    colorClass: 'text-sky-500',
   },
   {
-    title: 'Enjoying Life',
+    title: 'Life',
+    subtitle: 'Moments and Reflections',
     image: '/images/life-banner.png',
-    caption: 'In Photos & Beyond',
-    imageFirst: true,
+    link: '/life',
+    colorClass: 'text-amber-500',
   },
 ]
 
-// 分类颜色映射
-const categoryColors: Record<string, string> = {
-  Technology: 'bg-blue-100 text-blue-800',
-  Tutor: 'bg-purple-100 text-purple-800',
-  Life: 'bg-green-100 text-green-800',
+// 多方向浮动动画（关键词）
+const floatKeyword = {
+  animate: (delay = 0) => ({
+    x: [-2, 2, -2, 0],
+    y: [0, -2, 2, 0],
+    transition: {
+      duration: 2,
+      repeat: Infinity,
+      ease: 'easeInOut',
+      delay,
+    },
+  }),
+}
+
+// 轻微上下浮动动画（卡片图片）
+const floatImage = {
+  animate: {
+    y: [0, -3, 3, 0],
+    transition: {
+      duration: 3,
+      repeat: Infinity,
+      ease: 'easeInOut',
+    },
+  },
 }
 
 export default function HeroImageGrid() {
+  const router = useRouter()
+
   return (
-    <motion.section
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.6, ease: 'easeOut' }}
-      className="relative w-full bg-white px-6 pt-24 pb-2"
-    >
-      {/* 分行交错布局 */}
-      <div className="space-y-8">
-        {heroCards.map((card, index) => {
-          const badgeClass = categoryColors[card.category] || 'bg-gray-100 text-gray-800'
+    <section className="w-full px-4 md:px-8 pt-6 pb-4">
+      {/* 顶部标题区域 */}
+      <div className="text-center mb-8">
+        <h1 className="text-3xl md:text-4xl font-medium text-gray-900 leading-snug">
+          <span className="text-gray-700">Explore</span>{' '}
+          <motion.span
+            className="inline-block italic font-[Playfair_Display] text-violet-500"
+            animate={floatKeyword.animate(0)}
+          >
+            Technology
+          </motion.span>
+          ,{' '}
+          <motion.span
+            className="inline-block italic font-[Playfair_Display] text-sky-500"
+            animate={floatKeyword.animate(0.4)}
+          >
+            Knowledge
+          </motion.span>{' '}
+          <span className="text-gray-700">and</span>{' '}
+          <motion.span
+            className="inline-block italic font-[Playfair_Display] text-amber-500"
+            animate={floatKeyword.animate(0.8)}
+          >
+            Life
+          </motion.span>
+        </h1>
+        <p className="text-lg text-black mt-2">
+          Dive into curated content across categories, powered by real stories and creativity.
+        </p>
+      </div>
 
-          const imageElement = (
+      {/* 三栏卡片区域 */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {heroSections.map((section, index) => (
+          <motion.div
+            key={index}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+            className="cursor-pointer rounded-2xl overflow-hidden shadow-md bg-white transition-all duration-300"
+            onClick={() => router.push(section.link)}
+          >
+            {/* 卡片图片带动画 */}
             <motion.div
-              key={`img-${index}`}
-              initial={{ opacity: 0, x: 300 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.2 }}
-              whileHover={{ scale: 1.02 }}
-              className="md:col-span-2 rounded-2xl shadow-md overflow-hidden border border-gray-200 transition-transform group"
+              className="w-full h-48 relative bg-white"
+              animate={floatImage.animate}
             >
-              <div className="relative h-[200px] w-full bg-white">
-                <Image
-                  src={card.image}
-                  alt={card.title}
-                  fill
-                  className="object-contain p-4 transition-all duration-300"
-                  sizes="(max-width: 768px) 100vw, 66vw"
-                />
-              </div>
+              <Image
+                src={section.image}
+                alt={section.title}
+                fill
+                className="object-contain p-4"
+              />
             </motion.div>
-          )
-
-          const textElement = (
-            <motion.div
-              key={`txt-${index}`}
-              initial={{ opacity: 0, x: -300 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.2 }}
-              className="md:col-span-1 text-gray-800 text-center px-4 py-4"
-            >
-              <div className={`inline-block mb-2 text-xs font-semibold px-2 py-1 rounded-full ${badgeClass}`}>
-                {card.category}
-              </div>
-              <h2 className="text-xl font-bold mb-1">{card.title}</h2>
-              <p className="text-sm text-gray-600">{card.caption}</p>
-            </motion.div>
-          )
-
-          return (
-            <div
-              key={index}
-              className="grid grid-cols-1 md:grid-cols-3 items-center gap-4"
-            >
-              {card.imageFirst ? (
-                <>
-                  {imageElement}
-                  {textElement}
-                </>
-              ) : (
-                <>
-                  {textElement}
-                  {imageElement}
-                </>
-              )}
+            <div className="p-4 text-center">
+              <h2 className={`text-xl font-semibold ${section.colorClass}`}>{section.title}</h2>
+              <p className="text-sm text-black mt-1">{section.subtitle}</p>
             </div>
-          )
-        })}
+          </motion.div>
+        ))}
       </div>
 
-      {/* 向下箭头按钮 */}
-      <div className="w-full flex justify-center mt-4 mb-2">
-        <button
-          onClick={() => {
-            const section = document.getElementById('home-cards');
-            section?.scrollIntoView({ behavior: 'smooth' });
-          }}
-          className="text-3xl text-purple-600 hover:text-purple-800 animate-bounce transition-all"
+      {/* 向下滚动引导箭头 */}
+      <div className="flex justify-center mt-8 animate-bounce">
+        <svg
+          className="w-6 h-6 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          viewBox="0 0 24 24"
         >
-          ↓
-        </button>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
       </div>
-    </motion.section>
+    </section>
   )
 }
