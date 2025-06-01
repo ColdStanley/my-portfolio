@@ -22,7 +22,7 @@ const projects = [
 export default function ProjectsPage() {
   return (
     <main className="min-h-screen p-8 bg-gray-50 pt-32">
-      <h1 className="text-4xl font-bold text-center text-purple-700 mb-12">My Projects</h1>
+      <h1 className="text-4xl font-bold text-center text-purple-700 mb-12">Life</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {projects.map((project, index) => (
           <div key={index} className="bg-white rounded-2xl p-6 fade-in hover-card">

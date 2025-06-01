@@ -28,7 +28,6 @@ const heroSections = [
   },
 ]
 
-// 多方向浮动动画（关键词）
 const floatKeyword = {
   animate: (delay = 0) => ({
     x: [-2, 2, -2, 0],
@@ -42,7 +41,6 @@ const floatKeyword = {
   }),
 }
 
-// 轻微上下浮动动画（卡片图片）
 const floatImage = {
   animate: {
     y: [0, -3, 3, 0],
@@ -58,7 +56,7 @@ export default function HeroImageGrid() {
   const router = useRouter()
 
   return (
-    <section className="w-full px-4 md:px-8 pt-6 pb-4">
+    <section className="relative w-full px-4 md:px-8 pt-6 pb-4">
       {/* 顶部标题区域 */}
       <div className="text-center mb-8">
         <h1 className="text-3xl md:text-4xl font-medium text-gray-900 leading-snug">
@@ -82,7 +80,10 @@ export default function HeroImageGrid() {
             animate={floatKeyword.animate(0.8)}
           >
             Life
-          </motion.span>
+          </motion.span>{' '}
+          <span className="text-black font-semibold inline-flex items-center">
+            with Music <span className="inline-block animate-bounce ml-1">🎧</span>
+          </span>
         </h1>
         <p className="text-lg text-black mt-2">
           Dive into curated content across categories, powered by real stories and creativity.
@@ -99,7 +100,6 @@ export default function HeroImageGrid() {
             className="cursor-pointer rounded-2xl overflow-hidden shadow-md bg-white transition-all duration-300"
             onClick={() => router.push(section.link)}
           >
-            {/* 卡片图片带动画 */}
             <motion.div
               className="w-full h-48 relative bg-white"
               animate={floatImage.animate}

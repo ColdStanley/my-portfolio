@@ -5,18 +5,17 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
 
-
-
 interface CardItem {
   id: string
   title: string
-  content: string
+  content: string // ✅ 来自 Notion 的 Description 字段
   subtext: string
   link: string
   imageUrl: string
   category: string // technology / knowledge / life
   slug: string
   section: string
+  tech?: string[] // ✅ 技术标签
 }
 
 function CardColumn({ cards, title }: { cards: CardItem[], title: string }) {
@@ -37,8 +36,25 @@ function CardColumn({ cards, title }: { cards: CardItem[], title: string }) {
         >
           <div className="flex-1">
             <h3 className="text-xl font-bold text-purple-700 mb-2">{card.title}</h3>
+
+            {/* ✅ 使用 Notion 的 Description 字段 */}
             <p className="text-gray-700 mb-2 leading-relaxed whitespace-pre-line">{card.content}</p>
+
             <p className="text-sm text-gray-500 italic">{card.subtext}</p>
+
+            {/* ✅ 技术标签区域 */}
+            {card.tech && card.tech.length > 0 && (
+              <div className="flex flex-wrap gap-2 my-4">
+                {card.tech.map((tag, i) => (
+                  <span
+                    key={i}
+                    className="bg-purple-100 text-purple-700 text-sm font-medium px-3 py-1 rounded-full"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between mt-6">
@@ -49,17 +65,17 @@ function CardColumn({ cards, title }: { cards: CardItem[], title: string }) {
               Learn more
             </Link>
 
-            {card.imageUrl && (
-              <div className="h-10 w-10 ml-4 flex-shrink-0 bg-white rounded-md overflow-hidden flex items-center justify-center border border-gray-200 shadow-sm">
-                <Image
-                  src={card.imageUrl}
-                  alt={card.title}
-                  width={32}
-                  height={32}
-                  className="object-contain"
-                />
-              </div>
-            )}
+           {card.imageUrl && (
+  <div className="h-10 w-20 ml-4 flex-shrink-0 bg-white rounded-md overflow-hidden border border-gray-200 shadow-sm relative">
+    <Image
+      src={card.imageUrl}
+      alt={card.title}
+      fill
+      className="object-contain p-1"
+    />
+  </div>
+)}
+
           </div>
         </motion.div>
       ))}
