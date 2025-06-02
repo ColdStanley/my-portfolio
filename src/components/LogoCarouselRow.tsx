@@ -19,6 +19,7 @@ export default function LogoCarouselRow() {
     Life: [
       '/images/Life-Montreal.png',
       '/images/Life-TaiWan.png',
+      '/images/Life-Niagara.png',
     ],
   }
 
