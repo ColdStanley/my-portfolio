@@ -15,6 +15,8 @@ export default function LogoCarouselRow() {
       '/images/Knowledge-Carleton.png',
       '/images/Knowledge-Bologna.png',
       '/images/Knowledge-Queensland.png',
+      '/images/Knowledge-Deakin.png',
+      '/images/Knowledge-Toronto.png',
     ],
     Life: [
       '/images/Life-Montreal.png',

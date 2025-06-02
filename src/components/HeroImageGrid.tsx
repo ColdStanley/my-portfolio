@@ -63,9 +63,9 @@ export default function HeroImageGrid() {
     'inline-block italic font-[Playfair_Display] underline-offset-2 hover:underline cursor-pointer transition-all'
 
   return (
-    <section className="relative w-full px-4 md:px-8 pt-6 pb-4">
-      {/* 顶部标题 */}
-      <div className="text-center mb-10 max-w-3xl mx-auto">
+    <section className="flex flex-col gap-6 w-full lg:w-2/3">
+      {/* 顶部文字区 */}
+      <div className="text-center max-w-3xl mx-auto">
         <h1 className="text-3xl md:text-4xl font-semibold text-gray-900 dark:text-white leading-snug tracking-tight">
           <span className="text-gray-700 dark:text-gray-300">Explore</span>{' '}
           <motion.span
@@ -106,8 +106,8 @@ export default function HeroImageGrid() {
         </p>
       </div>
 
-      {/* 三栏图卡 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* 三张主卡片 */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {heroSections.map((section, index) => (
           <motion.div
             key={index}
@@ -118,7 +118,7 @@ export default function HeroImageGrid() {
             aria-label={`Go to ${section.title}`}
           >
             <motion.div
-              className="w-full h-48 relative bg-white dark:bg-gray-800"
+              className="w-full h-36 relative bg-white dark:bg-gray-800"
               animate={floatImage.animate}
             >
               <Image
@@ -130,24 +130,11 @@ export default function HeroImageGrid() {
               />
             </motion.div>
             <div className="p-4 text-center">
-              <h2 className={`text-xl font-semibold ${section.colorClass}`}>{section.title}</h2>
-              <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{section.subtitle}</p>
+              <h2 className={`text-lg font-semibold ${section.colorClass}`}>{section.title}</h2>
+              <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">{section.subtitle}</p>
             </div>
           </motion.div>
         ))}
-      </div>
-
-      {/* 向下引导箭头 */}
-      <div className="flex justify-center mt-10 animate-bounce">
-        <svg
-          className="w-6 h-6 text-gray-400 dark:text-gray-500"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
       </div>
     </section>
   )
