@@ -109,7 +109,8 @@ export default function DetailPage() {
       </div>
 
       <article
-        className="prose prose-lg max-w-none text-gray-800 dark:text-gray-200 [&_table]:w-full [&_th]:bg-gray-100 [&_td]:p-2 [&_th]:p-2 border-collapse border border-gray-300"
+        className="prose prose-lg max-w-none text-gray-800 dark:text-gray-200 [&_table]:w-full [&_th]:bg-gray-100 [&_td]:p-2 [&_th]:p-2"
+
         aria-label="Notion page content"
         dangerouslySetInnerHTML={{ __html: pageContent }}
       />
