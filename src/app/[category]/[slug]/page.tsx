@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
+import RenderBlock from '@/components/notion/RenderBlock'
 
 interface CardData {
   id: string
@@ -21,7 +22,7 @@ export default function DetailPage() {
   const { category, slug } = useParams() as { category: string; slug: string }
 
   const [item, setItem] = useState<CardData | null>(null)
-  const [pageContent, setPageContent] = useState<string>('')
+  const [blocks, setBlocks] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -54,7 +55,7 @@ export default function DetailPage() {
       fetch(`/api/notion/page?pageId=${item.pageId}`)
         .then(res => res.json())
         .then(data => {
-          setPageContent(data.html || '')
+          setBlocks(data.blocks || [])
         })
         .catch(() => {
           setError('Failed to load page content.')
@@ -108,12 +109,9 @@ export default function DetailPage() {
         )}
       </div>
 
-      <article
-        className="prose prose-lg max-w-none text-gray-800 dark:text-gray-200 [&_table]:w-full [&_th]:bg-gray-100 [&_td]:p-2 [&_th]:p-2"
-
-        aria-label="Notion page content"
-        dangerouslySetInnerHTML={{ __html: pageContent }}
-      />
+      <article className="prose dark:prose-invert max-w-none text-[17px]">
+        <RenderBlock blocks={blocks} />
+      </article>
     </div>
   )
 }
