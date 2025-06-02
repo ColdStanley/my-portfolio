@@ -20,7 +20,6 @@ async function fetchBlockChildrenRecursively(blockId: string): Promise<BlockObje
 
     const blocks = res.results as BlockObjectResponse[]
 
-    // 对每个 block 判断是否嵌套 children
     for (const block of blocks) {
       if ('has_children' in block && block.has_children) {
         const nested = await fetchBlockChildrenRecursively(block.id)
@@ -35,20 +34,74 @@ async function fetchBlockChildrenRecursively(blockId: string): Promise<BlockObje
   return children
 }
 
+// ✅ 查询数据库内容（用于读取 LatestHighlightCard）
+async function fetchHighlightCards(): Promise<any[]> {
+  const databaseId = process.env.NOTION_DATABASE_ID
+  if (!databaseId) throw new Error('Missing NOTION_DATABASE_ID')
+
+  const meta = await notion.databases.retrieve({ database_id: databaseId })
+  const orderedColumnNames = Object.keys(meta.properties)
+
+  const res = await notion.databases.query({
+    database_id: databaseId,
+    filter: {
+      property: 'Section',
+      select: {
+        equals: 'LatestHighlightCard',
+      },
+    },
+    sorts: [
+      {
+        property: 'Order',
+        direction: 'ascending',
+      },
+    ],
+  })
+
+  const rows = res.results.map((page: any) => {
+    const props = page.properties
+    const row: Record<string, string> = {}
+    for (const col of orderedColumnNames) {
+      const value = props[col]
+      if (!value) continue
+      if (value.type === 'title') {
+        row[col] = value.title[0]?.plain_text || ''
+      } else if (value.type === 'rich_text') {
+        row[col] = value.rich_text[0]?.plain_text || ''
+      } else if (value.type === 'select') {
+        row[col] = value.select?.name || ''
+      } else if (value.type === 'multi_select') {
+        row[col] = value.multi_select.map((t: any) => t.name).join(', ')
+      } else if (value.type === 'url') {
+        row[col] = value.url
+      } else if (value.type === 'files' && value.files.length > 0) {
+        row[col] = value.files[0].name || ''
+      }
+    }
+    return row
+  })
+
+  return rows
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const pageId = searchParams.get('pageId')
 
-  if (!pageId) {
-    return NextResponse.json({ error: 'Missing pageId parameter' }, { status: 400 })
-  }
-
   try {
-    const blocks = await fetchBlockChildrenRecursively(pageId); console.log('📦 Final blocks:', JSON.stringify(blocks, null, 2))
+    if (pageId === 'home-latest') {
+      const data = await fetchHighlightCards()
+      return NextResponse.json({ data })
+    }
 
+    if (!pageId) {
+      return NextResponse.json({ error: 'Missing pageId parameter' }, { status: 400 })
+    }
+
+    const blocks = await fetchBlockChildrenRecursively(pageId)
     return NextResponse.json({ blocks })
   } catch (error) {
-    console.error('❌ Error fetching Notion blocks recursively:', error)
+    console.error('❌ Error fetching Notion content:', error)
     return NextResponse.json({ error: 'Failed to fetch Notion content' }, { status: 500 })
   }
 }

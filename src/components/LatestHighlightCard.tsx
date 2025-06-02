@@ -1,75 +1,97 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import { Tooltip } from 'react-tooltip'
 
-function HighlightCard({
-  title,
-  icon,
-  description,
-}: {
+interface HighlightItem {
   title: string
-  icon?: string
   description?: string
-}) {
+  slug?: string
+  category?: string
+  tag?: string
+}
+
+function HighlightCard({ item, index }: { item: HighlightItem; index: number }) {
+  const router = useRouter()
+
+  const icon = '✨'
+  const bgColor = index % 3 === 0
+    ? 'bg-purple-50 dark:bg-purple-900'
+    : index % 3 === 1
+    ? 'bg-blue-50 dark:bg-blue-900'
+    : 'bg-yellow-50 dark:bg-yellow-900'
+
   return (
     <motion.div
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.97 }}
-      className="rounded-xl border border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 shadow-sm transition-all duration-300 flex flex-col justify-center h-[60px]"
+      onClick={() => {
+        if (item.slug && item.category) {
+          router.push(`/${item.category}/${item.slug}?id=home-latest`)
+        }
+      }}
+      className={`relative rounded-xl border border-dashed border-gray-300 dark:border-gray-600 
+                 ${bgColor} px-3 py-2 shadow-sm transition-all duration-300 
+                 flex flex-col justify-center h-[60px] cursor-pointer group`}
+      data-tooltip-id={`tip-${index}`}
+      data-tooltip-content={item.description || ''}
     >
       <div className="flex items-start gap-2">
         <div className="text-base mt-0.5">{icon}</div>
-        <div className="flex-1">
-          <h3 className="text-xs font-semibold text-gray-800 dark:text-gray-200 leading-snug">
-            {title}
+        <div className="flex-1 overflow-hidden">
+          <h3 className="text-xs font-semibold text-gray-800 dark:text-gray-200 leading-snug truncate">
+            {item.title || 'Untitled'}
           </h3>
-          {description && (
-            <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5 truncate">
-              {description}
-            </p>
-          )}
+          <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5 truncate">
+            {item.description || 'No description'}
+          </p>
         </div>
       </div>
+      <Tooltip id={`tip-${index}`} />
     </motion.div>
   )
 }
 
 export default function LatestSection() {
+  const [data, setData] = useState<HighlightItem[]>([])
+
+  useEffect(() => {
+    fetch('/api/notion/page?pageId=home-latest')
+      .then((res) => res.json())
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data)) setData(res.data)
+        else setData([])
+      })
+      .catch((err) => {
+        console.error('Failed to load highlights', err)
+        setData([])
+      })
+  }, [])
+
   return (
-    <aside className="w-full lg:w-1/3 pl-4 border-l border-gray-200 dark:border-gray-700 flex flex-col justify-between h-full">
-      {/* 顶部图 + 标题 */}
-      <div className="flex items-center gap-2 mb-4">
+    <aside className="w-full lg:w-1/3 pl-4 border-l border-gray-200 dark:border-gray-700 flex flex-col justify-between">
+      <div className="flex items-center gap-2 mb-4 min-h-[28px]">
         <motion.div
           className="w-6 h-6 relative"
           animate={{
             rotate: [-2, 2, -2, 0],
-            transition: {
-              duration: 2.4,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            },
+            transition: { duration: 2.4, repeat: Infinity, ease: 'easeInOut' },
           }}
         >
           <Image src="/images/latest-banner.png" alt="latest" fill className="object-contain" />
         </motion.div>
-        <span className="text-base font-semibold text-gray-700 dark:text-gray-300 tracking-wide">
+        <span className="text-[17px] font-semibold text-gray-700 dark:text-gray-300 tracking-wide">
           Latest Highlights
         </span>
       </div>
 
-      {/* 卡片区域：2列5行 */}
-      <div className="grid grid-cols-2 grid-rows-5 gap-3 pr-1 h-full">
-        <HighlightCard title="AI Launch" icon="🚀" description="New model online" />
-        <HighlightCard title="500K Views" icon="📈" description="Milestone hit today" />
-        <HighlightCard title="Excel Upgrade" icon="📊" description="Solver mode added" />
-        <HighlightCard title="Lo-Fi Mix" icon="🎧" description="Study sounds live" />
-        <HighlightCard title="French Class" icon="🇫🇷" description="Basics uploaded now" />
-        <HighlightCard title="Visual Style" icon="🎨" description="Typography refreshed" />
-        <HighlightCard title="1K+ Subs" icon="📬" description="Newsletter growth" />
-        <HighlightCard title="Log + Music" icon="📓" description="Study sync ready" />
-        <HighlightCard title="Tech Blog" icon="🖥️" description="Weekly articles live" />
-        <HighlightCard title="Q2 Goals" icon="🎯" description="Updated task map" />
+      <div className="grid grid-cols-2 grid-rows-5 gap-3 pr-1 min-h-[340px]">
+        {data.map((item, i) => (
+          <HighlightCard key={i} item={item} index={i} />
+        ))}
       </div>
     </aside>
   )
