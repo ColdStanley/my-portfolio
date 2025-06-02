@@ -7,7 +7,8 @@ import {
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY })
 
-async function fetchBlockChildren(blockId: string): Promise<BlockObjectResponse[]> {
+// ✅ 递归抓取所有子 block，注入 block.children
+async function fetchBlockChildrenRecursively(blockId: string): Promise<BlockObjectResponse[]> {
   const children: BlockObjectResponse[] = []
   let cursor: string | undefined = undefined
 
@@ -16,7 +17,18 @@ async function fetchBlockChildren(blockId: string): Promise<BlockObjectResponse[
       block_id: blockId,
       start_cursor: cursor,
     })
-    children.push(...(res.results as BlockObjectResponse[]))
+
+    const blocks = res.results as BlockObjectResponse[]
+
+    // 对每个 block 判断是否嵌套 children
+    for (const block of blocks) {
+      if ('has_children' in block && block.has_children) {
+        const nested = await fetchBlockChildrenRecursively(block.id)
+        ;(block as any).children = nested
+      }
+    }
+
+    children.push(...blocks)
     cursor = res.has_more ? res.next_cursor || undefined : undefined
   } while (cursor)
 
@@ -32,10 +44,10 @@ export async function GET(request: Request) {
   }
 
   try {
-    const blocks = await fetchBlockChildren(pageId)
+    const blocks = await fetchBlockChildrenRecursively(pageId)
     return NextResponse.json({ blocks })
   } catch (error) {
-    console.error('❌ Error fetching Notion blocks:', error)
+    console.error('❌ Error fetching Notion blocks recursively:', error)
     return NextResponse.json({ error: 'Failed to fetch Notion content' }, { status: 500 })
   }
 }
