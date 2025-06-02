@@ -6,7 +6,6 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Tooltip } from 'react-tooltip'
 
-
 interface HighlightItem {
   title: string
   description?: string
@@ -30,8 +29,10 @@ function HighlightCard({ item, index }: { item: HighlightItem; index: number }) 
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.97 }}
       onClick={() => {
-        if (item.slug && item.category) {
-          router.push(`/${item.category}/${item.slug}?id=home-latest`)
+        if (item.slug?.startsWith('/')) {
+          router.push(item.slug) // ✅ 绝对路径 slug
+        } else if (item.slug && item.category) {
+          router.push(`/${item.category}/${item.slug}?id=home-latest`) // ✅ 原有逻辑
         }
       }}
       className={`relative rounded-xl border border-dashed border-gray-300 dark:border-gray-600 
