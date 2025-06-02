@@ -1,3 +1,4 @@
+// ✅ Final Stable /api/notion/database/route.ts
 import { NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
 
@@ -12,7 +13,9 @@ export async function GET(request: Request) {
   }
 
   try {
-    // 获取所有行数据
+    const meta = await notion.databases.retrieve({ database_id: id })
+    const orderedColumnNames = Object.keys(meta.properties)
+
     const res = await notion.databases.query({
       database_id: id,
       page_size: 100,
@@ -20,19 +23,20 @@ export async function GET(request: Request) {
 
     const rows: Record<string, string>[] = []
 
-    // 尝试从第一行推导列顺序（更贴近 Notion 前端展示）
-    const firstRow = res.results.find(r => 'properties' in r) as any
-    const columnOrder = firstRow ? Object.keys(firstRow.properties) : []
-
     for (const result of res.results) {
       if (!('properties' in result)) continue
       const props = result.properties
       const row: Record<string, string> = {}
 
-      for (const [key, prop] of Object.entries(props)) {
+      for (const colName of orderedColumnNames) {
+        const prop = props[colName]
+        if (!prop) {
+          row[colName] = ''
+          continue
+        }
+
         const type = prop.type
         let val = ''
-
         switch (type) {
           case 'title':
             val = prop.title.map((t) => t.plain_text).join('')
@@ -79,14 +83,14 @@ export async function GET(request: Request) {
             val = '[Unsupported]'
         }
 
-        row[key] = val
+        row[colName] = val
       }
 
       rows.push(row)
     }
 
     return NextResponse.json({
-      columns: columnOrder,
+      columns: orderedColumnNames,
       rows,
     })
   } catch (err) {
