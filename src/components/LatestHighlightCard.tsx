@@ -6,12 +6,13 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Tooltip } from 'react-tooltip'
 
+
 interface HighlightItem {
   title: string
   description?: string
   slug?: string
   category?: string
-  tag?: string
+  tag?: string[]
 }
 
 function HighlightCard({ item, index }: { item: HighlightItem; index: number }) {

@@ -35,6 +35,7 @@ async function fetchBlockChildrenRecursively(blockId: string): Promise<BlockObje
 }
 
 // ✅ 查询数据库内容（用于读取 LatestHighlightCard）
+// ✅ 查询数据库内容（用于读取 LatestHighlightCard）
 async function fetchHighlightCards(): Promise<any[]> {
   const databaseId = process.env.NOTION_DATABASE_ID
   if (!databaseId) throw new Error('Missing NOTION_DATABASE_ID')
@@ -64,18 +65,21 @@ async function fetchHighlightCards(): Promise<any[]> {
     for (const col of orderedColumnNames) {
       const value = props[col]
       if (!value) continue
+
+      const key = col.toLowerCase()  // ✅ 强制转为小写字段名
+
       if (value.type === 'title') {
-        row[col] = value.title[0]?.plain_text || ''
+        row[key] = value.title[0]?.plain_text || ''
       } else if (value.type === 'rich_text') {
-        row[col] = value.rich_text[0]?.plain_text || ''
+        row[key] = value.rich_text[0]?.plain_text || ''
       } else if (value.type === 'select') {
-        row[col] = value.select?.name || ''
+        row[key] = value.select?.name || ''
       } else if (value.type === 'multi_select') {
-        row[col] = value.multi_select.map((t: any) => t.name).join(', ')
+        row[key] = value.multi_select.map((t: any) => t.name).join(', ')
       } else if (value.type === 'url') {
-        row[col] = value.url
+        row[key] = value.url
       } else if (value.type === 'files' && value.files.length > 0) {
-        row[col] = value.files[0].name || ''
+        row[key] = value.files[0].name || ''
       }
     }
     return row

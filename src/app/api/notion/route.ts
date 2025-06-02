@@ -7,7 +7,7 @@ import {
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY })
 
-// ✅ 获取卡片数据（用于 HomeCardsSection）
+// ✅ 公共方法：获取所有卡片数据（用于 HomeCardsSection）
 async function fetchCardItems(): Promise<any[]> {
   const databaseId = process.env.NOTION_DATABASE_ID
   if (!databaseId) throw new Error('Missing NOTION_DATABASE_ID')
@@ -81,6 +81,21 @@ async function fetchCardItems(): Promise<any[]> {
   })
 }
 
+// ✅ 新增：用于 LatestHighlightCard 精简结构
+async function fetchLatestHighlightItems(): Promise<any[]> {
+  const all = await fetchCardItems()
+  return all
+    .filter((item) => item.section === 'LatestHighlightCard')
+    .map((item) => ({
+      title: item.title || 'Untitled',
+      description: item.content || '',
+      slug: item.slug || '',
+      category: item.category || '',
+      tag: item.tech || [],
+    }))
+}
+
+
 // ✅ 主 GET 接口
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -88,10 +103,9 @@ export async function GET(request: Request) {
 
   try {
     if (pageId === 'home-latest') {
-      // 👉 用于右侧 LatestHighlightCard
-      const data = await fetchCardItems()
-      const filtered = data.filter((item) => item.section === 'LatestHighlightCard')
-      return NextResponse.json({ data: filtered })
+      // ✅ 关键改动在这里：返回精简字段的版本
+      const data = await fetchLatestHighlightItems()
+      return NextResponse.json({ data })
     }
 
     // 👉 用于 HomeCardsSection
@@ -102,3 +116,4 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Failed to fetch Notion content' }, { status: 500 })
   }
 }
+
