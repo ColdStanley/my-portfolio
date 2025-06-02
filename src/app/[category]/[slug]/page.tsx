@@ -25,7 +25,6 @@ export default function DetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // 获取 Notion 卡片基本信息
   useEffect(() => {
     setIsLoading(true)
     setError(null)
@@ -50,7 +49,6 @@ export default function DetailPage() {
       })
   }, [category, slug])
 
-  // 获取 Notion 渲染内容
   useEffect(() => {
     if (item?.pageId) {
       fetch(`/api/notion/page?pageId=${item.pageId}`)
@@ -91,22 +89,25 @@ export default function DetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto p-8 fade-in">
-      <h1 className="text-3xl font-bold text-purple-700 mb-4">{item.title}</h1>
-      <p className="text-gray-600 italic mb-6">{item.subtext}</p>
+      <h1 className="text-3xl font-bold text-purple-700 mb-2">{item.title}</h1>
 
-      {item.imageUrl && (
-        <div className="w-full h-auto mb-6 relative aspect-[16/9] rounded-xl overflow-hidden shadow">
-          <Image
-            src={item.imageUrl}
-            alt={item.title}
-            fill
-            className="object-cover fade-image"
-            sizes="100vw"
-          />
-        </div>
-      )}
+      <div className="flex justify-between items-start mb-6 gap-4">
+        <p className="text-gray-600 italic">{item.subtext}</p>
 
-      {/* 渲染 Notion 富文本（包含表格） */}
+        {item.imageUrl && (
+          <div className="min-w-[160px] max-w-[200px]">
+            <Image
+              src={item.imageUrl}
+              alt={item.title}
+              width={300}
+              height={180}
+              className="w-full h-auto rounded-xl shadow fade-image"
+              sizes="(max-width: 768px) 100vw, 300px"
+            />
+          </div>
+        )}
+      </div>
+
       <article
         className="prose prose-lg max-w-none text-gray-800 dark:text-gray-200 [&_table]:w-full [&_th]:bg-gray-100 [&_td]:p-2 [&_th]:p-2 border-collapse border border-gray-300"
         aria-label="Notion page content"
