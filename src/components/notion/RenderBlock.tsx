@@ -14,6 +14,8 @@ import CalloutBlock from './blocks/CalloutBlock'
 import DividerBlock from './blocks/DividerBlock'
 import TableBlock from './blocks/TableBlock'
 import ChildDatabaseBlock from './blocks/ChildDatabaseBlock'
+import DatabaseInlineBlock from './blocks/DatabaseInlineBlock'
+
 
 export default function RenderBlock({ blocks }: { blocks: any[] }) {
   if (!blocks || blocks.length === 0) return null
@@ -23,40 +25,36 @@ export default function RenderBlock({ blocks }: { blocks: any[] }) {
       {blocks.map((block) => {
         const { type, id } = block
 
-        // ✅ 将 children 注入各 block 支持嵌套渲染
-        const props = { block, key: id }
-        if (block.has_children && block.children) {
-          (props as any).block.children = block.children
-        }
-
         switch (type) {
           case 'paragraph':
-            return <ParagraphBlock {...props} />
+            return <ParagraphBlock key={id} block={block} />
           case 'heading_1':
           case 'heading_2':
-            return <HeadingBlock {...props} />
+            return <HeadingBlock key={id} block={block} />
           case 'image':
-            return <ImageBlock {...props} />
+            return <ImageBlock key={id} block={block} />
           case 'quote':
-            return <QuoteBlock {...props} />
+            return <QuoteBlock key={id} block={block} />
           case 'bulleted_list_item':
-            return <ListBlock {...props} />
+            return <ListBlock key={id} block={block} />
           case 'numbered_list_item':
-            return <NumberedListBlock {...props} />
+            return <NumberedListBlock key={id} block={block} />
           case 'to_do':
-            return <TodoBlock {...props} />
+            return <TodoBlock key={id} block={block} />
           case 'toggle':
-            return <ToggleBlock {...props} />
+            return <ToggleBlock key={id} block={block} />
           case 'callout':
-            return <CalloutBlock {...props} />
+            return <CalloutBlock key={id} block={block} />
           case 'divider':
             return <DividerBlock key={id} />
           case 'table':
-            return <TableBlock {...props} />
-          case 'child_database':
-            return <ChildDatabaseBlock {...props} />
-          default:
-            return null
+            return <TableBlock key={id} block={block} />
+         case 'child_database':
+            return block.parent?.type === 'block_id'
+            ? <DatabaseInlineBlock key={id} block={block} />
+            : <ChildDatabaseBlock key={id} block={block} />
+        default:
+        return null
         }
       })}
     </div>

@@ -44,7 +44,8 @@ export async function GET(request: Request) {
   }
 
   try {
-    const blocks = await fetchBlockChildrenRecursively(pageId)
+    const blocks = await fetchBlockChildrenRecursively(pageId); console.log('📦 Final blocks:', JSON.stringify(blocks, null, 2))
+
     return NextResponse.json({ blocks })
   } catch (error) {
     console.error('❌ Error fetching Notion blocks recursively:', error)
