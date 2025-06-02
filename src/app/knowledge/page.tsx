@@ -1,24 +1,23 @@
-export default function TutoringPage() {
+import KnowledgeCardSection from '@/components/KnowledgeCardSection'
+
+export default function KnowledgePage() {
   return (
-    <main className="min-h-screen bg-white pt-24 px-6">
-      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-10">
-        <h1 className="text-3xl font-bold text-purple-700 mb-6">My Tutoring Experience</h1>
-        <p className="text-gray-700 text-lg leading-relaxed mb-4">
-          As a dedicated Python and Excel tutor, I specialize in helping beginners build confidence in tech.
-          I’ve guided students from basic data types all the way to practical project development, ensuring they grasp
-          not only the how, but also the why.
-        </p>
-        <p className="text-gray-700 text-lg leading-relaxed mb-4">
-          I create structured, interactive, and real-world-oriented lesson plans—whether it’s solving business problems
-          using Excel functions like <code className="bg-gray-100 px-1 py-0.5 rounded">XLOOKUP</code> and
-          <code className="bg-gray-100 px-1 py-0.5 rounded">Solver</code>, or writing your first
-          <code className="bg-gray-100 px-1 py-0.5 rounded">for loop</code> in Python.
-        </p>
-        <p className="text-gray-700 text-lg leading-relaxed">
-          Teaching isn’t just about delivering content. I take pride in helping students develop their problem-solving mindset,
-          and seeing their confidence grow as they learn.
-        </p>
+    <main className="min-h-screen pt-28 pb-20 px-6 md:px-12 bg-gray-50 dark:bg-background">
+      <h1 className="text-4xl font-bold text-purple-700 dark:text-purple-300 text-center mb-12">
+        Knowledge
+      </h1>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-10 max-w-7xl mx-auto">
+        {/* 左侧：卡片区域 */}
+        <KnowledgeCardSection />
+
+        {/* 右侧：预留扩展 */}
+        <aside className="hidden lg:block">
+          <div className="h-full w-full rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm italic">
+            Coming soon: Frameworks, Methods, Essays, and More...
+          </div>
+        </aside>
       </div>
     </main>
-  );
+  )
 }

@@ -12,7 +12,7 @@ export default function TutorSection() {
       className="py-16"
     >
       <section className="bg-white rounded-2xl shadow-lg p-10 max-w-7xl mx-auto mb-16">
-        <h2 className="text-3xl font-bold text-purple-700 mb-6">My Tutoring Experience</h2>
+        <h2 className="text-3xl font-bold text-purple-700 mb-6">Knowledge</h2>
         <p className="text-lg text-gray-700 leading-relaxed mb-4">
           I’ve helped students from diverse backgrounds master tools like Excel, Python, and data analytics. Whether
           it’s 1-on-1 coaching or online classes, I focus on clarity, hands-on practice, and building confidence.

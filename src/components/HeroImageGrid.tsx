@@ -55,6 +55,13 @@ const floatImage = {
 export default function HeroImageGrid() {
   const router = useRouter()
 
+  const handleKeywordClick = (path: string) => {
+    router.push(path)
+  }
+
+  const interactiveSpanClass =
+    'inline-block italic font-[Playfair_Display] underline-offset-2 hover:underline cursor-pointer transition-all'
+
   return (
     <section className="relative w-full px-4 md:px-8 pt-6 pb-4">
       {/* 顶部标题 */}
@@ -62,22 +69,31 @@ export default function HeroImageGrid() {
         <h1 className="text-3xl md:text-4xl font-semibold text-gray-900 dark:text-white leading-snug tracking-tight">
           <span className="text-gray-700 dark:text-gray-300">Explore</span>{' '}
           <motion.span
-            className="inline-block italic font-[Playfair_Display] text-violet-500"
+            className={`${interactiveSpanClass} text-violet-500`}
             animate={floatKeyword.animate(0)}
+            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.05 }}
+            onClick={() => handleKeywordClick('/technology')}
           >
             Technology
           </motion.span>
           ,{' '}
           <motion.span
-            className="inline-block italic font-[Playfair_Display] text-sky-500"
+            className={`${interactiveSpanClass} text-sky-500`}
             animate={floatKeyword.animate(0.4)}
+            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.05 }}
+            onClick={() => handleKeywordClick('/knowledge')}
           >
             Knowledge
           </motion.span>{' '}
           <span className="text-gray-700 dark:text-gray-300">and</span>{' '}
           <motion.span
-            className="inline-block italic font-[Playfair_Display] text-amber-500"
+            className={`${interactiveSpanClass} text-amber-500`}
             animate={floatKeyword.animate(0.8)}
+            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.05 }}
+            onClick={() => handleKeywordClick('/life')}
           >
             Life
           </motion.span>{' '}
