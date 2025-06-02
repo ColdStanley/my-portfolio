@@ -46,43 +46,41 @@ export default function NavBar() {
   }
 
   return (
-    <nav className="fixed top-0 left-0 w-full z-50 bg-white/90 backdrop-blur border-b border-gray-200 px-6 py-4 flex justify-between items-center shadow-sm">
-      {/* Left: Logo + Prompt */}
+    <nav className="fixed top-0 left-0 w-full z-50 bg-white/90 dark:bg-black/80 backdrop-blur border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center shadow-sm transition-colors">
+      {/* Left: Logo + Music Prompt */}
       <div className="flex items-center gap-4">
         <Link
           href="/"
-          className="text-2xl font-extrabold text-purple-700 tracking-tight hover:text-purple-800 transition-colors duration-200"
+          className="text-2xl font-extrabold text-purple-700 dark:text-purple-400 tracking-tight hover:text-purple-800 dark:hover:text-purple-300 transition-colors duration-200"
         >
           Stanley
         </Link>
 
-        {/* Text + Play / Pause Button */}
-        <div className="hidden md:flex items-center gap-3 text-sm text-gray-800">
-          <span>
-            Do you like “Ella Langley (feat. Riley Green) - you look like you love me”?
+        <div className="hidden md:flex items-center gap-3 text-sm text-gray-800 dark:text-gray-200">
+          <span className="whitespace-nowrap">
+            Do you like “Ella Langley - you look like you love me”?
           </span>
 
           <button
             onClick={handleToggle}
             className={clsx(
-              'px-3 py-1 rounded-md text-sm transition font-medium',
+              'px-3 py-1 rounded-md text-sm font-medium transition-colors duration-200',
               isPlaying
-                ? 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                ? 'bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-white hover:bg-gray-400'
                 : 'bg-purple-600 text-white hover:bg-purple-700'
             )}
           >
             {hasInitiated ? (isPlaying ? 'Pause' : 'Play') : 'Yes'}
           </button>
 
-          {/* Animated Music Playing indicator */}
           {isPlaying && (
-            <span className="text-purple-600 font-medium animate-pulse ml-2">
-              🎵 Music Playing...
+            <span className="text-purple-600 dark:text-purple-300 font-medium animate-pulse ml-2">
+              🎵 Playing...
             </span>
           )}
         </div>
 
-        {/* Hidden YouTube Player (audio only) */}
+        {/* Hidden YouTube Player */}
         <div className="absolute opacity-0 pointer-events-none">
           {hasInitiated && (
             <YouTube
@@ -107,11 +105,12 @@ export default function NavBar() {
           <Link
             key={item.label}
             href={item.href}
-            className={`text-sm md:text-base transition-colors duration-200 font-medium ${
+            className={clsx(
+              'text-sm md:text-base font-medium transition-colors duration-200 underline-offset-4',
               pathname === item.href
-                ? 'text-purple-700 font-semibold underline underline-offset-4'
-                : 'text-gray-700 hover:text-purple-600 hover:underline underline-offset-4'
-            }`}
+                ? 'text-purple-700 dark:text-purple-400 underline'
+                : 'text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:underline'
+            )}
           >
             {item.label}
           </Link>
@@ -121,20 +120,21 @@ export default function NavBar() {
       {/* Mobile nav */}
       <div className="md:hidden">
         <Sheet>
-          <SheetTrigger>
-            <Menu className="h-6 w-6 text-purple-700" />
+          <SheetTrigger aria-label="Open menu">
+            <Menu className="h-6 w-6 text-purple-700 dark:text-purple-300" />
           </SheetTrigger>
-          <SheetContent side="left" className="bg-white">
+          <SheetContent side="left" className="bg-white dark:bg-black">
             <div className="mt-8 flex flex-col gap-4">
               {navItems.map((item) => (
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={`text-base transition-colors duration-200 font-medium ${
+                  className={clsx(
+                    'text-base font-medium transition-colors duration-200 underline-offset-4',
                     pathname === item.href
-                      ? 'text-purple-700 font-semibold underline underline-offset-4'
-                      : 'text-gray-700 hover:text-purple-600 hover:underline underline-offset-4'
-                  }`}
+                      ? 'text-purple-700 dark:text-purple-400 underline'
+                      : 'text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:underline'
+                  )}
                 >
                   {item.label}
                 </Link>

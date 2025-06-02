@@ -33,7 +33,7 @@ const floatKeyword = {
     x: [-2, 2, -2, 0],
     y: [0, -2, 2, 0],
     transition: {
-      duration: 2,
+      duration: 2.4,
       repeat: Infinity,
       ease: 'easeInOut',
       delay,
@@ -43,7 +43,7 @@ const floatKeyword = {
 
 const floatImage = {
   animate: {
-    y: [0, -3, 3, 0],
+    y: [0, -4, 4, 0],
     transition: {
       duration: 3,
       repeat: Infinity,
@@ -57,10 +57,10 @@ export default function HeroImageGrid() {
 
   return (
     <section className="relative w-full px-4 md:px-8 pt-6 pb-4">
-      {/* 顶部标题区域 */}
-      <div className="text-center mb-8">
-        <h1 className="text-3xl md:text-4xl font-medium text-gray-900 leading-snug">
-          <span className="text-gray-700">Explore</span>{' '}
+      {/* 顶部标题 */}
+      <div className="text-center mb-10 max-w-3xl mx-auto">
+        <h1 className="text-3xl md:text-4xl font-semibold text-gray-900 dark:text-white leading-snug tracking-tight">
+          <span className="text-gray-700 dark:text-gray-300">Explore</span>{' '}
           <motion.span
             className="inline-block italic font-[Playfair_Display] text-violet-500"
             animate={floatKeyword.animate(0)}
@@ -74,55 +74,57 @@ export default function HeroImageGrid() {
           >
             Knowledge
           </motion.span>{' '}
-          <span className="text-gray-700">and</span>{' '}
+          <span className="text-gray-700 dark:text-gray-300">and</span>{' '}
           <motion.span
             className="inline-block italic font-[Playfair_Display] text-amber-500"
             animate={floatKeyword.animate(0.8)}
           >
             Life
           </motion.span>{' '}
-          <span className="text-black font-semibold inline-flex items-center">
+          <span className="text-black dark:text-white font-semibold inline-flex items-center">
             with Music <span className="inline-block animate-bounce ml-1">🎧</span>
           </span>
         </h1>
-        <p className="text-lg text-black mt-2">
+        <p className="text-lg text-gray-700 dark:text-gray-300 mt-2">
           Dive into curated content across categories, powered by real stories and creativity.
         </p>
       </div>
 
-      {/* 三栏卡片区域 */}
+      {/* 三栏图卡 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {heroSections.map((section, index) => (
           <motion.div
             key={index}
             whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-            className="cursor-pointer rounded-2xl overflow-hidden shadow-md bg-white transition-all duration-300"
+            whileTap={{ scale: 0.97 }}
             onClick={() => router.push(section.link)}
+            className="cursor-pointer rounded-2xl overflow-hidden shadow-md bg-white dark:bg-card border border-gray-100 dark:border-border transition-all duration-300 group"
+            aria-label={`Go to ${section.title}`}
           >
             <motion.div
-              className="w-full h-48 relative bg-white"
+              className="w-full h-48 relative bg-white dark:bg-gray-800"
               animate={floatImage.animate}
             >
               <Image
                 src={section.image}
-                alt={section.title}
+                alt={`${section.title} banner`}
                 fill
-                className="object-contain p-4"
+                className="object-contain p-4 transition-transform duration-300 group-hover:scale-105"
+                priority={index === 0}
               />
             </motion.div>
             <div className="p-4 text-center">
               <h2 className={`text-xl font-semibold ${section.colorClass}`}>{section.title}</h2>
-              <p className="text-sm text-black mt-1">{section.subtitle}</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{section.subtitle}</p>
             </div>
           </motion.div>
         ))}
       </div>
 
-      {/* 向下滚动引导箭头 */}
-      <div className="flex justify-center mt-8 animate-bounce">
+      {/* 向下引导箭头 */}
+      <div className="flex justify-center mt-10 animate-bounce">
         <svg
-          className="w-6 h-6 text-gray-400"
+          className="w-6 h-6 text-gray-400 dark:text-gray-500"
           fill="none"
           stroke="currentColor"
           strokeWidth={2}

@@ -59,6 +59,20 @@
     animation: fadeInUp 0.6s ease-out forwards;
   }
 
+  .card-hover-effect {
+    @apply transition-all duration-300 ease-in-out 
+    hover:shadow-[0_0_12px_2px_theme(colors.purple.300)] hover:border-purple-400
+    active:scale-[0.98] active:shadow-inner;
+  }
+
+  .card-hover-effect {
+    @apply transition-all duration-300 ease-in-out 
+    hover:shadow-[0_0_12px_2px_theme(colors.purple.300)]
+    dark:hover:shadow-[0_0_12px_2px_theme(colors.purple.600)]
+    hover:border-purple-400 
+    active:scale-[0.98] active:shadow-inner;
+  }
+
   .hover-card {
     @apply transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-xl;
   }
