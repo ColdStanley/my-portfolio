@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
+export const dynamic = "force-dynamic"
+
 
 const questionBank = {
   'Part 1': [
@@ -225,6 +227,9 @@ export default function IELTS7Page() {
             )}
           </div>
 
+
+
+
           {/* 答案显示区域 */}
           {[5, 6, 7].map((score) => (
             <div key={score}>
@@ -234,14 +239,24 @@ export default function IELTS7Page() {
                   <p className="text-sm font-semibold text-gray-600">
                     {score === 5 ? '参考答案' : '推荐答案'}
                   </p>
-                  <div className="min-h-[200px] bg-white border border-purple-300 rounded-xl p-4 text-sm whitespace-pre-wrap text-gray-800">
-                    {answers[`band${score}` as keyof typeof answers] || '⚠️ 内容生成失败，请重试'}
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-semibold text-gray-600">注释</p>
-                  <div className="min-h-[200px] bg-white border border-purple-300 rounded-xl p-4 text-sm whitespace-pre-wrap text-gray-800">
-                    {answers[`comment${score}` as keyof typeof answers] || '⚠️ 注释生成失败，请重试'}
+<div className="min-h-[200px] bg-white border border-purple-300 rounded-xl p-4 text-sm whitespace-pre-wrap text-gray-800">
+  {answers[`band${score}` as keyof typeof answers]
+    ? answers[`band${score}` as keyof typeof answers]
+    : loading
+      ? ''
+      : ''}
+</div>
+</div>
+<div className="space-y-1">
+  <p className="text-sm font-semibold text-gray-600">注释</p>
+  <div className="min-h-[200px] bg-white border border-purple-300 rounded-xl p-4 text-sm whitespace-pre-wrap text-gray-800">
+    {answers[`comment${score}` as keyof typeof answers]
+      ? answers[`comment${score}` as keyof typeof answers]
+      : loading
+        ? ''
+        : ''}
+
+
                   </div>
                 </div>
               </div>
