@@ -110,7 +110,7 @@ export default function IELTS7Page() {
       question
     })
 
-    const res = await fetch('https://fastapi-gemini-api-ielts.onrender.com/generate', {
+    const res = await fetch('https://ielts-gemini.onrender.com/generate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
