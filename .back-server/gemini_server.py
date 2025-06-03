@@ -5,9 +5,11 @@ from datetime import date
 from fastapi.responses import JSONResponse
 import google.generativeai as genai
 import re
+import os
+
 
 # 配置 Gemini API Key
-genai.configure(api_key="AIzaSyAazU3hutjFc2d4Po0YSDCYJ2ENGgQNSWU")
+genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
 
 # 初始化 Gemini 模型
 model = genai.GenerativeModel("models/gemini-1.5-flash")
