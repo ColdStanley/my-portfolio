@@ -1,75 +1,165 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
+import { motion } from 'framer-motion'
 
-export default function IELTSSpeakingPage() {
-  const [selectedPart, setSelectedPart] = useState<'Part 1' | 'Part 2' | 'Part 3' | null>(null)
+const questionBank = {
+  'Part 1': ['What is your full name?', 'Where are you from?', 'Do you enjoy your job?'],
+  'Part 2': ['Describe a trip you enjoyed recently.', 'Talk about your favorite teacher.', 'Describe a memorable gift you received.'],
+  'Part 3': ['Why do people like to travel?', 'What is the role of education in society?', 'How do advertisements affect consumer behavior?']
+}
+
+export default function IELTS7Page() {
+  const [selectedPart, setSelectedPart] = useState<'Part 1' | 'Part 2' | 'Part 3'>('Part 1')
   const [question, setQuestion] = useState('')
-  const [answers, setAnswers] = useState({ band5: '', band6: '', band7: '' })
+  const [answers, setAnswers] = useState({
+    band5: '', comment5: '',
+    band6: '', comment6: '',
+    band7: '', comment7: ''
+  })
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async () => {
-    if (!selectedPart || !question.trim()) return
+  const handleClick = async () => {
+    if (!question) return
     setLoading(true)
-    setAnswers({ band5: '', band6: '', band7: '' })
 
     try {
-      const res = await fetch('/api/gemini/ielts', {
+      const res = await fetch('http://localhost:8000/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ part: selectedPart, question })
       })
+
+
+
+
       const data = await res.json()
-      setAnswers(data)
+
+setAnswers({
+  band5: data.band5,
+  comment5: data.comment5,
+  band6: data.band6,
+  comment6: data.comment6,
+  band7: data.band7,
+  comment7: data.comment7
+})
+
+
+
+
+
     } catch (err) {
-      console.error('Failed to fetch answers:', err)
+      console.error('❌ Gemini fetch failed', err)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <main className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">IELTS Speaking - {question || '请输入题目'}</h1>
+    <main className="flex flex-col items-center justify-center gap-10 p-6 max-w-7xl mx-auto font-sans text-gray-800">
+      {/* 顶部居中 Logo + 标题 */}
+      <div className="flex flex-row items-center justify-center gap-4 mt-6 mb-2">
+  <h1 className="text-3xl font-extrabold text-purple-600">IELTS Speaking</h1>
+  <motion.div
+    animate={{ rotate: [0, -5, 5, 0] }}
+    transition={{ repeat: Infinity, duration: 2 }}
+  >
+    <Image src="/images/IELTS7.png" alt="IELTS7" width={60} height={60} />
+  </motion.div>
+</div>
 
-      <div className="flex gap-4 mb-4">
-        {['Part 1', 'Part 2', 'Part 3'].map((part) => (
-          <button
-            key={part}
-            className={`rounded-full px-6 py-2 text-lg shadow-inner border ${selectedPart === part ? 'bg-black text-white' : 'bg-white text-black'}`}
-            onClick={() => setSelectedPart(part as 'Part 1' | 'Part 2' | 'Part 3')}
-          >
-            {part}
-          </button>
-        ))}
-      </div>
 
-      <div className="flex gap-2 mb-4">
-        <input
-          type="text"
-          placeholder="输入雅思口语题目"
-          className="border px-4 py-2 rounded w-full"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-        />
-        <button
-          className="rounded-full px-6 py-2 bg-black text-white shadow"
-          onClick={handleSubmit}
-          disabled={!selectedPart || !question.trim() || loading}
-        >
-          {loading ? '生成中...' : '提交'}
-        </button>
-      </div>
+      {/* 主体布局 */}
+      <div className="flex flex-col md:flex-row gap-6 w-full">
+        {/* 左侧题库区域 */}
+        <div className="w-full md:w-1/3 space-y-6">
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {['五分版', '六分版', '七分版'].map((label, i) => (
-          <div key={i} className="rounded-xl border p-4 min-h-[150px] border-purple-300">
-            <h3 className="font-semibold mb-2 text-center">{label}</h3>
-            <p className="whitespace-pre-wrap text-sm text-gray-800">
-              {answers[`band${i + 5}` as 'band5' | 'band6' | 'band7'] || '暂无内容'}
-            </p>
+
+{/* Part 按钮 */}
+<div className="flex justify-between px-4 gap-3 items-center">
+  {(['Part 1', 'Part 2', 'Part 3'] as const).map((p) => (
+    <motion.button
+      key={p}
+      onClick={() => setSelectedPart(p)}
+      className={`w-[120px] h-[40px] px-1 text-base rounded-xl border shadow font-semibold leading-none transition ${
+        selectedPart === p
+          ? 'bg-purple-600 text-white'
+          : 'bg-white text-black hover:bg-gray-100'
+      }`}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      transition={{ duration: 0.2 }}
+    >
+      {p}
+    </motion.button>
+  ))}
+</div>
+
+
+
+
+
+          <ul className="space-y-2 px-4">
+            {questionBank[selectedPart].map((q, idx) => (
+              <li
+                key={idx}
+                onClick={() => setQuestion(q)}
+                className="cursor-pointer p-2 rounded-xl bg-gray-100 hover:bg-purple-100 transition"
+              >
+                {q}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* 右侧答案区域 */}
+        <div className="w-full md:w-2/3 flex flex-col justify-start gap-6">
+          {/* 输入框 + 按钮 */}
+          <div className="flex items-center justify-between gap-2">
+            <input
+              type="text"
+              className="border border-gray-300 px-4 py-2 rounded-xl w-full max-w-[81%] focus:outline-none focus:ring-2 focus:ring-purple-300"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+            />
+            <motion.button
+              onClick={handleClick}
+              className="bg-purple-600 text-white px-5 py-2 rounded-xl shadow hover:bg-purple-700 focus:outline-none"
+              disabled={!question || loading}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+            >
+              {loading ? '生成中...' : '生成参考答案'}
+            </motion.button>
           </div>
-        ))}
+
+          {/* 答案显示区域 */}
+          {[5, 6, 7].map((score) => (
+            <div key={score}>
+              <h3 className="text-lg font-bold text-purple-600 mb-3">{score}分</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">
+                    {score === 5 ? '参考答案' : '推荐答案'}
+                  </p>
+                  <div className="min-h-[200px] bg-white border border-purple-300 rounded-xl p-4 text-sm whitespace-pre-wrap text-gray-800">
+                    {answers[`band${score}` as keyof typeof answers]}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">
+                    {score === 5 ? '注释' : '注释'}
+                  </p>
+                  <div className="min-h-[200px] bg-white border border-purple-300 rounded-xl p-4 text-sm whitespace-pre-wrap text-gray-800">
+                    {answers[`comment${score}` as keyof typeof answers]}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </main>
   )
