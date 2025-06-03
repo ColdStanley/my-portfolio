@@ -20,41 +20,38 @@ export default function IELTS7Page() {
   })
   const [loading, setLoading] = useState(false)
 
-  const handleClick = async () => {
-    if (!question) return
-    setLoading(true)
 
-    try {
-      const res = await fetch('http://localhost:8000/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ part: selectedPart, question })
-      })
+const handleClick = async () => {
+  if (!question) return
+  setLoading(true)
 
+  try {
+    const res = await fetch('https://fastapi-gemini-api-ielts.onrender.com/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ part: selectedPart, question })
+    })
 
+    const data = await res.json()
 
+    setAnswers({
+      band5: data.band5,
+      comment5: data.comment5,
+      band6: data.band6,
+      comment6: data.comment6,
+      band7: data.band7,
+      comment7: data.comment7
+    })
 
-      const data = await res.json()
-
-setAnswers({
-  band5: data.band5,
-  comment5: data.comment5,
-  band6: data.band6,
-  comment6: data.comment6,
-  band7: data.band7,
-  comment7: data.comment7
-})
-
-
-
-
-
-    } catch (err) {
-      console.error('❌ Gemini fetch failed', err)
-    } finally {
-      setLoading(false)
-    }
+  } catch (err) {
+    console.error('❌ Gemini fetch failed:', err)
+  } finally {
+    setLoading(false)
   }
+}
+
 
   return (
     <main className="flex flex-col items-center justify-center gap-10 p-6 max-w-7xl mx-auto font-sans text-gray-800">
