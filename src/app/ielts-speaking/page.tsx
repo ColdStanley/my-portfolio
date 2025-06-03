@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 export const dynamic = "force-dynamic"
+// Trigger Git change
 
 
 const questionBank = {
