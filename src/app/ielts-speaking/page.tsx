@@ -94,35 +94,58 @@ export default function IELTS7Page() {
   })
   const [loading, setLoading] = useState(false)
 
+
+
+
   const handleClick = async () => {
-    if (!question) return
-    setLoading(true)
+  if (!question) return
+  setLoading(true)
 
-    try {
-      const res = await fetch('https://fastapi-gemini-api-ielts.onrender.com/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ part: selectedPart, question })
-      })
+  try {
+    console.log('🎯 [Gemini] Sending request with:', {
+      part: selectedPart,
+      question
+    })
 
-      const data = await res.json()
+    const res = await fetch('https://fastapi-gemini-api-ielts.onrender.com/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ part: selectedPart, question })
+    })
 
-      setAnswers({
-        band5: data.band5 || '',
-        comment5: data.comment5 || '',
-        band6: data.band6 || '',
-        comment6: data.comment6 || '',
-        band7: data.band7 || '',
-        comment7: data.comment7 || ''
-      })
+    const data = await res.json()
 
-    } catch (err) {
-      console.error('❌ Gemini fetch failed:', err)
-      alert('生成失败，请稍后再试')
-    } finally {
-      setLoading(false)
-    }
+    console.log('📥 [Gemini] Raw response:', data)
+    console.log('📌 band5:', data.band5)
+    console.log('📌 comment5:', data.comment5)
+    console.log('📌 band6:', data.band6)
+    console.log('📌 comment6:', data.comment6)
+    console.log('📌 band7:', data.band7)
+    console.log('📌 comment7:', data.comment7)
+
+    setAnswers({
+      band5: data.band5 || '',
+      comment5: data.comment5 || '',
+      band6: data.band6 || '',
+      comment6: data.comment6 || '',
+      band7: data.band7 || '',
+      comment7: data.comment7 || ''
+    })
+
+  } catch (err) {
+    console.error('❌ [Gemini] Fetch failed:', err)
+    alert('生成失败，请稍后再试')
+  } finally {
+    setLoading(false)
   }
+}
+
+
+
+
+
 
   return (
     <main className="flex flex-col items-center justify-center gap-10 p-6 max-w-7xl mx-auto font-sans text-gray-800">
