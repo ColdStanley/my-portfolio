@@ -5,9 +5,83 @@ import Image from 'next/image'
 import { motion } from 'framer-motion'
 
 const questionBank = {
-  'Part 1': ['What is your full name?', 'Where are you from?', 'Do you enjoy your job?'],
-  'Part 2': ['Describe a trip you enjoyed recently.', 'Talk about your favorite teacher.', 'Describe a memorable gift you received.'],
-  'Part 3': ['Why do people like to travel?', 'What is the role of education in society?', 'How do advertisements affect consumer behavior?']
+  'Part 1': [
+  'What is your full name?',
+  'Where are you from?',
+  'Do you enjoy your job?',
+  'What do you do in your free time?',
+  'Do you prefer mornings or evenings?',
+  'What kind of music do you like?',
+  'How often do you go shopping?',
+  'Do you enjoy cooking?',
+  'Do you prefer to stay at home or go out?',
+  'What is your favorite season of the year?',
+  'Do you enjoy reading books?',
+  'What kind of TV programs do you watch?',
+  'Do you use social media a lot?',
+  'Do you live in a house or an apartment?',
+  'How do you usually get around your city?',
+  'Do you like your hometown? Why or why not?',
+  'What is your favorite food?',
+  'Do you prefer coffee or tea?',
+  'What is your usual daily routine?',
+  'Do you like going to the cinema?',
+  'How do you celebrate your birthday?',
+  'Do you enjoy spending time with family?',
+  'What hobbies would you like to try in the future?'
+],
+
+  'Part 2': [
+  'Describe a trip you enjoyed recently.',
+  'Talk about your favorite teacher.',
+  'Describe a memorable gift you received.',
+  'Describe a book you enjoyed reading and explain why',
+  'Describe a time you helped someone and how it made you feel',
+  'Describe a memorable holiday you had as a child',
+  'Describe a teacher who made a strong impression on you',
+  'Describe a place near water where you spent time',
+  'Describe a time when you were very busy',
+  'Describe a person in your family you admire',
+  'Describe an outdoor activity you tried for the first time',
+  'Describe a film that taught you something important',
+  'Describe a piece of technology you find useful',
+  'Describe a place in your hometown that you often visit',
+  'Describe a sportsperson you respect',
+  'Describe a party or celebration you enjoyed attending',
+  'Describe a photo that means a lot to you',
+  'Describe a building you like and find interesting',
+  'Describe a skill you learned that took a long time',
+  'Describe a period of time you worked hard to achieve something',
+  'Describe an event that changed your opinion about something',
+  'Describe a quiet place where you like to spend time',
+  'Describe a goal you would like to achieve in the future'
+],
+  'Part 3': [
+  'Why do people like to travel?',
+  'What is the role of education in society?',
+  'How do advertisements affect consumer behavior?',
+  'What are the advantages of living in a big city',
+  'How does modern technology affect communication',
+  'What is the role of education in shaping a person',
+  'Why do people choose to work abroad',
+  'How can governments encourage people to protect the environment',
+  'What are the effects of advertising on consumer behavior',
+  'How important is teamwork in the workplace',
+  'What are some common causes of stress in modern life',
+  'How has the way people travel changed over the years',
+  'What are the benefits of learning a second language',
+  'Why is it important to preserve cultural traditions',
+  'How can art and music influence society',
+  'What are the main challenges in balancing work and family life',
+  'How does social media impact the way people interact',
+  'Why do some people prefer online shopping over traditional shopping',
+  'What are the effects of climate change on daily life',
+  'How can schools better prepare students for the future',
+  'What makes a good leader in your opinion',
+  'How do public transport systems affect urban life',
+  'Why do some people avoid taking risks in life'
+]
+
 }
 
 export default function IELTS7Page() {
