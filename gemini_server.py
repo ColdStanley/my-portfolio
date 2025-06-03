@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+from datetime import date
+from fastapi.responses import JSONResponse
 import google.generativeai as genai
+import re
 
 # 配置 Gemini API Key
 genai.configure(api_key="AIzaSyAazU3hutjFc2d4Po0YSDCYJ2ENGgQNSWU")
@@ -25,8 +28,32 @@ class PromptRequest(BaseModel):
     part: str
     question: str
 
+# ✅ 简单的内存存储（每日调用次数 + 日期）
+request_counter = {
+    "date": date.today(),
+    "count": 0
+}
+
+DAILY_LIMIT = 50  # 可根据需求调整
+
 @app.post("/generate")
 async def generate_answer(payload: PromptRequest):
+    # ✅ 每日重置计数
+    if request_counter["date"] != date.today():
+        request_counter["date"] = date.today()
+        request_counter["count"] = 0
+
+    # ✅ 超出限制时拒绝请求
+    if request_counter["count"] >= DAILY_LIMIT:
+        return JSONResponse(
+            status_code=429,
+            content={"error": "🛑 Daily request limit reached. Please try again tomorrow."}
+        )
+
+    # ✅ 累计请求计数
+    request_counter["count"] += 1
+
+    # 🔽 以下为原有生成逻辑（不变）
     prompt = f"""
 You are an IELTS Speaking examiner.
 
@@ -58,14 +85,10 @@ Band 7 Comment:
         response = model.generate_content(prompt)
         text = response.text.strip()
 
-        import re
-
         def extract_answer_and_comment(band: str):
-            # 提取答案
             ans_match = re.search(fr"{band} Answer[:：]?\s*(.*?)(?=\n{band} Comment[:：])", text, re.DOTALL)
             answer = ans_match.group(1).strip() if ans_match else ""
 
-            # 提取注释
             comment_match = re.search(fr"{band} Comment[:：]?\s*(.*?)(?=\n|$)", text, re.DOTALL)
             comment = comment_match.group(1).strip() if comment_match else ""
 
