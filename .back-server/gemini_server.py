@@ -16,9 +16,7 @@ async def generate_answer(payload: PromptRequest):
     request_counter["count"] += 1
 
 
-
-
-    prompt = f"""
+prompt = f"""
 You are a certified IELTS Speaking examiner.
 
 Please evaluate the following IELTS Speaking question from Part {payload.part}:
@@ -34,6 +32,7 @@ Your task is to generate speaking answers and examiner comments for **Band 5**, 
 - The speaking sample should be structured with a **clear beginning, development with details/examples, and a brief ending or reflection**.
 - Maintain **natural spoken tone**, use appropriate **connectors**, and vary **sentence structures**.
 - Comments must be based on IELTS official criteria (fluency & coherence, lexical resource, grammatical range & accuracy, pronunciation).
+- For Band 7 Comment, at the end of the comment, add a section called "Vocabulary Highlights" that lists 2 impressive words and 2 impressive phrases used in the Band 7 Answer.
 
 ---
 
@@ -59,12 +58,19 @@ Band 7 Answer:
 Band 7 Comment:
 <Insert evaluation comment based on IELTS official criteria>
 
+Vocabulary Highlights:
+1- <fancy word>
+2- <fancy word>
+3- <fancy phrase>
+4- <fancy phrase>
+
 ---
 
 Only return the content in this format. Do not include any introduction or extra commentary.
 
 Be concise, realistic, and follow IELTS Speaking band descriptors.
 """
+
 
 # ✅ 打印到控制台
     print("==== PROMPT SENT TO GEMINI ====")
