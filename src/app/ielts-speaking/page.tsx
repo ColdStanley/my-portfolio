@@ -112,12 +112,15 @@ export default function IELTS7Page() {
         {/* Right Card */}
         <div className="bg-white shadow rounded-xl p-4 flex items-center justify-center">
           <video
-            src="/images/cat.mp4"
-            autoPlay
-            muted
-            loop
-            className="rounded-xl w-full h-auto"
-          />
+  src="/images/cat.mp4"
+  autoPlay
+  muted
+  loop
+  playsInline
+  preload="auto"
+  className="rounded-xl w-full h-auto object-cover"
+/>
+
         </div>
       </div>
 
