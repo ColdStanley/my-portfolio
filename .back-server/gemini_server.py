@@ -7,7 +7,6 @@ import google.generativeai as genai
 import re
 import os
 
-
 # 配置 Gemini API Key
 genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
 
@@ -17,7 +16,7 @@ model = genai.GenerativeModel("models/gemini-1.5-flash")
 # 初始化 FastAPI 应用
 app = FastAPI()
 
-# 设置 CORS（允许前端访问）
+# 设置 CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -25,93 +24,103 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 请求体格式
+# 请求体数据格式
 class PromptRequest(BaseModel):
     part: str
     question: str
 
-# ✅ 简单的内存存储（每日调用次数 + 日期）
+# 简单的调用次数限制
 request_counter = {
     "date": date.today(),
     "count": 0
 }
-
-DAILY_LIMIT = 50  # 可根据需求调整
+DAILY_LIMIT = 50
 
 @app.post("/generate")
 async def generate_answer(payload: PromptRequest):
-    # ✅ 每日重置计数
+    # 每日重置调用次数
     if request_counter["date"] != date.today():
         request_counter["date"] = date.today()
         request_counter["count"] = 0
 
-    # ✅ 超出限制时拒绝请求
     if request_counter["count"] >= DAILY_LIMIT:
         return JSONResponse(
             status_code=429,
             content={"error": "🛑 Daily request limit reached. Please try again tomorrow."}
         )
 
-    # ✅ 累计请求计数
     request_counter["count"] += 1
 
-    # 🔽 以下为原有生成逻辑（不变）
+    # Prompt（去除 Vocabulary 板块）
     prompt = f"""
 You are a certified IELTS Speaking examiner.
 
 Please evaluate the following IELTS Speaking question from Part {payload.part}:
 "{payload.question}"
 
-Your task is to generate answers and examiner comments for **Band 5**, **Band 6**, and **Band 7** levels.
+Your task is to generate speaking answers and examiner comments for **Band 5**, **Band 6**, and **Band 7** levels.
 
-Use the exact format below and do not skip any section:
+⚠️ Instructions:
+- Follow the exact structure below.
+- You must include both an **Answer** and a **Comment** section for each band score.
+- Do NOT include any extra sections such as vocabulary lists or explanations.
+
+---
 
 Band 5 Answer:
-<Insert Band 5 sample answer here>
+<Insert Band 5 speaking sample, 3–5 sentences>
 
 Band 5 Comment:
-<Explain why this would receive a Band 5>
+<Insert evaluation comment based on IELTS official criteria>
+
+---
 
 Band 6 Answer:
-<Insert Band 6 sample answer here>
+<Insert Band 6 speaking sample, 3–5 sentences>
 
 Band 6 Comment:
-<Explain why this would receive a Band 6>
+<Insert evaluation comment based on IELTS official criteria>
+
+---
 
 Band 7 Answer:
-<Insert Band 7 sample answer here>
+<Insert Band 7 speaking sample, 3–5 sentences>
 
 Band 7 Comment:
-<Explain why this would receive a Band 7>
+<Insert evaluation comment based on IELTS official criteria>
 
-Be concise and realistic. Keep answers within 3–5 sentences. Use authentic IELTS scoring criteria.
+---
+
+Only return the content in this format. Do not include any introduction or extra commentary.
+
+Be concise, realistic, and follow IELTS Speaking band descriptors.
 """
 
     try:
-        response = model.generate_content(prompt)
+        response = model.generate_content(
+            prompt,
+            generation_config={
+                "temperature": 0.75,
+                "top_p": 0.95,
+                "max_output_tokens": 1024
+            }
+        )
         text = response.text.strip()
 
-        def extract_answer_and_comment(band: str):
-            ans_match = re.search(fr"{band} Answer[:：]?\s*(.*?)(?=\n{band} Comment[:：])", text, re.DOTALL)
-            answer = ans_match.group(1).strip() if ans_match else ""
-
-            comment_match = re.search(fr"{band} Comment[:：]?\s*(.*?)(?=\n|$)", text, re.DOTALL)
-            comment = comment_match.group(1).strip() if comment_match else ""
-
-            return answer, comment
-
-        b5, c5 = extract_answer_and_comment("Band 5")
-        b6, c6 = extract_answer_and_comment("Band 6")
-        b7, c7 = extract_answer_and_comment("Band 7")
+        # 稳定提取每个区块内容
+        def extract_section(band: str, label: str):
+            pattern = fr"{band} {label}[:：]?\s*(.*?)(?=\nBand \d+ (Answer|Comment)|\Z)"
+            match = re.search(pattern, text, re.DOTALL)
+            return match.group(1).strip() if match else ""
 
         return {
-            "band5": b5,
-            "comment5": c5,
-            "band6": b6,
-            "comment6": c6,
-            "band7": b7,
-            "comment7": c7,
-            "fullText": text  # 可供调试用
+            "band5": extract_section("Band 5", "Answer"),
+            "comment5": extract_section("Band 5", "Comment"),
+            "band6": extract_section("Band 6", "Answer"),
+            "comment6": extract_section("Band 6", "Comment"),
+            "band7": extract_section("Band 7", "Answer"),
+            "comment7": extract_section("Band 7", "Comment"),
+            "fullText": text
         }
 
     except Exception as e:
