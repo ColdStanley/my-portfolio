@@ -57,30 +57,34 @@ async def generate_answer(payload: PromptRequest):
 
     # 🔽 以下为原有生成逻辑（不变）
     prompt = f"""
-You are an IELTS Speaking examiner.
+You are a certified IELTS Speaking examiner.
 
-For the IELTS Speaking {payload.part} question:
+Please evaluate the following IELTS Speaking question from Part {payload.part}:
 "{payload.question}"
 
-Please generate answers and explanations for 3 different band scores in the following **strict** format:
+Your task is to generate answers and examiner comments for **Band 5**, **Band 6**, and **Band 7** levels.
+
+Use the exact format below and do not skip any section:
 
 Band 5 Answer:
-<Your sample answer for Band 5>
+<Insert Band 5 sample answer here>
 
 Band 5 Comment:
-<Why this answer would be rated Band 5>
+<Explain why this would receive a Band 5>
 
 Band 6 Answer:
-<Your sample answer for Band 6>
+<Insert Band 6 sample answer here>
 
 Band 6 Comment:
-<Why this answer would be rated Band 6>
+<Explain why this would receive a Band 6>
 
 Band 7 Answer:
-<Your sample answer for Band 7>
+<Insert Band 7 sample answer here>
 
 Band 7 Comment:
-<Why this answer would be rated Band 7>
+<Explain why this would receive a Band 7>
+
+Be concise and realistic. Keep answers within 3–5 sentences. Use authentic IELTS scoring criteria.
 """
 
     try:
