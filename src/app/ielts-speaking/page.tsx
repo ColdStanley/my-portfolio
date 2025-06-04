@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 
@@ -16,6 +16,7 @@ export default function IELTS7Page() {
     band7: '', comment7: ''
   })
   const [loading, setLoading] = useState(false)
+  const scrollRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -24,7 +25,8 @@ export default function IELTS7Page() {
         const data = await res.json()
         const safeQuestions = Array.isArray(data.questions) ? data.questions : []
         const shuffle = (array: string[]) => [...array].sort(() => Math.random() - 0.5)
-        setQuestions(shuffle(safeQuestions).slice(0, 8))
+        const count = selectedPart === 'Part 2' ? 6 : 8
+        setQuestions(shuffle(safeQuestions).slice(0, count))
       } catch (err) {
         console.error('❌ Failed to fetch questions:', err)
       }
@@ -33,28 +35,36 @@ export default function IELTS7Page() {
   }, [selectedPart])
 
   const handleClick = async () => {
-    if (!question) return
+    console.log("🚀 handleClick 触发")
+    if (!question) {
+      console.warn("⚠️ 未选择题目，取消提交")
+      return
+    }
+
     setLoading(true)
 
     try {
+      console.log("🌐 正在发送请求到 Gemini 后端")
+
       const res = await fetch('https://ielts-gemini.onrender.com/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ part: selectedPart, question })
       })
 
-      if (!res.ok) {
-        const errorData = await res.json()
-        const msg = errorData?.error || '服务器出错，请稍后再试'
-        alert(msg)
+      const raw = await res.text()
+      console.log("🧾 后端原始返回：", raw)
+
+      let data = {}
+      try {
+        data = JSON.parse(raw)
+      } catch (e) {
+        console.error("❌ JSON 解析失败：", e)
+        alert("服务器返回了非 JSON 格式，可能是报错页面")
         return
       }
 
-      const data = await res.json()
-      console.log('返回结果是：', data)
-
       const fallback = '内容生成失败，请重试'
-
       setAnswers({
         band5: data.band5 || fallback,
         comment5: data.comment5 || fallback,
@@ -64,18 +74,25 @@ export default function IELTS7Page() {
         comment7: data.comment7 || fallback
       })
     } catch (err) {
-      console.error('❌ Fetch failed:', err)
+      console.error('❌ 请求失败:', err)
       alert('网络错误或服务器未响应')
     } finally {
       setLoading(false)
     }
   }
 
+  const handleQuestionClick = (q: string) => {
+    setQuestion(q)
+    if (window.innerWidth < 768) {
+      scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
+  const questionCardStyle = `cursor-pointer bg-gray-100 hover:bg-purple-100 transition p-3 rounded-xl text-sm flex items-center ${selectedPart === 'Part 2' ? 'h-33' : 'h-24'}`
+
   return (
     <main className="flex flex-col items-center justify-center gap-8 p-6 max-w-7xl mx-auto font-sans text-gray-800">
-      {/* Top Section: 3 Independent Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
-        {/* Left Card */}
         <div className="bg-white shadow rounded-xl p-4">
           <div className="flex flex-col gap-2">
             <div className="flex flex-row items-center gap-3">
@@ -85,17 +102,11 @@ export default function IELTS7Page() {
               </motion.div>
             </div>
             <p className="text-xs text-gray-500 pl-1 leading-snug">
-              "We are what we repeatedly do. <br />
-              我们由我们反复做的事情塑造而成。<br />
-              Excellence, then, is not an act, but a habit."<br />
-              卓越并非一时之举，而是一种习惯<br />
-              —— Aristotle<br />
-              亚里士多德
+              "We are what we repeatedly do. <br />我们由我们反复做的事情塑造而成。<br />Excellence, then, is not an act, but a habit."<br />卓越并非一时之举，而是一种习惯<br />—— Aristotle<br />亚里士多德
             </p>
           </div>
         </div>
 
-        {/* Center Card */}
         <div className="bg-white shadow rounded-xl p-4 text-center text-gray-700 flex flex-col items-center justify-center space-y-2">
           <div className="text-sm text-gray-500 leading-relaxed space-y-1">
             <p>🧑‍💻 一人独立开发，咖啡续命，小猫陪伴。</p>
@@ -109,22 +120,19 @@ export default function IELTS7Page() {
           </div>
         </div>
 
-        {/* Right Card */}
         <div className="bg-white shadow rounded-xl p-4 flex items-center justify-center">
           <video
-  src="/images/cat.mp4"
-  autoPlay
-  muted
-  loop
-  playsInline
-  preload="auto"
-  className="rounded-xl w-full h-auto object-cover"
-/>
-
+            src="/images/cat.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            className="rounded-xl w-full h-auto object-cover"
+          />
         </div>
       </div>
 
-      {/* Selection Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full items-center mt-6">
         <p className="text-base font-semibold text-gray-700 md:text-left text-center">第一步：选择 Part 1, Part 2, or Part 3</p>
         <select
@@ -139,26 +147,24 @@ export default function IELTS7Page() {
         <p className="text-base font-semibold text-gray-700 md:text-left text-center md:pl-4">第二步：点击左侧题目</p>
       </div>
 
-      {/* Question List */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full items-start">
         <div className="space-y-2">
-          {questions.slice(0, 4).map((q, i) => (
-            <div key={i} onClick={() => setQuestion(q)} className="cursor-pointer bg-gray-100 hover:bg-purple-100 transition p-3 h-24 rounded-xl text-sm flex items-center">
+          {questions.slice(0, selectedPart === 'Part 2' ? 3 : 4).map((q, i) => (
+            <div key={i} onClick={() => handleQuestionClick(q)} className={questionCardStyle}>
               {q}
             </div>
           ))}
         </div>
-
         <div className="space-y-2">
-          {questions.slice(4, 8).map((q, i) => (
-            <div key={i + 4} onClick={() => setQuestion(q)} className="cursor-pointer bg-gray-100 hover:bg-purple-100 transition p-3 h-24 rounded-xl text-sm flex items-center">
+          {questions.slice(selectedPart === 'Part 2' ? 3 : 4).map((q, i) => (
+            <div key={i + (selectedPart === 'Part 2' ? 3 : 4)} onClick={() => handleQuestionClick(q)} className={questionCardStyle}>
               {q}
             </div>
           ))}
         </div>
-
         <div className="flex flex-col h-full justify-between">
           <textarea
+            ref={scrollRef}
             readOnly
             placeholder="点击左侧，进行题目选择"
             value={question}
@@ -180,7 +186,6 @@ export default function IELTS7Page() {
         </div>
       </div>
 
-      {/* Answer Display: 2-column grid */}
       {[5, 6, 7].map((score) => (
         <div key={score} className="w-full">
           <h3 className="text-lg font-bold text-purple-600 mb-3">{score}分</h3>
