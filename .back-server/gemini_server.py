@@ -49,6 +49,9 @@ async def generate_answer(payload: PromptRequest):
     request_counter["count"] += 1
 
     prompt = f"""
+
+
+
 You are a certified IELTS Speaking examiner.
 
 Please evaluate the following IELTS Speaking question from Part {payload.part}:
@@ -64,12 +67,11 @@ Your task is to generate speaking answers and examiner comments for **Band 5**, 
 - The speaking sample should be structured with a **clear beginning, development with details/examples, and a brief ending or reflection**.
 - Maintain **natural spoken tone**, use appropriate **connectors**, and vary **sentence structures**.
 - Comments must be based on IELTS official criteria (fluency & coherence, lexical resource, grammatical range & accuracy, pronunciation).
-- At the end of each Band Comment, include the following section:
+- At the end of each Band Comment, include the following section **in bilingual format** (English + Chinese):
 Vocabulary Highlights:
-1- <fancy word>
-2- <fancy word>
-3- <fancy phrase>
-4- <fancy phrase>
+- Band 5: 2 impressive words + 2 impressive phrases, each with 1 English example sentence and its Chinese translation.
+- Band 6: 3 impressive words + 3 impressive phrases, each with 1 English example sentence and its Chinese translation.
+- Band 7: 4 impressive words + 4 impressive phrases, each with 1 English example sentence and its Chinese translation.
 
 ---
 
@@ -80,13 +82,20 @@ Band 5 Comment:
 <Insert evaluation comment based on IELTS official criteria>
 
 Vocabulary Highlights:
-1- <fancy word>
-2- <fancy word>
-3- <fancy phrase>
-4- <fancy phrase>
+1. <fancy word 1>
+   - EN: <example sentence>
+   - 中文：<中文翻译>
+2. <fancy word 2>
+   - EN: <example sentence>
+   - 中文：<中文翻译>
+3. <fancy phrase 1>
+   - EN: <example sentence>
+   - 中文：<中文翻译>
+4. <fancy phrase 2>
+   - EN: <example sentence>
+   - 中文：<中文翻译>
 
----
-
+   
 Band 6 Answer:
 <Insert Band 6 speaking sample, 3–5 sentences>
 
@@ -94,12 +103,26 @@ Band 6 Comment:
 <Insert evaluation comment based on IELTS official criteria>
 
 Vocabulary Highlights:
-1- <fancy word>
-2- <fancy word>
-3- <fancy phrase>
-4- <fancy phrase>
+1. <fancy word 1>
+   - EN: <example sentence>
+   - 中文：<中文翻译>
+2. <fancy word 2>
+   - EN: <example sentence>
+   - 中文：<中文翻译>
+3. <fancy word 3>
+   - EN: <example sentence>
+   - 中文：<中文翻译>
+4. <fancy phrase 1>
+   - EN: <example sentence>
+   - 中文：<中文翻译>
+5. <fancy phrase 2>
+   - EN: <example sentence>
+   - 中文：<中文翻译>
+6. <fancy phrase 3>
+   - EN: <example sentence>
+   - 中文：<中文翻译>
 
----
+
 
 Band 7 Answer:
 <Insert Band 7 speaking sample, 3–5 sentences>
@@ -108,16 +131,40 @@ Band 7 Comment:
 <Insert evaluation comment based on IELTS official criteria>
 
 Vocabulary Highlights:
-1- <fancy word>
-2- <fancy word>
-3- <fancy phrase>
-4- <fancy phrase>
+1. <fancy word 1>
+   - EN: <example sentence>
+   - 中文：<中文翻译>
+2. <fancy word 2>
+   - EN: <example sentence>
+   - 中文：<中文翻译>
+3. <fancy word 3>
+   - EN: <example sentence>
+   - 中文：<中文翻译>
+4. <fancy word 4>
+   - EN: <example sentence>
+   - 中文：<中文翻译>
+5. <fancy phrase 1>
+   - EN: <example sentence>
+   - 中文：<中文翻译>
+6. <fancy phrase 2>
+   - EN: <example sentence>
+   - 中文：<中文翻译>
+7. <fancy phrase 3>
+   - EN: <example sentence>
+   - 中文：<中文翻译>
+8. <fancy phrase 4>
+   - EN: <example sentence>
+   - 中文：<中文翻译>
 
----
 
 Only return the content in this format. Do not include any introduction or extra commentary.
 
 Be concise, realistic, and follow IELTS Speaking band descriptors.
+
+
+
+
+
 """
 
     # ✅ 打印到控制台
