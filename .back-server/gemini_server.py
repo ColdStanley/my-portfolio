@@ -15,7 +15,10 @@ async def generate_answer(payload: PromptRequest):
 
     request_counter["count"] += 1
 
-    prompt = f"""
+
+
+
+ prompt = f"""
 You are a certified IELTS Speaking examiner.
 
 Please evaluate the following IELTS Speaking question from Part {payload.part}:
@@ -27,6 +30,10 @@ Your task is to generate speaking answers and examiner comments for **Band 5**, 
 - Follow the exact structure below.
 - You must include both an **Answer** and a **Comment** section for each band score.
 - Do NOT include any extra sections such as vocabulary lists or explanations.
+- This is a **Part 2 (Long Turn)** question. Each answer should simulate a **1–2 minute** spoken response (around **150–180 words**).
+- The speaking sample should be structured with a **clear beginning, development with details/examples, and a brief ending or reflection**.
+- Maintain **natural spoken tone**, use appropriate **connectors**, and vary **sentence structures**.
+- Comments must be based on IELTS official criteria (fluency & coherence, lexical resource, grammatical range & accuracy, pronunciation).
 
 ---
 
@@ -58,6 +65,28 @@ Only return the content in this format. Do not include any introduction or extra
 
 Be concise, realistic, and follow IELTS Speaking band descriptors.
 """
+
+# ✅ 打印到控制台
+    print("==== PROMPT SENT TO GEMINI ====")
+    print(prompt)
+
+    model = genai.GenerativeModel(model_name="gemini-1.5-flash")
+    response = model.generate_content(prompt)
+
+    # ✅ 打印 Gemini 返回结果
+    print("==== GEMINI RESPONSE ====")
+    print(response.text)
+
+    return response.text
+
+
+
+
+
+
+
+
+
 
     print("📤 正在发送 prompt 给 Gemini ...")
 
