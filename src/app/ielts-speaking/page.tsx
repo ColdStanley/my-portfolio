@@ -17,6 +17,7 @@ export default function IELTS7Page() {
   })
   const [loading, setLoading] = useState(false)
   const scrollRef = useRef<HTMLTextAreaElement>(null)
+  const resultRef = useRef<HTMLDivElement>(null) // 👉 新增：答案跳转锚点
 
   const fetchQuestions = async (part: 'Part 1' | 'Part 2' | 'Part 3') => {
     try {
@@ -65,6 +66,14 @@ export default function IELTS7Page() {
         band7: data.band7 || fallback,
         comment7: data.comment7 || fallback
       })
+
+      // 👉 新增：手机端跳转至参考答案区
+      if (window.innerWidth < 768) {
+        setTimeout(() => {
+          resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 300)
+      }
+
     } catch (err) {
       alert('网络错误或服务器未响应')
     } finally {
@@ -209,6 +218,7 @@ export default function IELTS7Page() {
       </div>
 
       {/* 参考答案区域 */}
+      <div ref={resultRef} className="w-full"></div>
       {[5, 6, 7].map((score) => (
         <div key={score} className="w-full">
           <h3 className="text-lg font-bold text-purple-600 mb-3">{score}分</h3>
