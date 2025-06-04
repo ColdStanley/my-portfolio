@@ -51,6 +51,8 @@ export default function IELTS7Page() {
       }
 
       const data = await res.json()
+      console.log('返回结果是：', data)
+
       const fallback = '内容生成失败，请重试'
 
       setAnswers({
@@ -71,33 +73,51 @@ export default function IELTS7Page() {
 
   return (
     <main className="flex flex-col items-center justify-center gap-8 p-6 max-w-7xl mx-auto font-sans text-gray-800">
-      {/* Top Sticky Banner with 3 separate cards */}
-      <div className="sticky top-[72px] z-40 w-full bg-transparent">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
-          <div className="bg-white shadow rounded-xl p-4">
+      {/* Top Section: 3 Independent Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+        {/* Left Card */}
+        <div className="bg-white shadow rounded-xl p-4">
+          <div className="flex flex-col gap-2">
             <div className="flex flex-row items-center gap-3">
               <h1 className="text-4xl font-extrabold text-purple-600">IELTS Speaking</h1>
               <motion.div animate={{ rotate: [0, -5, 5, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
                 <Image src="/images/IELTS7.png" alt="IELTS7" width={60} height={60} />
               </motion.div>
             </div>
-          </div>
-
-          <div className="bg-white shadow rounded-xl p-4 text-center text-gray-700 flex items-center justify-center">
-            <p className="text-base italic leading-relaxed">
-              "We are what we repeatedly do. <br />我们由我们反复做的事情塑造而成。<br />Excellence, then, is not an act, but a habit."<br />卓越并非一时之举，而是一种习惯<br />—— Aristotle <br />亚里士多德
+            <p className="text-xs text-gray-500 pl-1 leading-snug">
+              "We are what we repeatedly do. <br />
+              我们由我们反复做的事情塑造而成。<br />
+              Excellence, then, is not an act, but a habit."<br />
+              卓越并非一时之举，而是一种习惯<br />
+              —— Aristotle<br />
+              亚里士多德
             </p>
           </div>
+        </div>
 
-          <div className="bg-white shadow rounded-xl p-4 flex justify-between items-center gap-3">
-            <div className="text-sm text-gray-500 leading-relaxed space-y-1">
-              <p>🧑‍💻 一人独立开发，咖啡续命，小猫陪伴。</p>
-              <p>🪙 A- 给作者买杯咖啡6美金（35元）</p>
-              <p>🍖 B- 给小猫买袋猫粮10美金（60元）</p>
-              <p>😺 喵～</p>
-            </div>
-            <video src="/images/cat.mp4" autoPlay muted loop className="rounded-xl" style={{ maxWidth: '100px', height: 'auto' }} />
+        {/* Center Card */}
+        <div className="bg-white shadow rounded-xl p-4 text-center text-gray-700 flex flex-col items-center justify-center space-y-2">
+          <div className="text-sm text-gray-500 leading-relaxed space-y-1">
+            <p>🧑‍💻 一人独立开发，咖啡续命，小猫陪伴。</p>
+            <p>🪙 A- 给作者买杯咖啡 7 加元/35元</p>
+            <p>🍖 B- 给小猫买袋猫粮 14 加元/70元</p>
+            <p>😺 喵～</p>
           </div>
+          <div className="flex gap-4 pt-2">
+            <Image src="/images/wechat35.png" alt="wechat35" width={90} height={90} />
+            <Image src="/images/wechat70.png" alt="wechat70" width={90} height={90} />
+          </div>
+        </div>
+
+        {/* Right Card */}
+        <div className="bg-white shadow rounded-xl p-4 flex items-center justify-center">
+          <video
+            src="/images/cat.mp4"
+            autoPlay
+            muted
+            loop
+            className="rounded-xl w-full h-auto"
+          />
         </div>
       </div>
 

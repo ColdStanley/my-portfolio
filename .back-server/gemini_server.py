@@ -6,6 +6,8 @@ from fastapi.responses import JSONResponse
 import google.generativeai as genai
 import re
 import os
+import traceback
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 
 # 配置 Gemini API Key
 genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
@@ -36,8 +38,12 @@ request_counter = {
 }
 DAILY_LIMIT = 50
 
+executor = ThreadPoolExecutor()
+
 @app.post("/generate")
 async def generate_answer(payload: PromptRequest):
+    print("📩 收到请求：", payload.dict())
+
     # 每日重置调用次数
     if request_counter["date"] != date.today():
         request_counter["date"] = date.today()
@@ -51,7 +57,7 @@ async def generate_answer(payload: PromptRequest):
 
     request_counter["count"] += 1
 
-    # Prompt（去除 Vocabulary 板块）
+    # 构造 prompt（去除 Vocabulary 板块）
     prompt = f"""
 You are a certified IELTS Speaking examiner.
 
@@ -96,8 +102,10 @@ Only return the content in this format. Do not include any introduction or extra
 Be concise, realistic, and follow IELTS Speaking band descriptors.
 """
 
-    try:
-        response = model.generate_content(
+    print("📤 正在发送 prompt 给 Gemini ...")
+
+    def call_gemini():
+        return model.generate_content(
             prompt,
             generation_config={
                 "temperature": 0.75,
@@ -105,7 +113,13 @@ Be concise, realistic, and follow IELTS Speaking band descriptors.
                 "max_output_tokens": 1024
             }
         )
+
+    try:
+        future = executor.submit(call_gemini)
+        response = future.result(timeout=20)  # 设置超时20秒
+
         text = response.text.strip()
+        print("✅ Gemini 原始返回：\n", text)
 
         # 稳定提取每个区块内容
         def extract_section(band: str, label: str):
@@ -113,7 +127,7 @@ Be concise, realistic, and follow IELTS Speaking band descriptors.
             match = re.search(pattern, text, re.DOTALL)
             return match.group(1).strip() if match else ""
 
-        return {
+        result = {
             "band5": extract_section("Band 5", "Answer"),
             "comment5": extract_section("Band 5", "Comment"),
             "band6": extract_section("Band 6", "Answer"),
@@ -123,5 +137,16 @@ Be concise, realistic, and follow IELTS Speaking band descriptors.
             "fullText": text
         }
 
+        print("🧩 提取后的结构：", result)
+        return result
+
+    except TimeoutError:
+        print("⏰ Gemini 超时！")
+        return JSONResponse(
+            status_code=504,
+            content={"error": "⏰ Gemini 响应超时，请稍后再试。"}
+        )
     except Exception as e:
-        return {"error": str(e)}
+        print("❌ 异常发生：", str(e))
+        traceback.print_exc()
+        return {"error": f"服务器错误：{str(e)}"}
