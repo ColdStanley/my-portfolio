@@ -1,45 +1,3 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from fastapi.middleware.cors import CORSMiddleware
-from datetime import date
-from fastapi.responses import JSONResponse
-import google.generativeai as genai
-import re
-import os
-import traceback
-from concurrent.futures import ThreadPoolExecutor, TimeoutError
-
-# 配置 Gemini API Key
-genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
-
-# 初始化 Gemini 模型
-model = genai.GenerativeModel("models/gemini-1.5-flash")
-
-# 初始化 FastAPI 应用
-app = FastAPI()
-
-# 设置 CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# 请求体数据格式
-class PromptRequest(BaseModel):
-    part: str
-    question: str
-
-# 简单的调用次数限制
-request_counter = {
-    "date": date.today(),
-    "count": 0
-}
-DAILY_LIMIT = 50
-
-executor = ThreadPoolExecutor()
-
 @app.post("/generate")
 async def generate_answer(payload: PromptRequest):
     print("📩 收到请求：", payload.dict())
@@ -57,7 +15,6 @@ async def generate_answer(payload: PromptRequest):
 
     request_counter["count"] += 1
 
-    # 构造 prompt（去除 Vocabulary 板块）
     prompt = f"""
 You are a certified IELTS Speaking examiner.
 
@@ -116,12 +73,11 @@ Be concise, realistic, and follow IELTS Speaking band descriptors.
 
     try:
         future = executor.submit(call_gemini)
-        response = future.result(timeout=20)  # 设置超时20秒
+        response = future.result(timeout=20)
 
         text = response.text.strip()
         print("✅ Gemini 原始返回：\n", text)
 
-        # 稳定提取每个区块内容
         def extract_section(band: str, label: str):
             pattern = fr"{band} {label}[:：]?\s*(.*?)(?=\nBand \d+ (Answer|Comment)|\Z)"
             match = re.search(pattern, text, re.DOTALL)
@@ -150,3 +106,8 @@ Be concise, realistic, and follow IELTS Speaking band descriptors.
         print("❌ 异常发生：", str(e))
         traceback.print_exc()
         return {"error": f"服务器错误：{str(e)}"}
+
+# ✅ Ping 保活接口，放在最后
+@app.get("/ping")
+async def ping():
+    return {"status": "ok"}
