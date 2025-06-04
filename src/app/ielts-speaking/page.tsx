@@ -83,7 +83,7 @@ export default function IELTS7Page() {
             <p>📮 欢迎发邮件给我提吐槽bug<br/>stanleytonight@hotmail.com</p>
             <p>😺 喵～</p>
           </div>
-          <video src="/images/cat.mp4" autoPlay muted loop className="rounded-xl" style={{ maxWidth: '100px', height: 'auto' }} />
+          <video src="my-portfolio/public/images/cat.mp4" autoPlay muted loop className="rounded-xl" style={{ maxWidth: '100px', height: 'auto' }} />
         </div>
       </div>
 
