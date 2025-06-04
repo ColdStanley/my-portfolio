@@ -8,6 +8,16 @@ from concurrent.futures import ThreadPoolExecutor
 from pydantic import BaseModel
 
 app = FastAPI()
+
+# ✅ 允许来自任何来源的前端访问（可限制域名）
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://my-portfolio-lyart-xi-57.vercel.app"],  # 或改为 ["https://my-portfolio-lyart-xi-57.vercel.app"]
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 executor = ThreadPoolExecutor(max_workers=1)
 
 class PromptRequest(BaseModel):
