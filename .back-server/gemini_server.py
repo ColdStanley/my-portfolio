@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from datetime import date
 import traceback
 import re
@@ -9,10 +10,10 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
-# ✅ 允许来自任何来源的前端访问（可限制域名）
+# ✅ 允许来自你的 Vercel 前端访问
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://my-portfolio-lyart-xi-57.vercel.app"],  # 或改为 ["https://my-portfolio-lyart-xi-57.vercel.app"]
+    allow_origins=["https://my-portfolio-lyart-xi-57.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -173,7 +174,7 @@ Be concise, realistic, and follow IELTS Speaking band descriptors.
         traceback.print_exc()
         return {"error": f"服务器错误：{str(e)}"}
 
-# ✅ Ping 保活接口，放在最后
+# ✅ Ping 保活接口
 @app.get("/ping")
 async def ping():
     return {"status": "ok"}
