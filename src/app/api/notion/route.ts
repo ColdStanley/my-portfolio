@@ -7,6 +7,10 @@ import {
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY })
 
+console.log("NOTION KEY:", process.env.NOTION_API_KEY)
+console.log("DB ID:", process.env.NOTION_DATABASE_ID)
+
+
 // ✅ 公共方法：获取所有卡片数据（用于 HomeCardsSection）
 async function fetchCardItems(): Promise<any[]> {
   const databaseId = process.env.NOTION_DATABASE_ID
