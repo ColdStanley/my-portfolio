@@ -130,10 +130,19 @@ export default function IELTSInteraction() {
       />
 
       <AnswerSection
-        answers={answers}
-        resultRef={resultRef}
-        onGenerate={handleGenerate}
-      />
+  answers={answers}
+  resultRef={resultRef}
+  question={question}  // 缺了这个！也要补上
+  loading={loading}    // 缺了这个！也要补上
+  onGenerate={(band) => {
+    if (band === 5) {
+      handleClick()
+    } else {
+      handleGenerate(band)
+    }
+  }}
+/>
+
     </>
   )
 }
