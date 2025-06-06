@@ -11,6 +11,9 @@ interface HighlightItem {
   description?: string
   slug?: string
   category?: string
+  section?: string
+  status?: string
+  order?: number
   tag?: string[]
 }
 
@@ -30,9 +33,9 @@ function HighlightCard({ item, index }: { item: HighlightItem; index: number }) 
       whileTap={{ scale: 0.97 }}
       onClick={() => {
         if (item.slug?.startsWith('/')) {
-          router.push(item.slug) // ✅ 绝对路径 slug
+          router.push(item.slug)
         } else if (item.slug && item.category) {
-          router.push(`/${item.category}/${item.slug}?id=home-latest`) // ✅ 原有逻辑
+          router.push(`/${item.category}/${item.slug}?id=home-latest`)
         }
       }}
       className={`relative rounded-xl border border-dashed border-gray-300 dark:border-gray-600 
@@ -64,8 +67,14 @@ export default function LatestSection() {
     fetch('/api/notion/page?pageId=home-latest')
       .then((res) => res.json())
       .then((res) => {
-        if (res?.data && Array.isArray(res.data)) setData(res.data)
-        else setData([])
+        if (res?.data && Array.isArray(res.data)) {
+          const filtered = res.data
+            .filter((item: HighlightItem) => item.status === 'Published')
+            .sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
+          setData(filtered)
+        } else {
+          setData([])
+        }
       })
       .catch((err) => {
         console.error('Failed to load highlights', err)
