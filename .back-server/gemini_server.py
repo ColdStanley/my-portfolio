@@ -64,18 +64,30 @@ Your task is to generate speaking answers and examiner comments for **Band 5** l
   3. Vocabulary Highlights (2 words + 2 phrases, each with English sentence + 中文翻译)
 - Do NOT include extra explanation or intro.
 
-Return format:
+📌 Return Format (Strictly follow the exact structure below):
 
 Band 5 Answer:
-<answer>
+(Write the answer text here. It should be around 150–180 words.)
 
 Band 5 Comment:
-<comment>
+(Write the comment here, based on IELTS criteria: fluency, vocabulary, grammar, pronunciation.)
 
 Vocabulary Highlights:
-1. <word>
-   - EN: <example>
-   - 中文：<translation>
+1. <Word or Phrase>
+   - EN: (English example sentence using the word or phrase)
+   - 中文：(对应的中文翻译)
+2. <Word or Phrase>
+   - EN: (English example sentence using the word or phrase)
+   - 中文：(对应的中文翻译)
+3. <Word or Phrase>
+   - EN: (English example sentence using the word or phrase)
+   - 中文：(对应的中文翻译)
+4. <Word or Phrase>
+   - EN: (English example sentence using the word or phrase)
+   - 中文：(对应的中文翻译)
+
+⚠️ Do not add any other explanation, formatting, or introductory sentence.
+
         """.strip()
 
     elif payload.band == "6":
@@ -179,6 +191,7 @@ Vocabulary Highlights:
             f"comment{band}": comment,
             f"vocab{band}": vocab
         }
+         
 
     except TimeoutError:
         print("⏰ Gemini 超时")

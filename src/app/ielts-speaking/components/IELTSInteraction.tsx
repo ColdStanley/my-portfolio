@@ -52,12 +52,14 @@ export default function IELTSInteraction() {
       })
 
       const data = await res.json()
+      console.log('[Debug] Gemini 原始返回数据:', data)
+
       const fallback = '内容生成失败，请重试'
       setAnswers((prev) => ({
         ...prev,
-        band5: data.answer || fallback,
-        comment5: data.comment || fallback,
-        vocab5: data.vocab || fallback
+        band5: data.band5 || fallback,
+        comment5: data.comment5 || fallback,
+        vocab5: data.vocab5 || fallback
       }))
     } catch (err) {
       console.error('❌ Gemini 请求失败:', err)
