@@ -71,35 +71,48 @@ export default function IELTSInteraction() {
 
   // ✅ 新增函数：支持生成 6 分 / 7 分（可扩展）
   const handleGenerate = async (band: number) => {
-    if (!question) return
-    setLoading(true)
+  if (!question) return
+  setLoading(true)
 
-    try {
-      const res = await fetch('https://ielts-gemini.onrender.com/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          part: selectedPart,
-          question,
-          band: band.toString()
-        })
+  try {
+    const res = await fetch('https://ielts-gemini.onrender.com/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        part: selectedPart,
+        question,
+        band: band.toString()
       })
+    })
 
-      const data = await res.json()
-      const fallback = '内容生成失败，请重试'
+    const data = await res.json()
+    console.log('[Debug] Gemini 返回数据:', data)
+
+    const fallback = '内容生成失败，请重试'
+
+    if (band === 6) {
       setAnswers((prev) => ({
         ...prev,
-        [`band${band}`]: data.answer || fallback,
-        [`comment${band}`]: data.comment || fallback,
-        [`vocab${band}`]: data.vocab || fallback
+        band6: data.band6 || fallback,
+        comment6: data.comment6 || fallback,
+        vocab6: data.vocab6 || fallback
       }))
-    } catch (err) {
-      console.error('❌ Gemini 请求失败:', err)
-      alert('服务器错误，请稍后再试')
-    } finally {
-      setLoading(false)
+    } else if (band === 7) {
+      setAnswers((prev) => ({
+        ...prev,
+        band7: data.band7 || fallback,
+        comment7: data.comment7 || fallback,
+        vocab7: data.vocab7 || fallback
+      }))
     }
+  } catch (err) {
+    console.error('❌ Gemini 请求失败:', err)
+    alert('服务器错误，请稍后再试')
+  } finally {
+    setLoading(false)
   }
+}
+
 
   return (
     <>
