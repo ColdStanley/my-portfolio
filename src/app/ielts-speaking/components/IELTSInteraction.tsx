@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react'
 import QuestionSelector from './QuestionSelector'
 import AnswerSection from './AnswerSection'
 
-
 export default function IELTSInteraction() {
   const [selectedPart, setSelectedPart] = useState<'Part 1' | 'Part 2' | 'Part 3'>('Part 1')
   const [question, setQuestion] = useState('')
@@ -36,6 +35,7 @@ export default function IELTSInteraction() {
     fetchQuestions(selectedPart)
   }, [selectedPart])
 
+  // ✅ 提交按钮（生成 5 分）
   const handleClick = async () => {
     if (!question) return
     setLoading(true)
@@ -44,67 +44,81 @@ export default function IELTSInteraction() {
       const res = await fetch('https://ielts-gemini.onrender.com/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ part: selectedPart, question })
+        body: JSON.stringify({
+          part: selectedPart,
+          question,
+          band: '5'
+        })
       })
 
-      const raw = await res.text()
-      let data = {}
-      try {
-        data = JSON.parse(raw)
-      } catch (e) {
-        alert("服务器返回了非 JSON 格式，可能是报错页面")
-        return
-      }
-
+      const data = await res.json()
       const fallback = '内容生成失败，请重试'
-      setAnswers({
-        band5: data.band5 || fallback,
-        comment5: data.comment5 || fallback,
-        vocab5: data.vocab5 || fallback,
-        band6: data.band6 || fallback,
-        comment6: data.comment6 || fallback,
-        vocab6: data.vocab6 || fallback,
-        band7: data.band7 || fallback,
-        comment7: data.comment7 || fallback,
-        vocab7: data.vocab7 || fallback
-      })
-
-      if (window.innerWidth < 768) {
-        setTimeout(() => {
-          resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }, 300)
-      }
-
+      setAnswers((prev) => ({
+        ...prev,
+        band5: data.answer || fallback,
+        comment5: data.comment || fallback,
+        vocab5: data.vocab || fallback
+      }))
     } catch (err) {
-      alert('网络错误或服务器未响应')
+      console.error('❌ Gemini 请求失败:', err)
+      alert('服务器错误，请稍后再试')
     } finally {
       setLoading(false)
     }
   }
 
- 
+  // ✅ 新增函数：支持生成 6 分 / 7 分（可扩展）
+  const handleGenerate = async (band: number) => {
+    if (!question) return
+    setLoading(true)
+
+    try {
+      const res = await fetch('https://ielts-gemini.onrender.com/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          part: selectedPart,
+          question,
+          band: band.toString()
+        })
+      })
+
+      const data = await res.json()
+      const fallback = '内容生成失败，请重试'
+      setAnswers((prev) => ({
+        ...prev,
+        [`band${band}`]: data.answer || fallback,
+        [`comment${band}`]: data.comment || fallback,
+        [`vocab${band}`]: data.vocab || fallback
+      }))
+    } catch (err) {
+      console.error('❌ Gemini 请求失败:', err)
+      alert('服务器错误，请稍后再试')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <>
-      {/* 下拉选择 + 刷新 */}
       <QuestionSelector
-  selectedPart={selectedPart}
-  setSelectedPart={setSelectedPart}
-  question={question}
-  setQuestion={setQuestion}
-  questions={questions}
-  setQuestions={setQuestions}
-  scrollRef={scrollRef}
-  handleClick={handleClick}
-  loading={loading}
-  fetchQuestions={fetchQuestions}
-/>
+        selectedPart={selectedPart}
+        setSelectedPart={setSelectedPart}
+        question={question}
+        setQuestion={setQuestion}
+        questions={questions}
+        setQuestions={setQuestions}
+        scrollRef={scrollRef}
+        handleClick={handleClick}
+        loading={loading}
+        fetchQuestions={fetchQuestions}
+      />
 
-     
-
-      {/* 结果区域 */}
-      <AnswerSection answers={answers} resultRef={resultRef} />
-
+      <AnswerSection
+        answers={answers}
+        resultRef={resultRef}
+        onGenerate={handleGenerate}
+      />
     </>
   )
 }
