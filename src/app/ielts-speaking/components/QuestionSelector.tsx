@@ -10,8 +10,6 @@ interface Props {
   questions: string[]
   setQuestions: (qs: string[]) => void
   scrollRef: React.RefObject<HTMLTextAreaElement>
-  handleClick: () => void
-  loading: boolean
   fetchQuestions: (part: 'Part 1' | 'Part 2' | 'Part 3') => void
 }
 
@@ -23,8 +21,6 @@ export default function QuestionSelector({
   questions,
   setQuestions,
   scrollRef,
-  handleClick,
-  loading,
   fetchQuestions
 }: Props) {
   useEffect(() => {
@@ -63,7 +59,7 @@ export default function QuestionSelector({
         </button>
       </div>
 
-      {/* 题目卡片 + 文本框 + 提交 */}
+      {/* 题目卡片 + 文本框 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full items-start">
         <div className="space-y-2">
           {questions.slice(0, selectedPart === 'Part 2' ? 3 : 4).map((q, i) => (
@@ -87,15 +83,6 @@ export default function QuestionSelector({
             value={question}
             className="w-full h-90 border border-purple-300 px-4 py-3 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-purple-300 text-sm text-gray-800"
           />
-          <div className="flex justify-end items-end pt-2 gap-4">
-            <button
-              onClick={handleClick}
-              className="w-full md:w-1/3 px-4 py-2 rounded-xl bg-purple-600 text-white hover:bg-purple-700 shadow hover:shadow-lg focus:outline-none disabled:opacity-60"
-              disabled={!question || loading}
-            >
-              {loading ? '生成中...' : '提交'}
-            </button>
-          </div>
         </div>
       </div>
     </>
