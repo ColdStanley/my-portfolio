@@ -3,6 +3,8 @@
 interface Props {
   selectedBook: string
   setSelectedBook: (v: string) => void
+  selectedTest: string
+  setSelectedTest: (v: string) => void
   selectedPassage: string
   setSelectedPassage: (v: string) => void
   selectedQuestionType: string
@@ -13,38 +15,77 @@ interface Props {
 export default function ReadingSelector({
   selectedBook,
   setSelectedBook,
+  selectedTest,
+  setSelectedTest,
   selectedPassage,
   setSelectedPassage,
   selectedQuestionType,
   setSelectedQuestionType,
   questionData,
 }: Props) {
-  // 从数据中提取 passage 和题型
-  const passageOptions = Array.from(new Set(
-    questionData.map((q) => q.Passage)
+  const baseClass =
+    "transition-all duration-200 ease-in-out text-sm tracking-wide rounded-2xl border border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white text-gray-700 hover:shadow-md px-4 py-2 w-full md:w-[22%] cursor-pointer"
+
+  const bookOptions = Array.from(new Set(questionData.map((q) => q.Book).filter(Boolean)))
+
+  const testOptions = Array.from(new Set(
+    questionData
+      .filter((q) => !selectedBook || q.Book === selectedBook)
+      .map((q) => q.Test)
+      .filter(Boolean)
   ))
+
+  const passageOptions = Array.from(new Set(
+    questionData
+      .filter((q) => (!selectedBook || q.Book === selectedBook) && (!selectedTest || q.Test === selectedTest))
+      .map((q) => q.Passage)
+      .filter(Boolean)
+  )).sort((a, b) => {
+    const numA = parseInt(a.replace(/\D/g, '')) || 0
+    const numB = parseInt(b.replace(/\D/g, '')) || 0
+    return numA - numB
+  })
+
   const typeOptions = Array.from(new Set(
     questionData
-      .filter((q) => !selectedPassage || q.Passage === selectedPassage)
-      .map((q) => q.题型)
+      .filter(
+        (q) =>
+          (!selectedBook || q.Book === selectedBook) &&
+          (!selectedTest || q.Test === selectedTest) &&
+          (!selectedPassage || q.Passage === selectedPassage)
+      )
+      .map((q) => q.QuestionType)
+      .filter(Boolean)
   ))
 
   return (
-    <div className="w-full flex flex-col md:flex-row items-center justify-start md:justify-between gap-4 mt-6">
-      {/* 剑雅编号 */}
+    <div className="w-full flex flex-col md:flex-row items-center justify-start md:justify-between gap-4 mt-6 flex-wrap">
       <select
         value={selectedBook}
         onChange={(e) => setSelectedBook(e.target.value)}
-        className="w-full md:w-1/3 p-2 rounded-xl border border-purple-500 shadow focus:ring-2 focus:ring-purple-500 focus:outline-none cursor-pointer bg-white text-gray-800 hover:shadow-lg transition"
+        className={baseClass}
       >
-        <option value="剑雅17">剑雅17</option>
+        <option value="">请选择剑雅编号</option>
+        {bookOptions.map((book) => (
+          <option key={book} value={book}>{book}</option>
+        ))}
       </select>
 
-      {/* Passage */}
+      <select
+        value={selectedTest}
+        onChange={(e) => setSelectedTest(e.target.value)}
+        className={baseClass}
+      >
+        <option value="">请选择 Test</option>
+        {testOptions.map((test) => (
+          <option key={test} value={test}>{test}</option>
+        ))}
+      </select>
+
       <select
         value={selectedPassage}
         onChange={(e) => setSelectedPassage(e.target.value)}
-        className="w-full md:w-1/3 p-2 rounded-xl border border-purple-500 shadow focus:ring-2 focus:ring-purple-500 focus:outline-none cursor-pointer bg-white text-gray-800 hover:shadow-lg transition"
+        className={baseClass}
       >
         <option value="">请选择 Passage</option>
         {passageOptions.map((p) => (
@@ -52,11 +93,10 @@ export default function ReadingSelector({
         ))}
       </select>
 
-      {/* 题型 */}
       <select
         value={selectedQuestionType}
         onChange={(e) => setSelectedQuestionType(e.target.value)}
-        className="w-full md:w-1/3 p-2 rounded-xl border border-purple-500 shadow focus:ring-2 focus:ring-purple-500 focus:outline-none cursor-pointer bg-white text-gray-800 hover:shadow-lg transition"
+        className={baseClass}
       >
         <option value="">请选择题型</option>
         {typeOptions.map((t) => (
