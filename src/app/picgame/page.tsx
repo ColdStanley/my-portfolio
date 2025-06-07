@@ -120,7 +120,7 @@ export default function PicGamePage() {
         className="relative w-full max-w-[90vw] sm:max-w-[400px] cursor-pointer transition duration-300 hover:scale-[1.01]"
       >
         <img
-          src="/images/001.jpg"
+          src="/images/001.png"
           alt="初音未来"
           className="w-full h-auto border-4 border-purple-300 rounded-xl shadow-xl"
         />
