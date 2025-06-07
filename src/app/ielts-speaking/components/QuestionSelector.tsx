@@ -81,7 +81,7 @@ export default function QuestionSelector({
             readOnly
             placeholder="点击题目"
             value={question}
-            className="w-full h-90 border border-purple-300 px-4 py-3 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-purple-300 text-sm text-gray-800"
+            className="w-full h-102 border border-purple-300 px-4 py-3 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-purple-300 text-sm text-gray-800"
           />
         </div>
       </div>

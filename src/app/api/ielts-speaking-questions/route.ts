@@ -15,13 +15,12 @@ export async function GET(request: Request) {
     const databaseId = process.env.NOTION_SPEAKING_DB_ID!
 const res = await notion.databases.query({
   database_id: databaseId,
-  // 👇 暂时注释 filter（注意：调试完记得恢复！）
-  // filter: {
-  //   property: 'Part',
-  //   select: {
-  //     equals: part.replace('Part', 'Part '),
-  //   },
-  // },
+  filter: {
+    property: 'Part',
+    select: {
+      equals: part
+    }
+  }
 })
 // ✅ 打印所有内容看结构
 console.log('[调试 Notion 返回原始数据]:', JSON.stringify(res.results[0], null, 2))

@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { useState } from 'react'
 
 interface Props {
   answers: Record<string, string>
@@ -10,14 +11,39 @@ interface Props {
   loading: boolean
 }
 
-export default function AnswerSection({ answers, onGenerate, resultRef, question, loading }: Props) {
-  const bandDisplay = (score: number) => {
+export default function AnswerSection({
+  answers,
+  onGenerate,
+  resultRef,
+  question,
+  loading
+}: Props) {
+  const [activeBand, setActiveBand] = useState<number | null>(null)
+
+  const getDisplayText = (score: number) => {
+    const isThisLoading = loading && activeBand === score
+
+    if (isThisLoading) {
+      return <span className="text-purple-400">🪄 给思绪一点留白，答案会更清晰...</span>
+    }
+
     const answer = answers[`band${score}`] || ''
     const comment = answers[`comment${score}`] || ''
     const vocab = answers[`vocab${score}`] || ''
 
-    if (!answer && !comment && !vocab)
+    if (!answer && !comment && !vocab) {
       return <span className="text-gray-400">点击上方按钮 🖱️</span>
+    }
+
+    const isFallback = answer.includes('内容生成失败')
+
+    if (isFallback) {
+      return (
+        <span className="text-red-500">
+          语言的迷雾暂时遮蔽了意义，再试一次，让风吹散它。内容生成失败，请重试。
+        </span>
+      )
+    }
 
     return `
 【参考答案】
@@ -34,76 +60,44 @@ ${vocab}
   const sharedButtonStyle =
     'w-full px-4 py-2 rounded-xl bg-gradient-to-r from-purple-100 via-purple-200 to-purple-100 text-purple-700 hover:from-purple-200 hover:to-purple-300 hover:shadow-lg shadow transition-all text-center font-semibold transform active:scale-95 duration-300'
 
-  const ScoreHighlight = ({ score }: { score: string }) => (
-    <motion.span
-      className="text-purple-600 font-bold inline-block mx-1"
-      animate={{ rotate: [0, -10, 10, -10, 0] }}
-      transition={{ duration: 0.6, repeat: Infinity, ease: 'easeInOut' }}
-    >
-      {score}
-    </motion.span>
-  )
-
   const getButtonText = (band: number) => {
-    if (loading) return '请耐心等待，正在烤鸭 🍗...'
+    if (loading && activeBand === band) return '🪄 魔法时间，灵魂正在追赶脚步 👣'
 
     switch (band) {
       case 5:
-        return <>点我<ScoreHighlight score="5分" />🧐</>
+        return '🌱 5分 - 点亮起点'
       case 6:
-        return <>点我<ScoreHighlight score="6分" />（不用读语言班了）🎉</>
+        return '🚀 6分 - 突破瓶颈'
       case 7:
-        return <>点我，点我，<ScoreHighlight score="7分" />在手，天下我有 💪</>
+        return '🦉 7分 - 驾驭语言'
       default:
         return '生成'
     }
+  }
+
+  const handleClick = (band: number) => {
+    setActiveBand(band)
+    onGenerate(band)
   }
 
   return (
     <>
       <div ref={resultRef} className="w-full" />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full mt-6">
-        {/* 5分列 */}
-        <div className="space-y-2">
-          <button
-            className={sharedButtonStyle}
-            onClick={() => onGenerate(5)}
-            disabled={!question || loading}
-          >
-            {getButtonText(5)}
-          </button>
-          <div className="min-h-[300px] bg-white border border-purple-300 rounded-xl p-4 text-sm whitespace-pre-wrap text-gray-800">
-            {bandDisplay(5)}
+        {[5, 6, 7].map((band) => (
+          <div key={band} className="space-y-2">
+            <button
+              className={sharedButtonStyle}
+              onClick={() => handleClick(band)}
+              disabled={!question || loading}
+            >
+              {getButtonText(band)}
+            </button>
+            <div className="min-h-[300px] bg-white border border-purple-300 rounded-xl p-4 text-sm whitespace-pre-wrap text-gray-800">
+              {getDisplayText(band)}
+            </div>
           </div>
-        </div>
-
-        {/* 6分列 */}
-        <div className="space-y-2">
-          <button
-            className={sharedButtonStyle}
-            onClick={() => onGenerate(6)}
-            disabled={!question || loading}
-          >
-            {getButtonText(6)}
-          </button>
-          <div className="min-h-[300px] bg-white border border-purple-300 rounded-xl p-4 text-sm whitespace-pre-wrap text-gray-800">
-            {bandDisplay(6)}
-          </div>
-        </div>
-
-        {/* 7分列 */}
-        <div className="space-y-2">
-          <button
-            className={sharedButtonStyle}
-            onClick={() => onGenerate(7)}
-            disabled={!question || loading}
-          >
-            {getButtonText(7)}
-          </button>
-          <div className="min-h-[300px] bg-white border border-purple-300 rounded-xl p-4 text-sm whitespace-pre-wrap text-gray-800">
-            {bandDisplay(7)}
-          </div>
-        </div>
+        ))}
       </div>
     </>
   )
