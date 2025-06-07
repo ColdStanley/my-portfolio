@@ -1,4 +1,3 @@
-// 文件路径: app/api/ielts-questions/route.ts
 import { NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
 
@@ -13,15 +12,20 @@ export async function GET(request: Request) {
   }
 
   try {
-    const res = await notion.databases.query({
-      database_id: '2088ebc7833480a9910ee19cd516a805',
-      filter: {
-        property: 'Part',
-        select: {
-          equals: part
-        }
-      }
-    })
+    const databaseId = process.env.NOTION_SPEAKING_DB_ID!
+const res = await notion.databases.query({
+  database_id: databaseId,
+  // 👇 暂时注释 filter（注意：调试完记得恢复！）
+  // filter: {
+  //   property: 'Part',
+  //   select: {
+  //     equals: part.replace('Part', 'Part '),
+  //   },
+  // },
+})
+// ✅ 打印所有内容看结构
+console.log('[调试 Notion 返回原始数据]:', JSON.stringify(res.results[0], null, 2))
+
 
     const questions = res.results.map((page: any) => {
       return page.properties?.Question?.title?.map(t => t.plain_text).join('') || ''

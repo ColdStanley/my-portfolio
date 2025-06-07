@@ -21,11 +21,6 @@ function HighlightCard({ item, index }: { item: HighlightItem; index: number }) 
   const router = useRouter()
 
   const icon = '✨'
-  const bgColor = index % 3 === 0
-    ? 'bg-purple-50 dark:bg-purple-900'
-    : index % 3 === 1
-    ? 'bg-blue-50 dark:bg-blue-900'
-    : 'bg-yellow-50 dark:bg-yellow-900'
 
   return (
     <motion.div
@@ -38,8 +33,8 @@ function HighlightCard({ item, index }: { item: HighlightItem; index: number }) 
           router.push(`/${item.category}/${item.slug}?id=home-latest`)
         }
       }}
-      className={`relative rounded-xl border border-dashed border-gray-300 dark:border-gray-600 
-                 ${bgColor} px-3 py-2 shadow-sm transition-all duration-300 
+      className={`relative rounded-xl border border-purple-300 dark:border-purple-700 
+                 bg-purple-100 dark:bg-purple-950 px-3 py-2 shadow-sm transition-all duration-300 
                  flex flex-col justify-center h-[60px] cursor-pointer group`}
       data-tooltip-id={`tip-${index}`}
       data-tooltip-content={item.description || ''}
@@ -47,10 +42,10 @@ function HighlightCard({ item, index }: { item: HighlightItem; index: number }) 
       <div className="flex items-start gap-2">
         <div className="text-base mt-0.5">{icon}</div>
         <div className="flex-1 overflow-hidden">
-          <h3 className="text-xs font-semibold text-gray-800 dark:text-gray-200 leading-snug truncate">
+          <h3 className="text-xs font-semibold text-purple-800 dark:text-purple-200 leading-snug truncate">
             {item.title || 'Untitled'}
           </h3>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5 truncate">
+          <p className="text-[11px] text-gray-600 dark:text-gray-400 leading-tight mt-0.5 truncate">
             {item.description || 'No description'}
           </p>
         </div>
@@ -64,22 +59,27 @@ export default function LatestSection() {
   const [data, setData] = useState<HighlightItem[]>([])
 
   useEffect(() => {
-    fetch('/api/notion/page?pageId=home-latest')
-      .then((res) => res.json())
-      .then((res) => {
-        if (res?.data && Array.isArray(res.data)) {
-          const filtered = res.data
-            .filter((item: HighlightItem) => item.status === 'Published')
-            .sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
-          setData(filtered)
-        } else {
-          setData([])
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to load highlights', err)
-        setData([])
-      })
+    fetch('/api/notion?pageId=home-latest')
+  .then(async (res) => {
+    if (!res.ok) throw new Error('Fetch failed')
+    return await res.json()
+  })
+  .then((res) => {
+      console.log('🌟 HIGHLIGHTS RAW DATA:', res.data) 
+    if (res?.data && Array.isArray(res.data)) {
+      const filtered = res.data
+        .filter((item: any) => item?.status === 'Published')
+        .sort((a: any, b: any) => (a.order ?? 999) - (b.order ?? 999))
+      setData(filtered)
+    } else {
+      setData([])
+    }
+  })
+  .catch((err) => {
+    console.error('Failed to load highlights', err)
+    setData([])
+  })
+
   }, [])
 
   return (

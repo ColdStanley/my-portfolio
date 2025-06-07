@@ -60,15 +60,15 @@ export default function QuestionSelector({
       </div>
 
       {/* 题目卡片 + 文本框 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full items-stretch mt-4">
-        <div className="space-y-2 h-full">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full items-start">
+        <div className="space-y-2">
           {questions.slice(0, selectedPart === 'Part 2' ? 3 : 4).map((q, i) => (
             <div key={i} onClick={() => handleQuestionClick(q)} className={questionCardStyle}>
               {q}
             </div>
           ))}
         </div>
-        <div className="space-y-2 h-full">
+        <div className="space-y-2">
           {questions.slice(selectedPart === 'Part 2' ? 3 : 4).map((q, i) => (
             <div key={i + (selectedPart === 'Part 2' ? 3 : 4)} onClick={() => handleQuestionClick(q)} className={questionCardStyle}>
               {q}
@@ -81,7 +81,7 @@ export default function QuestionSelector({
             readOnly
             placeholder="点击题目"
             value={question}
-            className="w-full h-full border border-purple-300 px-4 py-3 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-purple-300 text-sm text-gray-800"
+            className="w-full h-90 border border-purple-300 px-4 py-3 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-purple-300 text-sm text-gray-800"
           />
         </div>
       </div>

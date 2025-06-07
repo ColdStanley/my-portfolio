@@ -27,13 +27,14 @@ export default function NavBar() {
 
   const onPlayerReady = (event: any) => {
     setPlayer(event.target)
+    event.target.playVideo()
   }
 
   const handleToggle = () => {
     if (!hasInitiated) {
       setHasInitiated(true)
       setIsPlaying(true)
-      player?.playVideo()
+      // 播放将在 onReady 中执行
     } else {
       if (isPlaying) {
         player?.pauseVideo()
@@ -91,6 +92,8 @@ export default function NavBar() {
                 playerVars: {
                   autoplay: 1,
                   mute: 0,
+                  loop: 1, // ✅ 启用循环播放
+                  playlist: YOUTUBE_VIDEO_ID // ✅ 必须加这个才能 loop 生效
                 },
               }}
               onReady={onPlayerReady}

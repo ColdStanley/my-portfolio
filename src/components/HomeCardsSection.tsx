@@ -108,15 +108,22 @@ export default function HomeCardsSection() {
   const [cards, setCards] = useState<CardItem[]>([])
 
   useEffect(() => {
-    fetch('/api/notion')
-      .then((res) => res.json())
-      .then((data) => {
-        const cardItems: CardItem[] = data.data.filter(
-          (item: CardItem) => item.section === 'Cards'
-        )
-        setCards(cardItems)
-      })
-  }, [])
+  fetch('/api/notion?pageId=cards')
+    .then(async (res) => {
+      if (!res.ok) {
+        throw new Error('Failed to fetch card data')
+      }
+      const data = await res.json()
+      const cardItems: CardItem[] = data.data.filter(
+        (item: CardItem) => item.section === 'Cards'
+      )
+      setCards(cardItems)
+    })
+    .catch((err) => {
+      console.error('❌ Error loading cards:', err)
+    })
+}, [])
+
 
   const techCards = cards.filter(c => c.category === 'technology')
   const knowCards = cards.filter(c => c.category === 'knowledge')
