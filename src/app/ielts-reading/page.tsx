@@ -29,6 +29,9 @@ export default function IELTSReadingPage() {
   const [selectedPassage, setSelectedPassage] = useState('')
   const [selectedQuestionType, setSelectedQuestionType] = useState('')
 
+  // 用于通知子组件“筛选项已变更”，触发答题状态重置
+  const [resetSignal, setResetSignal] = useState(0)
+
   useEffect(() => {
     fetch('/api/ielts-reading-questions')
       .then((res) => res.json())
@@ -43,6 +46,24 @@ export default function IELTSReadingPage() {
       .catch(() => setLoading(false))
   }, [])
 
+  useEffect(() => {
+    const availableTypes = Array.from(new Set(
+      questions
+        .filter(q =>
+          (!selectedBook || q.Book === selectedBook) &&
+          (!selectedTest || q.Test === selectedTest) &&
+          (!selectedPassage || q.Passage === selectedPassage)
+        )
+        .map(q => q.QuestionType)
+        .filter(Boolean)
+    ))
+
+    if (selectedQuestionType && !availableTypes.includes(selectedQuestionType)) {
+      setSelectedQuestionType('') // 自动清空
+      handleFilterChange()        // 通知子组件更新
+    }
+  }, [selectedBook, selectedTest, selectedPassage])
+
   const filtered = questions.filter((q) => {
     return (
       (!selectedBook || q.Book === selectedBook) &&
@@ -54,6 +75,11 @@ export default function IELTSReadingPage() {
 
   const hasSelection = selectedBook || selectedTest || selectedPassage || selectedQuestionType
 
+  // 筛选项变更时触发，通知子组件重置
+  const handleFilterChange = () => {
+    setResetSignal((prev) => prev + 1) // 每次变化 +1，子组件监听变化
+  }
+
   return (
     <main className="flex flex-col items-start justify-start w-full px-4 md:px-8 py-6 space-y-8">
       {/* 顶部标题区域 */}
@@ -62,13 +88,25 @@ export default function IELTSReadingPage() {
       {/* 选择区 */}
       <ReadingSelector
         selectedBook={selectedBook}
-        setSelectedBook={setSelectedBook}
+        setSelectedBook={(v) => {
+          setSelectedBook(v)
+          handleFilterChange()
+        }}
         selectedTest={selectedTest}
-        setSelectedTest={setSelectedTest}
+        setSelectedTest={(v) => {
+          setSelectedTest(v)
+          handleFilterChange()
+        }}
         selectedPassage={selectedPassage}
-        setSelectedPassage={setSelectedPassage}
+        setSelectedPassage={(v) => {
+          setSelectedPassage(v)
+          handleFilterChange()
+        }}
         selectedQuestionType={selectedQuestionType}
-        setSelectedQuestionType={setSelectedQuestionType}
+        setSelectedQuestionType={(v) => {
+          setSelectedQuestionType(v)
+          handleFilterChange()
+        }}
         questionData={questions}
       />
 
@@ -80,6 +118,9 @@ export default function IELTSReadingPage() {
               questionData={filtered}
               selectedPassage={selectedPassage}
               selectedQuestionType={selectedQuestionType}
+              selectedBook={selectedBook}
+              selectedTest={selectedTest}
+              resetSignal={resetSignal} // 新增：传递重置信号
             />
           ) : (
             <motion.div

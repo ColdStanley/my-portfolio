@@ -10,6 +10,7 @@ interface Props {
   selectedQuestionType: string
   setSelectedQuestionType: (v: string) => void
   questionData: any[]
+  onFilterChange?: () => void  // ✅ 新增：筛选项变化时触发
 }
 
 export default function ReadingSelector({
@@ -22,6 +23,7 @@ export default function ReadingSelector({
   selectedQuestionType,
   setSelectedQuestionType,
   questionData,
+  onFilterChange,
 }: Props) {
   const baseClass =
     "transition-all duration-200 ease-in-out text-sm tracking-wide rounded-2xl border border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white text-gray-700 hover:shadow-md px-4 py-2 w-full md:w-[22%] cursor-pointer"
@@ -58,11 +60,16 @@ export default function ReadingSelector({
       .filter(Boolean)
   ))
 
+  const handleChange = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setter(e.target.value)
+    onFilterChange?.() // ✅ 调用父组件传入的回调
+  }
+
   return (
     <div className="w-full flex flex-col md:flex-row items-center justify-start md:justify-between gap-4 mt-6 flex-wrap">
       <select
         value={selectedBook}
-        onChange={(e) => setSelectedBook(e.target.value)}
+        onChange={handleChange(setSelectedBook)}
         className={baseClass}
       >
         <option value="">请选择剑雅编号</option>
@@ -73,7 +80,7 @@ export default function ReadingSelector({
 
       <select
         value={selectedTest}
-        onChange={(e) => setSelectedTest(e.target.value)}
+        onChange={handleChange(setSelectedTest)}
         className={baseClass}
       >
         <option value="">请选择 Test</option>
@@ -84,7 +91,7 @@ export default function ReadingSelector({
 
       <select
         value={selectedPassage}
-        onChange={(e) => setSelectedPassage(e.target.value)}
+        onChange={handleChange(setSelectedPassage)}
         className={baseClass}
       >
         <option value="">请选择 Passage</option>
@@ -95,7 +102,7 @@ export default function ReadingSelector({
 
       <select
         value={selectedQuestionType}
-        onChange={(e) => setSelectedQuestionType(e.target.value)}
+        onChange={handleChange(setSelectedQuestionType)}
         className={baseClass}
       >
         <option value="">请选择题型</option>
