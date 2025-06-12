@@ -4,11 +4,11 @@ import { useRef, useState, useEffect } from 'react'
 
 const quotes = {
   lt: [
-    '这长长的双马尾，是我的标志哦！',
-    '甩动这青色的头发，准备唱歌啦！',
-    '我的头发，像不像青色的瀑布呀？',
-    '头发的长度，就是偶像的气场！',
-    '看我这飘逸的青绿色秀发！',
+    '这长长的双马尾,是我的标志哦!',
+    '甩动这青色的头发,准备唱歌啦!',
+    '我的头发,像不像青色的瀑布呀?',
+    '头发的长度,就是偶像的气场!',
+    '看我这飘逸的青绿色秀发!',
   ],
   rt: [
     '戴上耳机，我的世界就是舞台！',
@@ -34,7 +34,6 @@ const quotes = {
 }
 
 type CornerKey = keyof typeof quotes
-
 interface Position {
   top?: string
   bottom?: string
@@ -44,56 +43,64 @@ interface Position {
 
 export default function PicGamePage() {
   const imageRef = useRef<HTMLImageElement>(null)
-  const [visibleText, setVisibleText] = useState<string>('')
+  const [typedText, setTypedText] = useState('')
+  const [fullText, setFullText] = useState('')
   const [positionStyle, setPositionStyle] = useState<Position>({})
-  const [imageHeight, setImageHeight] = useState<number | null>(null)
+  const [imageHeight, setImageHeight] = useState<number>(300)
+  const [ripples, setRipples] = useState<{ x: number; y: number; id: number }[]>([])
+  const [shake, setShake] = useState(false)
+  const [hovering, setHovering] = useState(false)
 
   const getRandomOffset = (min: number, max: number): string =>
     `${Math.floor(Math.random() * (max - min + 1)) + min}%`
 
-  const showQuote = (corner: CornerKey) => {
-    const lines = quotes[corner]
-    const randomLine = lines[Math.floor(Math.random() * lines.length)]
-    let style: Position = {}
-
-    switch (corner) {
-      case 'lt':
-        style = { top: getRandomOffset(1, 15), left: getRandomOffset(1, 20) }
-        break
-      case 'rt':
-        style = { top: getRandomOffset(1, 15), right: getRandomOffset(1, 20) }
-        break
-      case 'lb':
-        style = { bottom: getRandomOffset(1, 15), left: getRandomOffset(1, 20) }
-        break
-      case 'rb':
-        style = { bottom: getRandomOffset(1, 15), right: getRandomOffset(1, 20) }
-        break
+ const showQuote = (corner: CornerKey) => {
+    // 确保 corner 键存在并且有对应的引用文本
+    const lines = quotes[corner];
+    if (!lines || lines.length === 0) {
+      console.warn(`未找到 ${corner} 角落的引用文本`); // 控制台警告
+      setFullText(''); // 清除之前可能存在的文本
+      setTypedText('');
+      return; // 如果没有文本，则直接退出
     }
 
-    setVisibleText(randomLine)
-    setPositionStyle(style)
-  }
+    const line = lines[Math.floor(Math.random() * lines.length)];
+    setFullText(line);
+    setTypedText('');
+    setPositionStyle({
+      ...(corner.includes('t') ? { top: getRandomOffset(1, 15) } : { bottom: getRandomOffset(1, 15) }),
+      ...(corner.includes('l') ? { left: getRandomOffset(1, 20) } : { right: getRandomOffset(1, 20) }),
+    });
+  };
 
   useEffect(() => {
-    if (visibleText !== '') {
-      const timer = setTimeout(() => {
-        setVisibleText('')
-      }, 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [visibleText])
-
-  useEffect(() => {
-    const updateHeight = () => {
-      if (imageRef.current) {
-        setImageHeight(imageRef.current.offsetHeight)
+    if (!imageRef.current) return
+    const observer = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        if (entry.target === imageRef.current) {
+          setImageHeight(entry.contentRect.height)
+        }
       }
-    }
-    updateHeight()
-    window.addEventListener('resize', updateHeight)
-    return () => window.removeEventListener('resize', updateHeight)
+    })
+    observer.observe(imageRef.current)
+    return () => observer.disconnect()
   }, [])
+
+  useEffect(() => {
+  if (!fullText || fullText.length === 0) return
+  setTypedText('')
+  let i = 0
+  const interval = setInterval(() => {
+    if (i < fullText.length) {
+      setTypedText((prev) => prev + fullText[i])
+      i++
+    } else {
+      clearInterval(interval)
+    }
+  }, 30)
+  return () => clearInterval(interval)
+}, [fullText])
+
 
   const handleClick = (e: React.MouseEvent) => {
     const rect = imageRef.current?.getBoundingClientRect()
@@ -108,15 +115,29 @@ export default function PicGamePage() {
     else if (x > width / 2 && y <= height / 2) showQuote('rt')
     else if (x <= width / 2 && y > height / 2) showQuote('lb')
     else if (x > width / 2 && y > height / 2) showQuote('rb')
+
+    // Ripple
+    const id = Date.now()
+    setRipples((prev) => [...prev, { x, y, id }])
+    setTimeout(() => setRipples((prev) => prev.filter((r) => r.id !== id)), 500)
+
+    // Shake
+    setShake(true)
+    setTimeout(() => setShake(false), 300)
   }
 
   return (
-    <div className="flex flex-col items-center justify-start min-h-screen bg-white p-6">
-      <div className="flex w-full max-w-6xl gap-6">
-        {/* 左侧：图片卡片 */}
+    <div className="relative flex flex-col items-center justify-start min-h-screen bg-white overflow-hidden">
+      {/* 背景粒子 */}
+      <div className="absolute inset-0 z-0 pointer-events-none animate-float-bg" />
+
+      <div className="flex flex-col sm:flex-row w-full max-w-6xl gap-6 p-4 sm:p-6 z-10">
+        {/* 图片区域 */}
         <div
-          className="w-1/3 relative bg-white border border-purple-100 rounded-2xl shadow-md transition hover:shadow-lg cursor-pointer"
+          className={`w-full sm:w-1/3 relative border border-purple-100 bg-white rounded-2xl shadow-md transition hover:shadow-lg cursor-pointer overflow-hidden ${shake ? 'animate-shake' : ''}`}
           onClick={handleClick}
+          onMouseEnter={() => setHovering(true)}
+          onMouseLeave={() => setHovering(false)}
         >
           <img
             ref={imageRef}
@@ -124,27 +145,40 @@ export default function PicGamePage() {
             alt="初音未来"
             className="w-full h-auto rounded-2xl"
           />
-          {visibleText && (
+
+          {typedText && (
             <div
-              className={`
-                absolute px-4 py-2 border border-purple-100 rounded-2xl shadow-sm
-                bg-white/20 backdrop-blur text-purple-700
-                text-sm sm:text-base font-normal font-sans
-                animate-fade-in hover:animate-wiggle transition-opacity z-10
-              `}
+              className="absolute px-4 py-2 border border-purple-100 rounded-2xl shadow-sm bg-white/40 backdrop-blur-md text-purple-700 text-sm sm:text-base font-normal animate-fade-in z-20"
               style={{ ...positionStyle, position: 'absolute', maxWidth: '80%' }}
             >
-              {visibleText}
+              {typedText}
             </div>
           )}
+
+          {hovering && (
+            <div className="absolute bottom-3 right-3 text-purple-400 text-xl animate-bounce z-10 opacity-70">
+              ➤
+            </div>
+          )}
+
+          {ripples.map((r) => (
+            <span
+              key={r.id}
+              className="absolute rounded-full bg-purple-300 opacity-40 animate-ripple z-0 pointer-events-none"
+              style={{
+                left: r.x - 40,
+                top: r.y - 40,
+                width: 80,
+                height: 80,
+              }}
+            />
+          ))}
         </div>
 
-        {/* 右侧：文本框等高，自带滚动 */}
+        {/* 右侧文本 */}
         <div
-          className="w-2/3 bg-white border border-purple-100 rounded-2xl shadow-md p-6
-          text-purple-800 text-base sm:text-[15px] font-normal font-sans
-          leading-relaxed overflow-y-auto"
-          style={{ height: imageHeight ?? 'auto' }}
+          className="w-full sm:w-2/3 border border-purple-100 rounded-2xl shadow-md p-6 text-purple-800 text-base sm:text-[15px] font-normal font-sans leading-relaxed overflow-y-auto"
+          style={{ height: `${imageHeight}px` }}
         >
           <>
             OMG！聊到初音未来，谁能不激动啊！她可不是什么普通的纸片人，她是我们的电子歌姬，是二次元世界永远的公主殿下！<br /><br />
@@ -163,21 +197,40 @@ export default function PicGamePage() {
       </div>
 
       <style>{`
-        @keyframes fade-in {
-          0% { opacity: 0; transform: scale(0.8); }
-          100% { opacity: 1; transform: scale(1); }
+        @keyframes ripple {
+          0% { transform: scale(0); opacity: 0.6; }
+          100% { transform: scale(2.5); opacity: 0; }
         }
-        .animate-fade-in {
-          animation: fade-in 0.4s ease-out;
+        .animate-ripple {
+          animation: ripple 0.5s ease-out;
         }
 
-        @keyframes wiggle {
-          0%, 100% { transform: rotate(0deg); }
-          25% { transform: rotate(1.5deg); }
-          75% { transform: rotate(-1.5deg); }
+        @keyframes fade-in {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
         }
-        .animate-wiggle {
-          animation: wiggle 0.4s ease-in-out infinite;
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out;
+        }
+
+        @keyframes shake {
+          0%, 100% { transform: rotate(0deg); }
+          25% { transform: rotate(0.3deg); }
+          75% { transform: rotate(-0.3deg); }
+        }
+        .animate-shake {
+          animation: shake 0.3s ease-in-out;
+        }
+
+        @keyframes float-bg {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        .animate-float-bg {
+          background-image: radial-gradient(circle at 10% 20%, rgba(168, 129, 255, 0.08) 0%, transparent 70%),
+                            radial-gradient(circle at 70% 80%, rgba(129, 206, 255, 0.08) 0%, transparent 70%);
+          background-size: 400% 400%;
+          animation: float-bg 10s ease infinite;
         }
       `}</style>
     </div>
