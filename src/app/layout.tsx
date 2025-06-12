@@ -4,6 +4,8 @@ import "./globals.css"
 import NavBar from "../components/NavBar"
 import Footer from "../components/Footer"
 import { Toaster } from "sonner"
+import { Quicksand } from 'next/font/google'
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,6 +15,11 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+})
+
+const quicksand = Quicksand({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
 })
 
 export const metadata: Metadata = {

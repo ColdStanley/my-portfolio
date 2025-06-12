@@ -2,6 +2,8 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import PicGameHeader from '@/components/picgame/PicGameHeader'
+
 
 const picgames = [
   {
@@ -49,9 +51,8 @@ const picgames = [
 export default function PicGameGalleryPage() {
   return (
     <div className="min-h-screen py-10 px-4 sm:px-10 bg-gradient-to-b from-white to-purple-50">
-      <h1 className="text-3xl sm:text-4xl font-bold text-purple-600 text-center mb-10">
-        🎮 PicGame Gallery
-      </h1>
+      <PicGameHeader />
+
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
         {picgames.map((item) => (
