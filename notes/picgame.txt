@@ -1,0 +1,171 @@
+📁 文件名：picgame.txt
+📌 模块说明文档：PicGame 模块
+
+========================================
+🧩 模块概述：
+----------------------------------------
+PicGame 是一个交互式图片文字游戏模块，包含：
+
+1. /picgame               → 图集页面（Gallery）
+2. /picgame/[id]          → 单页互动页面（每张图片的互动页）
+3. PicGameDisplay.tsx     → 通用展示组件（左图右文、点击出 quotes）
+
+用于展示二次元、可爱、创意风格图像，支持鼠标点击四角弹出不同台词、动效与震动等反馈。
+
+========================================
+📂 文件结构说明：
+----------------------------------------
+src/
+└── app/
+    └── picgame/
+        ├── page.tsx                  ← 图集页面
+        └── [id]/
+            ├── page.tsx             ← 每张互动页（如 picgame01）
+components/
+└── picgame/
+    └── PicGameDisplay.tsx           ← 通用组件（传入 props 控制每页内容）
+
+public/
+└── images/
+    └── picgame01.png ~ picgame06.png   ← 所有展示图片
+
+notes/
+└── picgame.txt                     ← 当前说明文档
+
+========================================
+🖼 图片与页面命名规范：
+----------------------------------------
+- 图片文件名为：picgameXX.png （XX 从 01 开始）
+- 对应页面路径为：/picgame/picgameXX
+- 页面组件文件为：src/app/picgame/picgameXX/page.tsx
+
+保持命名一致性是正确跳转与加载的关键！
+
+========================================
+💬 Quotes 设计与绑定说明：
+----------------------------------------
+- 每页 page.tsx 都包含一个 quotes 对象，结构如下：
+
+```ts
+const quotes = {
+  lt: ['左上语句1', '左上语句2', ...],
+  rt: ['右上语句1', '右上语句2', ...],
+  lb: ['左下语句1', '左下语句2', ...],
+  rb: ['右下语句1', '右下语句2', ...],
+}
+点击图片区域后，根据点击位置（4个角）随机弹出该区 quote，附带打字动画、Ripple、震动效果
+
+========================================
+✨ 当前已上线图片列表（共 6 张）：
+ID	文件名	标题
+picgame01	picgame01.png	猫系少女
+picgame02	picgame02.png	异次元电竞歌姬
+picgame03	picgame03.png	真实的 Miku Cosplay
+picgame04	picgame04.png	办公室狗狗老板
+picgame05	picgame05.png	猫娘在家
+picgame06	picgame06.png	初音未来 本体驾到！
+
+========================================
+🛠 如何新增图片互动页（推荐流程）：
+📁 将图片命名为 picgame07.png，放入 /public/images/
+
+🧠 创建页面文件：
+
+bash
+Copy
+Edit
+src/app/picgame/picgame07/page.tsx
+✍️ 在该文件中填写：
+
+imageUrl：图片地址（建议为 /images/picgame07.png）
+
+description：右侧介绍段落（中英皆可）
+
+quotes：四个方向的 quotes（中英皆可）
+
+🔗 /picgame/page.tsx 中图集列表加入一项：
+
+ts
+Copy
+Edit
+{
+  id: 'picgame07',
+  title: '新图标题',
+  image: '/images/picgame07.png',
+}
+✅ 页面即可跳转并渲染（无需改动其他组件）
+
+'use client'
+
+import PicGameDisplay from '@/components/picgame/PicGameDisplay'
+
+const imageUrl = '/images/picgame08.png'
+
+const description = `
+这位元气兔兔少女，戴着毛绒兔耳，在午后阳光下蹦蹦跳跳。
+她用笑容治愈你的坏心情，用活力点燃你的每一分钟。
+你准备好接受这份活力暴击了吗？
+
+This energetic bunny girl hops through your heart like sunshine in spring.
+With her fluffy ears and sparkling smile, she's ready to brighten your entire day!
+`
+
+const quotes = {
+  lt: [
+    "我的兔耳朵，是不是毛绒绒的？",
+    "向着阳光，一起跳跃吧！",
+    "元气加倍，活力满分~",
+    "不许偷看我的秘密萝卜~",
+    "嘿嘿，猜猜我今天藏了几个胡萝卜？",
+  ],
+  rt: [
+    "太阳晒屁股啦，快起床！",
+    "一跳一跳跳进你心里~",
+    "你喜欢胡萝卜吗？我超喜欢！",
+    "兔兔我最可爱没有之一！",
+    "好奇心 +100，可爱值爆表~",
+  ],
+  lb: [
+    "软绵绵的兔脚最适合跳舞啦~",
+    "今天也要活力满满地跳一支兔子舞！",
+    "别踩我尾巴，小心我反击哦~",
+    "蹦~蹦~蹦！你也跟着动起来~",
+    "咕咕咕，我的能量从腿开始积蓄！",
+  ],
+  rb: [
+    "今天的胡萝卜是草莓味的！",
+    "来抱一个，就一下下~",
+    "想不想试试兔兔抱击？很暖很暖哦~",
+    "这只爪子可是能治愈一切的魔法！",
+    "我的抱抱是限量的，快来抢！",
+  ],
+} as const
+
+export default function Picgame08Page() {
+  return <PicGameDisplay imageUrl={imageUrl} quotes={quotes} description={description} />
+}
+
+
+========================================
+📌 注意事项：
+所有图集图片建议为纵向（portrait），宽高比不宜失衡
+
+quotes 建议每方向保持 3~5 句，避免过少或为空
+
+当前交互行为支持移动端，但建议后续补充长按等适配逻辑
+
+图片路径不支持中文，请统一英文命名
+
+========================================
+🗓 模块开发记录：
+2025-06-11：完成 PicGameDisplay.tsx 通用组件
+
+2025-06-12：上线前 6 张图片 + 图集页
+
+下一步：计划拓展为 Notion CMS 管理、支持音效绑定等
+
+========================================
+🧠 联系人 / 维护人：
+开发者：Stanley
+
+技术栈：Next.js (App Router), Tailwind CSS, TypeScript
