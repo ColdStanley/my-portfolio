@@ -156,8 +156,8 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
 
         @keyframes shake {
           0%, 100% { transform: rotate(0deg); }
-          25% { transform: rotate(0.3deg); }
-          75% { transform: rotate(-0.3deg); }
+          25% { transform: rotate(5.5deg); }
+          75% { transform: rotate(-5.5deg); }
         }
         .animate-shake {
           animation: shake 0.3s ease-in-out;
