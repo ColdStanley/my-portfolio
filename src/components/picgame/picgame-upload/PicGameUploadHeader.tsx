@@ -34,7 +34,7 @@ export default function PicGameUploadHeader() {
             }}
             transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
           >
-            光影碎片
+            Shards of Light
           </motion.h1>
 
           <p className="text-sm text-gray-600 leading-relaxed">Shards of Light</p>
@@ -43,12 +43,16 @@ export default function PicGameUploadHeader() {
             animate={{ opacity: [1, 0.5, 1] }}
             transition={{ duration: 3, repeat: Infinity }}
           >
-            片段即永恒，每次点击，都是一次静静的靠近
+            Every click is a quiet moment closer.
+            <br />
+            <span className="text-purple-400 italic">
+              Chaque clic est un moment silencieux de plus près.
+            </span>
           </motion.p>
         </div>
       </motion.div>
 
-      {/* 中栏：描述说明 */}
+      {/* 中栏：Quotes 说明（已互换） */}
       <motion.div
         className="flex-1 bg-white shadow rounded-xl p-6 flex flex-col justify-between"
         initial={{ opacity: 0, y: 10 }}
@@ -56,14 +60,32 @@ export default function PicGameUploadHeader() {
         transition={{ duration: 1.0 }}
       >
         <div className="text-sm leading-relaxed text-gray-600 space-y-3">
-          <p className="font-semibold text-purple-500">📖 描述是什么？</p>
-          <p>你可以简单地记录这张照片的背景、时间、情绪、或者你想传达的含义。</p>
-          <p>它会出现在页面中图片的旁边，就像是你为照片写下的一段“碎片注解”。</p>
-          <p className="italic text-purple-400">比如：“那天阳光正好，我只拍下了你的背影。”</p>
+          <p className="font-semibold text-purple-500">💬 What are the Quotes?</p>
+          <p>
+            They are messages you want to share through the photo—words from the heart.
+            <br />
+            <span className="text-purple-400 italic">
+              Ce sont des messages que vous souhaitez transmettre à travers la photo — des mots du cœur.
+            </span>
+          </p>
+          <p>
+            You can write them for yourself, for someone else, for the past or future.
+            <br />
+            <span className="text-purple-400 italic">
+              Vous pouvez les écrire pour vous-même, pour quelqu’un d’autre, pour le passé ou l’avenir.
+            </span>
+          </p>
+          <p className="italic text-purple-400">
+            For example: “I never had the courage to say it, but I think you always knew.”
+            <br />
+            <span className="text-purple-400 italic">
+              Par exemple : « Je n’ai jamais eu le courage de le dire, mais je pense que tu l’as toujours su. »
+            </span>
+          </p>
         </div>
       </motion.div>
 
-      {/* 右栏：Quotes 说明 */}
+      {/* 右栏：Description 说明（已互换） */}
       <motion.div
         className="flex-1 bg-white shadow rounded-xl p-6 flex flex-col justify-between"
         initial={{ opacity: 0, y: 10 }}
@@ -71,10 +93,28 @@ export default function PicGameUploadHeader() {
         transition={{ duration: 1.2 }}
       >
         <div className="text-sm leading-relaxed text-gray-600 space-y-3">
-          <p className="font-semibold text-purple-500">💬 Quotes 是什么？</p>
-          <p>这些是你想通过图片传递给他人或自己的话，像是藏在图像背后的心声。</p>
-          <p>写给自己，写给某人，写给过去或未来都可以。</p>
-          <p className="italic text-purple-400">比如：“我没有勇气当面说，但我想你一直都知道。”</p>
+          <p className="font-semibold text-purple-500">📖 What is the description?</p>
+          <p>
+            You can briefly describe the background, time, emotion, or meaning of the photo.
+            <br />
+            <span className="text-purple-400 italic">
+              Vous pouvez brièvement décrire le contexte, le moment, l’émotion ou la signification de la photo.
+            </span>
+          </p>
+          <p>
+            It will appear next to the image, like a “caption fragment” you wrote for it.
+            <br />
+            <span className="text-purple-400 italic">
+              Elle apparaîtra à côté de l’image, comme une « annotation fragmentée » que vous avez écrite.
+            </span>
+          </p>
+          <p className="italic text-purple-400">
+            For example: “The sunlight was perfect that day, and I only captured your back.”
+            <br />
+            <span className="text-purple-400 italic">
+              Par exemple : « Ce jour-là, la lumière était parfaite, et je n’ai capté que ton dos. »
+            </span>
+          </p>
         </div>
       </motion.div>
     </div>
