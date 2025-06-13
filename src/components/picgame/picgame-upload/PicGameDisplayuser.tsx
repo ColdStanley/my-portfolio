@@ -15,13 +15,6 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
   // ✅ 自动补全 imageUrl（确保包含 https://）
   const safeImageUrl = imageUrl?.startsWith('http') ? imageUrl : `https://${imageUrl}`
 
-  // ✅ 测试日志输出
-  console.log('🖼️ 原始 imageUrl:', imageUrl)
-  console.log('🛡️ 安全 imageUrl:', safeImageUrl)
-  console.log('📦 获取到的 Notion 数据:', page)
-  console.log('🌐 ImageURL 字段:', page.properties.ImageURL)
-  console.log('🧩 ImageURL.url:', page.properties.ImageURL?.url)
-
   return (
     <div className="flex flex-col md:flex-row gap-6">
       {/* 左图 */}

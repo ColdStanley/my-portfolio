@@ -15,7 +15,6 @@ export async function GET(req: NextRequest) {
 
   // 🛑 检查环境变量是否设置
   if (!databaseId) {
-    console.error('❌ 环境变量 NOTION_PICGAME_DB_ID 未设置')
     return NextResponse.json({ error: '服务器配置错误：缺少数据库ID' }, { status: 500 })
   }
 
@@ -31,8 +30,6 @@ export async function GET(req: NextRequest) {
       },
     })
 
-    console.log('🔍 请求ID:', id)
-    console.log('📦 Notion 查询结果:', response.results.length)
 
     // ❌ 没有找到记录
     if (response.results.length === 0) {
@@ -57,7 +54,6 @@ export async function GET(req: NextRequest) {
       type,
     })
   } catch (error) {
-    console.error('❌ Notion 查询失败:', error)
     return NextResponse.json({ error: '服务器内部错误' }, { status: 500 })
   }
 }
