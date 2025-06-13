@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY })
-const databaseId = process.env.NOTION_PicGame_DB_ID!
+const databaseId = process.env.NOTION_PICGAME_DB_ID!
 
 export async function POST(req: NextRequest) {
   const { imageUrl, description, quotes, type = '未分类' } = await req.json()
