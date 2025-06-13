@@ -18,6 +18,9 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
   // ✅ 测试日志输出
   console.log('🖼️ 原始 imageUrl:', imageUrl)
   console.log('🛡️ 安全 imageUrl:', safeImageUrl)
+  console.log('📦 获取到的 Notion 数据:', page)
+  console.log('🌐 ImageURL 字段:', page.properties.ImageURL)
+  console.log('🧩 ImageURL.url:', page.properties.ImageURL?.url)
 
   return (
     <div className="flex flex-col md:flex-row gap-6">
@@ -25,10 +28,10 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
       <div className="md:w-1/2 w-full rounded-xl overflow-hidden shadow">
         {imageUrl ? (
           <img
-  src={safeImageUrl}
-  alt="picgame"
-  className="w-full h-auto object-cover rounded-xl"
-/>
+        src={safeImageUrl}
+        alt="picgame"
+        className="w-full h-auto object-cover rounded-xl"
+          />
 
         ) : (
           <div className="w-full h-[400px] bg-gray-100 flex items-center justify-center text-gray-400 text-sm">

@@ -25,6 +25,8 @@ export default function PicGameUserViewPage() {
       try {
         const res = await fetch(`/api/picgame/get-one-from-notion?id=${id}`)
         const json = await res.json()
+        console.log('🟡 get-one 返回数据:', json)  // ←✅ 就加这一行
+
         setData(json)
       } catch (error) {
         console.error('获取数据失败:', error)
