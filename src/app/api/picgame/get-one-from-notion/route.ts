@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY })
-const databaseId = process.env.NOTION_PicGame_DB_ID
+const databaseId = process.env.NOTION_PICGAME_DB_ID
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
   // 🛑 检查环境变量是否设置
   if (!databaseId) {
-    console.error('❌ 环境变量 NOTION_PicGame_DB_ID 未设置')
+    console.error('❌ 环境变量 NOTION_PICGAME_DB_ID 未设置')
     return NextResponse.json({ error: '服务器配置错误：缺少数据库ID' }, { status: 500 })
   }
 
