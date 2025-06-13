@@ -55,10 +55,8 @@ export default function PicGameHeader() {
         </div>
       </motion.div>
 
-      {/* 中栏：空卡片占位 */}
 
       {/* 中栏：空卡片占位（含动效和链接） */}
-{/* <div className="bg-white shadow rounded-xl p-6 flex flex-col items-center justify-center h-full">*/}
     <div className="bg-white shadow rounded-xl p-6 flex flex-col items-center justify-center h-[200px]">
 
   <div className="text-center text-gray-500 text-sm italic space-y-4">

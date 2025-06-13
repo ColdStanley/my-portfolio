@@ -1,6 +1,10 @@
 'use client'
 
-export default function QuoteSuggestionPanel() {
+interface Props {
+  onClickItem: (text: string) => void
+}
+
+export default function QuoteSuggestionPanel({ onClickItem }: Props) {
   const confession = [
     '我喜欢你很久了，一直没说出口。',
     '遇见你，是我最幸运的事。',
@@ -51,29 +55,24 @@ export default function QuoteSuggestionPanel() {
   ]
 
   const renderScrollingList = (list: string[], prefix: string) => {
-    // 复制列表项以创建无缝循环
-    const doubledList = [...list, ...list];
+    const doubledList = [...list, ...list]
 
     return (
       <div className="relative h-[520px] overflow-hidden">
-        {/*
-          动画现在将内容从 0%（其原始位置）移动到 -50%（其高度的一半，即原始列表的一整套）。
-          我们移除 min-h-[1040px]，因为内容的高度将由其子元素决定，并且动画将处理滚动。
-        */}
         <div className="absolute top-0 left-0 w-full animate-scroll-up flex flex-col gap-4 text-sm text-gray-700">
           {doubledList.map((text, idx) => (
             <div
               key={`${prefix}-${idx}`}
               className="cursor-pointer hover:bg-purple-50 p-2 rounded transition"
+              onClick={() => onClickItem(text)}
             >
               {text}
             </div>
           ))}
         </div>
       </div>
-    );
-  };
-
+    )
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">

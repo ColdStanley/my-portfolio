@@ -7,6 +7,11 @@ const nextConfig = {
         hostname: 'prod-files-secure.s3.us-west-2.amazonaws.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'picgame-uploads.public.blob.vercel-storage.com',
+        pathname: '/**',
+      },
     ],
   },
   eslint: {
