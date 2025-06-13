@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 
@@ -28,7 +27,6 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
   const [positionStyle, setPositionStyle] = useState<Position>({})
   const [ripples, setRipples] = useState<{ x: number; y: number; id: number }[]>([])
   const [shake, setShake] = useState(false)
-  const [hovering, setHovering] = useState(false)
 
   const getRandomOffset = (min: number, max: number): string =>
     `${Math.floor(Math.random() * (max - min + 1)) + min}%`
@@ -47,12 +45,17 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
       ...(x <= rect.width / 2 ? { left: getRandomOffset(5, 15) } : { right: getRandomOffset(5, 15) }),
     })
 
+    // 自动 3 秒后消失
+    setTimeout(() => {
+      setDisplayedQuote('')
+    }, 3000)
+
     const id = Date.now()
     setRipples((prev) => [...prev, { x, y, id }])
     setTimeout(() => setRipples((prev) => prev.filter((r) => r.id !== id)), 500)
 
     setShake(true)
-    setTimeout(() => setShake(false), 300)
+    setTimeout(() => setShake(false), 150)
   }
 
   useEffect(() => {
@@ -74,8 +77,6 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
       <div
         className={`md:w-1/2 w-full relative rounded-xl overflow-hidden shadow border border-purple-100 bg-white transition hover:shadow-lg cursor-pointer ${shake ? 'animate-shake' : ''}`}
         onClick={showQuote}
-        onMouseEnter={() => setHovering(true)}
-        onMouseLeave={() => setHovering(false)}
       >
         <img
           ref={imageRef}
@@ -93,12 +94,6 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
           </div>
         )}
 
-        {hovering && (
-          <div className="absolute bottom-3 right-3 text-purple-400 text-xl animate-bounce z-10 opacity-70">
-            ➤
-          </div>
-        )}
-
         {ripples.map((r) => (
           <span
             key={r.id}
@@ -113,32 +108,12 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
         ))}
       </div>
 
-      {/* 右文 */}
+      {/* 右文，仅保留纯文本描述 */}
       <div
         className="md:w-1/2 w-full bg-white shadow rounded-xl p-6 flex flex-col justify-between border border-purple-100"
         style={{ height: `${imageHeight}px` }}
       >
-        <div className="mb-4">
-          <div className="text-lg font-bold text-purple-600 mb-2">描述（Description）</div>
-          <p className="text-gray-700 text-sm whitespace-pre-wrap">{description}</p>
-        </div>
-
-        <div>
-          <div className="text-lg font-bold text-purple-600 mb-2">留言语录（Quotes）</div>
-          <div className="space-y-2">
-            {quoteArray.map((quote, idx) => (
-              <motion.p
-                key={idx}
-                className="text-gray-600 text-sm italic"
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-              >
-                {quote}
-              </motion.p>
-            ))}
-          </div>
-        </div>
+        <p className="text-gray-700 text-sm whitespace-pre-wrap">{description}</p>
       </div>
 
       {/* 动画 CSS */}
@@ -161,11 +136,11 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
 
         @keyframes shake {
           0%, 100% { transform: rotate(0deg); }
-          25% { transform: rotate(5.5deg); }
-          75% { transform: rotate(-5.5deg); }
+          25% { transform: rotate(8deg); }
+          75% { transform: rotate(-8deg); }
         }
         .animate-shake {
-          animation: shake 0.3s ease-in-out;
+          animation: shake 0.15s ease-in-out;
         }
       `}</style>
     </div>
