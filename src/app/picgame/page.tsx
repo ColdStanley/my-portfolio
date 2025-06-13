@@ -7,11 +7,6 @@ import PicGameHeader from '@/components/picgame/PicGameHeader'
 
 const picgames = [
   {
-  id: 'stanleymontreal',
-  title: '蒙特利尔滑冰乱纪实',
-  image: '/images/picgamenms.png',
-},
-  {
     id: 'picgame01',
     title: '猫系少女',
     image: '/images/picgame01.png',
@@ -41,11 +36,6 @@ const picgames = [
     title: '初音未来 本体驾到！',
     image: '/images/picgame06.png',
   },
-  {
-  id: 'stanleyemmanuel',
-  title: '篮球双雄出征',
-  image: '/images/picgamestanleyemmanuel.png',
-},
 ]
 
 export default function PicGameGalleryPage() {
