@@ -5,9 +5,10 @@ import { useState } from 'react'
 interface Props {
   quotes: string
   setQuotes: (val: string) => void
+  onInsertFromCategory: (category: 'love' | 'apology' | 'blessing' | 'thanks') => void
 }
 
-export default function UploadFormRow({ quotes, setQuotes }: Props) {
+export default function UploadFormRow({ quotes, setQuotes, onInsertFromCategory }: Props) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [description, setDescription] = useState('')
@@ -122,10 +123,30 @@ export default function UploadFormRow({ quotes, setQuotes }: Props) {
             className="flex-grow border border-purple-200 rounded-lg p-3 resize-none text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
           />
           <div className="mt-3 flex flex-wrap gap-2 text-sm">
-            <button className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200">Confession</button>
-            <button className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200">Say Sorry</button>
-            <button className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200">Blessing</button>
-            <button className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200">Thanks</button>
+            <button
+              onClick={() => onInsertFromCategory('love')}
+              className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200"
+            >
+              LOVE
+            </button>
+            <button
+              onClick={() => onInsertFromCategory('apology')}
+              className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200"
+            >
+              Apology
+            </button>
+            <button
+              onClick={() => onInsertFromCategory('blessing')}
+              className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200"
+            >
+              Blessing
+            </button>
+            <button
+              onClick={() => onInsertFromCategory('thanks')}
+              className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200"
+            >
+              Thanks
+            </button>
           </div>
           <p className="mt-2 text-xs text-gray-400 italic">
             For custom quote templates, email <span className="underline">stanleytonight@hotmail.com</span>

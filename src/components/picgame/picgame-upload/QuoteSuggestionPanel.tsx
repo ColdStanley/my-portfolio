@@ -1,7 +1,7 @@
 'use client'
 
 interface Props {
-  confession: string[]
+  love: string[]
   apology: string[]
   blessing: string[]
   thanks: string[]
@@ -9,7 +9,7 @@ interface Props {
 }
 
 export default function QuoteSuggestionPanel({
-  confession,
+  love,
   apology,
   blessing,
   thanks,
@@ -25,7 +25,7 @@ export default function QuoteSuggestionPanel({
             <div
               key={`${prefix}-${idx}`}
               className="cursor-pointer hover:bg-purple-50 p-2 rounded transition"
-              onClick={() => onClickItem(text)} // ✅ 保留点击填入输入框逻辑
+              onClick={() => onClickItem(text)} // ✅ 点击单条插入 quotes
             >
               {text}
             </div>
@@ -40,10 +40,10 @@ export default function QuoteSuggestionPanel({
       {/* 表白列 */}
       <div className="bg-white shadow rounded-xl p-6 flex flex-col">
         <h3 className="text-purple-600 font-semibold text-center mb-4">I LOVE You</h3>
-        {renderScrollingList(confession, 'conf')}
+        {renderScrollingList(love, 'love')}
       </div>
 
-      {/* Say Sorry 列 */}
+      {/* 道歉列 */}
       <div className="bg-white shadow rounded-xl p-6 flex flex-col">
         <h3 className="text-purple-600 font-semibold text-center mb-4">Say Sorry</h3>
         {renderScrollingList(apology, 'apol')}
@@ -55,7 +55,7 @@ export default function QuoteSuggestionPanel({
         {renderScrollingList(blessing, 'bless')}
       </div>
 
-      {/* 谢谢列 */}
+      {/* 感谢列 */}
       <div className="bg-white shadow rounded-xl p-6 flex flex-col">
         <h3 className="text-purple-600 font-semibold text-center mb-4">Thanks</h3>
         {renderScrollingList(thanks, 'thx')}
