@@ -110,11 +110,12 @@ export default function UploadFormRow({ quotes, setQuotes, onInsertFromCategory 
         {/* Middle: Quotes */}
         <div className="flex-1 bg-white shadow rounded-xl p-6 flex flex-col justify-between h-[300px]">
           <div className="text-gray-700 text-sm mb-2 font-semibold">Quote Bubbles</div>
+          <p className="text-xs text-gray-500 italic mb-2">Please choose a quote category below.</p>
           <textarea
             rows={4}
             value={quotes}
             onChange={(e) => setQuotes(e.target.value)}
-            placeholder="Write a few words to someone, to yourself, or to the future..."
+            placeholder="Click one of the categories below to insert a quote."
             className="flex-grow border border-purple-200 rounded-lg p-3 resize-none text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
           />
           <div className="mt-3 flex flex-wrap gap-2 text-sm">
@@ -157,7 +158,7 @@ export default function UploadFormRow({ quotes, setQuotes, onInsertFromCategory 
             onClick={handleSaveToNotion}
             disabled={saving}
           >
-            {saving ? '⏳ Generating link...' : 'Generate link to share with He, She, They, or Yourself'}
+            {saving ? '⏳ Generating your Feelink...' : 'Generate Your Feelink'}
           </button>
         </div>
         <div className="col-span-2 flex items-center gap-2">

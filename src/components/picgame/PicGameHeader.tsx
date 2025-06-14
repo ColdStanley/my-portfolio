@@ -1,8 +1,10 @@
 'use client'
-import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Quicksand } from 'next/font/google'
 import Link from 'next/link'
+import { HiOutlinePhotograph } from 'react-icons/hi'
+import { useInView } from 'react-intersection-observer'
+import FloatingBackground from './FloatingBackground'
 
 const quicksand = Quicksand({
   subsets: ['latin'],
@@ -10,98 +12,94 @@ const quicksand = Quicksand({
 })
 
 export default function PicGameHeader() {
+  const { ref, inView } = useInView({ triggerOnce: true })
+
   return (
-    <div className="flex flex-col md:flex-row gap-4 w-full items-stretch min-h-[200px] mb-10">
-      {/* 左栏：标题 + Slogan + 动效 */}
+    <div className="relative w-full mb-10" ref={ref}>
+      <FloatingBackground />
+
       <motion.div
-        className="flex-1 bg-white shadow rounded-xl p-6 flex flex-col justify-between"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
+        className="flex flex-col md:flex-row gap-4 items-stretch min-h-[200px]"
+        initial={{ opacity: 0, y: 30 }}
+        animate={inView ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.9, ease: 'easeOut' }}
       >
-        <div className="flex flex-col gap-4">
-          <motion.h1
-            className={`text-4xl font-extrabold text-purple-600 tracking-wide ${quicksand.className}`}
-            animate={{
-              textShadow: [
-                '0px 0px 0px rgba(192,132,252,0.3)',
-                '0px 0px 12px rgba(192,132,252,0.6)',
-                '0px 0px 24px rgba(192,132,252,0.8)',
-                '0px 0px 12px rgba(192,132,252,0.6)',
-                '0px 0px 0px rgba(192,132,252,0.3)'
-              ],
-              scale: [1, 1.03, 1],
-              opacity: [1, 0.95, 1],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: 'easeInOut'
-            }}
-          >
-            光影碎片
-          </motion.h1>
-
-          <p className="text-sm text-gray-600 leading-relaxed">Shards of Light</p>
-          <motion.p
-            className="text-sm text-gray-600 leading-relaxed italic"
-            animate={{ opacity: [1, 0.5, 1] }}
-            transition={{ duration: 3, repeat: Infinity }}
-          >
-            片段即永恒，每次点击，都是一次静静的靠近
-          </motion.p>
-        </div>
-      </motion.div>
-
-      {/* 中栏：强调 CTA 的卡片 */}
-      <div className="bg-white shadow rounded-xl p-6 flex flex-col items-center justify-center h-[200px]">
-        <div className="text-center text-gray-500 text-sm italic space-y-4">
-          <motion.p
-            animate={{ opacity: [1, 0.7, 1], y: [0, -2, 0] }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            致自己：一切都是最好的安排
-          </motion.p>
-
-          <motion.p
-            animate={{ opacity: [1, 0.7, 1], y: [0, 2, 0] }}
-            transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            对他He/她She/They：对不起！我爱你！谢谢你！祝福你！
-          </motion.p>
-
-          <motion.div
-            animate={{ scale: [1, 1.08, 1], opacity: [1, 0.95, 1] }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <Link
-              href="/picgame/upload"
-              className="text-purple-600 font-semibold text-base hover:underline hover:text-purple-700 transition-all"
+        {/* 左栏 */}
+        <motion.div
+          className="flex-1 bg-white shadow rounded-xl px-6 py-8 flex flex-col justify-between"
+        >
+          <div className="flex flex-col gap-4">
+            <motion.h1
+              className={`text-3xl md:text-4xl font-extrabold text-purple-600 tracking-wide ${quicksand.className}`}
+              animate={{
+                textShadow: [
+                  '0px 0px 0px rgba(192,132,252,0.3)',
+                  '0px 0px 12px rgba(192,132,252,0.6)',
+                  '0px 0px 24px rgba(192,132,252,0.8)',
+                  '0px 0px 12px rgba(192,132,252,0.6)',
+                  '0px 0px 0px rgba(192,132,252,0.3)'
+                ],
+                scale: [1, 1.03, 1],
+                opacity: [1, 0.95, 1],
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: 'easeInOut'
+              }}
             >
-              点我，10秒制作专属的“光影碎片”
-            </Link>
-          </motion.div>
-        </div>
-      </div>
+              Feelink
+            </motion.h1>
 
-      {/* 右栏：说明文字 */}
-      <motion.div
-        className="flex-1 bg-white shadow rounded-xl p-6 text-gray-700 flex flex-col justify-between"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1.2 }}
-      >
-        <div className="text-sm leading-relaxed space-y-3 text-gray-600">
-          <p className="border-l-4 border-purple-300 pl-3 italic">
-            有些话我们不好意思说出口，图片会替我们说。
-          </p>
-          <p className="border-l-4 border-purple-300 pl-3 italic">
-            如果你愿意，也许能从这里看到更深的自己。
-          </p>
-          <p className="border-l-4 border-purple-300 pl-3 italic">
-            希望你在这里找到一点点“被懂得”的感觉。
-          </p>
-        </div>
+            <p className="text-sm md:text-base text-gray-600 leading-relaxed">Say it with a picture</p>
+
+            <motion.p
+              className="text-sm md:text-base text-gray-600 leading-relaxed italic"
+              animate={{ opacity: [1, 0.5, 1] }}
+              transition={{ duration: 3, repeat: Infinity }}
+            >
+              Turn a picture into something that says what you couldn’t.
+            </motion.p>
+
+            <p className="text-sm md:text-base text-gray-600 italic">
+              Because every feeling deserves to be seen.
+            </p>
+          </div>
+        </motion.div>
+
+        {/* 右栏 */}
+        <motion.div
+          className="flex-1 bg-white shadow rounded-xl px-6 py-8 text-gray-700 flex flex-col justify-center items-center"
+        >
+          <div className="text-center text-gray-500 text-sm md:text-base italic space-y-5">
+            <motion.p
+              animate={{ opacity: [1, 0.7, 1], y: [0, -2, 0] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              Say sorry. Say I love you. Say thank you.
+            </motion.p>
+
+            <motion.p
+              animate={{ opacity: [1, 0.7, 1], y: [0, 2, 0] }}
+              transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              Without saying anything at all.
+            </motion.p>
+
+            <motion.div
+              animate={{ scale: [1, 1.05, 1], opacity: [1, 0.95, 1] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <Link
+                href="/picgame/upload"
+                className="inline-flex items-center gap-2 bg-purple-100 hover:bg-purple-200 text-purple-700 font-semibold text-sm md:text-base px-4 py-2 rounded-full transition-all shadow-sm"
+              >
+                <HiOutlinePhotograph className="w-5 h-5" />
+                <span>Start your story</span>
+              </Link>
+            </motion.div>
+          </div>
+        </motion.div>
       </motion.div>
     </div>
   )
