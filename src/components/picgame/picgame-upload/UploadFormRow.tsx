@@ -94,7 +94,7 @@ export default function UploadFormRow({ quotes, setQuotes, onInsertFromCategory 
         {/* Left: Upload Image */}
         <div className="flex-1 bg-white shadow rounded-xl p-6 flex flex-col justify-between h-[300px]">
           <div className="text-gray-700 text-sm mb-2 font-semibold">Upload Image</div>
-          <p className="text-xs text-gray-400 mb-2">Drag and drop, or use the button below to select a file</p>
+          <p className="text-xs text-gray-400 mb-2">Drag and drop, or use the button to select a file</p>
           <input type="file" accept="image/*" className="mb-4" onChange={handleFileChange} />
           <div className="flex justify-end">
             <button
@@ -134,7 +134,7 @@ export default function UploadFormRow({ quotes, setQuotes, onInsertFromCategory 
             </button>
           </div>
           <p className="mt-2 text-xs text-gray-400 italic">
-            For tailor-made quotes, contact <span className="underline">stanleytonight@hotmail.com</span> (service charges may apply).
+            For tailor-made quotes, contact <span className="underline">stanleytonight@hotmail.com</span>.
           </p>
         </div>
 
@@ -155,7 +155,7 @@ export default function UploadFormRow({ quotes, setQuotes, onInsertFromCategory 
       <div className="grid grid-cols-3 gap-4 w-full mb-8 items-center">
         <div className="flex items-center justify-start">
           <button
-            className="w-[400px] py-2 text-sm rounded-lg bg-purple-500 text-white hover:bg-purple-600 transition-all disabled:opacity-50"
+            className="w-[480px] py-2 text-sm rounded-lg bg-purple-500 text-white hover:bg-purple-600 transition-all disabled:opacity-50"
             onClick={handleSaveToNotion}
             disabled={saving}
           >

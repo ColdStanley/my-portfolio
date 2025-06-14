@@ -1,6 +1,8 @@
 'use client'
 
 import { useRef, useState, useEffect } from 'react'
+import Link from 'next/link'
+import { HiOutlinePhotograph } from 'react-icons/hi'
 
 type CornerKey = 'lt' | 'rt' | 'lb' | 'rb'
 
@@ -75,7 +77,6 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
     setRipples((prev) => [...prev, { x, y, id }])
     setTimeout(() => setRipples((prev) => prev.filter((r) => r.id !== id)), 500)
 
-    // 切换到下一个动画
     setAnimationIndex((prev) => (prev + 1) % animationTypeList.length)
   }
 
@@ -97,7 +98,7 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
           {/* Quote 气泡 */}
           {displayedQuote && (
             <div
-              className="absolute px-4 py-2 border border-purple-300 rounded-lg shadow-sm bg-[rgba(255,255,255,0.01)] text-white text-sm font-medium z-20"
+              className="absolute px-4 py-2 border border-purple-300 rounded-xl shadow-sm bg-[rgba(255,255,255,0.01)] text-white text-sm font-medium z-20"
               style={{ ...positionStyle, position: 'absolute', maxWidth: '80%', opacity: 0.9 }}
             >
               {displayedQuote}
@@ -128,13 +129,24 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
           ))}
         </div>
 
-        {/* 文字区域 */}
+        {/* 文字区域 + 按钮（仅此处新增链接） */}
         <div
-          className="w-full md:w-3/5 p-6 text-black text-[15px] font-sans leading-relaxed rounded-xl overflow-y-auto"
+          className="w-full md:w-3/5 p-6 text-black text-[15px] font-sans leading-relaxed overflow-y-auto rounded-xl bg-white border border-purple-200 shadow-sm relative"
           style={{ height: `${imageHeight}px` }}
         >
-          {description}
+          <div className="pb-16">{description}</div>
         </div>
+
+         <Link
+    href="/picgame/upload"
+    className="absolute bottom-0 left-0 right-0 inline-flex justify-center items-center gap-2 bg-purple-500/80 hover:bg-purple-600 text-white text-[0.65rem] font-normal px-3 py-1 rounded-b-xl shadow transition"
+  >
+    <HiOutlinePhotograph className="w-4 h-4" />
+    <span>Begin with a picture, let the quotes speak.</span>
+  </Link>
+
+
+
       </div>
 
       {/* CSS 动画样式 */}

@@ -68,7 +68,7 @@ export default function PicGameUploadHeader() {
             Want a custom quote? Email us at <span className="underline">stanleytonight@hotmail.com</span>
           </p>
           <p className="text-xs text-gray-400 italic pt-1">
-            Upload your photo below to begin.
+            Upload your photo to begin.
           </p>
         </div>
       </motion.div>
@@ -85,7 +85,7 @@ export default function PicGameUploadHeader() {
           <div>
             <p className="font-medium text-gray-700">Quote</p>
             <p className="italic text-purple-500">“I never had the courage to say it, but I think you always knew.”</p>
-            <p className="text-xs text-gray-400">Click the library to choose your quote</p>
+            <p className="text-xs text-gray-400">Click the "Love", "Apology", "Blessing", "Thanks" buttons to choose your quote</p>
           </div>
           <div>
             <p className="font-medium text-gray-700 pt-2">Description</p>
