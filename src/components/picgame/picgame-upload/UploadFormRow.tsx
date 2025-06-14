@@ -116,7 +116,8 @@ export default function UploadFormRow({ quotes, setQuotes, onInsertFromCategory 
             value={quotes}
             onChange={(e) => setQuotes(e.target.value)}
             placeholder="Click one of the categories below to insert a quote."
-            className="flex-grow border border-purple-200 rounded-lg p-3 resize-none text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
+            disabled
+            className="flex-grow border border-purple-200 rounded-lg p-3 resize-none text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 bg-gray-50 text-gray-600"
           />
           <div className="mt-3 flex flex-wrap gap-2 text-sm">
             <button onClick={() => onInsertFromCategory('love')} className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200">
@@ -133,7 +134,7 @@ export default function UploadFormRow({ quotes, setQuotes, onInsertFromCategory 
             </button>
           </div>
           <p className="mt-2 text-xs text-gray-400 italic">
-            For custom quote templates, email <span className="underline">stanleytonight@hotmail.com</span>
+            For tailor-made quotes, contact <span className="underline">stanleytonight@hotmail.com</span> (service charges may apply).
           </p>
         </div>
 
