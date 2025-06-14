@@ -18,16 +18,15 @@ interface Props {
 }
 
 export default function PicGameDisplay({ imageUrl, quotes, description }: Props) {
-  // console.log('Quotes received in PicGameDisplay:', quotes); // 调试行可以根据需要移除
-
   const imageRef = useRef<HTMLImageElement>(null)
-  const [displayedQuote, setDisplayedQuote] = useState('') // 直接显示完整文本
+  const [displayedQuote, setDisplayedQuote] = useState('')
   const [positionStyle, setPositionStyle] = useState<Position>({})
   const [imageHeight, setImageHeight] = useState<number>(300)
-  // 恢复 ripples, shake, hovering 相关的 state
   const [ripples, setRipples] = useState<{ x: number; y: number; id: number }[]>([])
-  const [shake, setShake] = useState(false)
-  const [hovering, setHovering] = useState(false) // 恢复 hover 状态
+  const animationTypeList = ['shake', 'scale', 'bounce', 'fade-in', 'ripple'] as const
+  const [animationIndex, setAnimationIndex] = useState(0)
+  const animationType = animationTypeList[animationIndex]
+  const [hasClicked, setHasClicked] = useState(false)
 
   const getRandomOffset = (min: number, max: number): string =>
     `${Math.floor(Math.random() * (max - min + 1)) + min}%`
@@ -36,7 +35,8 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
     const lines = quotes[corner]
     if (!lines || lines.length === 0) return
     const line = lines[Math.floor(Math.random() * lines.length)]
-    setDisplayedQuote(line || '') // 直接设置完整文本，移除打字动画的 fullText 逻辑
+    setDisplayedQuote('')
+    setTimeout(() => setDisplayedQuote(line || ''), 100)
     setPositionStyle({
       ...(corner.includes('t') ? { top: getRandomOffset(1, 15) } : { bottom: getRandomOffset(1, 15) }),
       ...(corner.includes('l') ? { left: getRandomOffset(1, 20) } : { right: getRandomOffset(1, 20) }),
@@ -56,12 +56,11 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
     return () => observer.disconnect()
   }, [])
 
-  // 移除打字动画逻辑的 useEffect
-
   const handleClick = (e: React.MouseEvent) => {
+    if (!hasClicked) setHasClicked(true)
+
     const rect = imageRef.current?.getBoundingClientRect()
     if (!rect) return
-
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
     const width = rect.width
@@ -72,48 +71,49 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
     else if (x <= width / 2 && y > height / 2) showQuote('lb')
     else if (x > width / 2 && y > height / 2) showQuote('rb')
 
-    // 恢复 ripples 和 shake 相关的代码
     const id = Date.now()
     setRipples((prev) => [...prev, { x, y, id }])
-    setTimeout(() => setRipples((prev) => prev.filter((r) => r.id !== id)), 500) // 500ms 后移除
+    setTimeout(() => setRipples((prev) => prev.filter((r) => r.id !== id)), 500)
 
-    setShake(true) // 设置 shake 状态为 true
-    setTimeout(() => setShake(false), 300) // 300ms 后恢复
+    // 切换到下一个动画
+    setAnimationIndex((prev) => (prev + 1) % animationTypeList.length)
   }
 
   return (
-    <div className="relative flex flex-col items-center justify-start min-h-screen bg-white overflow-hidden">
-      {/* 恢复背景粒子动画 */}
-      <div className="absolute inset-0 z-0 pointer-events-none animate-float-bg" />
-
-      <div className="flex flex-col sm:flex-row w-full max-w-6xl gap-6 p-4 sm:p-6 z-10">
+    <div className="relative z-10">
+      <div className="relative flex flex-col md:flex-row w-full">
+        {/* 图片区域 */}
         <div
-          className={`w-full sm:w-1/3 relative border border-purple-100 bg-white rounded-2xl shadow-md transition hover:shadow-lg cursor-pointer overflow-hidden ${shake ? 'animate-shake' : ''}`} // 恢复 transition, hover:shadow-lg, shake 相关的 class
+          className={`w-full md:w-2/5 relative cursor-pointer overflow-hidden rounded-xl transition-all duration-300 animate-${animationType}`}
           onClick={handleClick}
-          onMouseEnter={() => setHovering(true)} // 恢复 onMouseEnter
-          onMouseLeave={() => setHovering(false)} // 恢复 onMouseLeave
         >
           <img
             ref={imageRef}
             src={imageUrl}
-            alt="互动图片"
-            className="w-full h-auto rounded-2xl"
+            alt="interactive"
+            className="w-full h-auto object-cover rounded-xl"
           />
-          {displayedQuote && ( // 使用 displayedQuote 来显示完整文本
+
+          {/* Quote 气泡 */}
+          {displayedQuote && (
             <div
-              className="absolute px-4 py-2 border border-purple-100 rounded-2xl shadow-sm bg-white/30 backdrop-blur-sm text-purple-700 text-sm sm:text-base font-normal animate-fade-in z-20" // 添加 animate-fade-in
-              style={{ ...positionStyle, position: 'absolute', maxWidth: '80%' }}
+              className="absolute px-4 py-2 border border-purple-300 rounded-lg shadow-sm bg-[rgba(255,255,255,0.01)] text-purple-800 text-sm font-medium z-20"
+              style={{ ...positionStyle, position: 'absolute', maxWidth: '80%', opacity: 0.9 }}
             >
-              {displayedQuote} {/* 显示完整文本 */}
+              {displayedQuote}
             </div>
           )}
-          {/* 恢复悬停提示 */}
-          {hovering && (
-            <div className="absolute bottom-3 right-3 text-purple-400 text-xl animate-bounce z-10 opacity-70">
-              ➤
+
+          {/* 初始提示 */}
+          {!hasClicked && (
+            <div className="absolute bottom-3 right-3 z-10">
+              <div className="bg-purple-500/80 hover:bg-purple-600 text-white text-xs px-3 py-1 rounded-full shadow transition">
+                ▶ Click to play
+              </div>
             </div>
           )}
-          {/* 恢复涟漪效果 */}
+
+          {/* Ripple 效果 */}
           {ripples.map((r) => (
             <span
               key={r.id}
@@ -128,51 +128,48 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
           ))}
         </div>
 
+        {/* 文字区域 */}
         <div
-          className="w-full sm:w-2/3 border border-purple-100 rounded-2xl shadow-md p-6 text-purple-800 text-base sm:text-[15px] font-normal font-sans leading-relaxed overflow-y-auto"
+          className="w-full md:w-3/5 p-6 text-black text-[15px] font-sans leading-relaxed rounded-xl overflow-y-auto"
           style={{ height: `${imageHeight}px` }}
         >
           {description}
         </div>
       </div>
 
-      {/* 恢复所有 CSS 动画的 style 块 */}
+      {/* CSS 动画样式 */}
       <style>{`
         @keyframes ripple {
           0% { transform: scale(0); opacity: 0.6; }
           100% { transform: scale(2.5); opacity: 0; }
         }
-        .animate-ripple {
-          animation: ripple 0.5s ease-out;
-        }
-
-        @keyframes fade-in {
-          from { opacity: 0; transform: scale(0.95); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.3s ease-out;
-        }
+        .animate-ripple { animation: ripple 0.5s ease-out; }
 
         @keyframes shake {
           0%, 100% { transform: rotate(0deg); }
-          25% { transform: rotate(5.5deg); }
-          75% { transform: rotate(-5.5deg); }
+          25% { transform: rotate(3deg); }
+          75% { transform: rotate(-3deg); }
         }
-        .animate-shake {
-          animation: shake 0.3s ease-in-out;
-        }
+        .animate-shake { animation: shake 0.3s ease-in-out; }
 
-        @keyframes float-bg {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
+        @keyframes scale {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.03); }
         }
-        .animate-float-bg {
-          background-image: radial-gradient(circle at 10% 20%, rgba(168, 129, 255, 0.08) 0%, transparent 70%),
-                            radial-gradient(circle at 70% 80%, rgba(129, 206, 255, 0.08) 0%, transparent 70%);
-          background-size: 400% 400%;
-          animation: float-bg 10s ease infinite;
+        .animate-scale { animation: scale 0.4s ease-in-out; }
+
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
         }
+        .animate-bounce { animation: bounce 0.4s ease-in-out; }
+
+        @keyframes fade-in {
+          0% { opacity: 0.3; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.03); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        .animate-fade-in { animation: fade-in 0.5s ease-in-out; }
       `}</style>
     </div>
   )
