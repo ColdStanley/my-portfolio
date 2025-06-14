@@ -16,6 +16,7 @@ export default function UploadFormRow({ quotes, setQuotes, onInsertFromCategory 
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [copySuccess, setCopySuccess] = useState(false)
+  const [uploadSuccess, setUploadSuccess] = useState(false)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -35,6 +36,8 @@ export default function UploadFormRow({ quotes, setQuotes, onInsertFromCategory 
     const completeUrl = data.url.startsWith('http') ? data.url : `https://${data.url}`
     setImageUrl(completeUrl)
     setUploading(false)
+    setUploadSuccess(true)
+    setTimeout(() => setUploadSuccess(false), 1500)
     alert('Upload successful!')
   }
 
@@ -82,7 +85,7 @@ export default function UploadFormRow({ quotes, setQuotes, onInsertFromCategory 
     if (!shareLink) return
     navigator.clipboard.writeText(shareLink)
     setCopySuccess(true)
-    setTimeout(() => setCopySuccess(false), 2000)
+    setTimeout(() => setCopySuccess(false), 1500)
   }
 
   return (
@@ -99,17 +102,9 @@ export default function UploadFormRow({ quotes, setQuotes, onInsertFromCategory 
               onClick={handleUpload}
               disabled={uploading}
             >
-              {uploading ? 'Uploading...' : 'Upload'}
+              {uploading ? 'Uploading...' : uploadSuccess ? 'Uploaded' : 'Upload'}
             </button>
           </div>
-          {imageUrl && (
-            <div className="mt-4 text-xs text-purple-500 break-all">
-              Image uploaded:<br />
-              <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="underline">
-                {imageUrl}
-              </a>
-            </div>
-          )}
         </div>
 
         {/* Middle: Quotes */}
@@ -123,28 +118,16 @@ export default function UploadFormRow({ quotes, setQuotes, onInsertFromCategory 
             className="flex-grow border border-purple-200 rounded-lg p-3 resize-none text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
           />
           <div className="mt-3 flex flex-wrap gap-2 text-sm">
-            <button
-              onClick={() => onInsertFromCategory('love')}
-              className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200"
-            >
+            <button onClick={() => onInsertFromCategory('love')} className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200">
               LOVE
             </button>
-            <button
-              onClick={() => onInsertFromCategory('apology')}
-              className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200"
-            >
+            <button onClick={() => onInsertFromCategory('apology')} className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200">
               Apology
             </button>
-            <button
-              onClick={() => onInsertFromCategory('blessing')}
-              className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200"
-            >
+            <button onClick={() => onInsertFromCategory('blessing')} className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200">
               Blessing
             </button>
-            <button
-              onClick={() => onInsertFromCategory('thanks')}
-              className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200"
-            >
+            <button onClick={() => onInsertFromCategory('thanks')} className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200">
               Thanks
             </button>
           </div>
@@ -189,7 +172,7 @@ export default function UploadFormRow({ quotes, setQuotes, onInsertFromCategory 
             className="w-16 py-2 text-sm bg-purple-100 text-purple-600 rounded hover:bg-purple-200 text-center"
             onClick={handleCopy}
           >
-            Copy
+            {copySuccess ? 'Copied' : 'Copy'}
           </button>
         </div>
       </div>
