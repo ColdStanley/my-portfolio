@@ -1,44 +1,43 @@
-// src/app/picgame/PicGame04.tsx
 'use client'
 
 import PicGameDisplay from '@/components/picgame/PicGameDisplay'
 
 const quotes = {
   lt: [
-    "Good morning. Don’t forget the meeting at 9 sharp.",
-    "Docs approved. Go execute—I'm watching.",
-    "This isn't a pet—this is your boss.",
-    "Five Zoom calls lined up today. Let’s go.",
-    "You're three minutes late. Don't make it a habit.",
+    "Yes, I look like I hacked your dreams—and installed neon.",
+    "Goth? Kinda. Glitchcore? Maybe. Just me? Always.",
+    "My hair has its own power grid.",
+    "Smiling ironically since '99.",
+    "Don't worry, I only curse Wi-Fi signals.",
   ],
   rt: [
-    "This suit? Custom tailored, obviously.",
-    "Don’t be fooled by the fluff—I'm all business.",
-    "This office runs on coffee... and me.",
-    "Expense reports go through proper channels. Thanks.",
-    "Just greenlit a massive new project. You’re welcome.",
+    "These goggles? Not just for show—I see through your nonsense.",
+    "Winged eyeliner sharp enough to delete your bad vibes.",
+    "I sparkle... in the darkest codebases.",
+    "The green is not envy. It's voltage.",
+    "This isn’t cosplay—it’s mood armor.",
   ],
   lb: [
-    "Tired? Just look at me. Instant morale boost.",
-    "Yes, I personally reviewed every file on this desk.",
-    "Tail wag = KPI exceeded.",
-    "Alright team—let’s crush this quarter!",
-    "This chair? Executive throne, thank you very much.",
+    "I dress like I’m about to DJ in a haunted server room.",
+    "Cyber boots powered by caffeine and defiance.",
+    "Fishnet sleeves: dramatic effect, zero signal loss.",
+    "Outfit: 80% black, 20% glow-in-the-dark chaos.",
+    "My aesthetic? Hacker Barbie meets bass drop demon.",
   ],
   rb: [
-    "Too much fur? It’s called presence.",
-    "Sink my teeth in and don’t let go—that’s how I manage projects.",
-    "Bring your dog to work? No. Dog runs the workplace.",
-    "This company wouldn’t be the same without me.",
-    "Don’t pet me. I’m in a meeting.",
+    "Let’s take a walk—through a digital dystopia.",
+    "You're not afraid of the dark. You're afraid of the eyeliner in it.",
+    "Wanna join my rave cult? Bring glowsticks and attitude.",
+    "This smile? Debugged it myself.",
+    "Say hi now, before I vanish into a techno mist.",
   ],
 }
 
 const description = (
   <>
-    Who says dogs can’t be CEOs?<br /><br />
-    This suited-up pup isn’t just adorable—he’s commanding the room with boss-level energy. Perfect posture, focused eyes, and a business vibe sharper than your manager’s PowerPoint.<br /><br />
-    In this office, he’s not the pet. He’s the one running the show.
+    She’s not just dressed to impress—she’s coded to disrupt.<br /><br />
+    With neon dreadlocks, fishnet flair, and enough charisma to overload a server farm, she’s your favorite paradox: spooky but soft, intense but inviting.<br /><br />
+    Step closer. She bites... in binary.
   </>
 )
 

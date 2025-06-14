@@ -97,7 +97,7 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
           {/* Quote 气泡 */}
           {displayedQuote && (
             <div
-              className="absolute px-4 py-2 border border-purple-300 rounded-lg shadow-sm bg-[rgba(255,255,255,0.01)] text-purple-800 text-sm font-medium z-20"
+              className="absolute px-4 py-2 border border-purple-300 rounded-lg shadow-sm bg-[rgba(255,255,255,0.01)] text-white text-sm font-medium z-20"
               style={{ ...positionStyle, position: 'absolute', maxWidth: '80%', opacity: 0.9 }}
             >
               {displayedQuote}
