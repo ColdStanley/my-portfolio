@@ -27,16 +27,24 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
   const [positionStyle, setPositionStyle] = useState<Position>({})
   const [ripples, setRipples] = useState<{ x: number; y: number; id: number }[]>([])
   const [shake, setShake] = useState(false)
+  const [lastClickTime, setLastClickTime] = useState<number>(Date.now())
 
   const getRandomOffset = (min: number, max: number): string =>
     `${Math.floor(Math.random() * (max - min + 1)) + min}%`
 
-  const showQuote = (e: React.MouseEvent) => {
+  const showQuote = (
+    e: React.MouseEvent | null = null,
+    xPos?: number,
+    yPos?: number
+  ) => {
     if (!imageRef.current || quoteArray.length === 0) return
 
     const rect = imageRef.current.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
+    const x = e ? e.clientX - rect.left : xPos ?? rect.width / 2
+    const y = e ? e.clientY - rect.top : yPos ?? rect.height / 2
+
+    // 更新时间戳
+    setLastClickTime(Date.now())
 
     const quote = quoteArray[Math.floor(Math.random() * quoteArray.length)]
     setDisplayedQuote(quote)
@@ -45,14 +53,14 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
       ...(x <= rect.width / 2 ? { left: getRandomOffset(5, 15) } : { right: getRandomOffset(5, 15) }),
     })
 
-    // 自动 3 秒后消失
+    // 自动 6 秒后消失
     setTimeout(() => {
       setDisplayedQuote('')
-    }, 3000)
+    }, 6000)
 
     const id = Date.now()
-    setRipples((prev) => [...prev, { x, y, id }])
-    setTimeout(() => setRipples((prev) => prev.filter((r) => r.id !== id)), 500)
+    setRipples(prev => [...prev, { x, y, id }])
+    setTimeout(() => setRipples(prev => prev.filter(r => r.id !== id)), 500)
 
     setShake(true)
     setTimeout(() => setShake(false), 150)
@@ -60,7 +68,7 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
 
   useEffect(() => {
     if (!imageRef.current) return
-    const observer = new ResizeObserver((entries) => {
+    const observer = new ResizeObserver(entries => {
       for (let entry of entries) {
         if (entry.target === imageRef.current) {
           setImageHeight(entry.contentRect.height)
@@ -71,12 +79,30 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
     return () => observer.disconnect()
   }, [])
 
+  // 自动触发语录逻辑
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!imageRef.current || quoteArray.length === 0) return
+      const now = Date.now()
+      if (now - lastClickTime >= 20000) {
+        const rect = imageRef.current.getBoundingClientRect()
+        for (let i = 0; i < 2; i++) {
+          const randX = Math.floor(Math.random() * rect.width)
+          const randY = Math.floor(Math.random() * rect.height)
+          showQuote(null, randX, randY)
+        }
+      }
+    }, 2000) // 检查频率（每2秒检查是否已超过20秒）
+
+    return () => clearInterval(interval)
+  }, [lastClickTime, quoteArray])
+
   return (
     <div className="flex flex-col md:flex-row gap-6 relative">
       {/* 左图 */}
       <div
         className={`md:w-1/2 w-full relative rounded-xl overflow-hidden shadow border border-purple-100 bg-white transition hover:shadow-lg cursor-pointer ${shake ? 'animate-shake' : ''}`}
-        onClick={showQuote}
+        onClick={(e) => showQuote(e)}
       >
         <img
           ref={imageRef}
@@ -94,7 +120,7 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
           </div>
         )}
 
-        {ripples.map((r) => (
+        {ripples.map(r => (
           <span
             key={r.id}
             className="absolute rounded-full bg-purple-300 opacity-40 animate-ripple z-0 pointer-events-none"
