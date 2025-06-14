@@ -15,25 +15,43 @@ import PicGame11 from './PicGame11'
 
 export default function PicGameGalleryPage() {
   return (
-    <div className="min-h-screen py-12 px-4 sm:px-10 bg-gradient-to-b from-white to-purple-50">
+    <div className="min-h-screen py-12 px-4 sm:px-6 md:px-10 bg-gradient-to-b from-white to-purple-50 animate-fade-in">
       {/* ✅ 顶部 Header 区块 */}
       <PicGameHeader />
 
-      {/* ✅ 卡片展示区域：瀑布流布局 + 动画包装 */}
-      <div className="columns-1 md:columns-2 gap-6 max-w-6xl mx-auto [animation:fade-in_0.6s_ease-in-out]">
-        <div className="mb-6 break-inside-avoid"><PicGame01 /></div>
-      
-        <div className="mb-6 break-inside-avoid"><PicGame03 /></div>
-        <div className="mb-6 break-inside-avoid"><PicGame04 /></div>
-        <div className="mb-6 break-inside-avoid"><PicGame05 /></div>
-        <div className="mb-6 break-inside-avoid"><PicGame06 /></div>
-        <div className="mb-6 break-inside-avoid"><PicGame07 /></div>
-        <div className="mb-6 break-inside-avoid"><PicGame08 /></div>
-        <div className="mb-6 break-inside-avoid"><PicGame09 /></div>
-        <div className="mb-6 break-inside-avoid"><PicGame10 /></div>
-        <div className="mb-6 break-inside-avoid"><PicGame11 /></div>
-        <div className="mb-6 break-inside-avoid"><PicGame02 /></div>
+      {/* ✅ 卡片展示区域：瀑布流布局 + 动画 + hover 效果 */}
+      <div className="columns-1 sm:columns-1 md:columns-2 gap-6 max-w-6xl mx-auto">
+        <div className="mb-6 break-inside-avoid animate-slide-up hover:scale-[1.01] hover:shadow-lg transition-all duration-300"><PicGame01 /></div>
+        <div className="mb-6 break-inside-avoid animate-slide-up hover:scale-[1.01] hover:shadow-lg transition-all duration-300"><PicGame03 /></div>
+        <div className="mb-6 break-inside-avoid animate-slide-up hover:scale-[1.01] hover:shadow-lg transition-all duration-300"><PicGame04 /></div>
+        <div className="mb-6 break-inside-avoid animate-slide-up hover:scale-[1.01] hover:shadow-lg transition-all duration-300"><PicGame05 /></div>
+        <div className="mb-6 break-inside-avoid animate-slide-up hover:scale-[1.01] hover:shadow-lg transition-all duration-300"><PicGame06 /></div>
+        <div className="mb-6 break-inside-avoid animate-slide-up hover:scale-[1.01] hover:shadow-lg transition-all duration-300"><PicGame07 /></div>
+        <div className="mb-6 break-inside-avoid animate-slide-up hover:scale-[1.01] hover:shadow-lg transition-all duration-300"><PicGame08 /></div>
+        <div className="mb-6 break-inside-avoid animate-slide-up hover:scale-[1.01] hover:shadow-lg transition-all duration-300"><PicGame09 /></div>
+        <div className="mb-6 break-inside-avoid animate-slide-up hover:scale-[1.01] hover:shadow-lg transition-all duration-300"><PicGame10 /></div>
+        <div className="mb-6 break-inside-avoid animate-slide-up hover:scale-[1.01] hover:shadow-lg transition-all duration-300"><PicGame11 /></div>
+        <div className="mb-6 break-inside-avoid animate-slide-up hover:scale-[1.01] hover:shadow-lg transition-all duration-300"><PicGame02 /></div>
       </div>
+
+      {/* ✅ 自定义动画样式 */}
+      <style jsx global>{`
+        @keyframes fade-in {
+          0% { opacity: 0; }
+          100% { opacity: 1; }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.8s ease-in-out;
+        }
+
+        @keyframes slide-up {
+          0% { opacity: 0; transform: translateY(20px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up {
+          animation: slide-up 0.6s ease-in-out;
+        }
+      `}</style>
     </div>
   )
 }
