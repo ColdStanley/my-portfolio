@@ -46,7 +46,7 @@ const description = (
 export default function PicGameLove05AnimateFrieren() {
   return (
     <PicGameDisplay
-      imageUrl="/images/picgamelove05animatefrieren.png"
+      imageUrl="/images/picgamelove05animateFrieren.png"
       quotes={quotes}
       description={description}
     />
