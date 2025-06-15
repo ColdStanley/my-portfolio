@@ -1,9 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import PicGameUploadHeader from '@/components/feelink/picgame-upload/PicGameUploadHeader'
-import UploadFormRow from '@/components/feelink/picgame-upload/UploadFormRow'
-import QuoteSuggestionPanel from '@/components/feelink/picgame-upload/QuoteSuggestionPanel'
+import PicGameUploadHeader from '@/components/feelink/upload/PicGameUploadHeader'
+import UploadFormRow from '@/components/feelink/upload/UploadFormRow'
+import QuoteSuggestionPanel from '@/components/feelink/upload/QuoteSuggestionPanel'
+
+
+
+
 
 export default function PicGameUploadPage() {
   const [quotes, setQuotes] = useState('')

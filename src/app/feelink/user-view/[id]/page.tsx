@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import PicGameDisplayuser from '@/components/feelink/picgame-upload/PicGameDisplayuser'
+import PicGameDisplayuser from '@/components/feelink/upload/PicGameDisplayuser'
 
 console.log('✅ 成功进入 user-view 页面组件')
 interface PicGameData {

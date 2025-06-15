@@ -134,7 +134,7 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
       {/* 跳转链接 */}
       <div className="w-full px-4 pb-4">
         <Link
-          href=/feelink/upload"
+          href="/feelink/upload"
           className="mt-2 inline-flex items-center gap-1 text-sm text-gray-700 underline hover:opacity-80 transition-opacity cursor-pointer"
         >
           <span>Begin with a picture, let the quotes speak.</span>
