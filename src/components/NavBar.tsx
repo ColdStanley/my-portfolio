@@ -57,7 +57,7 @@ export default function NavBar() {
           StanleyHi
         </Link>
 
-        <div className="hidden md:flex items-center gap-3 text-sm text-gray-800 dark:text-gray-200">
+        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-800 dark:text-gray-200">
           <span className="whitespace-nowrap">
             Do you like “Ella Langley - you look like you love me”?
           </span>
