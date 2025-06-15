@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import Link from 'next/link'
 
 interface Props {
   imageUrl: string
@@ -28,9 +29,12 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
   const [ripples, setRipples] = useState<{ x: number; y: number; id: number }[]>([])
   const [shake, setShake] = useState(false)
   const [lastClickTime, setLastClickTime] = useState<number>(Date.now())
+  const [animationClass, setAnimationClass] = useState('animate-fade-in')
 
   const getRandomOffset = (min: number, max: number): string =>
     `${Math.floor(Math.random() * (max - min + 1)) + min}%`
+
+  const animationOptions = ['animate-fade-in', 'animate-slide-up', 'animate-zoom-in']
 
   const showQuote = (
     e: React.MouseEvent | null = null,
@@ -43,17 +47,16 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
     const x = e ? e.clientX - rect.left : xPos ?? rect.width / 2
     const y = e ? e.clientY - rect.top : yPos ?? rect.height / 2
 
-    // 更新时间戳
     setLastClickTime(Date.now())
 
     const quote = quoteArray[Math.floor(Math.random() * quoteArray.length)]
     setDisplayedQuote(quote)
+    setAnimationClass(animationOptions[Math.floor(Math.random() * animationOptions.length)])
     setPositionStyle({
       ...(y <= rect.height / 2 ? { top: getRandomOffset(5, 15) } : { bottom: getRandomOffset(5, 15) }),
       ...(x <= rect.width / 2 ? { left: getRandomOffset(5, 15) } : { right: getRandomOffset(5, 15) }),
     })
 
-    // 自动 6 秒后消失
     setTimeout(() => {
       setDisplayedQuote('')
     }, 6000)
@@ -79,12 +82,11 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
     return () => observer.disconnect()
   }, [])
 
-  // 自动触发语录逻辑
   useEffect(() => {
     const interval = setInterval(() => {
       if (!imageRef.current || quoteArray.length === 0) return
       const now = Date.now()
-      if (now - lastClickTime >= 20000) {
+      if (now - lastClickTime >= 7000) {
         const rect = imageRef.current.getBoundingClientRect()
         for (let i = 0; i < 2; i++) {
           const randX = Math.floor(Math.random() * rect.width)
@@ -92,16 +94,15 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
           showQuote(null, randX, randY)
         }
       }
-    }, 2000) // 检查频率（每2秒检查是否已超过20秒）
-
+    }, 2000)
     return () => clearInterval(interval)
   }, [lastClickTime, quoteArray])
 
   return (
-    <div className="flex flex-col md:flex-row gap-6 relative">
+    <div className="flex flex-col lg:flex-row gap-6 relative w-full">
       {/* 左图 */}
       <div
-        className={`md:w-1/2 w-full relative rounded-xl overflow-hidden shadow border border-purple-100 bg-white transition hover:shadow-lg cursor-pointer ${shake ? 'animate-shake' : ''}`}
+        className={`lg:w-1/2 w-full relative rounded-xl overflow-hidden shadow border border-purple-100 bg-white transition hover:shadow-lg cursor-pointer ${shake ? 'animate-shake' : ''}`}
         onClick={(e) => showQuote(e)}
       >
         <img
@@ -113,7 +114,7 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
 
         {displayedQuote && (
           <div
-            className="absolute px-4 py-2 border border-purple-100 rounded-2xl shadow-sm bg-white/30 backdrop-blur-sm text-purple-700 text-sm sm:text-base font-normal animate-fade-in z-20"
+            className={`absolute px-4 py-2 border border-purple-100 rounded-2xl shadow-sm bg-white/30 backdrop-blur-sm text-purple-700 text-sm sm:text-base font-normal ${animationClass} z-20`}
             style={{ ...positionStyle, position: 'absolute', maxWidth: '80%' }}
           >
             {displayedQuote}
@@ -134,15 +135,27 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
         ))}
       </div>
 
-      {/* 右文，仅保留纯文本描述 */}
+      {/* 中段：描述 */}
       <div
-        className="md:w-1/2 w-full bg-white shadow rounded-xl p-6 flex flex-col justify-between border border-purple-100"
+        className="lg:w-1/3 w-full bg-white shadow rounded-xl p-6 flex flex-col justify-between border border-purple-100"
         style={{ height: `${imageHeight}px` }}
       >
         <p className="text-gray-700 text-sm whitespace-pre-wrap">{description}</p>
       </div>
 
-      {/* 动画 CSS */}
+      {/* 右侧跳转引导 */}
+      <div
+        className="lg:w-1/6 w-full bg-white shadow rounded-xl p-6 border border-purple-100 flex items-center justify-center"
+        style={{ height: `${imageHeight}px` }}
+      >
+        <Link
+          href="/feelink/upload"
+          className="text-purple-600 text-sm hover:underline hover:text-purple-800 transition"
+        >
+          点击上传你的故事
+        </Link>
+      </div>
+
       <style>{`
         @keyframes ripple {
           0% { transform: scale(0); opacity: 0.6; }
@@ -158,6 +171,22 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
         }
         .animate-fade-in {
           animation: fade-in 0.3s ease-out;
+        }
+
+        @keyframes slide-up {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up {
+          animation: slide-up 0.3s ease-out;
+        }
+
+        @keyframes zoom-in {
+          from { transform: scale(0.9); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+        .animate-zoom-in {
+          animation: zoom-in 0.3s ease-out;
         }
 
         @keyframes shake {
