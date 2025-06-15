@@ -105,9 +105,9 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
             </div>
           )}
 
-          {/* 初始提示 */}
+          {/* ✅ 初始提示：已从 bottom-3 改为 top-3 */}
           {!hasClicked && (
-            <div className="absolute bottom-3 right-3 z-10">
+            <div className="absolute top-3 right-3 z-10">
               <div className="bg-purple-500/80 hover:bg-purple-600 text-white text-xs px-3 py-1 rounded-full shadow transition">
                 ▶ Click to play
               </div>
@@ -137,16 +137,13 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
           <div className="pb-16">{description}</div>
         </div>
 
-         <Link
-    href="/picgame/upload"
-    className="absolute bottom-0 left-0 right-0 inline-flex justify-center items-center gap-2 bg-purple-500/80 hover:bg-purple-600 text-white text-[0.65rem] font-normal px-3 py-1 rounded-b-xl shadow transition"
-  >
-    <HiOutlinePhotograph className="w-4 h-4" />
-    <span>Begin with a picture, let the quotes speak.</span>
-  </Link>
-
-
-
+        <Link
+          href="/picgame/upload"
+          className="absolute bottom-0 left-0 right-0 inline-flex justify-center items-center gap-2 bg-purple-500/80 hover:bg-purple-600 text-white text-[0.65rem] font-normal px-3 py-1 rounded-b-xl shadow transition"
+        >
+          <HiOutlinePhotograph className="w-4 h-4" />
+          <span>Begin with a picture, let the quotes speak.</span>
+        </Link>
       </div>
 
       {/* CSS 动画样式 */}

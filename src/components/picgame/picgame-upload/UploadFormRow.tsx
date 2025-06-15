@@ -94,7 +94,7 @@ export default function UploadFormRow({ quotes, setQuotes, onInsertFromCategory 
         {/* Left: Upload Image */}
         <div className="flex-1 bg-white shadow rounded-xl p-6 flex flex-col justify-between h-[300px]">
           <div className="text-gray-700 text-sm mb-2 font-semibold">Upload Image</div>
-          <p className="text-xs text-gray-400 mb-2">Drag and drop, or use the button to select a file</p>
+          <p className="text-xs text-gray-400 mb-2">Drag and drop, or use the button below to select a file</p>
           <input type="file" accept="image/*" className="mb-4" onChange={handleFileChange} />
           <div className="flex justify-end">
             <button

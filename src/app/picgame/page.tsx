@@ -17,6 +17,9 @@ import PicGameThanks01HappyBirthday from './PicGameThanks01HappyBirthday'
 import PicGameBlessing01Graduation from './PicGameBlessing01Graduation'
 import PicGameLove02RealCouple from './PicGameLove02RealCouple'
 import PicGameLove03RealCoupleWine from './PicGameLove03RealCoupleWine'
+import PicGameLove01AnimateAnon from './PicGameLove01AnimateAnon'
+import PicGameLove04AnimateMitsumi from './PicGameLove04AnimateMitsumi'
+import PicGameLove05AnimateFrieren from './PicGameLove05AnimateFrieren'
 
 export default function PicGameGalleryPage() {
   return (
@@ -35,7 +38,7 @@ export default function PicGameGalleryPage() {
       {/* 分区展示区域 */}
       <section id="love" className="scroll-mt-24 py-8 mb-14 bg-white/70 rounded-xl shadow-inner backdrop-blur-md px-6 max-w-6xl mx-auto">
         <TitleBlock emoji="❤️" title="Say Love" desc="When your heart is full, let a catgirl or Miku say it for you." />
-        <CardGroup components={[PicGame10, PicGame01, PicGameLove02RealCouple, PicGameLove03RealCoupleWine, PicGame02, PicGame03]} />
+        <CardGroup components={[PicGameLove01AnimateAnon, PicGameLove04AnimateMitsumi, PicGameLove05AnimateFrieren, PicGame10, PicGame01, PicGameLove02RealCouple, PicGameLove03RealCoupleWine, PicGame02, PicGame03]} />
       </section>
 
       <section id="sorry" className="scroll-mt-24 py-8 mb-14 bg-purple-50/80 rounded-xl shadow-inner backdrop-blur-md px-6 max-w-6xl mx-auto">
