@@ -1,9 +1,7 @@
 'use client'
 
 import PicGameHeader from '@/components/picgame/PicGameHeader'
-import PicGame01 from './PicGame01'
 import PicGame02 from './PicGame02'
-import PicGame03 from './PicGame03'
 import PicGame04 from './PicGame04'
 import PicGame05 from './PicGame05'
 import PicGame06 from './PicGame06'
@@ -38,12 +36,12 @@ export default function PicGameGalleryPage() {
       {/* 分区展示区域 */}
       <section id="love" className="scroll-mt-24 py-8 mb-14 bg-white/70 rounded-xl shadow-inner backdrop-blur-md px-6 max-w-6xl mx-auto">
         <TitleBlock emoji="❤️" title="Say Love" desc="When your heart is full, let a catgirl or Miku say it for you." />
-        <CardGroup components={[PicGameLove01AnimateAnon, PicGameLove04AnimateMitsumi, PicGameLove05AnimateFrieren, PicGame10, PicGame01, PicGameLove02RealCouple, PicGameLove03RealCoupleWine, PicGame02, PicGame03]} />
+        <CardGroup components={[PicGameLove01AnimateAnon, PicGameLove04AnimateMitsumi, PicGameLove05AnimateFrieren, PicGame10, PicGameLove02RealCouple, PicGameLove03RealCoupleWine, PicGame02]} />
       </section>
 
       <section id="sorry" className="scroll-mt-24 py-8 mb-14 bg-purple-50/80 rounded-xl shadow-inner backdrop-blur-md px-6 max-w-6xl mx-auto">
         <TitleBlock emoji="🙏" title="Say Sorry" desc="Some apologies are better said with pixels than words." />
-        <CardGroup components={[PicGame04, PicGame05, PicGameApology01]} />
+        <CardGroup components={[ PicGameApology01, PicGame04, PicGame05]} />
       </section>
 
       <section id="blessing" className="scroll-mt-24 py-8 mb-14 bg-indigo-50/70 rounded-xl shadow-inner backdrop-blur-md px-6 max-w-6xl mx-auto">
