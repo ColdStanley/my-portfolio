@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
-import { HiOutlinePhotograph } from 'react-icons/hi'
+import { HiOutlineArrowNarrowRight } from 'react-icons/hi'
 
 type CornerKey = 'lt' | 'rt' | 'lb' | 'rb'
 
@@ -60,7 +60,6 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
 
   const handleClick = (e: React.MouseEvent) => {
     if (!hasClicked) setHasClicked(true)
-
     const rect = imageRef.current?.getBoundingClientRect()
     if (!rect) return
     const x = e.clientX - rect.left
@@ -76,73 +75,70 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
     const id = Date.now()
     setRipples((prev) => [...prev, { x, y, id }])
     setTimeout(() => setRipples((prev) => prev.filter((r) => r.id !== id)), 500)
-
     setAnimationIndex((prev) => (prev + 1) % animationTypeList.length)
   }
 
   return (
-    <div className="relative z-10">
-      <div className="relative flex flex-col md:flex-row w-full">
-        {/* 图片区域 */}
-        <div
-          className={`w-full md:w-2/5 relative cursor-pointer overflow-hidden rounded-xl transition-all duration-300 animate-${animationType}`}
-          onClick={handleClick}
-        >
-          <img
-            ref={imageRef}
-            src={imageUrl}
-            alt="interactive"
-            className="w-full h-auto object-cover rounded-xl"
+    <div className="w-full mb-6 break-inside-avoid rounded-md shadow-sm border border-gray-200 overflow-hidden">
+      {/* 图片区域 */}
+      <div
+        className={`relative w-full cursor-pointer overflow-hidden animate-${animationType}`}
+        onClick={handleClick}
+      >
+        <img
+          ref={imageRef}
+          src={imageUrl}
+          alt="interactive"
+          className="w-full h-auto object-contain rounded-t-md"
+        />
+
+        {/* Quote 气泡 */}
+        {displayedQuote && (
+          <div
+            className="absolute px-4 py-2 border border-purple-300 rounded-xl shadow-sm bg-[rgba(255,255,255,0.01)] text-white text-sm font-medium z-20"
+            style={{ ...positionStyle, position: 'absolute', maxWidth: '80%', opacity: 0.9 }}
+          >
+            {displayedQuote}
+          </div>
+        )}
+
+        {/* 初始提示 */}
+        {!hasClicked && (
+          <div className="absolute top-3 right-3 z-10">
+            <div className="bg-purple-500/40 hover:bg-purple-600 text-white text-xs px-3 py-1 rounded-full shadow transition">
+              ▶ Click to play
+            </div>
+          </div>
+        )}
+
+        {/* Ripple 效果 */}
+        {ripples.map((r) => (
+          <span
+            key={r.id}
+            className="absolute rounded-full bg-purple-300 opacity-40 animate-ripple z-0 pointer-events-none"
+            style={{
+              left: r.x - 40,
+              top: r.y - 40,
+              width: 80,
+              height: 80,
+            }}
           />
+        ))}
+      </div>
 
-          {/* Quote 气泡 */}
-          {displayedQuote && (
-            <div
-              className="absolute px-4 py-2 border border-purple-300 rounded-xl shadow-sm bg-[rgba(255,255,255,0.01)] text-white text-sm font-medium z-20"
-              style={{ ...positionStyle, position: 'absolute', maxWidth: '80%', opacity: 0.9 }}
-            >
-              {displayedQuote}
-            </div>
-          )}
+      {/* description 文本展示区 */}
+      <div className="w-full p-4 text-sm text-gray-700 bg-white border-t border-gray-200 leading-relaxed">
+        {description}
+      </div>
 
-          {/* ✅ 初始提示：已从 bottom-3 改为 top-3 */}
-          {!hasClicked && (
-            <div className="absolute top-3 right-3 z-10">
-              <div className="bg-purple-500/80 hover:bg-purple-600 text-white text-xs px-3 py-1 rounded-full shadow transition">
-                ▶ Click to play
-              </div>
-            </div>
-          )}
-
-          {/* Ripple 效果 */}
-          {ripples.map((r) => (
-            <span
-              key={r.id}
-              className="absolute rounded-full bg-purple-300 opacity-40 animate-ripple z-0 pointer-events-none"
-              style={{
-                left: r.x - 40,
-                top: r.y - 40,
-                width: 80,
-                height: 80,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* 文字区域 + 按钮（仅此处新增链接） */}
-        <div
-          className="w-full md:w-3/5 p-6 text-black text-[15px] font-sans leading-relaxed overflow-y-auto rounded-xl bg-white border border-purple-200 shadow-sm relative"
-          style={{ height: `${imageHeight}px` }}
-        >
-          <div className="pb-16">{description}</div>
-        </div>
-
+      {/* 跳转链接 */}
+      <div className="w-full px-4 pb-4">
         <Link
           href="/picgame/upload"
-          className="absolute bottom-0 left-0 right-0 inline-flex justify-center items-center gap-2 bg-purple-500/80 hover:bg-purple-600 text-white text-[0.65rem] font-normal px-3 py-1 rounded-b-xl shadow transition"
+          className="mt-2 inline-flex items-center gap-1 text-sm text-gray-700 underline hover:opacity-80 transition-opacity cursor-pointer"
         >
-          <HiOutlinePhotograph className="w-4 h-4" />
           <span>Begin with a picture, let the quotes speak.</span>
+          <HiOutlineArrowNarrowRight className="w-4 h-4" />
         </Link>
       </div>
 
