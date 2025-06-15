@@ -99,10 +99,10 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
   }, [lastClickTime, quoteArray])
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 relative w-full">
+    <div className="flex flex-col gap-6 relative w-full items-center"> {/* Changed from lg:flex-row to flex-col and added items-center */}
       {/* 左图 */}
       <div
-        className={`lg:w-1/2 w-full relative rounded-xl overflow-hidden shadow border border-purple-100 bg-white transition hover:shadow-lg cursor-pointer ${shake ? 'animate-shake' : ''}`}
+        className={`w-full relative rounded-xl overflow-hidden shadow border border-purple-100 bg-white transition hover:shadow-lg cursor-pointer ${shake ? 'animate-shake' : ''} max-w-lg`} // Removed lg:w-1/2, set to w-full and added max-w-lg to constrain width
         onClick={(e) => showQuote(e)}
       >
         <img
@@ -137,16 +137,16 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
 
       {/* 中段：描述 */}
       <div
-        className="lg:w-1/3 w-full bg-white shadow rounded-xl p-6 flex flex-col justify-between border border-purple-100"
-        style={{ height: `${imageHeight}px` }}
+        className="w-full bg-white shadow rounded-xl p-6 flex flex-col justify-between border border-purple-100 max-w-lg" // Removed lg:w-1/3, set to w-full and added max-w-lg
+        // Removed style={{ height: `${imageHeight}px` }} as it makes less sense in a vertical layout and the example image doesn't show it.
       >
         <p className="text-gray-700 text-sm whitespace-pre-wrap">{description}</p>
       </div>
 
       {/* 右侧跳转引导 */}
       <div
-        className="lg:w-1/6 w-full bg-white shadow rounded-xl p-6 border border-purple-100 flex items-center justify-center"
-        style={{ height: `${imageHeight}px` }}
+        className="w-full bg-white shadow rounded-xl p-6 border border-purple-100 flex items-center justify-center max-w-lg" // Removed lg:w-1/6, set to w-full and added max-w-lg
+        // Removed style={{ height: `${imageHeight}px` }} for the same reason as above.
       >
         <Link
           href="/feelink/upload"
