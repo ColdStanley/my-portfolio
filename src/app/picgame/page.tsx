@@ -2,8 +2,6 @@
 
 import PicGameHeader from '@/components/picgame/PicGameHeader'
 import PicGame02 from './PicGame02'
-import PicGame04 from './PicGame04'
-import PicGame05 from './PicGame05'
 import PicGame06 from './PicGame06'
 import PicGame07 from './PicGame07'
 import PicGame08 from './PicGame08'
@@ -18,6 +16,7 @@ import PicGameLove03RealCoupleWine from './PicGameLove03RealCoupleWine'
 import PicGameLove01AnimateAnon from './PicGameLove01AnimateAnon'
 import PicGameLove04AnimateMitsumi from './PicGameLove04AnimateMitsumi'
 import PicGameLove05AnimateFrieren from './PicGameLove05AnimateFrieren'
+import PicGameApology02 from './PicGameApology02'
 
 export default function PicGameGalleryPage() {
   return (
@@ -36,12 +35,12 @@ export default function PicGameGalleryPage() {
       {/* 分区展示区域 */}
       <section id="love" className="scroll-mt-24 py-8 mb-14 bg-white/70 rounded-xl shadow-inner backdrop-blur-md px-6 max-w-6xl mx-auto">
         <TitleBlock emoji="❤️" title="Say Love" desc="When your heart is full, let a catgirl or Miku say it for you." />
-        <CardGroup components={[PicGameLove01AnimateAnon, PicGameLove04AnimateMitsumi, PicGameLove05AnimateFrieren, PicGame10, PicGameLove02RealCouple, PicGameLove03RealCoupleWine, PicGame02]} />
+        <CardGroup components={[PicGameLove01AnimateAnon, PicGameLove04AnimateMitsumi, PicGameLove05AnimateFrieren, PicGame10, PicGameLove03RealCoupleWine, PicGameLove02RealCouple, PicGame02]} />
       </section>
 
       <section id="sorry" className="scroll-mt-24 py-8 mb-14 bg-purple-50/80 rounded-xl shadow-inner backdrop-blur-md px-6 max-w-6xl mx-auto">
         <TitleBlock emoji="🙏" title="Say Sorry" desc="Some apologies are better said with pixels than words." />
-        <CardGroup components={[ PicGameApology01, PicGame04, PicGame05]} />
+        <CardGroup components={[ PicGameApology01, PicGameApology02]} />
       </section>
 
       <section id="blessing" className="scroll-mt-24 py-8 mb-14 bg-indigo-50/70 rounded-xl shadow-inner backdrop-blur-md px-6 max-w-6xl mx-auto">
