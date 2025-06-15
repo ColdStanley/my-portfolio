@@ -54,7 +54,7 @@ export default function NavBar() {
           href="/"
           className="text-2xl font-extrabold text-purple-700 dark:text-purple-400 tracking-tight hover:text-purple-800 dark:hover:text-purple-300 transition-colors duration-200"
         >
-          Stanley
+          StanleyHi
         </Link>
 
         <div className="hidden md:flex items-center gap-3 text-sm text-gray-800 dark:text-gray-200">
