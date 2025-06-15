@@ -1,6 +1,6 @@
 'use client'
 
-import PicGameDisplay from '@/components/picgame/PicGameDisplay'
+import PicGameDisplay from '@/components/feelink/PicGameDisplay'
 
 const quotes = {
   lt: [

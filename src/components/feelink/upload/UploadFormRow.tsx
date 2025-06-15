@@ -31,7 +31,7 @@ export default function UploadFormRow({ quotes, setQuotes, onInsertFromCategory 
     setUploading(true)
     const formData = new FormData()
     formData.append('file', selectedFile)
-    const res = await fetch('/api/picgame/blob-upload', { method: 'POST', body: formData })
+    const res = await fetch('/api/feelink/blob-upload', { method: 'POST', body: formData })
     const data = await res.json()
     const completeUrl = data.url.startsWith('http') ? data.url : `https://${data.url}`
     setImageUrl(completeUrl)
@@ -61,7 +61,7 @@ export default function UploadFormRow({ quotes, setQuotes, onInsertFromCategory 
 
     setSaving(true)
 
-    const res = await fetch('/api/picgame/save-to-notion', {
+    const res = await fetch('/api/feelink/save-to-notion', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ imageUrl, description, quotes, type: 'Uncategorized' }),
@@ -76,7 +76,7 @@ export default function UploadFormRow({ quotes, setQuotes, onInsertFromCategory 
       return
     }
 
-    const link = `${window.location.origin}/picgame/user-view/${data.title}`
+    const link = `${window.location.origin}/feelink/user-view/${data.title}`
     setShareLink(link)
     alert('Your shareable link is ready!')
   }

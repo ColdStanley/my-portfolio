@@ -1,7 +1,7 @@
-// src/app/picgame/PicGame06.tsx
+// src/app/feelink/PicGame06.tsx
 'use client'
 
-import PicGameDisplay from '@/components/picgame/PicGameDisplay'
+import PicGameDisplay from '@/components/feelink/PicGameDisplay'
 
 const quotes = {
   lt: [
