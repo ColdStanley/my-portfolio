@@ -13,7 +13,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-white pt-1">
       {/* 顶部内容区域：Hero + Latest */}
-      <section className="flex flex-col lg:flex-row gap-8 items-start max-w-7xl px-6 mx-auto">
+      <section className="flex flex-col-reverse lg:flex-row gap-8 items-start max-w-7xl px-6 mx-auto">
         <HeroImageGrid />
         <LatestSection />
       </section>
