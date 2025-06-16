@@ -30,6 +30,14 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
   const animationType = animationTypeList[animationIndex]
   const [hasClicked, setHasClicked] = useState(false)
 
+  // 新增：字体颜色切换
+  const [quoteColor, setQuoteColor] = useState<'white' | 'black'>('white')
+  const toggleQuoteColor = () =>
+    setQuoteColor(prev => (prev === 'white' ? 'black' : 'white'))
+
+  // 新增：记录最后一次点击时间
+  const [lastClickTime, setLastClickTime] = useState(Date.now())
+
   const getRandomOffset = (min: number, max: number): string =>
     `${Math.floor(Math.random() * (max - min + 1)) + min}%`
 
@@ -60,6 +68,8 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
 
   const handleClick = (e: React.MouseEvent) => {
     if (!hasClicked) setHasClicked(true)
+    setLastClickTime(Date.now())
+
     const rect = imageRef.current?.getBoundingClientRect()
     if (!rect) return
     const x = e.clientX - rect.left
@@ -78,6 +88,20 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
     setAnimationIndex((prev) => (prev + 1) % animationTypeList.length)
   }
 
+  // 新增：定时检测是否无点击并自动触发 quote
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now()
+      if (now - lastClickTime >= 7000) {
+        const corners: CornerKey[] = ['lt', 'rt', 'lb', 'rb']
+        const randomCorner = corners[Math.floor(Math.random() * corners.length)]
+        showQuote(randomCorner)
+        setLastClickTime(now)
+      }
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [lastClickTime, quotes])
+
   return (
     <div className="w-full mb-6 break-inside-avoid rounded-md shadow-sm border border-gray-200 overflow-hidden">
       {/* 图片区域 */}
@@ -95,21 +119,31 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
         {/* Quote 气泡 */}
         {displayedQuote && (
           <div
-            className="absolute px-4 py-2 border border-purple-300 rounded-xl shadow-sm bg-[rgba(255,255,255,0.01)] text-white text-sm font-medium z-20"
+            className={`absolute px-4 py-2 border border-purple-300 rounded-xl shadow-sm bg-[rgba(255,255,255,0.01)] text-${quoteColor} text-sm font-medium z-20`}
             style={{ ...positionStyle, position: 'absolute', maxWidth: '80%', opacity: 0.9 }}
           >
             {displayedQuote}
           </div>
         )}
 
-        {/* 初始提示 */}
-        {!hasClicked && (
-          <div className="absolute top-3 right-3 z-10">
+        {/* 提示按钮（新逻辑） */}
+        <div className="absolute top-3 right-3 z-10">
+          {!hasClicked ? (
             <div className="bg-purple-500/40 hover:bg-purple-600 text-white text-xs px-3 py-1 rounded-full shadow transition">
               ▶ Click to play
             </div>
-          </div>
-        )}
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                toggleQuoteColor()
+              }}
+              className="bg-purple-500/40 hover:bg-purple-600 text-white text-xs px-3 py-1 rounded-full shadow transition"
+            >
+              🎨 Change quote color
+            </button>
+          )}
+        </div>
 
         {/* Ripple 效果 */}
         {ripples.map((r) => (

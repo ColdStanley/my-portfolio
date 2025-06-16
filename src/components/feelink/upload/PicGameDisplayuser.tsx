@@ -32,6 +32,11 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
   const animationType = animationTypeList[animationIndex]
   const [lastClickTime, setLastClickTime] = useState(Date.now())
 
+  // ✅ 新增：quote 颜色切换逻辑
+  const [quoteColor, setQuoteColor] = useState<'white' | 'black'>('white')
+  const toggleQuoteColor = () =>
+    setQuoteColor(prev => (prev === 'white' ? 'black' : 'white'))
+
   const getRandomOffset = (min: number, max: number): string =>
     `${Math.floor(Math.random() * (max - min + 1)) + min}%`
 
@@ -108,21 +113,31 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
         {/* Quote 气泡 */}
         {displayedQuote && (
           <div
-            className="absolute px-4 py-2 border border-purple-300 rounded-xl shadow-sm bg-[rgba(255,255,255,0.01)] text-white text-sm font-medium z-20"
+            className={`absolute px-4 py-2 border border-purple-300 rounded-xl shadow-sm bg-[rgba(255,255,255,0.01)] text-${quoteColor} text-sm font-medium z-20`}
             style={{ ...positionStyle, position: 'absolute', maxWidth: '80%', opacity: 0.9 }}
           >
             {displayedQuote}
           </div>
         )}
 
-        {/* 初始提示 */}
-        {!hasClicked && (
-          <div className="absolute top-3 right-3 z-10">
+        {/* 初始提示 or 切换按钮 */}
+        <div className="absolute top-3 right-3 z-10">
+          {!hasClicked ? (
             <div className="bg-purple-500/40 hover:bg-purple-600 text-white text-xs px-3 py-1 rounded-full shadow transition">
               ▶ Click to play
             </div>
-          </div>
-        )}
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                toggleQuoteColor()
+              }}
+              className="bg-purple-500/40 hover:bg-purple-600 text-white text-xs px-3 py-1 rounded-full shadow transition"
+            >
+              🎨 Change quote color
+            </button>
+          )}
+        </div>
 
         {/* Ripple 效果 */}
         {ripples.map((r) => (
