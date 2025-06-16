@@ -1,11 +1,10 @@
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Geist, Geist_Mono, Quicksand } from "next/font/google"
 import "./globals.css"
 import NavBar from "../components/NavBar"
 import Footer from "../components/Footer"
 import { Toaster } from "sonner"
-import { Quicksand } from 'next/font/google'
-
+import Script from "next/script"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,8 +17,8 @@ const geistMono = Geist_Mono({
 })
 
 const quicksand = Quicksand({
-  subsets: ['latin'],
-  weight: ['400', '500', '700'],
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
 })
 
 export const metadata: Metadata = {
@@ -27,13 +26,28 @@ export const metadata: Metadata = {
   description: "Personal website for Stanley - content creator & tutor",
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <head>
+        {/* ✅ Google Analytics */}
+        <Script
+          strategy="afterInteractive"
+          src="https://www.googletagmanager.com/gtag/js?id=G-RYW791SKJH"
+        />
+        <Script
+          id="gtag-init"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-RYW791SKJH');
+            `,
+          }}
+        />
+      </head>
       <body className="pt-24 font-sans bg-white text-gray-900">
         <NavBar />
         {children}
