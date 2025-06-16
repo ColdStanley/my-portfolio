@@ -165,7 +165,7 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
           href="/feelink/upload"
           className="mt-2 inline-flex items-center gap-1 text-sm text-gray-700 underline hover:opacity-80 transition-opacity cursor-pointer"
         >
-          <span>Begin with a picture, let the quotes speak.</span>
+          <span>What would your photo say? Find out →</span>
           <HiOutlineArrowNarrowRight className="w-4 h-4" />
         </Link>
       </div>
