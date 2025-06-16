@@ -1,8 +1,15 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { motion } from 'framer-motion'
 import Link from 'next/link'
+import { HiOutlineArrowNarrowRight } from 'react-icons/hi'
+
+type Position = {
+  top?: string
+  bottom?: string
+  left?: string
+  right?: string
+}
 
 interface Props {
   imageUrl: string
@@ -10,35 +17,25 @@ interface Props {
   quotes: string
 }
 
-interface Position {
-  top?: string
-  bottom?: string
-  left?: string
-  right?: string
-}
-
-const animationClasses = [
-  'animate-fade-in',
-  'animate-slide-up',
-  'animate-zoom-in',
-]
-
 export default function PicGameDisplayuser({ imageUrl, description, quotes }: Props) {
-  const quoteArray = quotes?.split('\n').filter(line => line.trim() !== '') || []
-  const safeImageUrl = imageUrl?.startsWith('http') ? imageUrl : `https://${imageUrl}`
-
   const imageRef = useRef<HTMLImageElement>(null)
-  const [imageHeight, setImageHeight] = useState<number>(300)
+  const quoteArray = quotes?.split('\n').filter(line => line.trim() !== '') || []
+
   const [displayedQuote, setDisplayedQuote] = useState('')
   const [positionStyle, setPositionStyle] = useState<Position>({})
   const [ripples, setRipples] = useState<{ x: number; y: number; id: number }[]>([])
-  const [shake, setShake] = useState(false)
+  const [hasClicked, setHasClicked] = useState(false)
+  const [imageHeight, setImageHeight] = useState<number>(300)
+
+  const animationTypeList = ['shake', 'scale', 'bounce', 'fade-in', 'ripple'] as const
   const [animationIndex, setAnimationIndex] = useState(0)
-  const [lastClickTime, setLastClickTime] = useState<number>(Date.now())
+  const animationType = animationTypeList[animationIndex]
+  const [lastClickTime, setLastClickTime] = useState(Date.now())
 
-  const getRandomOffset = (min: number, max: number): string => `${Math.floor(Math.random() * (max - min + 1)) + min}%`
+  const getRandomOffset = (min: number, max: number): string =>
+    `${Math.floor(Math.random() * (max - min + 1)) + min}%`
 
-  const showQuote = (e: React.MouseEvent | null = null, xPos?: number, yPos?: number) => {
+  const showQuote = (e?: React.MouseEvent | null, xPos?: number, yPos?: number) => {
     if (!imageRef.current || quoteArray.length === 0) return
 
     const rect = imageRef.current.getBoundingClientRect()
@@ -48,21 +45,21 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
     setLastClickTime(Date.now())
     const quote = quoteArray[Math.floor(Math.random() * quoteArray.length)]
     setDisplayedQuote(quote)
-    setAnimationIndex((prev) => (prev + 1) % animationClasses.length)
-
     setPositionStyle({
       ...(y <= rect.height / 2 ? { top: getRandomOffset(5, 15) } : { bottom: getRandomOffset(5, 15) }),
       ...(x <= rect.width / 2 ? { left: getRandomOffset(5, 15) } : { right: getRandomOffset(5, 15) }),
     })
 
-    setTimeout(() => setDisplayedQuote(''), 6000)
+    setTimeout(() => {
+      setDisplayedQuote('')
+    }, 6000)
 
     const id = Date.now()
     setRipples(prev => [...prev, { x, y, id }])
     setTimeout(() => setRipples(prev => prev.filter(r => r.id !== id)), 500)
 
-    setShake(true)
-    setTimeout(() => setShake(false), 150)
+    setAnimationIndex(prev => (prev + 1) % animationTypeList.length)
+    if (!hasClicked) setHasClicked(true)
   }
 
   useEffect(() => {
@@ -84,92 +81,113 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
       const now = Date.now()
       if (now - lastClickTime >= 7000) {
         const rect = imageRef.current.getBoundingClientRect()
-        for (let i = 0; i < 2; i++) {
-          const randX = Math.floor(Math.random() * rect.width)
-          const randY = Math.floor(Math.random() * rect.height)
-          showQuote(null, randX, randY)
-        }
+        const randX = Math.floor(Math.random() * rect.width)
+        const randY = Math.floor(Math.random() * rect.height)
+        showQuote(null, randX, randY)
       }
     }, 2000)
     return () => clearInterval(interval)
   }, [lastClickTime, quoteArray])
 
+  const safeImageUrl = imageUrl?.startsWith('http') ? imageUrl : `https://${imageUrl}`
+
   return (
-    <div className="flex flex-col items-center gap-6 w-full">
+    <div className="w-full mb-6 break-inside-avoid rounded-md shadow-sm border border-gray-200 overflow-hidden">
+      {/* 图片区域 */}
       <div
-        className={`w-full max-w-3xl relative rounded-xl overflow-hidden shadow border border-purple-100 bg-white transition hover:shadow-lg cursor-pointer ${shake ? 'animate-shake' : ''}`}
+        className={`relative w-full cursor-pointer overflow-hidden animate-${animationType}`}
         onClick={(e) => showQuote(e)}
       >
         <img
           ref={imageRef}
           src={safeImageUrl}
-          alt="feelink"
-          className="w-full h-auto object-cover rounded-xl"
+          alt="interactive"
+          className="w-full h-auto object-contain rounded-t-md"
         />
+
+        {/* Quote 气泡 */}
         {displayedQuote && (
           <div
-            className={`absolute px-4 py-2 border border-purple-100 rounded-2xl shadow-sm bg-white/30 backdrop-blur-sm text-purple-700 text-sm sm:text-base font-normal z-20 ${animationClasses[animationIndex]}`}
-            style={{ ...positionStyle, position: 'absolute', maxWidth: '80%' }}
+            className="absolute px-4 py-2 border border-purple-300 rounded-xl shadow-sm bg-[rgba(255,255,255,0.01)] text-white text-sm font-medium z-20"
+            style={{ ...positionStyle, position: 'absolute', maxWidth: '80%', opacity: 0.9 }}
           >
             {displayedQuote}
           </div>
         )}
-        {ripples.map(r => (
+
+        {/* 初始提示 */}
+        {!hasClicked && (
+          <div className="absolute top-3 right-3 z-10">
+            <div className="bg-purple-500/40 hover:bg-purple-600 text-white text-xs px-3 py-1 rounded-full shadow transition">
+              ▶ Click to play
+            </div>
+          </div>
+        )}
+
+        {/* Ripple 效果 */}
+        {ripples.map((r) => (
           <span
             key={r.id}
             className="absolute rounded-full bg-purple-300 opacity-40 animate-ripple z-0 pointer-events-none"
-            style={{ left: r.x - 40, top: r.y - 40, width: 80, height: 80 }}
+            style={{
+              left: r.x - 40,
+              top: r.y - 40,
+              width: 80,
+              height: 80,
+            }}
           />
         ))}
       </div>
 
-      <div className="w-full max-w-3xl bg-white shadow rounded-xl p-6 text-gray-700 text-base border border-purple-100 whitespace-pre-wrap">
+      {/* description 文本展示区 */}
+      <div className="w-full p-4 text-sm text-gray-700 bg-white border-t border-gray-200 leading-relaxed">
         {description}
       </div>
 
-      <div className="w-full max-w-3xl flex justify-center">
-        <Link href="/feelink/upload" className="text-purple-700 text-sm underline hover:text-purple-500 transition">
-          Begin with a picture, let the quotes speak.
+      {/* 跳转链接 */}
+      <div className="w-full px-4 pb-4">
+        <Link
+          href="/feelink/upload"
+          className="mt-2 inline-flex items-center gap-1 text-sm text-gray-700 underline hover:opacity-80 transition-opacity cursor-pointer"
+        >
+          <span>Begin with a picture, let the quotes speak.</span>
+          <HiOutlineArrowNarrowRight className="w-4 h-4" />
         </Link>
       </div>
 
+      {/* 动画样式 */}
       <style>{`
         @keyframes ripple {
           0% { transform: scale(0); opacity: 0.6; }
           100% { transform: scale(2.5); opacity: 0; }
         }
-        .animate-ripple {
-          animation: ripple 0.5s ease-out;
-        }
-        @keyframes fade-in {
-          from { opacity: 0; transform: scale(0.95); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.3s ease-out;
-        }
-        @keyframes slide-up {
-          from { transform: translateY(20px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-        .animate-slide-up {
-          animation: slide-up 0.4s ease-out;
-        }
-        @keyframes zoom-in {
-          from { transform: scale(0.5); opacity: 0; }
-          to { transform: scale(1); opacity: 1; }
-        }
-        .animate-zoom-in {
-          animation: zoom-in 0.3s ease-out;
-        }
+        .animate-ripple { animation: ripple 0.5s ease-out; }
+
         @keyframes shake {
           0%, 100% { transform: rotate(0deg); }
-          25% { transform: rotate(8deg); }
-          75% { transform: rotate(-8deg); }
+          25% { transform: rotate(3deg); }
+          75% { transform: rotate(-3deg); }
         }
-        .animate-shake {
-          animation: shake 0.15s ease-in-out;
+        .animate-shake { animation: shake 0.3s ease-in-out; }
+
+        @keyframes scale {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.03); }
         }
+        .animate-scale { animation: scale 0.4s ease-in-out; }
+
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        .animate-bounce { animation: bounce 0.4s ease-in-out; }
+
+        @keyframes fade-in {
+          0% { opacity: 0.3; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.03); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        .animate-fade-in { animation: fade-in 0.5s ease-in-out; }
       `}</style>
     </div>
   )
