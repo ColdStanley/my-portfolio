@@ -1,59 +1,56 @@
-'use client'
-
-import { useParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+// src/app/feelink/user-view/[id]/page.tsx
 import PicGameDisplayuser from '@/components/feelink/upload/PicGameDisplayuser'
 
-console.log('✅ 成功进入 user-view 页面组件')
-interface PicGameData {
-  id: string
-  imageUrl: string
-  description: string
-  quotes: string
-  type?: string
+// ✅ 用于 SEO metadata 设置
+export async function generateMetadata({ params }: { params: { id: string } }) {
+  const res = await fetch(
+    `https://www.stanleyhi.com/api/feelink/get-one-from-notion?id=${params.id}`,
+    { cache: 'no-store' }
+  )
+  const data = await res.json()
+
+  return {
+    title: `${data.quotes} – Feelink`,
+    description: data.description,
+    openGraph: {
+      title: `${data.quotes} – Feelink`,
+      description: data.description,
+      images: [
+        {
+          url: data.imageUrl,
+          width: 1200,
+          height: 630,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${data.quotes} – Feelink`,
+      description: data.description,
+      images: [data.imageUrl],
+    },
+  }
 }
 
-export default function PicGameUserViewPage() {
-  const { id } = useParams()
-  const [data, setData] = useState<PicGameData | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!id || typeof id !== 'string') return
-
-      try {
-        const res = await fetch(`/api/feelink/get-one-from-notion?id=${id}`)
-        const json = await res.json()
-        console.log('🟡 get-one-from-notion 返回数据:', json)  // ←✅ 就加这一行
-
-        setData(json)
-      } catch (error) {
-        console.error('获取数据失败:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [id])
-
-  if (loading) {
-    return <div className="p-6 text-gray-500 text-sm">加载中...</div>
-  }
-
-  if (!data) {
-    return <div className="p-6 text-red-500 text-sm">未找到内容</div>
-  }
+// ✅ 正常页面组件（传参给客户端组件）
+export default async function PicGameUserViewPage({
+  params,
+}: {
+  params: { id: string }
+}) {
+  const res = await fetch(
+    `https://www.stanleyhi.com/api/feelink/get-one-from-notion?id=${params.id}`,
+    { cache: 'no-store' }
+  )
+  const data = await res.json()
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <PicGameDisplayuser
-  imageUrl={data.imageUrl}
-  description={data.description}
-  quotes={data.quotes}
-/>
-
+        imageUrl={data.imageUrl}
+        description={data.description}
+        quotes={data.quotes}
+      />
     </div>
   )
 }
