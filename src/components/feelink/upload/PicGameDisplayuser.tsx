@@ -57,7 +57,7 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
 
     setTimeout(() => {
       setDisplayedQuote('')
-    }, 6000)
+    }, 12000)
 
     const id = Date.now()
     setRipples(prev => [...prev, { x, y, id }])
@@ -107,7 +107,7 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
           ref={imageRef}
           src={safeImageUrl}
           alt="interactive"
-          className="w-full h-auto object-contain rounded-t-md"
+          className="w-full h-auto max-h-[80vh] object-contain"
         />
 
         {/* Quote 气泡 */}
