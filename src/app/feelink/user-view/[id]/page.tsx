@@ -1,4 +1,3 @@
-// src/app/feelink/user-view/[id]/page.tsx
 import PicGameDisplayuser from '@/components/feelink/upload/PicGameDisplayuser'
 
 // ✅ 用于 SEO metadata 设置
@@ -10,10 +9,10 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
   const data = await res.json()
 
   return {
-    title: `${data.quotes} – Feelink`,
+    title: `${data.description} – Feelink`,
     description: data.description,
     openGraph: {
-      title: `${data.quotes} – Feelink`,
+      title: `${data.description} – Feelink`,
       description: data.description,
       images: [
         {
@@ -25,7 +24,7 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${data.quotes} – Feelink`,
+      title: `${data.description} – Feelink`,
       description: data.description,
       images: [data.imageUrl],
     },
