@@ -1,4 +1,4 @@
-// 文件路径: /api/notion-database/route.ts
+// 文件路径: /api/database/route.ts
 import { NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
 import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints'

@@ -4,7 +4,7 @@ import LogoCarouselRow from '@/components/LogoCarouselRow'
 import HomeCardsSection from '@/components/HomeCardsSection'
 
 export const metadata = {
-  title: "StanleyHi – Explore, Build, Share",
+  title: "StanleyHi",
   description: "Discover Stanley's personal projects in technology, learning, and life stories, presented with a touch of creativity and music."
 }
 
