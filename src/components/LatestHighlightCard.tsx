@@ -33,9 +33,12 @@ function HighlightCard({ item, index }: { item: HighlightItem; index: number }) 
           router.push(`/${item.category}/${item.slug}?id=home-latest`)
         }
       }}
-      className={`relative rounded-xl border border-purple-300 dark:border-purple-700 
-                 bg-purple-100 dark:bg-purple-950 px-3 py-2 shadow-sm transition-all duration-300 
-                 flex flex-col justify-center h-[60px] cursor-pointer group`}
+      className={`relative rounded-xl border border-[#E0D9F9] dark:border-purple-700 
+            bg-[#F9F5FF] dark:bg-purple-950 hover:bg-[#F3EDFF]
+            px-3 py-2 shadow-sm transition-all duration-300 
+            flex flex-col justify-center h-[60px] cursor-pointer group`}
+
+
       data-tooltip-id={`tip-${index}`}
       data-tooltip-content={item.description || ''}
     >
