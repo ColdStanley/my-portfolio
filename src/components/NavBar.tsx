@@ -57,9 +57,9 @@ export default function NavBar() {
           StanleyHi
         </Link>
 
-        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-800 dark:text-gray-200">
+        <div className="hidden md:flex items-center gap-3 text-sm text-gray-800 dark:text-gray-200">
           <span className="whitespace-nowrap">
-            Do you like “Ella Langley - you look like you love me”?
+            “You look like you love me -Ella Langley”
           </span>
 
           <button
@@ -71,7 +71,7 @@ export default function NavBar() {
                 : 'bg-purple-600 text-white hover:bg-purple-700'
             )}
           >
-            {hasInitiated ? (isPlaying ? 'Pause' : 'Play') : 'Yes'}
+            {hasInitiated ? (isPlaying ? 'Pause' : 'Play') : 'Play Music'}
           </button>
 
           {isPlaying && (
