@@ -24,7 +24,7 @@ export default function AboutPage() {
         {/* 链接部分 */}
         <div className="text-sm space-x-1">
           <Link
-            href="/feelink/upload"
+            href="https://stanleyhi.com/feelink"
             className="text-purple-600 underline underline-offset-2 hover:text-purple-800 transition-colors"
           >
             A Feelink
