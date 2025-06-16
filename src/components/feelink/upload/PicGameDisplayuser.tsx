@@ -107,7 +107,7 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
           ref={imageRef}
           src={safeImageUrl}
           alt="interactive"
-          className="w-full h-auto max-h-[80vh] object-contain rounded-t-md mx-auto"
+          className="w-full h-auto max-h-[80vh] object-contain rounded-t-md"
         />
 
         {/* Quote 气泡 */}
@@ -165,7 +165,7 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
           href="/feelink/upload"
           className="mt-2 inline-flex items-center gap-1 text-sm text-gray-700 underline hover:opacity-80 transition-opacity cursor-pointer"
         >
-          <span>What would your photo say? Find out →</span>
+          <span>Begin with a picture, let the quotes speak.</span>
           <HiOutlineArrowNarrowRight className="w-4 h-4" />
         </Link>
       </div>
