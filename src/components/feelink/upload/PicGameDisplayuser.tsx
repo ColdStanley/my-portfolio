@@ -107,7 +107,7 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
           ref={imageRef}
           src={safeImageUrl}
           alt="interactive"
-          className="w-full h-auto object-contain rounded-t-md"
+          className="w-full h-auto max-h-[80vh] object-contain rounded-t-md mx-auto"
         />
 
         {/* Quote 气泡 */}
