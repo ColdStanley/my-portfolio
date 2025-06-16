@@ -1,4 +1,6 @@
 import KnowledgeCardSection from '@/components/KnowledgeCardSection'
+import ComingSoonCard from '@/components/ComingSoonCard'
+
 
 export default function KnowledgePage() {
   return (
@@ -13,10 +15,8 @@ export default function KnowledgePage() {
 
         {/* 右侧：预留扩展 */}
         <aside className="hidden lg:block">
-          <div className="h-full w-full rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm italic">
-            Coming soon: Frameworks, Methods, Essays, and More...
-          </div>
-        </aside>
+                <ComingSoonCard />
+              </aside>
       </div>
     </main>
   )

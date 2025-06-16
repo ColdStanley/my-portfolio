@@ -1,4 +1,6 @@
 import LifeCardSection from '@/components/LifeCardSection'
+import ComingSoonCard from '@/components/ComingSoonCard'
+
 
 export default function LifePage() {
   return (
@@ -23,10 +25,8 @@ export default function LifePage() {
         <LifeCardSection />
 
         <aside className="hidden lg:block">
-          <div className="h-full w-full rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm italic">
-            Coming soon: Reflections, Stories, Audio Diary, and More...
-          </div>
-        </aside>
+                <ComingSoonCard />
+              </aside>
       </div>
     </main>
   )

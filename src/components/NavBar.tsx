@@ -13,8 +13,7 @@ const navItems = [
   { label: 'Technology', href: '/technology' },
   { label: 'Knowledge', href: '/knowledge' },
   { label: 'Life', href: '/life' },
-  { label: 'Contact', href: '/contact' },
-  { label: 'About', href: '/about' },
+  { label: 'About & Contact', href: '/aboutcontact' },
 ]
 
 const YOUTUBE_VIDEO_ID = 'Dm2TSMerGPQ'
