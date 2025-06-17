@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
           select: { name: type },
         },
         WebURL: {
-        url: `https://your-site.com/feelink/user-view/${title}`,
+        url: `https://stanleyhi.com/feelink/user-view/${title}`,
         },
       },
     })
