@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
 
-const notion = new Client({ auth: process.env.NOTION_SUBSCRIBE_API_KEY })
+const notion = new Client({ auth: process.env.NOTION_API_KEY })
 const databaseId = process.env.NOTION_SUBSCRIBE_DB_ID!
 
 export async function POST(req: Request) {
