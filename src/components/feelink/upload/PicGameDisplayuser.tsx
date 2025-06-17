@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi'
 import QuoteVisualPetal from '../QuoteVisualPetal'
 
-
 type Position = {
   top?: string
   bottom?: string
@@ -34,10 +33,13 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
   const animationType = animationTypeList[animationIndex]
   const [lastClickTime, setLastClickTime] = useState(Date.now())
 
-  // ✅ 新增：quote 颜色切换逻辑
+  // ✅ 新增：quote 颜色切换逻辑 + renderKey
   const [quoteColor, setQuoteColor] = useState<'white' | 'black'>('white')
-  const toggleQuoteColor = () =>
+  const [renderKey, setRenderKey] = useState(0)
+  const toggleQuoteColor = () => {
     setQuoteColor(prev => (prev === 'white' ? 'black' : 'white'))
+    setRenderKey(prev => prev + 1)
+  }
 
   const getRandomOffset = (min: number, max: number): string =>
     `${Math.floor(Math.random() * (max - min + 1)) + min}%`
@@ -113,10 +115,11 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
         />
 
         {/* Quote 气泡 */}
-            <QuoteVisualPetal
+        <QuoteVisualPetal
           quote={displayedQuote}
           position={positionStyle}
-          triggerKey={displayedQuote}
+          triggerKey={displayedQuote + renderKey}
+          color={quoteColor}
         />
 
         {/* 初始提示 or 切换按钮 */}

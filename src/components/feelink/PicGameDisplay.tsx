@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi'
 import QuoteVisualPetal from './QuoteVisualPetal'
 
-
 type CornerKey = 'lt' | 'rt' | 'lb' | 'rb'
 
 interface Position {
@@ -34,8 +33,11 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
 
   // 新增：字体颜色切换
   const [quoteColor, setQuoteColor] = useState<'white' | 'black'>('white')
-  const toggleQuoteColor = () =>
+  const [renderKey, setRenderKey] = useState(0)
+  const toggleQuoteColor = () => {
     setQuoteColor(prev => (prev === 'white' ? 'black' : 'white'))
+    setRenderKey(prev => prev + 1)
+  }
 
   // 新增：记录最后一次点击时间
   const [lastClickTime, setLastClickTime] = useState(Date.now())
@@ -119,11 +121,12 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
         />
 
         {/* Quote 气泡 */}
-       <QuoteVisualPetal
-  quote={displayedQuote}
-  position={positionStyle}
-  triggerKey={displayedQuote}
-/>
+        <QuoteVisualPetal
+          quote={displayedQuote}
+          position={positionStyle}
+          triggerKey={displayedQuote + renderKey}
+          color={quoteColor}
+        />
 
         {/* 提示按钮（新逻辑） */}
         <div className="absolute top-3 right-3 z-10">

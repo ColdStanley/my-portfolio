@@ -13,16 +13,19 @@ interface Props {
   quote: string
   position: Position
   triggerKey?: string
+  color?: 'white' | 'black'
 }
 
-export default function QuoteVisualPetal({ quote, position, triggerKey }: Props) {
+export default function QuoteVisualPetal({ quote, position, triggerKey, color = 'white' }: Props) {
   const [visible, setVisible] = useState(true)
 
   useEffect(() => {
     setVisible(true)
     const timer = setTimeout(() => setVisible(false), 10000)
     return () => clearTimeout(timer)
-  }, [quote, triggerKey])
+  }, [quote, triggerKey, color])
+
+  const textColor = color === 'white' ? '#ffffff' : '#111111'
 
   return (
     <div
@@ -35,7 +38,7 @@ export default function QuoteVisualPetal({ quote, position, triggerKey }: Props)
         fontSize: '0.95rem',
         fontWeight: 500,
         fontFamily: 'Georgia, serif',
-        color: 'rgb(100, 60, 90)',
+        color: textColor, // ✅ 动态颜色
         background: 'radial-gradient(ellipse at center, rgba(255,240,245,0.65) 40%, rgba(255,240,245,0.2) 100%)',
         borderRadius: '50% / 35%',
         boxShadow: '0 4px 12px rgba(255,192,203,0.4)',
