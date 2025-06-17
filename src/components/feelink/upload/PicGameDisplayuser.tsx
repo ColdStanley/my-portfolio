@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi'
+import QuoteVisualPetal from './QuoteVisualPetal'
+
 
 type Position = {
   top?: string
@@ -111,14 +113,11 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
         />
 
         {/* Quote 气泡 */}
-        {displayedQuote && (
-          <div
-            className={`absolute px-4 py-2 border border-purple-300 rounded-xl shadow-sm bg-[rgba(255,255,255,0.01)] text-${quoteColor} text-sm font-medium z-20`}
-            style={{ ...positionStyle, position: 'absolute', maxWidth: '80%', opacity: 0.9 }}
-          >
-            {displayedQuote}
-          </div>
-        )}
+            <QuoteVisualPetal
+          quote={displayedQuote}
+          position={positionStyle}
+          triggerKey={displayedQuote}
+        />
 
         {/* 初始提示 or 切换按钮 */}
         <div className="absolute top-3 right-3 z-10">
