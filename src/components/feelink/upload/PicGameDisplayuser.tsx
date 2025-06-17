@@ -115,12 +115,14 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
         />
 
         {/* Quote 气泡 */}
-        <QuoteVisualPetal
-          quote={displayedQuote}
-          position={positionStyle}
-          triggerKey={displayedQuote + renderKey}
-          color={quoteColor}
-        />
+        {displayedQuote && (
+  <QuoteVisualPetal
+    quote={displayedQuote}
+    position={positionStyle}
+    triggerKey={displayedQuote + renderKey}
+    color={quoteColor}
+  />
+)}
 
         {/* 初始提示 or 切换按钮 */}
         <div className="absolute top-3 right-3 z-10">

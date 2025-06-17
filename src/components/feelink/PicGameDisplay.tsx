@@ -121,12 +121,14 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
         />
 
         {/* Quote 气泡 */}
-        <QuoteVisualPetal
-          quote={displayedQuote}
-          position={positionStyle}
-          triggerKey={displayedQuote + renderKey}
-          color={quoteColor}
-        />
+        {displayedQuote && (
+  <QuoteVisualPetal
+    quote={displayedQuote}
+    position={positionStyle}
+    triggerKey={displayedQuote + renderKey}
+    color={quoteColor}
+  />
+)}
 
         {/* 提示按钮（新逻辑） */}
         <div className="absolute top-3 right-3 z-10">
