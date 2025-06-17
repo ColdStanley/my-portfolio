@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi'
-import QuoteVisualPetal from './QuoteVisualPetal'
+import QuoteVisualPetal from '../QuoteVisualPetal'
 
 
 type Position = {
