@@ -89,7 +89,7 @@ export default function NewAnswerDisplay({ questionText }: Props) {
       <TemplateSentenceCards text={sharedTemplateSentence} />
 
 
-      {/* ✅ 表达训练模块 */}
+      {/* ✅ 表达训练模块 test*/}
       <NewExpressionPanel explanations={mergeExplanations(answers)} />
       
       </TooltipProvider>
