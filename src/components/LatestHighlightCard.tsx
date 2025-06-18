@@ -15,6 +15,7 @@ interface HighlightItem {
   status?: string
   order?: number
   tag?: string[]
+  visibleOnSite?: boolean
 }
 
 function HighlightCard({ item, index }: { item: HighlightItem; index: number }) {
@@ -68,11 +69,12 @@ export default function LatestSection() {
     return await res.json()
   })
   .then((res) => {
-      console.log('🌟 HIGHLIGHTS RAW DATA:', res.data) 
+res.data.forEach((item, i) => console.log(`[#${i}]`, item.title, 'visibleOnSite:', item.visibleOnSite))
     if (res?.data && Array.isArray(res.data)) {
       const filtered = res.data
-        .filter((item: any) => item?.status === 'Published')
+        .filter((item: any) => item?.status === 'Published' && item?.visibleOnSite === true)
         .sort((a: any, b: any) => (a.order ?? 999) - (b.order ?? 999))
+
       setData(filtered)
     } else {
       setData([])
@@ -95,7 +97,7 @@ export default function LatestSection() {
             transition: { duration: 2.4, repeat: Infinity, ease: 'easeInOut' },
           }}
         >
-          <Image src="/images/latest-banner.png" alt="latest" fill className="object-contain" />
+          <Image src="/images/latest-banner.png" alt="latest" fill sizes="24px" className="object-contain" />
         </motion.div>
         <span className="text-[17px] font-semibold text-gray-700 dark:text-gray-300 tracking-wide">
           Latest Highlights

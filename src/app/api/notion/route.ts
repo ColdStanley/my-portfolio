@@ -77,11 +77,16 @@ async function fetchCardItems(): Promise<any[]> {
           : [],
       status:
         props.Status?.type === 'select'
-        ? props.Status.select?.name || ''
-      : '',
-      
+          ? props.Status.select?.name || ''
+          : '',
       order:
         props.Order?.type === 'number' ? props.Order.number ?? 0 : 0,
+
+      // ✅ 新增字段：visibleOnSite
+      visibleOnSite:
+        props.VisibleOnSite?.type === 'checkbox'
+          ? props.VisibleOnSite.checkbox
+          : false,
     }
   })
 }
@@ -90,15 +95,21 @@ async function fetchCardItems(): Promise<any[]> {
 async function fetchLatestHighlightItems(): Promise<any[]> {
   const all = await fetchCardItems()
   return all
-    .filter((item) => item.section === 'LatestHighlightCard')
+    .filter(
+      (item) =>
+        item.section === 'LatestHighlightCard' &&
+        item.status === 'Published' &&
+        item.visibleOnSite === true
+    )
     .map((item) => ({
       title: item.title || 'Untitled',
       description: item.content || '',
       slug: item.slug || '',
       category: item.category || '',
-      tag: item.tag || item.tech || [],   
-      status: item.status || '',          
-      order: item.order ?? 0,       
+      tag: item.tag || item.tech || [],
+      status: item.status || '',
+      order: item.order ?? 0,
+      visibleOnSite: item.visibleOnSite ?? false,
     }))
 }
 
@@ -143,19 +154,16 @@ export async function GET(request: Request) {
   const pageId = searchParams.get('pageId')
 
   try {
-    // 特殊处理 home-latest（因为它依赖 fetchCardItems 内部筛选）
     if (pageId === 'home-latest') {
       const data = await fetchLatestHighlightItems()
       return NextResponse.json({ data })
     }
 
-    // 特殊处理 ielts-reading（独立函数）
     if (pageId === 'ielts-reading') {
       const data = await fetchReadingQuestions()
       return NextResponse.json({ data })
     }
 
-    // 默认处理（如 pageId 为空，或用于 HomeCardsSection）
     const data = await fetchCardItems()
     return NextResponse.json({ data })
   } catch (error) {

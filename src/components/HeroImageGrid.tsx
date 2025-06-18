@@ -125,6 +125,7 @@ export default function HeroImageGrid() {
                 src={section.image}
                 alt={`${section.title} banner`}
                 fill
+                sizes="(max-width: 768px) 100vw, 33vw"
                 className="object-contain p-4 transition-transform duration-300 group-hover:scale-105"
                 priority={index === 0}
               />

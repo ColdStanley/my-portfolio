@@ -64,12 +64,17 @@ export default function LogoCarouselRow() {
                       className="w-[100px] h-[60px] flex items-center justify-center"
                     >
                       <Image
-                        src={src}
-                        alt={`${category} logo ${i}`}
-                        width={100}
-                        height={60}
-                        className="object-contain max-w-full max-h-full"
-                      />
+  src={src}
+  alt={`${category} logo ${i}`}
+  width={100}
+  height={60}
+  className="object-contain"
+  style={{
+    width: '100px',
+    height: 'auto',
+  }}
+/>
+
                     </div>
                   ))}
                 </div>

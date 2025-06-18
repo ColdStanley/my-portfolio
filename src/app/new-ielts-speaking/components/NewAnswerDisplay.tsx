@@ -15,6 +15,7 @@ interface AnswerData {
   text: string
   keywords: string[]
   explanations: Record<string, string>
+  templateSentence?: string // ✅ 新增字段
 }
 
 interface Props {
@@ -55,7 +56,17 @@ export default function NewAnswerDisplay({ questionText }: Props) {
           <Card key={index} className="shadow-lg border border-gray-200">
             <CardContent className="p-6 space-y-4">
               <h3 className="text-lg font-bold text-purple-700">Band {answer.band}</h3>
+
               <p className="text-gray-800 leading-relaxed">{answer.text}</p>
+
+              {answer.templateSentence && (
+                <div className="mt-2 text-sm text-gray-600 italic whitespace-pre-line">
+                  <p className="mt-2 text-sm text-gray-600 italic whitespace-pre-line">
+  <span className="font-semibold text-purple-700">Template:</span><br />
+  {answer.templateSentence}
+</p>
+                </div>
+              )}
 
               {Array.isArray(answer.keywords) && answer.keywords.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
@@ -78,7 +89,7 @@ export default function NewAnswerDisplay({ questionText }: Props) {
         ))}
       </div>
 
-      {/* ✅ 新增表达训练模块 */}
+      {/* ✅ 表达训练模块 */}
       <NewExpressionPanel explanations={mergeExplanations(answers)} />
     </TooltipProvider>
   )

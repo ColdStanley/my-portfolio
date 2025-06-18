@@ -1,5 +1,4 @@
 'use client'
-import Image from 'next/image'
 import { motion } from 'framer-motion'
 
 export default function IELTSHeader() {
@@ -9,9 +8,6 @@ export default function IELTSHeader() {
       <div className="bg-white shadow rounded-xl p-6">
         <div className="flex flex-row items-center gap-3 mb-3">
           <h1 className="text-4xl font-extrabold text-purple-600">IELTS Speaking</h1>
-          <motion.div animate={{ rotate: [0, -5, 5, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
-            <Image src="/images/IELTS7.png" alt="IELTS7" width={60} height={60} />
-          </motion.div>
         </div>
         <blockquote className="text-sm text-gray-600 leading-relaxed pl-2 border-l-4 border-purple-400">
           <p>"We are what we repeatedly do.</p>
@@ -31,23 +27,24 @@ export default function IELTSHeader() {
         </div>
         <div className="grid grid-cols-3 gap-6 w-full max-w-md">
           <div className="flex flex-col items-center space-y-2">
-            <Image src="/images/wechat35.png" alt="wechat35" width={90} height={90} />
+            <div className="w-[90px] h-[90px] flex items-center justify-center bg-gray-100 rounded-xl">
+              <span className="text-2xl">☕</span>
+            </div>
             <div className="text-center text-sm text-gray-600 leading-tight">
-              <p>☕</p>
-              <p>Buy me a coffe</p>
+              <p>Buy me a coffee</p>
             </div>
           </div>
           <div className="flex flex-col items-center space-y-2">
-            <Image src="/images/wechat70.png" alt="wechat70" width={90} height={90} />
+            <div className="w-[90px] h-[90px] flex items-center justify-center bg-gray-100 rounded-xl">
+              <span className="text-2xl">🐾</span>
+            </div>
             <div className="text-center text-sm text-gray-600 leading-tight">
-              <p>🐾</p>
-              <p>给小猫买袋猫粮</p>
+              <p>给小猫买猫粮</p>
             </div>
           </div>
           <div className="flex flex-col items-center space-y-2">
-            <p className="text-base font-semibold text-gray-800 invisible">_</p>
-            <div className="w-[90px] h-[90px] flex items-center justify-center">
-              <span className="text-3xl">😺</span>
+            <div className="w-[90px] h-[90px] flex items-center justify-center bg-gray-100 rounded-xl">
+              <span className="text-2xl">😺</span>
             </div>
             <div className="text-center text-sm text-gray-600 leading-tight">
               <p>喵～</p>

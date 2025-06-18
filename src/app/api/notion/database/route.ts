@@ -1,4 +1,3 @@
-// 文件路径: /api/database/route.ts
 import { NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
 import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints'
@@ -87,6 +86,12 @@ export async function GET(request: Request) {
             : '',
         order:
           props.Order?.type === 'number' ? props.Order.number ?? 0 : 0,
+
+        // ✅ 新增字段：VisibleOnSite
+        visibleOnSite:
+          props.VisibleOnSite?.type === 'checkbox'
+            ? props.VisibleOnSite.checkbox
+            : false,
       }
     })
 

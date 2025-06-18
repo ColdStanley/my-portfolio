@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 interface QuestionItem {
   id: string
@@ -20,14 +20,27 @@ export default function NewQuestionSelector({
   questions,
   fetchQuestions
 }: Props) {
-  // 初始加载自动拉取 Part 2
+  const [displayedQuestions, setDisplayedQuestions] = useState<QuestionItem[]>([])
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+
   useEffect(() => {
-    if (part === 'Part 2') {
-      fetchQuestions('Part 2')
+    fetchQuestions(part)
+  }, [part])
+
+  useEffect(() => {
+    if (questions.length > 0) {
+      pickRandomQuestions()
     }
-  }, [])
+  }, [questions])
+
+  const pickRandomQuestions = () => {
+    const shuffled = [...questions].sort(() => 0.5 - Math.random())
+    setDisplayedQuestions(shuffled.slice(0, 3))
+    setSelectedId(null)
+  }
 
   const handleClick = (q: QuestionItem) => {
+    setSelectedId(q.id)
     onSelect(q.id, q.questionText)
     if (window.innerWidth < 768) {
       window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })
@@ -36,12 +49,14 @@ export default function NewQuestionSelector({
 
   const parts: ('Part 1' | 'Part 2' | 'Part 3')[] = ['Part 1', 'Part 2', 'Part 3']
 
-  const questionCardStyle = `
+  const questionCardStyle = (id: string) => `
     cursor-pointer 
-    bg-purple-50 border border-purple-200 
-    hover:border-purple-400 hover:bg-purple-100 hover:shadow-md 
-    transition rounded-md 
-    p-4 text-[15px] text-gray-800 font-medium
+    border rounded-md p-4 text-[15px] font-medium transition 
+    ${selectedId === id
+      ? 'bg-purple-100 border-purple-500 shadow-lg'
+      : 'bg-purple-50 border-purple-200 hover:border-purple-400 hover:bg-purple-100 hover:shadow-md'
+    }
+    text-gray-800
   `
 
   return (
@@ -64,13 +79,23 @@ export default function NewQuestionSelector({
         ))}
       </div>
 
+      {/* “换一组”按钮 */}
+      <div className="mt-4">
+        <button
+          onClick={pickRandomQuestions}
+          className="text-sm text-purple-600 hover:underline font-medium"
+        >
+          换一组
+        </button>
+      </div>
+
       {/* 题目卡片列表 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full items-start mt-6">
-        {questions.map((q, i) => (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full items-start mt-4">
+        {displayedQuestions.map((q) => (
           <div
-            key={i}
+            key={q.id}
             onClick={() => handleClick(q)}
-            className={questionCardStyle}
+            className={questionCardStyle(q.id)}
           >
             {q.questionText}
           </div>
