@@ -25,20 +25,18 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
   const [displayedQuote, setDisplayedQuote] = useState('')
   const [positionStyle, setPositionStyle] = useState<Position>({})
   const [ripples, setRipples] = useState<{ x: number; y: number; id: number }[]>([])
-  const [hasClicked, setHasClicked] = useState(false)
   const [imageHeight, setImageHeight] = useState<number>(300)
+
+  const [quoteColor, setQuoteColor] = useState<'white' | 'black'>('white')
+  const [hasPlayed, setHasPlayed] = useState(false)
+  const [showColorToggle, setShowColorToggle] = useState(false)
 
   const animationTypeList = ['shake', 'scale', 'bounce', 'fade-in', 'ripple'] as const
   const [animationIndex, setAnimationIndex] = useState(0)
-  const animationType = animationTypeList[animationIndex]
   const [lastClickTime, setLastClickTime] = useState(Date.now())
 
-  // ✅ 新增：quote 颜色切换逻辑 + renderKey
-  const [quoteColor, setQuoteColor] = useState<'white' | 'black'>('white')
-  const [renderKey, setRenderKey] = useState(0)
   const toggleQuoteColor = () => {
     setQuoteColor(prev => (prev === 'white' ? 'black' : 'white'))
-    setRenderKey(prev => prev + 1)
   }
 
   const getRandomOffset = (min: number, max: number): string =>
@@ -68,7 +66,12 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
     setTimeout(() => setRipples(prev => prev.filter(r => r.id !== id)), 500)
 
     setAnimationIndex(prev => (prev + 1) % animationTypeList.length)
-    if (!hasClicked) setHasClicked(true)
+
+    // ✅ 设置“已开始播放”状态，并在 2 秒后展示按钮
+    if (!hasPlayed) {
+      setHasPlayed(true)
+      setTimeout(() => setShowColorToggle(true), 2000)
+    }
   }
 
   useEffect(() => {
@@ -88,7 +91,7 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
     const interval = setInterval(() => {
       if (!imageRef.current || quoteArray.length === 0) return
       const now = Date.now()
-      if (now - lastClickTime >= 7000) {
+      if (now - lastClickTime >= 10000) {
         const rect = imageRef.current.getBoundingClientRect()
         const randX = Math.floor(Math.random() * rect.width)
         const randY = Math.floor(Math.random() * rect.height)
@@ -104,7 +107,7 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
     <div className="w-full mb-6 break-inside-avoid rounded-md shadow-sm border border-gray-200 overflow-hidden">
       {/* 图片区域 */}
       <div
-        className={`relative w-full cursor-pointer overflow-hidden animate-${animationType}`}
+        className={`relative w-full cursor-pointer overflow-hidden animate-${animationTypeList[animationIndex]}`}
         onClick={(e) => showQuote(e)}
       >
         <img
@@ -116,21 +119,20 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
 
         {/* Quote 气泡 */}
         {displayedQuote && (
-  <QuoteVisualPetal
-    quote={displayedQuote}
-    position={positionStyle}
-    triggerKey={displayedQuote + renderKey}
-    color={quoteColor}
-  />
-)}
+          <QuoteVisualPetal
+            quote={displayedQuote}
+            position={positionStyle}
+            color={quoteColor}
+          />
+        )}
 
-        {/* 初始提示 or 切换按钮 */}
+        {/* 初始提示或颜色切换按钮 */}
         <div className="absolute top-3 right-3 z-10">
-          {!hasClicked ? (
+          {!hasPlayed ? (
             <div className="bg-purple-500/40 hover:bg-purple-600 text-white text-xs px-3 py-1 rounded-full shadow transition">
-              ▶ Click to play
+              ▶ Click to show quotes
             </div>
-          ) : (
+          ) : showColorToggle ? (
             <button
               onClick={(e) => {
                 e.stopPropagation()
@@ -138,9 +140,9 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
               }}
               className="bg-purple-500/40 hover:bg-purple-600 text-white text-xs px-3 py-1 rounded-full shadow transition"
             >
-              🎨 Change quote color
+              🎨 Switch text color
             </button>
-          )}
+          ) : null}
         </div>
 
         {/* Ripple 效果 */}
