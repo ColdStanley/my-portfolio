@@ -8,9 +8,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { Card, CardContent } from '@/components/ui/card'
-import NewExpressionPanel from './NewExpressionPanel'
-import TemplateSentenceCards from './TemplateSentenceCards.tsx'
-
 
 interface AnswerData {
   band: number
@@ -43,8 +40,6 @@ export default function NewAnswerDisplay({ questionText }: Props) {
     fetchAnswers()
   }, [questionText])
 
-  const sharedTemplateSentence = answers[0]?.templateSentence || ''
-
   if (!questionText) {
     return (
       <div className="text-sm text-gray-400 italic mt-6">
@@ -58,52 +53,69 @@ export default function NewAnswerDisplay({ questionText }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
         {answers.map((answer, index) => (
           <Card key={index} className="shadow-lg border border-gray-200">
-            <CardContent className="p-6 space-y-4">
+            <CardContent className="p-4 sm:p-6 space-y-4">
               <h3 className="text-lg font-bold text-purple-700">Band {answer.band}</h3>
-
-              <p className="text-gray-800 leading-relaxed">{answer.text}</p>
-
-              {Array.isArray(answer.keywords) && answer.keywords.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {answer.keywords.map((kw, i) => (
-                    <Tooltip key={i}>
-                      <TooltipTrigger asChild>
-                        <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-md text-sm cursor-pointer">
-                          {kw}
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-[240px] text-sm">
-                        {answer.explanations?.[kw] ?? '暂无解释'}
-                      </TooltipContent>
-                    </Tooltip>
-                  ))}
-                </div>
-              )}
+              <p className="text-gray-800 leading-relaxed text-sm sm:text-base">
+                {renderHighlightedText(answer.text, answer.keywords, answer.explanations)}
+              </p>
             </CardContent>
           </Card>
         ))}
       </div>
-
-      
-       {/* ✅ Template Sentence 统一展示区 */}
-      <TemplateSentenceCards text={sharedTemplateSentence} />
-
-
-      {/* ✅ 表达训练模块 test*/}
-      <NewExpressionPanel explanations={mergeExplanations(answers)} />
-      
-      </TooltipProvider>
-      
+    </TooltipProvider>
   )
 }
 
-// ✅ 合并多个 Band 的 explanations
-function mergeExplanations(answers: AnswerData[]): Record<string, string> {
-  const all: Record<string, string> = {}
-  for (const ans of answers) {
-    for (const [key, val] of Object.entries(ans.explanations)) {
-      all[key] = val
+// ✅ 文本中高亮关键词并加 Tooltip（标签样式 + 动效 + 响应式）
+function renderHighlightedText(
+  text: string,
+  keywords: string[],
+  explanations: Record<string, string>
+): React.ReactNode[] {
+  if (!keywords || keywords.length === 0) return [text]
+
+  const parts: React.ReactNode[] = []
+  let remaining = text
+
+  const sortedKeywords = [...keywords].sort((a, b) => b.length - a.length)
+
+  while (remaining.length > 0) {
+    let matched = false
+
+    for (const word of sortedKeywords) {
+      const index = remaining.toLowerCase().indexOf(word.toLowerCase())
+      if (index !== -1) {
+        if (index > 0) {
+          parts.push(remaining.slice(0, index))
+        }
+
+        const matchedWord = remaining.slice(index, index + word.length)
+        parts.push(
+          <Tooltip key={`${matchedWord}-${index}`}>
+            <TooltipTrigger asChild>
+              <span
+                className="px-1.5 py-0.5 bg-purple-100 text-purple-800 rounded-md text-sm font-medium transition-all duration-300 hover:scale-105 hover:bg-purple-200 cursor-help inline-block"
+              >
+                {matchedWord}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[80vw] sm:max-w-[240px] text-sm">
+              {explanations[word] ?? '暂无解释'}
+            </TooltipContent>
+          </Tooltip>
+        )
+
+        remaining = remaining.slice(index + word.length)
+        matched = true
+        break
+      }
+    }
+
+    if (!matched) {
+      parts.push(remaining)
+      break
     }
   }
-  return all
+
+  return parts
 }

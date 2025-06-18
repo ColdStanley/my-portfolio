@@ -91,7 +91,7 @@ export default function Footer() {
           </div>
 
           {/* 右栏 */}
-          <div className="flex flex-col justify-start gap-4 pt-1">
+          <div id="subscribe" className="flex flex-col justify-start gap-4 pt-1">
             <h3 className="text-lg font-semibold text-purple-800 dark:text-purple-300">Subscribe</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Get occasional updates on new projects or posts.
