@@ -66,7 +66,7 @@ export default function NewAnswerDisplay({ questionText }: Props) {
   )
 }
 
-// ✅ 文本中高亮关键词并加 Tooltip（标签样式 + 动效 + 响应式）
+// ✅ 文本中高亮关键词并加 Tooltip（支持点击触发）
 function renderHighlightedText(
   text: string,
   keywords: string[],
@@ -91,7 +91,7 @@ function renderHighlightedText(
 
         const matchedWord = remaining.slice(index, index + word.length)
         parts.push(
-          <Tooltip key={`${matchedWord}-${index}`}>
+          <Tooltip key={`${matchedWord}-${index}`} delayDuration={0}>
             <TooltipTrigger asChild>
               <span
                 className="px-1.5 py-0.5 bg-purple-100 text-purple-800 rounded-md text-sm font-medium transition-all duration-300 hover:scale-105 hover:bg-purple-200 cursor-help inline-block"
@@ -99,7 +99,11 @@ function renderHighlightedText(
                 {matchedWord}
               </span>
             </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-[80vw] sm:max-w-[240px] text-sm">
+            <TooltipContent
+              side="top"
+              className="max-w-[80vw] sm:max-w-[240px] text-sm"
+              disableHoverableContent
+            >
               {explanations[word] ?? '暂无解释'}
             </TooltipContent>
           </Tooltip>

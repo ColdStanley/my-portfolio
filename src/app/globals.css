@@ -47,6 +47,10 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 @layer base {
   body {
     @apply bg-background text-foreground;
