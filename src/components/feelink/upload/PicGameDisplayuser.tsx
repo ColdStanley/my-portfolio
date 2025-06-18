@@ -49,25 +49,28 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
     const x = e ? e.clientX - rect.left : xPos ?? rect.width / 2
     const y = e ? e.clientY - rect.top : yPos ?? rect.height / 2
 
-    setLastClickTime(Date.now())
-    const quote = quoteArray[Math.floor(Math.random() * quoteArray.length)]
-    setDisplayedQuote(quote)
-    setPositionStyle({
-      ...(y <= rect.height / 2 ? { top: getRandomOffset(5, 15) } : { bottom: getRandomOffset(5, 15) }),
-      ...(x <= rect.width / 2 ? { left: getRandomOffset(5, 15) } : { right: getRandomOffset(5, 15) }),
-    })
-
+    // 重置状态，确保不会被上一个定时器覆盖
+    setDisplayedQuote('')
     setTimeout(() => {
-      setDisplayedQuote('')
-    }, 15000)
+      const quote = quoteArray[Math.floor(Math.random() * quoteArray.length)]
+      setDisplayedQuote(quote)
+      setPositionStyle({
+        ...(y <= rect.height / 2 ? { top: getRandomOffset(5, 15) } : { bottom: getRandomOffset(5, 15) }),
+        ...(x <= rect.width / 2 ? { left: getRandomOffset(5, 15) } : { right: getRandomOffset(5, 15) }),
+      })
 
+      // 设置 quote 12 秒后消失
+      setTimeout(() => {
+        setDisplayedQuote('')
+      }, 12000)
+    }, 10)
+
+    setLastClickTime(Date.now())
+    setAnimationIndex(prev => (prev + 1) % animationTypeList.length)
     const id = Date.now()
     setRipples(prev => [...prev, { x, y, id }])
     setTimeout(() => setRipples(prev => prev.filter(r => r.id !== id)), 500)
 
-    setAnimationIndex(prev => (prev + 1) % animationTypeList.length)
-
-    // ✅ 设置“已开始播放”状态，并在 2 秒后展示按钮
     if (!hasPlayed) {
       setHasPlayed(true)
       setTimeout(() => setShowColorToggle(true), 2000)
@@ -91,13 +94,13 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
     const interval = setInterval(() => {
       if (!imageRef.current || quoteArray.length === 0) return
       const now = Date.now()
-      if (now - lastClickTime >= 10000) {
+      if (now - lastClickTime >= 9000) {  // ⏱️ 自动触发间隔：9 秒
         const rect = imageRef.current.getBoundingClientRect()
         const randX = Math.floor(Math.random() * rect.width)
         const randY = Math.floor(Math.random() * rect.height)
         showQuote(null, randX, randY)
       }
-    }, 2000)
+    }, 2000)  // 🔁 每 2 秒检测一次
     return () => clearInterval(interval)
   }, [lastClickTime, quoteArray])
 
