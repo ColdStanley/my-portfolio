@@ -30,6 +30,31 @@ export default function MobileWordExplainer({ open, word, explanation, onClose }
     }
   }, [copied])
 
+  const handlePlayAudio = () => {
+    if (!word) return
+
+    const lowerWord = word.toLowerCase()
+    const audioUrl = `https://ssl.gstatic.com/dictionary/static/sounds/oxford/${lowerWord}--_us_1.mp3`
+    const audio = new Audio(audioUrl)
+
+    audio.onerror = () => {
+      // fallback using browser TTS
+      const utterance = new SpeechSynthesisUtterance(word)
+      utterance.lang = 'en-US'
+      speechSynthesis.speak(utterance)
+      toast.info('🔊 Using browser pronunciation (fallback)')
+    }
+
+    audio
+      .play()
+      .then(() => {
+        toast.success(`▶️ Playing: ${word}`)
+      })
+      .catch(() => {
+        toast.error('🔇 Your browser blocked audio playback.')
+      })
+  }
+
   return (
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent side="bottom" className="sm:max-w-full p-6 pb-10 rounded-t-2xl shadow-lg border-t-4 border-purple-200">
@@ -41,7 +66,7 @@ export default function MobileWordExplainer({ open, word, explanation, onClose }
             <button
               className="text-purple-500 hover:text-purple-700 transition"
               aria-label="Play pronunciation"
-              onClick={() => toast.info('🔊 Pronunciation coming soon!')}
+              onClick={handlePlayAudio}
             >
               <Volume2 size={20} />
             </button>

@@ -8,6 +8,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { Card, CardContent } from '@/components/ui/card'
+import { Volume2 } from 'lucide-react'
 import MobileWordExplainer from './MobileWordExplainer'
 
 interface AnswerData {
@@ -83,6 +84,24 @@ export default function NewAnswerDisplay({ questionText }: Props) {
   )
 }
 
+// 🔊 播放发音函数（优先 Oxford，失败后用 SpeechSynthesis）
+function playAudio(word: string) {
+  const url = `https://ssl.gstatic.com/dictionary/static/sounds/oxford/${word.toLowerCase()}--_us_1.mp3`
+  const audio = new Audio(url)
+
+  audio.onerror = () => {
+    const utterance = new SpeechSynthesisUtterance(word)
+    utterance.lang = 'en-US'
+    speechSynthesis.speak(utterance)
+  }
+
+  audio.play().catch(() => {
+    const utterance = new SpeechSynthesisUtterance(word)
+    utterance.lang = 'en-US'
+    speechSynthesis.speak(utterance)
+  })
+}
+
 // 🔍 获取指定关键词的解释
 function getExplanation(word: string | null, answers: AnswerData[]): string | null {
   if (!word) return null
@@ -92,7 +111,7 @@ function getExplanation(word: string | null, answers: AnswerData[]): string | nu
   return null
 }
 
-// ✅ 渲染带交互的关键词（支持移动端点击）
+// ✅ 渲染带交互的关键词（支持发音和移动端浮层）
 function renderHighlightedText(
   text: string,
   keywords: string[],
@@ -119,14 +138,19 @@ function renderHighlightedText(
           <Tooltip key={`${matchedWord}-${index}`} delayDuration={0}>
             <TooltipTrigger asChild>
               <span
-                onPointerDown={() => onClick(word)} // ✅ 支持移动端点击
+                onPointerDown={() => onClick(word)}
                 className="px-1.5 py-0.5 bg-purple-100 text-purple-800 rounded-md text-sm font-medium transition-all duration-300 hover:scale-105 hover:bg-purple-200 cursor-help inline-block"
               >
                 {matchedWord}
               </span>
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-[80vw] sm:max-w-[240px] text-sm">
-              {explanations[word] ?? '暂无解释'}
+              <div className="flex items-center gap-2">
+                <span>{explanations[word] ?? '暂无解释'}</span>
+                <button onClick={() => playAudio(word)} className="text-purple-500 hover:text-purple-700">
+                  <Volume2 size={16} />
+                </button>
+              </div>
             </TooltipContent>
           </Tooltip>
         )
