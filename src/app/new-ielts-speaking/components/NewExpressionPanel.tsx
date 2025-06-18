@@ -1,28 +1,26 @@
 'use client'
 
-interface ExpressionPanelProps {
+interface Props {
   explanations: Record<string, string>
 }
 
-export default function NewExpressionPanel({ explanations }: ExpressionPanelProps) {
-  const entries = Object.entries(explanations)
+export default function NewExpressionPanel({ explanations }: Props) {
+  const entries = Object.entries(explanations || {})
 
   if (entries.length === 0) return null
 
   return (
-    <div className="mt-10 space-y-4">
-      <h3 className="text-lg font-semibold text-purple-700 flex items-center gap-2">
-        🧠 Expression Training
-      </h3>
+    <div className="mt-12">
+      <h2 className="text-lg font-semibold text-purple-700 mb-3">🧠 Expression Training</h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {entries.map(([word, explanation]) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+        {entries.map(([key, val], index) => (
           <div
-            key={word}
-            className="bg-purple-50 border border-purple-200 rounded-xl p-4"
+            key={index}
+            className="bg-purple-50 border border-purple-200 rounded-xl px-3 py-2 shadow-sm hover:shadow-md transition"
           >
-            <p className="text-purple-800 font-medium mb-1">{word}</p>
-            <p className="text-sm text-gray-700">{explanation}</p>
+            <div className="text-[15px] font-semibold text-purple-800 leading-tight">{key}</div>
+            <div className="text-[13px] text-gray-600 mt-1">{val}</div>
           </div>
         ))}
       </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import NewIELTSHeader from './components/NewIELTSHeader'
 import NewQuestionSelector from './components/NewQuestionSelector'
 import NewAnswerDisplay from './components/NewAnswerDisplay'
+import { Toaster } from 'sonner' // ✅ Toast支持
 
 interface QuestionItem {
   id: string
@@ -11,7 +12,7 @@ interface QuestionItem {
 }
 
 export default function NewIELTSSpeakingPage() {
-  const [selectedPart, setSelectedPart] = useState<'Part 1' | 'Part 2' | 'Part 3'>('Part 2') // ✅ 默认选中 Part 2
+  const [selectedPart, setSelectedPart] = useState<'Part 1' | 'Part 2' | 'Part 3'>('Part 2')
   const [selectedQuestionText, setSelectedQuestionText] = useState<string | null>(null)
   const [questions, setQuestions] = useState<QuestionItem[]>([])
 
@@ -19,7 +20,14 @@ export default function NewIELTSSpeakingPage() {
     try {
       const res = await fetch(`/api/new-ielts-speaking/list?part=${part}`)
       const data = await res.json()
-      setQuestions(data.items || [])
+      const items = data.items || []
+      setQuestions(items)
+
+      // ✅ 初始自动选择一道题（仅第一次加载）
+      if (part === 'Part 2' && selectedQuestionText === null && items.length > 0) {
+        const random = items[Math.floor(Math.random() * items.length)]
+        setSelectedQuestionText(random.questionText)
+      }
     } catch (error) {
       console.error('❌ 获取题目失败:', error)
     }
@@ -31,7 +39,7 @@ export default function NewIELTSSpeakingPage() {
 
   return (
     <main className="flex flex-col justify-start gap-8 p-6 max-w-7xl mx-auto font-sans text-gray-800">
-      {/* ❌ 删除了原先的 Part 按钮区域 */}
+      <Toaster /> {/* ✅ 启用 toast 提示 */}
 
       <NewIELTSHeader />
 

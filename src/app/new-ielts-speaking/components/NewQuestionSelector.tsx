@@ -29,7 +29,11 @@ export default function NewQuestionSelector({
 
   useEffect(() => {
     if (questions.length > 0) {
-      pickRandomQuestions()
+      const shuffled = [...questions].sort(() => 0.5 - Math.random())
+      const selected = shuffled[0]
+      setDisplayedQuestions(shuffled.slice(0, 3))
+      setSelectedId(selected.id)
+      onSelect(selected.id, selected.questionText)
     }
   }, [questions])
 

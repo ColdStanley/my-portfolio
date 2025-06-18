@@ -9,13 +9,15 @@ import {
 } from '@/components/ui/tooltip'
 import { Card, CardContent } from '@/components/ui/card'
 import NewExpressionPanel from './NewExpressionPanel'
+import TemplateSentenceCards from './TemplateSentenceCards.tsx'
+
 
 interface AnswerData {
   band: number
   text: string
   keywords: string[]
   explanations: Record<string, string>
-  templateSentence?: string // ✅ 新增字段
+  templateSentence?: string
 }
 
 interface Props {
@@ -41,6 +43,8 @@ export default function NewAnswerDisplay({ questionText }: Props) {
     fetchAnswers()
   }, [questionText])
 
+  const sharedTemplateSentence = answers[0]?.templateSentence || ''
+
   if (!questionText) {
     return (
       <div className="text-sm text-gray-400 italic mt-6">
@@ -58,15 +62,6 @@ export default function NewAnswerDisplay({ questionText }: Props) {
               <h3 className="text-lg font-bold text-purple-700">Band {answer.band}</h3>
 
               <p className="text-gray-800 leading-relaxed">{answer.text}</p>
-
-              {answer.templateSentence && (
-                <div className="mt-2 text-sm text-gray-600 italic whitespace-pre-line">
-                  <p className="mt-2 text-sm text-gray-600 italic whitespace-pre-line">
-  <span className="font-semibold text-purple-700">Template:</span><br />
-  {answer.templateSentence}
-</p>
-                </div>
-              )}
 
               {Array.isArray(answer.keywords) && answer.keywords.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
@@ -89,9 +84,16 @@ export default function NewAnswerDisplay({ questionText }: Props) {
         ))}
       </div>
 
+      
+       {/* ✅ Template Sentence 统一展示区 */}
+      <TemplateSentenceCards text={sharedTemplateSentence} />
+
+
       {/* ✅ 表达训练模块 */}
       <NewExpressionPanel explanations={mergeExplanations(answers)} />
-    </TooltipProvider>
+      
+      </TooltipProvider>
+      
   )
 }
 
