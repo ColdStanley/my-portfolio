@@ -40,11 +40,12 @@ export default function NewIELTSHeader() {
         <div className="absolute bottom-4 right-4">
           <a href="#subscribe" className="text-sm">
             <Button
-              variant="outline"
-              className="border-purple-500 text-purple-700 hover:bg-purple-50 hover:border-purple-600"
-            >
-              订阅获得雅思最新资讯
-            </Button>
+  variant="outline"
+  className="border-purple-500 text-purple-700 hover:bg-purple-50 hover:border-purple-600 text-sm sm:text-base px-3 py-1 whitespace-nowrap"
+>
+  订阅获得雅思最新资讯
+</Button>
+
           </a>
         </div>
       </div>
