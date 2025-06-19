@@ -31,40 +31,57 @@ export default function NewIELTSHeader() {
       </div>
 
       {/* 中间：功能介绍卡片 */}
-      <div className="bg-white shadow rounded-xl p-6 flex flex-col justify-between relative">
-        <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-gray-800">快速了解</h2>
-          <ul className="text-sm text-gray-700 leading-relaxed list-disc pl-5 space-y-1">
-            <li>提供真实 IELTS Speaking 题目</li>
-            <li>参考 Band 6–8 答案 & 高分表达</li>
-            <li>使用即享，无需注册，持续更新</li>
-          </ul>
-        </div>
+      {/* 中间：功能介绍卡片 */}
+<div className="bg-white shadow rounded-xl p-6 flex flex-col justify-between">
+  {/* 顶部介绍 */}
+  <div className="space-y-3">
+    <h2 className="text-lg font-semibold text-gray-800">快速了解</h2>
 
-        <div className="absolute bottom-4 right-4 flex gap-2">
+    <ul className="text-sm text-gray-700 leading-relaxed list-none pl-0 space-y-1">
+  <li>1- 选择 Part (Part 1, Part 2, Part 3)</li>
+  <li>2- 点击题目</li>
+  <li>3- 学习6分、7分、8分范文</li>
+  <li>4- 掌握Highlight词汇</li>
+</ul>
 
-          <Link
-            href="/new-ielts-speaking/custom-answer"
-            className="text-sm font-medium text-purple-600 hover:underline border border-purple-600 rounded-lg px-4 py-2"
-          >
-            定制属于你的真实答案
-          </Link>
-        </div>
-      </div>
+
+  </div>
+
+  {/* 底部提示与按钮：一行居中对齐 */}
+  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-6 gap-3">
+    {/* 提示 + 动效箭头 */}
+    <span className="text-xs text-gray-500 flex items-center">
+      属于你自己的，考场才能脱口而出
+      <span className="ml-1 animate-bounce-x text-purple-500 text-base">→</span>
+    </span>
+
+    {/* 吸引力增强按钮 */}
+    <Link
+      href="/new-ielts-speaking/custom-answer"
+      className="text-sm font-semibold text-white bg-gradient-to-r from-purple-500 to-purple-700
+                 hover:scale-105 transition-transform rounded-full px-5 py-2 shadow-md"
+    >
+      口语私人定制
+    </Link>
+  </div>
+</div>
+
+
+
+
 
       {/* 右侧：视频区域 */}
-      <div className="bg-white shadow rounded-xl p-6 flex flex-col items-center justify-between">
-        <video
-          src="/images/cat.mp4"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          className="rounded-xl w-full h-[200px] object-cover"
-        />
-        <p className="text-sm text-gray-500 mt-4 italic">Have fun like this cat 🐾</p>
-      </div>
+
+      <div className="bg-white shadow rounded-xl p-6 flex items-center justify-center">
+  <img
+    src="/images/IELTSSpeaking01.png"
+    alt="IELTS Speaking Visual"
+    className="w-full h-[200px] object-contain rounded-xl"
+  />
+</div>
+
+
+
     </div>
   )
 }
