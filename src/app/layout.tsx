@@ -52,6 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <NavBar />
         {children}
         <Footer />
+        {/* ✅ Toast 支持（不影响现有样式） */}
         <Toaster richColors position="top-center" />
       </body>
     </html>

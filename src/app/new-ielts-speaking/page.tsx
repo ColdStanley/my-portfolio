@@ -69,11 +69,26 @@ export default function NewIELTSSpeakingPage() {
       )}
 
       {/* Footer锚点 */}
-      <section id="footer" className="mt-20">
-        <div className="text-center text-sm text-gray-400 italic">
-          You're now at the bottom. Thanks for exploring!
-        </div>
-      </section>
+<section id="footer" className="mt-20 space-y-4">
+  {/* 顶部提示 */}
+  <div className="text-center text-sm text-gray-400 italic">
+    You're now at the bottom. Thanks for exploring!
+  </div>
+
+  {/* 引导文案 + 按钮 */}
+  <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-sm text-gray-500">
+    <span>属于你自己的，考场才能脱口而出 →</span>
+    <a
+      href="/new-ielts-speaking/custom-answer"
+      className="text-sm font-semibold text-white bg-gradient-to-r from-purple-500 to-purple-700
+                 hover:scale-105 transition-transform rounded-full px-5 py-2 shadow-md
+                 flex items-center justify-center"
+    >
+      口语私人定制
+    </a>
+  </div>
+</section>
+
     </main>
   )
 }
