@@ -2,11 +2,10 @@
 
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
-export default function NewIELTSHeader() {
+export default function NewIELTSCustomHeader() {
   const router = useRouter()
 
   return (
@@ -35,13 +34,13 @@ export default function NewIELTSHeader() {
         <div className="space-y-3">
           <h2 className="text-lg font-semibold text-gray-800">快速了解</h2>
           <ul className="text-sm text-gray-700 leading-relaxed list-disc pl-5 space-y-1">
-            <li>提供真实 IELTS Speaking 题目</li>
-            <li>参考 Band 6–8 答案 & 高分表达</li>
-            <li>使用即享，无需注册，持续更新</li>
+            <li>自选题目 + 智能关键词推荐</li>
+            <li>输入中文思路，一键生成英文答案</li>
+            <li>支持 Band 6/7/8 三段表达对比</li>
           </ul>
         </div>
 
-        <div className="absolute bottom-4 right-4 flex gap-2">
+        <div className="absolute bottom-4 right-4 flex">
           <button
             onClick={() => {
               const el = document.getElementById('subscribe')
@@ -51,13 +50,6 @@ export default function NewIELTSHeader() {
           >
             订阅获得雅思最新资讯
           </button>
-
-          <Link
-            href="/new-ielts-speaking/custom-answer"
-            className="text-sm font-medium text-purple-600 hover:underline border border-purple-600 rounded-lg px-4 py-2"
-          >
-            定制属于你的真实答案
-          </Link>
         </div>
       </div>
 

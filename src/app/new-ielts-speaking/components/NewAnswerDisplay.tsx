@@ -63,7 +63,10 @@ export default function NewAnswerDisplay({ questionText }: Props) {
     <TooltipProvider>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
         {answers.map((answer, index) => (
-          <Card key={index} className="shadow-lg border border-gray-200">
+          <Card
+            key={index}
+            className="shadow-lg border border-gray-200 transition duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1"
+          >
             <CardContent className="p-4 sm:p-6 space-y-4">
               <h3 className="text-lg font-bold text-purple-700">Band {answer.band}</h3>
               <p className="text-gray-800 leading-relaxed text-sm sm:text-base">
@@ -84,7 +87,6 @@ export default function NewAnswerDisplay({ questionText }: Props) {
   )
 }
 
-// 🔊 播放发音函数（优先 Oxford，失败后用 SpeechSynthesis）
 function playAudio(word: string) {
   const url = `https://ssl.gstatic.com/dictionary/static/sounds/oxford/${word.toLowerCase()}--_us_1.mp3`
   const audio = new Audio(url)
@@ -102,7 +104,6 @@ function playAudio(word: string) {
   })
 }
 
-// 🔍 获取指定关键词的解释
 function getExplanation(word: string | null, answers: AnswerData[]): string | null {
   if (!word) return null
   for (const ans of answers) {
@@ -111,7 +112,6 @@ function getExplanation(word: string | null, answers: AnswerData[]): string | nu
   return null
 }
 
-// ✅ 渲染带交互的关键词（支持发音和移动端浮层）
 function renderHighlightedText(
   text: string,
   keywords: string[],
@@ -139,7 +139,7 @@ function renderHighlightedText(
             <TooltipTrigger asChild>
               <span
                 onPointerDown={() => onClick(word)}
-                className="px-1.5 py-0.5 bg-purple-100 text-purple-800 rounded-md text-sm font-medium transition-all duration-300 hover:scale-105 hover:bg-purple-200 cursor-help inline-block"
+                className="px-1.5 py-0.5 bg-purple-100 text-purple-800 rounded-md text-sm font-medium transition-all duration-300 hover:scale-105 hover:shadow-md active:scale-95 hover:bg-purple-200 cursor-help inline-block"
               >
                 {matchedWord}
               </span>

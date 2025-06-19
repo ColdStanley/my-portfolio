@@ -38,7 +38,12 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    return NextResponse.json({ items })
+    // ✅ 洗牌并返回前 3 个
+    const shuffled = [...items].sort(() => 0.5 - Math.random())
+    const selected = shuffled.slice(0, 3)
+
+    return NextResponse.json({ items: selected })
+
   } catch (err: any) {
     return NextResponse.json(
       { error: '❌ Notion 查询失败', detail: err.message },

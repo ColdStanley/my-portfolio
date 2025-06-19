@@ -13,7 +13,7 @@ export const metadata = {
     siteName: 'Feelink by StanleyHi',
     images: [
       {
-        url: 'https://www.stanleyhi.com/images/feelink-cover.png',
+        url: 'https://www.stanleyhi.com/og/feelink-cover.png',
         width: 1200,
         height: 650,
         alt: 'Feelink Cover Image',
@@ -26,7 +26,7 @@ export const metadata = {
     title: 'Say I love you, apologize, bless, and thank – through an image with quotes.',
     description:
       'Express your feelings in a gentle and creative way. Upload an image, generate a quote, and share your message of love, apology, gratitude, or blessing.',
-    images: ['https://www.stanleyhi.com/images/feelink-cover.png'],
+    images: ['https://www.stanleyhi.com/og/feelink-cover.png'],
   },
 }
 
