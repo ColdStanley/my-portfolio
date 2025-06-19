@@ -42,15 +42,6 @@ export default function NewIELTSHeader() {
         </div>
 
         <div className="absolute bottom-4 right-4 flex gap-2">
-          <button
-            onClick={() => {
-              const el = document.getElementById('subscribe')
-              el?.scrollIntoView({ behavior: 'smooth' })
-            }}
-            className="border border-purple-500 text-purple-700 hover:bg-purple-50 hover:border-purple-600 text-sm sm:text-base px-3 py-1 rounded-md"
-          >
-            订阅获得雅思最新资讯
-          </button>
 
           <Link
             href="/new-ielts-speaking/custom-answer"
