@@ -2,11 +2,17 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Menu } from 'lucide-react'
 import YouTube from 'react-youtube'
 import clsx from 'clsx'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 const navItems = [
   { label: 'Home', href: '/' },
@@ -23,6 +29,30 @@ export default function NavBar() {
   const [player, setPlayer] = useState<any>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [hasInitiated, setHasInitiated] = useState(false)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+
+  useEffect(() => {
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user?.email) {
+        setUserEmail(session.user.email)
+      }
+    }
+    getSession()
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserEmail(session?.user?.email ?? null)
+    })
+
+    return () => {
+      listener.subscription.unsubscribe()
+    }
+  }, [])
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    setUserEmail(null)
+  }
 
   const onPlayerReady = (event: any) => {
     setPlayer(event.target)
@@ -33,7 +63,6 @@ export default function NavBar() {
     if (!hasInitiated) {
       setHasInitiated(true)
       setIsPlaying(true)
-      // 播放将在 onReady 中执行
     } else {
       if (isPlaying) {
         player?.pauseVideo()
@@ -91,8 +120,8 @@ export default function NavBar() {
                 playerVars: {
                   autoplay: 1,
                   mute: 0,
-                  loop: 1, // ✅ 启用循环播放
-                  playlist: YOUTUBE_VIDEO_ID // ✅ 必须加这个才能 loop 生效
+                  loop: 1,
+                  playlist: YOUTUBE_VIDEO_ID
                 },
               }}
               onReady={onPlayerReady}
@@ -102,7 +131,7 @@ export default function NavBar() {
       </div>
 
       {/* Desktop nav */}
-      <div className="hidden md:flex gap-6">
+      <div className="hidden md:flex gap-6 items-center">
         {navItems.map((item) => (
           <Link
             key={item.label}
@@ -117,6 +146,29 @@ export default function NavBar() {
             {item.label}
           </Link>
         ))}
+
+        {userEmail ? (
+          <div className="relative group">
+            <button className="text-sm text-gray-700 dark:text-gray-200">
+              Hello, {userEmail.split('@')[0]}
+            </button>
+            <div className="absolute hidden group-hover:block bg-white dark:bg-gray-800 shadow-md border rounded mt-2 right-0">
+              <button
+                onClick={handleLogout}
+                className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left"
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        ) : (
+          <Link
+            href="/register"
+            className="text-sm text-white bg-purple-600 px-3 py-1 rounded hover:bg-purple-700 ml-2"
+          >
+            Sign in / Register
+          </Link>
+        )}
       </div>
 
       {/* Mobile nav */}
@@ -141,6 +193,27 @@ export default function NavBar() {
                   {item.label}
                 </Link>
               ))}
+
+              {userEmail ? (
+                <div className="mt-4">
+                  <div className="text-sm text-gray-700 dark:text-gray-200 mb-2">
+                    Logged in as: {userEmail}
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="text-sm text-white bg-purple-600 px-3 py-1 rounded hover:bg-purple-700"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/register"
+                  className="text-sm text-white bg-purple-600 px-3 py-1 rounded hover:bg-purple-700 mt-2"
+                >
+                  Sign in / Register
+                </Link>
+              )}
             </div>
           </SheetContent>
         </Sheet>

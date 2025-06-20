@@ -2,15 +2,12 @@
 
 import { useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import { useRouter } from 'next/navigation'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
-
-console.log('URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
-console.log('KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
-
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('')
@@ -18,11 +15,13 @@ export default function RegisterPage() {
   const [inviteCode, setInviteCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const router = useRouter()
 
   const handleRegister = async () => {
     setLoading(true)
     setMessage('')
 
+    // 1️⃣ 注册 + 自动登录
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password
@@ -41,35 +40,11 @@ export default function RegisterPage() {
       return
     }
 
-    // 查询产品 ID
-    const { data: products } = await supabase
-      .from('products')
-      .select('id, name')
-      .in('name', ['ielts-speaking', 'feelink'])
-
-    if (!products || products.length !== 2) {
-      setMessage('找不到产品信息，无法写入会员记录')
-      setLoading(false)
-      return
-    }
-
-    // 为两个产品分别插入 basic 等级记录
-    const inserts = products.map((product) => ({
-      user_id: userId,
-      product_id: product.id,
-      membership_tier: 'basic',
-      invite_code: inviteCode || null
-    }))
-
-    const { error: insertError } = await supabase
-      .from('user_product_membership')
-      .insert(inserts)
-
-    if (insertError) {
-      setMessage(`注册成功，但会员记录写入失败：${insertError.message}`)
-    } else {
-      setMessage('注册成功，欢迎加入！请前往邮箱激活账户')
-    }
+    // ✅ 注册成功，自动登录状态已建立
+    setMessage('注册成功，欢迎加入！即将进入首页...')
+    setTimeout(() => {
+      router.push('/')
+    }, 1500)
 
     setLoading(false)
   }
@@ -108,7 +83,7 @@ export default function RegisterPage() {
         {loading ? '注册中…' : '立即注册'}
       </button>
 
-      {message && <p className="mt-4 text-sm text-center">{message}</p>}
+      {message && <p className="mt-4 text-sm text-center text-gray-700">{message}</p>}
     </div>
   )
 }
