@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { useRouter, useSearchParams } from 'next/navigation'
 
@@ -9,7 +9,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-export default function RegisterPage() {
+export default function RegisterPageClient() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [inviteCode, setInviteCode] = useState('')
@@ -24,7 +24,6 @@ export default function RegisterPage() {
     setLoading(true)
     setMessage('')
 
-    // 1️⃣ 注册用户
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -43,7 +42,6 @@ export default function RegisterPage() {
       return
     }
 
-    // 2️⃣ 插入默认会员记录（含错误捕捉）
     const { error: insertError } = await supabase.from('user_product_membership').insert([
       {
         user_id: userId,
@@ -61,7 +59,6 @@ export default function RegisterPage() {
       return
     }
 
-    // 3️⃣ 跳转提示
     setMessage('注册成功，欢迎加入！正在跳转...')
     setTimeout(() => {
       router.push(redirectPath)
