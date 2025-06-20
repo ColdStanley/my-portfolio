@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Menu } from 'lucide-react'
 import YouTube from 'react-youtube'
@@ -30,29 +30,7 @@ export default function NavBar() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [hasInitiated, setHasInitiated] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
-
-  useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user?.email) {
-        setUserEmail(session.user.email)
-      }
-    }
-    getSession()
-
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserEmail(session?.user?.email ?? null)
-    })
-
-    return () => {
-      listener.subscription.unsubscribe()
-    }
-  }, [])
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    setUserEmail(null)
-  }
+  const [showDropdown, setShowDropdown] = useState(false)
 
   const onPlayerReady = (event: any) => {
     setPlayer(event.target)
@@ -73,6 +51,23 @@ export default function NavBar() {
       }
     }
   }
+
+  const checkUser = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    setUserEmail(user?.email ?? null)
+  }
+
+  const signOut = async () => {
+    await supabase.auth.signOut()
+    setUserEmail(null)
+    setShowDropdown(false)
+  }
+
+  useEffect(() => {
+    checkUser()
+  }, [])
 
   return (
     <nav className="fixed top-0 left-0 w-full z-50 bg-white/90 dark:bg-black/80 backdrop-blur border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center shadow-sm transition-colors">
@@ -109,7 +104,6 @@ export default function NavBar() {
           )}
         </div>
 
-        {/* Hidden YouTube Player */}
         <div className="absolute opacity-0 pointer-events-none">
           {hasInitiated && (
             <YouTube
@@ -148,23 +142,28 @@ export default function NavBar() {
         ))}
 
         {userEmail ? (
-          <div className="relative group">
-            <button className="text-sm text-gray-700 dark:text-gray-200">
-              Hello, {userEmail.split('@')[0]}
+          <div className="relative ml-4">
+            <button
+              onClick={() => setShowDropdown(!showDropdown)}
+              className="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
+            >
+              {userEmail.split('@')[0]} ▼
             </button>
-            <div className="absolute hidden group-hover:block bg-white dark:bg-gray-800 shadow-md border rounded mt-2 right-0">
-              <button
-                onClick={handleLogout}
-                className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left"
-              >
-                Sign out
-              </button>
-            </div>
+            {showDropdown && (
+              <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 border rounded shadow p-2 text-sm">
+                <button
+                  onClick={signOut}
+                  className="text-left w-full text-gray-700 dark:text-gray-300 hover:text-purple-600"
+                >
+                  Sign out
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <Link
             href="/register"
-            className="text-sm text-white bg-purple-600 px-3 py-1 rounded hover:bg-purple-700 ml-2"
+            className="ml-4 text-sm md:text-base font-medium text-purple-700 dark:text-purple-400 hover:underline"
           >
             Sign in / Register
           </Link>
@@ -195,21 +194,28 @@ export default function NavBar() {
               ))}
 
               {userEmail ? (
-                <div className="mt-4">
-                  <div className="text-sm text-gray-700 dark:text-gray-200 mb-2">
-                    Logged in as: {userEmail}
-                  </div>
+                <div className="mt-6">
                   <button
-                    onClick={handleLogout}
-                    className="text-sm text-white bg-purple-600 px-3 py-1 rounded hover:bg-purple-700"
+                    onClick={() => setShowDropdown(!showDropdown)}
+                    className="text-base font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600"
                   >
-                    Sign out
+                    {userEmail.split('@')[0]} ▼
                   </button>
+                  {showDropdown && (
+                    <div className="mt-2">
+                      <button
+                        onClick={signOut}
+                        className="text-left w-full text-sm text-gray-700 dark:text-gray-300 hover:text-purple-600"
+                      >
+                        Sign out
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <Link
                   href="/register"
-                  className="text-sm text-white bg-purple-600 px-3 py-1 rounded hover:bg-purple-700 mt-2"
+                  className="mt-6 text-base font-medium text-purple-700 dark:text-purple-400 hover:underline"
                 >
                   Sign in / Register
                 </Link>
