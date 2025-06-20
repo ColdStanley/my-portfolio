@@ -176,8 +176,11 @@ export default function NavBar() {
           <SheetTrigger aria-label="Open menu">
             <Menu className="h-6 w-6 text-purple-700 dark:text-purple-300" />
           </SheetTrigger>
-          <SheetContent side="left" className="bg-white dark:bg-black">
-            <div className="mt-8 flex flex-col gap-4">
+          <SheetContent
+            side="left"
+            className="bg-white dark:bg-black px-6 pt-10 pb-6 max-w-xs rounded-r-xl shadow-lg flex flex-col justify-between"
+          >
+            <div className="flex flex-col gap-6">
               {navItems.map((item) => (
                 <Link
                   key={item.label}
@@ -192,9 +195,11 @@ export default function NavBar() {
                   {item.label}
                 </Link>
               ))}
+            </div>
 
+            <div className="border-t border-gray-200 dark:border-gray-700 mt-8 pt-4">
               {userEmail ? (
-                <div className="mt-6">
+                <div>
                   <button
                     onClick={() => setShowDropdown(!showDropdown)}
                     className="text-base font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600"
@@ -215,7 +220,7 @@ export default function NavBar() {
               ) : (
                 <Link
                   href="/register"
-                  className="mt-6 text-base font-medium text-purple-700 dark:text-purple-400 hover:underline"
+                  className="text-base font-medium text-purple-700 dark:text-purple-400 hover:underline"
                 >
                   Sign in / Register
                 </Link>
