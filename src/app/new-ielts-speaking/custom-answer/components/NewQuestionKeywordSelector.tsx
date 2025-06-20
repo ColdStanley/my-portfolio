@@ -31,7 +31,7 @@ export default function NewQuestionKeywordSelector({
 
   const fetchQuestions = async (partToFetch: 'Part 1' | 'Part 2' | 'Part 3') => {
     try {
-      setPart(partToFetch) // ✅ 保证切换按钮高亮正确
+      setPart(partToFetch)
       const res = await fetch(`/api/new-ielts-speaking/list?part=${partToFetch}`)
       const data = await res.json()
       setAllQuestions(data.items || [])
@@ -55,7 +55,6 @@ export default function NewQuestionKeywordSelector({
 
   const handleConfirm = async () => {
     if (!selectedId || !selectedText) return alert('请先选择一道题目')
-
     setLoading(true)
 
     try {
@@ -85,22 +84,22 @@ export default function NewQuestionKeywordSelector({
   }
 
   const questionCardStyle = (id: string) => `
-    cursor-pointer border rounded-xl p-4 text-[15px] font-medium transition
+    cursor-pointer border rounded-xl p-4 text-[15px] font-medium transition-all duration-200
     ${selectedId === id
-      ? 'bg-purple-100 border-purple-500 shadow-lg'
-      : 'bg-purple-50 border-purple-200 hover:border-purple-400 hover:bg-purple-100 hover:shadow-md'}
+      ? 'bg-purple-100 border-purple-500 shadow-md'
+      : 'bg-purple-50 border-purple-200 hover:border-purple-400 hover:bg-purple-100 hover:shadow-sm'}
     text-gray-800
   `
 
   return (
-    <div className="w-full">
-      {/* Part 切换按钮 */}
-      <div className="flex justify-start gap-4 mt-6 w-full">
+    <div className="w-full space-y-6 mt-10">
+      {/* Part切换按钮 + 换一组 */}
+      <div className="flex flex-wrap items-center gap-3">
         {(['Part 1', 'Part 2', 'Part 3'] as const).map((p) => (
           <button
             key={p}
             onClick={() => fetchQuestions(p)}
-            className={`rounded-md text-sm font-semibold border px-5 py-2 transition-all duration-200
+            className={`rounded-lg text-sm font-semibold border px-5 py-2 transition
               ${part === p
                 ? 'bg-purple-600 text-white border-transparent shadow-md'
                 : 'bg-white text-gray-700 border-gray-300 hover:border-purple-300 hover:shadow-sm'
@@ -109,20 +108,16 @@ export default function NewQuestionKeywordSelector({
             {p}
           </button>
         ))}
-      </div>
-
-      {/* 换一组按钮 */}
-      <div className="mt-4">
         <button
           onClick={reshuffleQuestions}
-          className="text-sm text-purple-600 hover:underline font-medium"
+          className="text-sm text-purple-600 hover:underline font-medium ml-2"
         >
           换一组
         </button>
       </div>
 
-      {/* 题目展示区域 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 w-full">
+      {/* 题目卡片区域 */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {displayedQuestions.map((q) => (
           <div
             key={q.id}
@@ -134,14 +129,14 @@ export default function NewQuestionKeywordSelector({
         ))}
       </div>
 
-      {/* 提示文字 */}
-      <p className="text-sm text-gray-600 leading-relaxed mt-6">
-        请选择 Part 1、Part 2 或 Part 3 的任一题目，点击下方确认按钮开始生成关键词。
-      </p>
+      {/* 提示说明 */}
+      <div className="mt-6 border border-dashed rounded-xl p-4 bg-white text-gray-700 shadow-sm text-sm">
+        请选择一道题目，点击下方确认按钮后，我们将为你生成关键词
+      </div>
 
       {/* 确认按钮 */}
       <motion.div
-        className="mt-4"
+        className="mt-2"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
@@ -151,9 +146,7 @@ export default function NewQuestionKeywordSelector({
           disabled={loading}
           className="w-full max-w-[400px] mx-auto bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-6 rounded-xl transition-all"
         >
-          {loading
-            ? '正在召唤关键词，它们有点社恐，请稍等'
-            : '确认'}
+          {loading ? '正在召唤关键词，请稍等' : '确认生成关键词'}
         </Button>
       </motion.div>
     </div>

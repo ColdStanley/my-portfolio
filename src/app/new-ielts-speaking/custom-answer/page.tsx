@@ -48,7 +48,7 @@ export default function CustomAnswerPage() {
   }
 
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-10 text-base">
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-12 text-base">
       {/* 顶部介绍模块 */}
       <NewIELTSCustomHeader />
 
@@ -60,24 +60,44 @@ export default function CustomAnswerPage() {
 
       {/* 模块二：关键词展示 + 用户输入 */}
       {keywords.length > 0 ? (
-        <NewKeywordAndInput
-          keywords={keywords}
-          onSubmit={handleGenerateAnswers}
-          questionText={questionText}
-          part={part}
-          userInput={userInput}
-        />
+        <>
+          <NewKeywordAndInput
+            keywords={keywords}
+            onSubmit={handleGenerateAnswers}
+            questionText={questionText}
+            part={part}
+            userInput={userInput}
+          />
+
+          {/* ✅ 状态提示：关键词已更新但答案还未生成 */}
+          {answers === null && (
+            <div className="mt-4 text-sm text-gray-500 italic px-2">
+              我们将为你重新生成参考答案，请稍候...
+            </div>
+          )}
+        </>
       ) : (
-        <div className="mt-10 p-4 border border-dashed rounded-xl bg-purple-50 text-purple-800 text-sm sm:text-base leading-relaxed">
-          <p>👋 先从一题你感兴趣的口语题目开始吧～</p>
-          <p className="mt-2">
-            点击上方“确认”后，我们将帮你梳理关键词，为你量身打造 3 个不同层次的参考回答。
+        <div className="mt-10 p-6 sm:p-8 border border-dashed rounded-2xl bg-purple-50/70 text-purple-900 text-base leading-relaxed shadow-sm transition">
+          <p className="font-medium">先从一道你感兴趣的雅思口语题目开始吧～</p>
+          <p className="mt-2 text-sm text-purple-700">
+            点击上方 <span className="font-semibold">确认生成关键词</span> 后，我们将为你智能梳理关键词，并定制 Band 6 / 7 / 8 的高分参考答案。
           </p>
         </div>
       )}
 
       {/* 模块三：答案展示 */}
-      {answers && <NewAnswerDisplayCustom answers={answers} />}
+      {answers && (
+        <>
+          <NewAnswerDisplayCustom answers={answers} />
+
+          {/* ✅ 本轮完成提示 */}
+          <div className="mt-6 text-sm text-gray-700 leading-relaxed bg-purple-50 p-4 rounded-xl shadow-inner border border-purple-200">
+            <p className="font-semibold text-purple-700 mb-1">本轮定制已完成</p>
+            <p>我们刚刚为你生成的答案，是结合你个人输入与关键词定制的。这将有助于你在考场中表达得更加真实、自然、自信。</p>
+            <p className="mt-1">建议你认真阅读并理解每个答案，用你自己的方式复述出来。准备好后，点击上方重新选择题目，开启下一轮练习。</p>
+          </div>
+        </>
+      )}
     </section>
   )
 }

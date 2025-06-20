@@ -29,7 +29,7 @@ export default function NewKeywordAndInput({ part, questionText, keywords, onSub
 
   const handleGenerateAnswers = async () => {
     if (!userInput.trim()) {
-      alert('⚠️ 请输入内容')
+      alert('请输入内容')
       return
     }
     setLoading(true)
@@ -47,10 +47,10 @@ export default function NewKeywordAndInput({ part, questionText, keywords, onSub
   }
 
   return (
-    <div className="mt-10 w-full space-y-6">
+    <div className="mt-10 w-full space-y-8">
       {/* 关键词提示文字 */}
-      <p className="text-sm text-gray-600 leading-relaxed">
-        请选择参考的关键字（可多选）：
+      <p className="text-sm text-gray-700 leading-relaxed font-medium">
+        请选择你想参考的关键词（可多选）：
       </p>
 
       {/* 关键词展示区域 */}
@@ -61,11 +61,11 @@ export default function NewKeywordAndInput({ part, questionText, keywords, onSub
             <motion.span
               key={idx}
               onClick={() => handleToggleKeyword(kw)}
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: 0.96 }}
               className={`cursor-pointer px-3 py-1 rounded-full text-sm font-medium border transition-all duration-200
                 ${
                   isSelected
-                    ? 'bg-purple-600 text-white shadow-md scale-105'
+                    ? 'bg-purple-600 text-white border-transparent shadow-md'
                     : 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50'
                 }`}
             >
@@ -76,9 +76,9 @@ export default function NewKeywordAndInput({ part, questionText, keywords, onSub
       </div>
 
       {/* 用户输入区域 */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          请用中文描述你想表达的内容，越详细越具体，答案与你越接近：
+      <div className="space-y-2">
+        <label className="block text-sm font-semibold text-gray-700">
+          请用中文描述你想表达的内容：
         </label>
         <Textarea
           value={userInput}
@@ -87,6 +87,7 @@ export default function NewKeywordAndInput({ part, questionText, keywords, onSub
           placeholder="请输入中文描述..."
           className="w-full resize-none rounded-xl border border-purple-300 p-3 text-gray-800 focus:ring-2 focus:ring-purple-400 transition-all"
         />
+        <p className="text-sm text-gray-500">越详细越具体，答案与你越接近</p>
       </div>
 
       {/* 确认按钮 */}
@@ -98,14 +99,10 @@ export default function NewKeywordAndInput({ part, questionText, keywords, onSub
         <Button
           onClick={handleGenerateAnswers}
           disabled={loading}
-          className="w-full max-w-[400px] mx-auto bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-6 rounded-xl transition-all"
+          className="w-full max-w-[400px] mx-auto bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-6 rounded-xl transition-all flex justify-center items-center gap-2"
         >
-          {loading && (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          )}
-          {loading
-            ? '思想的交响正在谱写，高潮即将到来，请静候'
-            : '确认'}
+          {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+          {loading ? '正在生成答案，请稍候' : '确认'}
         </Button>
       </motion.div>
     </div>

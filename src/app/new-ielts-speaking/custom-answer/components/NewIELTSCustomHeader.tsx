@@ -10,7 +10,6 @@ import clsx from 'clsx'
 
 export default function NewIELTSCustomHeader() {
   const router = useRouter()
-
   const [response, setResponse] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -25,7 +24,7 @@ export default function NewIELTSCustomHeader() {
       body: JSON.stringify({
         page: 'new-ielts-speaking-custom',
         responses: {
-          'Additional Suggestion': response, // ✅ 正确字段
+          'Additional Suggestion': response,
         },
       }),
     })
@@ -33,7 +32,7 @@ export default function NewIELTSCustomHeader() {
     if (res.ok) {
       setSubmitted(true)
       setSubmitting(false)
-      toast.success('🎉 感谢你的反馈，我们已收到！')
+      toast.success('感谢你的反馈，我们已经收到！')
     } else {
       setSubmitting(false)
       alert('提交失败，请稍后再试')
@@ -42,10 +41,10 @@ export default function NewIELTSCustomHeader() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
-      {/* 左侧：标题区域 */}
+      {/* 左栏：标题 + 引言 */}
       <div className="bg-white shadow rounded-xl p-6 flex flex-col justify-between">
         <div>
-          <div className="flex flex-row items-center gap-3 mb-3">
+          <div className="flex items-center gap-3 mb-3">
             <h1 className="text-4xl font-extrabold text-purple-600">IELTS Speaking</h1>
             <motion.div animate={{ rotate: [0, -5, 5, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
               <Image src="/images/IELTS7.png" alt="IELTS7" width={60} height={60} />
@@ -61,21 +60,21 @@ export default function NewIELTSCustomHeader() {
         </div>
       </div>
 
-      {/* 中间：功能介绍卡片 */}
-      <div className="bg-white shadow rounded-xl p-6 flex flex-col justify-between relative">
+      {/* 中栏：步骤说明 */}
+      <div className="bg-white shadow rounded-xl p-6 flex flex-col justify-between">
         <div className="space-y-3">
           <h2 className="text-lg font-semibold text-gray-800">快速了解</h2>
-          <ul className="text-sm text-gray-700 leading-relaxed list-none pl-0 space-y-1">
-            <li>1- 选择 Part 1, 2 or 3</li>
-            <li>2- 单击选择题目</li>
-            <li>3- 单击确认提供答题思路关键词</li>
-            <li>4- 输入答题思路（中文即可）</li>
-            <li>5- 点击确认，定制化的参考答案</li>
+          <ul className="text-sm text-gray-700 leading-relaxed list-none space-y-1">
+            <li>1. 选择 Part 1, 2 or 3</li>
+            <li>2. 单击选择题目</li>
+            <li>3. 单击确认提供答题思路关键词</li>
+            <li>4. 输入答题思路（中文即可）</li>
+            <li>5. 点击确认，定制化的参考答案</li>
           </ul>
         </div>
       </div>
 
-      {/* 右侧：反馈卡片 */}
+      {/* 右栏：反馈表单 */}
       <div className="bg-white shadow rounded-xl p-6 flex flex-col justify-between">
         <div className="flex flex-col justify-between h-full">
           <div className="space-y-4">
@@ -95,12 +94,12 @@ export default function NewIELTSCustomHeader() {
             ) : (
               <div className="h-[136px] flex flex-col justify-center">
                 <p className="text-sm text-gray-600 italic mb-2">页面下方邮件订阅获取最新资讯！</p>
-                <p className="text-sm text-purple-600 font-medium">感谢你的建议 🪄</p>
+                <p className="text-sm text-purple-600 font-medium">感谢你的建议，我们会认真考虑！</p>
               </div>
             )}
           </div>
 
-          {/* 提交按钮始终保持不动 */}
+          {/* 提交按钮 */}
           <div className="mt-6 flex justify-end">
             <button
               onClick={handleSubmit}

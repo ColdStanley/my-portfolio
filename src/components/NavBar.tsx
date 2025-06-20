@@ -30,6 +30,7 @@ export default function NavBar() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [hasInitiated, setHasInitiated] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [userProducts, setUserProducts] = useState<string[]>([]) // ✅ 新增
   const [showDropdown, setShowDropdown] = useState(false)
 
   const onPlayerReady = (event: any) => {
@@ -57,16 +58,39 @@ export default function NavBar() {
       data: { user },
     } = await supabase.auth.getUser()
     setUserEmail(user?.email ?? null)
+
+    // ✅ 查询用户产品
+    if (user?.id) {
+      const { data, error } = await supabase
+        .from('user_product_membership')
+        .select('product_id, products(name)')
+        .eq('user_id', user.id)
+
+      if (!error && data) {
+        const products = data.map((row) => row.products?.name).filter(Boolean)
+        setUserProducts(products)
+      }
+    }
   }
 
   const signOut = async () => {
     await supabase.auth.signOut()
     setUserEmail(null)
+    setUserProducts([]) // ✅ 清除产品
     setShowDropdown(false)
+    window.location.reload()
   }
 
   useEffect(() => {
     checkUser()
+
+    const { data: listener } = supabase.auth.onAuthStateChange(() => {
+      checkUser()
+    })
+
+    return () => {
+      listener.subscription.unsubscribe()
+    }
   }, [])
 
   return (
@@ -115,7 +139,7 @@ export default function NavBar() {
                   autoplay: 1,
                   mute: 0,
                   loop: 1,
-                  playlist: YOUTUBE_VIDEO_ID
+                  playlist: YOUTUBE_VIDEO_ID,
                 },
               }}
               onReady={onPlayerReady}
@@ -150,10 +174,15 @@ export default function NavBar() {
               {userEmail.split('@')[0]} ▼
             </button>
             {showDropdown && (
-              <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 border rounded shadow p-2 text-sm">
+              <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 border rounded shadow p-2 text-sm space-y-1">
+                {userProducts.map((p) => (
+                  <div key={p} className="text-gray-500 dark:text-gray-400 italic">
+                    {p}
+                  </div>
+                ))}
                 <button
                   onClick={signOut}
-                  className="text-left w-full text-gray-700 dark:text-gray-300 hover:text-purple-600"
+                  className="text-left w-full text-gray-700 dark:text-gray-300 hover:text-purple-600 mt-2"
                 >
                   Sign out
                 </button>
@@ -161,12 +190,20 @@ export default function NavBar() {
             )}
           </div>
         ) : (
-          <Link
-            href="/register"
-            className="ml-4 text-sm md:text-base font-medium text-purple-700 dark:text-purple-400 hover:underline"
-          >
-            Sign in / Register
-          </Link>
+          <div className="ml-4 flex gap-3">
+            <Link
+              href="/login"
+              className="text-sm md:text-base font-medium text-purple-700 dark:text-purple-400 hover:underline"
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/register"
+              className="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600"
+            >
+              Register
+            </Link>
+          </div>
         )}
       </div>
 
@@ -207,10 +244,15 @@ export default function NavBar() {
                     {userEmail.split('@')[0]} ▼
                   </button>
                   {showDropdown && (
-                    <div className="mt-2">
+                    <div className="mt-2 space-y-1">
+                      {userProducts.map((p) => (
+                        <div key={p} className="text-sm text-gray-500 italic">
+                          {p}
+                        </div>
+                      ))}
                       <button
                         onClick={signOut}
-                        className="text-left w-full text-sm text-gray-700 dark:text-gray-300 hover:text-purple-600"
+                        className="text-left w-full text-sm text-gray-700 dark:text-gray-300 hover:text-purple-600 mt-2"
                       >
                         Sign out
                       </button>
@@ -218,12 +260,20 @@ export default function NavBar() {
                   )}
                 </div>
               ) : (
-                <Link
-                  href="/register"
-                  className="text-base font-medium text-purple-700 dark:text-purple-400 hover:underline"
-                >
-                  Sign in / Register
-                </Link>
+                <div className="flex gap-4">
+                  <Link
+                    href="/login"
+                    className="text-base font-medium text-purple-700 dark:text-purple-400 hover:underline"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="text-base font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600"
+                  >
+                    Register
+                  </Link>
+                </div>
               )}
             </div>
           </SheetContent>
