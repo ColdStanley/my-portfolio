@@ -1,12 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import NewQuestionKeywordSelector from './components/NewQuestionKeywordSelector'
 import NewKeywordAndInput from './components/NewKeywordAndInput'
 import NewAnswerDisplayCustom from './components/NewAnswerDisplayCustom'
 import NewIELTSCustomHeader from './components/NewIELTSCustomHeader'
+import { useAnswerCounter } from '@/hooks/useAnswerCounter'
+import { toast } from 'sonner'
+import UpgradeModal from './components/UpgradeModal'
+import { supabase } from '@/utils/supabase' 
+import { useCurrentUserType } from '@/hooks/useCurrentUserType' // ✅ 导入 hook
+import { useRouter, usePathname } from 'next/navigation' // ✅ 补充路由 hook
 
 export default function CustomAnswerPage() {
+  const router = useRouter() // ✅ 路由跳转实例
+  const pathname = usePathname() // ✅ 当前路径获取
+
   const [part, setPart] = useState<'Part 1' | 'Part 2' | 'Part 3'>('Part 1')
   const [questionText, setQuestionText] = useState('')
   const [keywords, setKeywords] = useState<string[]>([])
@@ -16,6 +25,17 @@ export default function CustomAnswerPage() {
     band7: string
     band8: string
   } | null>(null)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+
+  const { userId, userType, loading: userLoading } = useCurrentUserType()
+
+  const {
+    count,
+    limit,
+    loading: counterLoading,
+    isLimitReached,
+    increaseCount,
+  } = useAnswerCounter(userId, userType)
 
   const handleQuestionConfirm = (
     generatedKeywords: string[],
@@ -29,6 +49,15 @@ export default function CustomAnswerPage() {
   }
 
   const handleGenerateAnswers = async (prompt: string) => {
+    if (isLimitReached) {
+      if (userType === 'guest') {
+        router.push(`/register?redirect=${encodeURIComponent(pathname)}`)
+      } else {
+        setShowUpgradeModal(true)
+      }
+      return
+    }
+
     try {
       const res = await fetch('/api/new-ielts-speaking/custom-answer-generate', {
         method: 'POST',
@@ -42,6 +71,8 @@ export default function CustomAnswerPage() {
         band7: data.band7,
         band8: data.band8,
       })
+
+      increaseCount()
     } catch (err) {
       console.error('生成答案失败', err)
     }
@@ -68,6 +99,13 @@ export default function CustomAnswerPage() {
             part={part}
             userInput={userInput}
           />
+
+          {/* ✅ 今日使用次数提示 */}
+          {!counterLoading && (
+            <div className="mt-2 text-sm bg-purple-50 border border-purple-200 text-purple-800 py-2 px-4 rounded-xl shadow-sm text-center">
+              今日已使用 {count} / {limit} 次定制口语服务
+            </div>
+          )}
 
           {/* ✅ 状态提示：关键词已更新但答案还未生成 */}
           {answers === null && (
@@ -98,6 +136,9 @@ export default function CustomAnswerPage() {
           </div>
         </>
       )}
+
+      {/* ✅ 升级提示弹窗 */}
+      <UpgradeModal open={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
     </section>
   )
 }

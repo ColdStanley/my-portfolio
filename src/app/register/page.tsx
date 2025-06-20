@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,16 +15,19 @@ export default function RegisterPage() {
   const [inviteCode, setInviteCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectPath = searchParams?.get('redirect') || '/'
 
   const handleRegister = async () => {
     setLoading(true)
     setMessage('')
 
-    // 1️⃣ 注册 + 自动登录
+    // 1️⃣ 注册用户
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
-      password
+      password,
     })
 
     if (signUpError) {
@@ -40,10 +43,28 @@ export default function RegisterPage() {
       return
     }
 
-    // ✅ 注册成功，自动登录状态已建立
-    setMessage('注册成功，欢迎加入！即将进入首页...')
+    // 2️⃣ 插入默认会员记录（含错误捕捉）
+    const { error: insertError } = await supabase.from('user_product_membership').insert([
+      {
+        user_id: userId,
+        product_id: 'ielts-speaking',
+        membership_tier: 'registered',
+        invite_code: inviteCode || null,
+        joined_at: new Date().toISOString(),
+      },
+    ])
+
+    if (insertError) {
+      console.error('插入 membership 失败：', insertError)
+      setMessage(`插入会员信息失败：${insertError.message}`)
+      setLoading(false)
+      return
+    }
+
+    // 3️⃣ 跳转提示
+    setMessage('注册成功，欢迎加入！正在跳转...')
     setTimeout(() => {
-      router.push('/')
+      router.push(redirectPath)
     }, 1500)
 
     setLoading(false)
