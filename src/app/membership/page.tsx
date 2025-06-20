@@ -18,7 +18,7 @@ const plans = [
     tier: 'pro',
     description: '每日 10 次定制答案额度，适合日常练习',
     priceNote: '￥90 / 1个月',
-    qrImage: '/images/wechat90.jpg',
+    qrImage: '/images/wechat90.png',
     bg: 'bg-purple-50',
     border: 'border-purple-200',
     features: [
@@ -36,7 +36,7 @@ const plans = [
     tier: 'vip',
     description: '无限次练习 + 独享导出与写作模块',
     priceNote: '￥150 / 3个月',
-    qrImage: '/images/wechat150.jpg',
+    qrImage: '/images/wechat150.png',
     bg: 'bg-purple-100',
     border: 'border-purple-300',
     features: [
@@ -154,6 +154,7 @@ export default function MembershipPage() {
                 width={120}
                 height={120}
                 className="mx-auto rounded border"
+                unoptimized
               />
               <p className="text-xs text-gray-400 mt-2">扫码付款后请联系管理员开通权限</p>
 
