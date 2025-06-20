@@ -32,7 +32,7 @@ export default function NewQuestionKeywordSelector({
   const fetchQuestions = async (partToFetch: 'Part 1' | 'Part 2' | 'Part 3') => {
     try {
       setPart(partToFetch)
-      const res = await fetch(`/api/new-ielts-speaking/list?part=${partToFetch}`)
+      const res = await fetch(`/api/new-ielts-speaking/supabase-list-questions?part=${encodeURIComponent(partToFetch)}`)
       const data = await res.json()
       setAllQuestions(data.items || [])
       const shuffled = [...data.items].sort(() => 0.5 - Math.random())

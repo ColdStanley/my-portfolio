@@ -10,18 +10,27 @@ interface QuestionItem {
 interface Props {
   part: 'Part 1' | 'Part 2' | 'Part 3'
   onSelect: (id: string, text: string) => void
-  questions: QuestionItem[]
-  fetchQuestions: (part: 'Part 1' | 'Part 2' | 'Part 3') => void
+  onPartChange: (part: 'Part 1' | 'Part 2' | 'Part 3') => void // ✅ 新增
 }
 
 export default function NewQuestionSelector({
   part,
   onSelect,
-  questions,
-  fetchQuestions
+  onPartChange
 }: Props) {
+  const [questions, setQuestions] = useState<QuestionItem[]>([])
   const [displayedQuestions, setDisplayedQuestions] = useState<QuestionItem[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  const fetchQuestions = async (targetPart: 'Part 1' | 'Part 2' | 'Part 3') => {
+    try {
+      const res = await fetch(`/api/new-ielts-speaking/supabase-list-questions?part=${encodeURIComponent(targetPart)}`)
+      const data = await res.json()
+      setQuestions(data.items || [])
+    } catch (err) {
+      console.error('❌ 获取题目失败:', err)
+    }
+  }
 
   useEffect(() => {
     fetchQuestions(part)
@@ -70,7 +79,10 @@ export default function NewQuestionSelector({
         {parts.map((p) => (
           <button
             key={p}
-            onClick={() => fetchQuestions(p)}
+            onClick={() => {
+              fetchQuestions(p)
+              onPartChange(p) // ✅ 通知父组件更新状态 → 高亮按钮
+            }}
             className={`rounded-md text-sm font-semibold border px-5 py-2 transition-all duration-200
               ${
                 part === p

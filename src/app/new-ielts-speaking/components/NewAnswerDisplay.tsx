@@ -15,7 +15,7 @@ interface AnswerData {
   band: number
   text: string
   keywords: string[]
-  explanations: Record<string, string>
+  explanations: Record<string, string> | string
   templateSentence?: string
 }
 
@@ -33,7 +33,7 @@ export default function NewAnswerDisplay({ questionText }: Props) {
 
     const fetchAnswers = async () => {
       try {
-        const res = await fetch(`/api/new-ielts-speaking/answers?questionId=${encodeURIComponent(questionText)}`)
+        const res = await fetch(`/api/new-ielts-speaking/supabase-band-answers?questionId=${encodeURIComponent(questionText)}`)
         const data = await res.json()
         setAnswers(data.answers || [])
       } catch (error) {
@@ -70,7 +70,7 @@ export default function NewAnswerDisplay({ questionText }: Props) {
             <CardContent className="p-4 sm:p-6 space-y-4">
               <h3 className="text-lg font-bold text-purple-700">Band {answer.band}</h3>
               <p className="text-gray-800 leading-relaxed text-sm sm:text-base">
-                {renderHighlightedText(answer.text, answer.keywords, answer.explanations, handleWordClick)}
+                {renderHighlightedText(answer.text, answer.keywords, parseExplanation(answer.explanations), handleWordClick)}
               </p>
             </CardContent>
           </Card>
@@ -107,7 +107,8 @@ function playAudio(word: string) {
 function getExplanation(word: string | null, answers: AnswerData[]): string | null {
   if (!word) return null
   for (const ans of answers) {
-    if (ans.explanations[word]) return ans.explanations[word]
+    const explanationMap = parseExplanation(ans.explanations)
+    if (explanationMap[word]) return explanationMap[word]
   }
   return null
 }
@@ -168,4 +169,24 @@ function renderHighlightedText(
   }
 
   return parts
+}
+
+function parseExplanation(input: Record<string, string> | string): Record<string, string> {
+  if (typeof input !== 'string') return input || {}
+
+  const result: Record<string, string> = {}
+  const lines = input.split('\n')
+
+  for (const line of lines) {
+    const [key, ...rest] = line.split(':')
+    if (key && rest.length > 0) {
+      const cleanedKey = key.trim().toLowerCase()
+      const value = rest.join(':').trim()
+      if (cleanedKey && value) {
+        result[cleanedKey] = value
+      }
+    }
+  }
+
+  return result
 }

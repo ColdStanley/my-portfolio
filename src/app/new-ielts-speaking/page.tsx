@@ -11,8 +11,6 @@ interface QuestionItem {
   questionText: string
 }
 
-
-
 export default function NewIELTSSpeakingPage() {
   const [selectedPart, setSelectedPart] = useState<'Part 1' | 'Part 2' | 'Part 3'>('Part 2')
   const [selectedQuestionText, setSelectedQuestionText] = useState<string | null>(null)
@@ -20,7 +18,7 @@ export default function NewIELTSSpeakingPage() {
 
   const fetchQuestions = async (part: 'Part 1' | 'Part 2' | 'Part 3') => {
     try {
-      const res = await fetch(`/api/new-ielts-speaking/list?part=${part}`)
+      const res = await fetch(`/api/new-ielts-speaking/supabase-list-questions?part=${encodeURIComponent(part)}`)
       const data = await res.json()
       const items = data.items || []
       setQuestions(items)
@@ -51,12 +49,7 @@ export default function NewIELTSSpeakingPage() {
         <NewQuestionSelector
           part={selectedPart}
           onSelect={(_, text) => setSelectedQuestionText(text)}
-          questions={questions}
-          fetchQuestions={(p) => {
-            setSelectedPart(p)
-            setSelectedQuestionText(null)
-            fetchQuestions(p)
-          }}
+          onPartChange={(newPart) => setSelectedPart(newPart)} // ✅ 仅新增此行
         />
       </section>
 
@@ -69,26 +62,23 @@ export default function NewIELTSSpeakingPage() {
       )}
 
       {/* Footer锚点 */}
-<section id="footer" className="mt-20 space-y-4">
-  {/* 顶部提示 */}
-  <div className="text-center text-sm text-gray-400 italic">
-    You're now at the bottom. Thanks for exploring!
-  </div>
+      <section id="footer" className="mt-20 space-y-4">
+        <div className="text-center text-sm text-gray-400 italic">
+          You're now at the bottom. Thanks for exploring!
+        </div>
 
-  {/* 引导文案 + 按钮 */}
-  <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-sm text-gray-500">
-    <span>属于你自己的，考场才能脱口而出 →</span>
-    <a
-      href="/new-ielts-speaking/custom-answer"
-      className="text-sm font-semibold text-white bg-gradient-to-r from-purple-500 to-purple-700
-                 hover:scale-105 transition-transform rounded-full px-5 py-2 shadow-md
-                 flex items-center justify-center"
-    >
-      口语私人定制
-    </a>
-  </div>
-</section>
-
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-sm text-gray-500">
+          <span>属于你自己的，考场才能脱口而出 →</span>
+          <a
+            href="/new-ielts-speaking/custom-answer"
+            className="text-sm font-semibold text-white bg-gradient-to-r from-purple-500 to-purple-700
+                       hover:scale-105 transition-transform rounded-full px-5 py-2 shadow-md
+                       flex items-center justify-center"
+          >
+            口语私人定制
+          </a>
+        </div>
+      </section>
     </main>
   )
 }
