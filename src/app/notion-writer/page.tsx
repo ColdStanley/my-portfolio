@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import NotionToSupabaseSync from './components/NotionToSupabaseSync'
 
 export default function NotionWriterPage() {
   const [databaseId, setDatabaseId] = useState('')
@@ -160,50 +161,51 @@ export default function NotionWriterPage() {
       </div>
 
       {/* Usage instructions */}
-      {/* Usage instructions */}
-<div className="bg-purple-50 border-l-4 border-purple-400 p-6 rounded-xl shadow-sm text-sm text-gray-700 leading-relaxed space-y-2">
-  <p className="font-semibold text-purple-700">Usage Instructions</p>
-  <ul className="list-disc list-inside space-y-1">
-    <li>Each line must follow the format: <code>FieldName: Value</code></li>
-    <li>Field names must exactly match those in the database (case-sensitive)</li>
-    <li><code>multi_select</code> values should be comma-separated (e.g., <code>AI, NLP</code>)</li>
-    <li>Each record must include at least one <code>Title</code> field</li>
-    <li>Separate each record by a <strong>blank line</strong></li>
-  </ul>
+      <div className="bg-purple-50 border-l-4 border-purple-400 p-6 rounded-xl shadow-sm text-sm text-gray-700 leading-relaxed space-y-2">
+        <p className="font-semibold text-purple-700">Usage Instructions</p>
+        <ul className="list-disc list-inside space-y-1">
+          <li>Each line must follow the format: <code>FieldName: Value</code></li>
+          <li>Field names must exactly match those in the database (case-sensitive)</li>
+          <li><code>multi_select</code> values should be comma-separated (e.g., <code>AI, NLP</code>)</li>
+          <li>Each record must include at least one <code>Title</code> field</li>
+          <li>Separate each record by a <strong>blank line</strong></li>
+        </ul>
 
-  <p className="font-semibold text-purple-700 pt-4">If you are using GPT or Claude to generate data:</p>
-  <ul className="list-disc list-inside space-y-1">
-    <li>Upload a screenshot of your Notion database's field structure</li>
-    <li>Then send the following prompt to the model:</li>
-  </ul>
+        <p className="font-semibold text-purple-700 pt-4">If you are using GPT or Claude to generate data:</p>
+        <ul className="list-disc list-inside space-y-1">
+          <li>Upload a screenshot of your Notion database's field structure</li>
+          <li>Then send the following prompt to the model:</li>
+        </ul>
 
-  <div className="bg-white border border-purple-200 p-4 mt-2 rounded-md text-xs text-gray-700 whitespace-pre-line">
-    请根据我上传的截图中的 Notion 数据库字段，生成 2–3 条符合格式要求的模拟数据。
-    
-    ⚠️ 输出格式要求如下：
-    - 每一行必须是：字段名: 内容（字段名后必须是英文冒号:）
-    - 字段名必须完全一致地来自截图中的字段名，注意大小写、空格等
-    - 每条记录之间请用空一行分隔
-    - 不要添加任何额外的空行、斜体字、引号、序号、markdown 格式或额外解释说明
-    - 不要添加表格，只返回纯文本内容
+        <div className="bg-white border border-purple-200 p-4 mt-2 rounded-md text-xs text-gray-700 whitespace-pre-line">
+          请根据我上传的截图中的 Notion 数据库字段，生成 2–3 条符合格式要求的模拟数据。
+          
+          ⚠️ 输出格式要求如下：
+          - 每一行必须是：字段名: 内容（字段名后必须是英文冒号:）
+          - 字段名必须完全一致地来自截图中的字段名，注意大小写、空格等
+          - 每条记录之间请用空一行分隔
+          - 不要添加任何额外的空行、斜体字、引号、序号、markdown 格式或额外解释说明
+          - 不要添加表格，只返回纯文本内容
 
-    ✅ 我稍后将把你生成的内容粘贴进一个 Notion 写入工具中，请严格遵守格式规则
-  </div>
-  <div className="bg-white border border-purple-200 p-4 mt-2 rounded-md text-xs text-gray-700 whitespace-pre-line">
-  Based on the uploaded screenshot of my Notion database fields, please generate 2–3 sample records that follow the format strictly.
+          ✅ 我稍后将把你生成的内容粘贴进一个 Notion 写入工具中，请严格遵守格式规则
+        </div>
 
-  ⚠️ Output requirements:
-  - Each line must follow the format: FieldName: Value (use a colon immediately after the field name)
-  - Field names must exactly match those in the screenshot, including correct spelling and capitalization
-  - Separate each record with one blank line
-  - Do not include any quotation marks, numbering, markdown formatting, or additional explanations
-  - Do not use tables — only return plain text
+        <div className="bg-white border border-purple-200 p-4 mt-2 rounded-md text-xs text-gray-700 whitespace-pre-line">
+          Based on the uploaded screenshot of my Notion database fields, please generate 2–3 sample records that follow the format strictly.
 
-  ✅ I will copy and paste your output directly into a Notion Writer tool, so please follow the format exactly.
-</div>
+          ⚠️ Output requirements:
+          - Each line must follow the format: FieldName: Value (use a colon immediately after the field name)
+          - Field names must exactly match those in the screenshot, including correct spelling and capitalization
+          - Separate each record with one blank line
+          - Do not include any quotation marks, numbering, markdown formatting, or additional explanations
+          - Do not use tables — only return plain text
 
-</div>
+          ✅ I will copy and paste your output directly into a Notion Writer tool, so please follow the format exactly.
+        </div>
+      </div>
 
+      {/* Notion → Supabase Sync Tool */}
+      <NotionToSupabaseSync />
     </main>
   )
 }

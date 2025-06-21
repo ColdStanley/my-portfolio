@@ -14,7 +14,7 @@ import MobileWordExplainer from './MobileWordExplainer'
 interface AnswerData {
   band: number
   text: string
-  keywords: string[]
+  keywords: string[] | string
   explanations: Record<string, string> | string
   templateSentence?: string
 }
@@ -33,7 +33,11 @@ export default function NewAnswerDisplay({ questionText }: Props) {
 
     const fetchAnswers = async () => {
       try {
-        const res = await fetch(`/api/new-ielts-speaking/supabase-band-answers?questionId=${encodeURIComponent(questionText)}`)
+        const res = await fetch(
+          `/api/new-ielts-speaking/supabase-band-answers?questionId=${encodeURIComponent(
+            questionText
+          )}`
+        )
         const data = await res.json()
         setAnswers(data.answers || [])
       } catch (error) {
@@ -62,19 +66,33 @@ export default function NewAnswerDisplay({ questionText }: Props) {
   return (
     <TooltipProvider>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-        {answers.map((answer, index) => (
-          <Card
-            key={index}
-            className="shadow-lg border border-gray-200 transition duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1"
-          >
-            <CardContent className="p-4 sm:p-6 space-y-4">
-              <h3 className="text-lg font-bold text-purple-700">Band {answer.band}</h3>
-              <p className="text-gray-800 leading-relaxed text-sm sm:text-base">
-                {renderHighlightedText(answer.text, answer.keywords, parseExplanation(answer.explanations), handleWordClick)}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+        {answers.map((answer, index) => {
+          const keywordList =
+            typeof answer.keywords === 'string'
+              ? answer.keywords.split(',').map((k) => k.trim())
+              : answer.keywords
+
+          return (
+            <Card
+              key={index}
+              className="shadow-lg border border-gray-200 transition duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1"
+            >
+              <CardContent className="p-4 sm:p-6 space-y-4">
+                <h3 className="text-lg font-bold text-purple-700">
+                  Band {answer.band}
+                </h3>
+                <p className="text-gray-800 leading-relaxed text-sm sm:text-base">
+                  {renderHighlightedText(
+                    answer.text,
+                    keywordList,
+                    parseExplanation(answer.explanations),
+                    handleWordClick
+                  )}
+                </p>
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
 
       <MobileWordExplainer
@@ -145,10 +163,16 @@ function renderHighlightedText(
                 {matchedWord}
               </span>
             </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-[80vw] sm:max-w-[240px] text-sm">
+            <TooltipContent
+              side="top"
+              className="max-w-[80vw] sm:max-w-[240px] text-sm"
+            >
               <div className="flex items-center gap-2">
                 <span>{explanations[word] ?? '暂无解释'}</span>
-                <button onClick={() => playAudio(word)} className="text-purple-500 hover:text-purple-700">
+                <button
+                  onClick={() => playAudio(word)}
+                  className="text-purple-500 hover:text-purple-700"
+                >
                   <Volume2 size={16} />
                 </button>
               </div>
