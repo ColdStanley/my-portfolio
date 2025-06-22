@@ -21,7 +21,7 @@ export default function QuoteVisualPetal({ quote, position, triggerKey, color = 
 
   useEffect(() => {
     setVisible(true)
-    const timer = setTimeout(() => setVisible(false), 10000)
+    const timer = setTimeout(() => setVisible(false), 20000)
     return () => clearTimeout(timer)
   }, [quote, triggerKey, color])
 
