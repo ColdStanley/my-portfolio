@@ -1,41 +1,40 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
-import { Card, CardContent } from '@/components/ui/card'
-import { Volume2 } from 'lucide-react'
-import MobileWordExplainer from './MobileWordExplainer'
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from '@/components/ui/popover'
+import { AnimatePresence, motion } from 'framer-motion'
 
 interface AnswerData {
-  band: number
+  level: string
   text: string
-  keywords: string[] | string
-  explanations: Record<string, string> | string
-  templateSentence?: string
+  bandHighlightWords?: string[]
+  bandHighlightNotes?: Array<{ word: string; note: string }>
 }
 
 interface Props {
-  questionText: string | null
+  questionId: string | null
 }
 
-export default function NewAnswerDisplay({ questionText }: Props) {
+export default function NewAnswerDisplay({ questionId }: Props) {
   const [answers, setAnswers] = useState<AnswerData[]>([])
   const [selectedWord, setSelectedWord] = useState<string | null>(null)
+  const [selectedNote, setSelectedNote] = useState<string | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 
   useEffect(() => {
-    if (!questionText) return
+    if (!questionId) return
 
     const fetchAnswers = async () => {
       try {
         const res = await fetch(
           `/api/new-ielts-speaking/supabase-band-answers?questionId=${encodeURIComponent(
-            questionText
+            questionId
           )}`
         )
         const data = await res.json()
@@ -46,171 +45,161 @@ export default function NewAnswerDisplay({ questionText }: Props) {
     }
 
     fetchAnswers()
-  }, [questionText])
+  }, [questionId])
 
-  const handleWordClick = (word: string) => {
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      setSelectedWord(word)
-      setIsSheetOpen(true)
+  function parseHighlightWords(raw: string | string[] | null | undefined): string[] {
+    if (Array.isArray(raw)) {
+      return raw;
     }
+    if (typeof raw !== 'string' || !raw) {
+      return [];
+    }
+    return raw.split(/[，,]/).map((s) => s.trim()).filter(Boolean)
   }
 
-  if (!questionText) {
-    return (
-      <div className="text-sm text-gray-400 italic mt-6">
-        Please select a question to see reference answers.
-      </div>
-    )
+  function parseNotes(raw: string | Array<{ word: string; note: string }> | null | undefined): Record<string, string> {
+    if (Array.isArray(raw)) {
+      return raw.reduce((acc, current) => {
+        if (current.word && current.note) {
+          acc[current.word] = current.note;
+        }
+        return acc;
+      }, {} as Record<string, string>);
+    }
+    if (typeof raw !== 'string' || !raw) {
+      return {};
+    }
+
+    const result: Record<string, string> = {}
+    raw.split(/[；;]/).forEach((pair) => {
+      const [word, note] = pair.split(/[:：]/).map((s) => s.trim())
+      if (word && note) result[word] = note
+    })
+    return result
+  }
+
+  function buildSegments(text: string, highlightWords: string[], notesMap: Record<string, string>) {
+    const ranges: { start: number; end: number; word: string }[] = []
+
+    highlightWords.forEach((word) => {
+      const pattern = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`, 'gi')
+      let match
+      while ((match = pattern.exec(text)) !== null) {
+        ranges.push({ start: match.index, end: match.index + match[0].length, word })
+      }
+    })
+
+    ranges.sort((a, b) => a.start - b.start)
+
+    const result: { text: string; highlight?: { word: string; note: string } }[] = []
+    let cursor = 0
+
+    for (const { start, end, word } of ranges) {
+      if (start > cursor) {
+        result.push({ text: text.slice(cursor, start) })
+      }
+      result.push({ text: text.slice(start, end), highlight: { word, note: notesMap[word] || '' } })
+      cursor = end
+    }
+
+    if (cursor < text.length) {
+      result.push({ text: text.slice(cursor) })
+    }
+
+    return result
+  }
+
+  function renderWithHighlights(text: string, rawWords: string | string[] | null | undefined = '', rawNotes: string | Array<{ word: string; note: string }> | null | undefined = '') {
+    const highlightWords = parseHighlightWords(rawWords)
+    const notesMap = parseNotes(rawNotes) // parseNotes 会将 route.ts 传来的对象数组转换为 Record<string, string>
+    const parts = buildSegments(text, highlightWords, notesMap)
+
+    return parts.map((part, i) => {
+      if (!part.highlight) return <span key={i}>{part.text}</span>
+      const { word, note } = part.highlight
+
+      // 调整后的高亮样式：更柔和、透明、立体，文字非粗体
+      const highlightClassName = `
+        inline-block px-2 py-1 rounded-lg // 基础框样式：内边距、适中圆角
+        bg-purple-100/20 // 背景色：浅紫色，20% 透明度
+        text-purple-800 // 文本颜色：深紫色
+        backdrop-blur-xs // 核心透明效果：更小的模糊程度，更自然
+        shadow-sm // 默认小阴影，减少突兀感
+        cursor-pointer
+        transition-all duration-200 ease-in-out // 平滑过渡
+
+        // 悬停动效 (桌面端)
+        hover:bg-purple-200/30 // 悬停时背景色略微加深，透明度也略增
+        hover:shadow-md // 悬停时阴影变大一点，增加微弱立体感
+        hover:scale-[1.005] // 悬停时非常轻微地放大 (更小的幅度)
+      `;
+
+      return isMobile ? (
+        <span
+          key={i}
+          onClick={() => {
+            setSelectedWord(word)
+            setSelectedNote(note)
+            setIsSheetOpen(true)
+          }}
+          className={highlightClassName}
+        >
+          {part.text}
+        </span>
+      ) : (
+        <Popover key={i}>
+          <PopoverTrigger asChild>
+            <span
+              className={highlightClassName}
+            >
+              {part.text}
+            </span>
+          </PopoverTrigger>
+          <PopoverContent side="top" className="w-64 p-4 text-sm text-gray-700 bg-white shadow-md border border-purple-200 rounded-xl">
+            <p className="text-purple-700 font-semibold mb-2">🧠 {word}</p>
+            {/* 核心改动：确保这里能够保留和显示换行符 */}
+            <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap"> {/* <-- ⚠️ 关键修改：添加了 whitespace-pre-wrap */}
+              {note}
+            </p>
+          </PopoverContent>
+        </Popover>
+      )
+    })
   }
 
   return (
-    <TooltipProvider>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-        {answers.map((answer, index) => {
-          const keywordList =
-            typeof answer.keywords === 'string'
-              ? answer.keywords.split(',').map((k) => k.trim())
-              : answer.keywords
+    <div className="space-y-6">
+      {answers.map((item, index) => (
+        <div key={index} className="border border-gray-200 rounded-xl p-6 shadow-sm">
+          <h3 className="text-lg font-semibold text-purple-700 mb-3">{item.level} Answer</h3>
+          <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+            {renderWithHighlights(item.text, item.bandHighlightWords, item.bandHighlightNotes)}
+          </p>
+        </div>
+      ))}
 
-          return (
-            <Card
-              key={index}
-              className="shadow-lg border border-gray-200 transition duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1"
-            >
-              <CardContent className="p-4 sm:p-6 space-y-4">
-                <h3 className="text-lg font-bold text-purple-700">
-                  Band {answer.band}
-                </h3>
-                <p className="text-gray-800 leading-relaxed text-sm sm:text-base">
-                  {renderHighlightedText(
-                    answer.text,
-                    keywordList,
-                    parseExplanation(answer.explanations),
-                    handleWordClick
-                  )}
-                </p>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
-
-      <MobileWordExplainer
-        open={isSheetOpen}
-        word={selectedWord}
-        explanation={getExplanation(selectedWord, answers)}
-        onClose={() => setIsSheetOpen(false)}
-      />
-    </TooltipProvider>
-  )
-}
-
-function playAudio(word: string) {
-  const url = `https://ssl.gstatic.com/dictionary/static/sounds/oxford/${word.toLowerCase()}--_us_1.mp3`
-  const audio = new Audio(url)
-
-  audio.onerror = () => {
-    const utterance = new SpeechSynthesisUtterance(word)
-    utterance.lang = 'en-US'
-    speechSynthesis.speak(utterance)
-  }
-
-  audio.play().catch(() => {
-    const utterance = new SpeechSynthesisUtterance(word)
-    utterance.lang = 'en-US'
-    speechSynthesis.speak(utterance)
-  })
-}
-
-function getExplanation(word: string | null, answers: AnswerData[]): string | null {
-  if (!word) return null
-  for (const ans of answers) {
-    const explanationMap = parseExplanation(ans.explanations)
-    if (explanationMap[word]) return explanationMap[word]
-  }
-  return null
-}
-
-function renderHighlightedText(
-  text: string,
-  keywords: string[],
-  explanations: Record<string, string>,
-  onClick: (word: string) => void
-): React.ReactNode[] {
-  if (!keywords || keywords.length === 0) return [text]
-
-  const parts: React.ReactNode[] = []
-  let remaining = text
-  const sortedKeywords = [...keywords].sort((a, b) => b.length - a.length)
-
-  while (remaining.length > 0) {
-    let matched = false
-
-    for (const word of sortedKeywords) {
-      const index = remaining.toLowerCase().indexOf(word.toLowerCase())
-      if (index !== -1) {
-        if (index > 0) parts.push(remaining.slice(0, index))
-
-        const matchedWord = remaining.slice(index, index + word.length)
-
-        parts.push(
-          <Tooltip key={`${matchedWord}-${index}`} delayDuration={0}>
-            <TooltipTrigger asChild>
-              <span
-                onPointerDown={() => onClick(word)}
-                className="px-1.5 py-0.5 bg-purple-100 text-purple-800 rounded-md text-sm font-medium transition-all duration-300 hover:scale-105 hover:shadow-md active:scale-95 hover:bg-purple-200 cursor-help inline-block"
+      <AnimatePresence>
+        {isMobile && isSheetOpen && selectedWord && selectedNote && (
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+            <SheetContent side="bottom" className="max-h-[60vh] overflow-y-auto p-6">
+              <SheetTitle className="text-lg font-semibold mb-3 text-purple-700">
+                🧠 Explanation: {selectedWord}
+              </SheetTitle>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.3 }}
               >
-                {matchedWord}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent
-              side="top"
-              className="max-w-[80vw] sm:max-w-[240px] text-sm"
-            >
-              <div className="flex items-center gap-2">
-                <span>{explanations[word] ?? '暂无解释'}</span>
-                <button
-                  onClick={() => playAudio(word)}
-                  className="text-purple-500 hover:text-purple-700"
-                >
-                  <Volume2 size={16} />
-                </button>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        )
-
-        remaining = remaining.slice(index + word.length)
-        matched = true
-        break
-      }
-    }
-
-    if (!matched) {
-      parts.push(remaining)
-      break
-    }
-  }
-
-  return parts
-}
-
-function parseExplanation(input: Record<string, string> | string): Record<string, string> {
-  if (typeof input !== 'string') return input || {}
-
-  const result: Record<string, string> = {}
-  const lines = input.split('\n')
-
-  for (const line of lines) {
-    const [key, ...rest] = line.split(':')
-    if (key && rest.length > 0) {
-      const cleanedKey = key.trim().toLowerCase()
-      const value = rest.join(':').trim()
-      if (cleanedKey && value) {
-        result[cleanedKey] = value
-      }
-    }
-  }
-
-  return result
+                {/* 核心改动：确保这里能够保留和显示换行符 */}
+                <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap"> {/* <-- ⚠️ 关键修改：添加了 whitespace-pre-wrap */}
+                  {selectedNote}
+                </p>
+              </motion.div>
+            </SheetContent>
+          </Sheet>
+        )}
+      </AnimatePresence>
+    </div>
+  )
 }

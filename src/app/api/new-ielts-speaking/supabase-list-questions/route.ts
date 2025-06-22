@@ -7,30 +7,43 @@ const supabase = createClient(
 )
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url)
-  const part = searchParams.get('part')
+  try {
+    const { searchParams } = new URL(req.url)
+    const part = searchParams.get('part')
 
-  const query = supabase
-    .from('ielts_speaking_data')
-    .select('title, part, question_text')
-    .order('created_time', { ascending: false })
+    console.log('✅ [supabase-list-questions] received part:', part)
 
-  if (part) {
-    query.eq('part', part)
+    // ✅ 使用你实际存在的字段
+    let query = supabase
+      .from('ielts_speaking_data')
+      .select('id, part, question_text')
+
+    // 如果 created_time 字段存在，可以开启排序
+    // .order('created_time', { ascending: false })
+
+    if (part) {
+      query = query.eq('part', part)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+      console.error('❌ Supabase query error:', error.message)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    console.log(`✅ [supabase-list-questions] fetched ${data?.length} items`)
+    console.log('🔍 Sample row:', data?.[0])
+
+    const formatted = data?.map((item) => ({
+      id: item.id, // ← 使用数据库主键
+      part: item.part,
+      questionText: item.question_text,
+    }))
+
+    return NextResponse.json({ items: formatted })
+  } catch (err: any) {
+    console.error('❌ [supabase-list-questions] route crash:', err)
+    return NextResponse.json({ error: err.message || 'Unknown error' }, { status: 500 })
   }
-
-  const { data, error } = await query
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  // 返回字段名称统一映射给前端使用（title 映射为 id）
-  const formatted = data?.map((item) => ({
-    id: item.title,
-    part: item.part,
-    questionText: item.question_text,
-  }))
-
-  return NextResponse.json({ items: formatted })
 }
