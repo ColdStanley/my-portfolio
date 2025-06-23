@@ -5,26 +5,15 @@ import Link from 'next/link'
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi'
 import QuoteVisualPetal from '../QuoteVisualPetal'
 
-interface Props {
-  imageUrl: string
-  description: string
-  quotes: string
-}
+// ✅ 分享行为辅助工具
+const shareUrl = typeof window !== 'undefined' ? window.location.href : ''
 
-type Position = {
-  top?: string
-  bottom?: string
-  left?: string
-  right?: string
-}
-
-export default function PicGameDisplayuser({ imageUrl, description, quotes }: Props) {
+export default function PicGameDisplayuser({ imageUrl, description, quotes }: { imageUrl: string; description: string; quotes: string }) {
   const imageRef = useRef<HTMLImageElement>(null)
   const quoteArray = quotes?.split('\n').filter(line => line.trim() !== '') || []
 
   const [displayedQuote, setDisplayedQuote] = useState('')
-  const [quoteId, setQuoteId] = useState(0)
-  const [positionStyle, setPositionStyle] = useState<Position>({})
+  const [positionStyle, setPositionStyle] = useState<{ top?: string; bottom?: string; left?: string; right?: string }>({})
   const [ripples, setRipples] = useState<{ x: number; y: number; id: number }[]>([])
   const [imageHeight, setImageHeight] = useState<number>(300)
 
@@ -40,8 +29,7 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
     setQuoteColor(prev => (prev === 'white' ? 'black' : 'white'))
   }
 
-  const getRandomOffset = (min: number, max: number): string =>
-    `${Math.floor(Math.random() * (max - min + 1)) + min}%`
+  const getRandomOffset = (min: number, max: number): string => `${Math.floor(Math.random() * (max - min + 1)) + min}%`
 
   const showQuote = (e?: React.MouseEvent | null, xPos?: number, yPos?: number) => {
     if (!imageRef.current || quoteArray.length === 0) return
@@ -50,21 +38,16 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
     const x = e ? e.clientX - rect.left : xPos ?? rect.width / 2
     const y = e ? e.clientY - rect.top : yPos ?? rect.height / 2
 
-    const newQuote = quoteArray[Math.floor(Math.random() * quoteArray.length)]
-    const newQuoteId = Date.now()
-    setDisplayedQuote(newQuote)
-    setQuoteId(newQuoteId)
-    setPositionStyle({
-      ...(y <= rect.height / 2 ? { top: getRandomOffset(5, 15) } : { bottom: getRandomOffset(5, 15) }),
-      ...(x <= rect.width / 2 ? { left: getRandomOffset(5, 15) } : { right: getRandomOffset(5, 15) }),
-    })
-
+    setDisplayedQuote('')
     setTimeout(() => {
-      setDisplayedQuote(prev => {
-        if (quoteId === newQuoteId) return ''
-        return prev
+      const quote = quoteArray[Math.floor(Math.random() * quoteArray.length)]
+      setDisplayedQuote(quote)
+      setPositionStyle({
+        ...(y <= rect.height / 2 ? { top: getRandomOffset(5, 15) } : { bottom: getRandomOffset(5, 15) }),
+        ...(x <= rect.width / 2 ? { left: getRandomOffset(5, 15) } : { right: getRandomOffset(5, 15) }),
       })
-    }, 12000)
+      setTimeout(() => setDisplayedQuote(''), 12000)
+    }, 10)
 
     setLastClickTime(Date.now())
     setAnimationIndex(prev => (prev + 1) % animationTypeList.length)
@@ -109,10 +92,10 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
 
   return (
     <div className="w-full mb-6 break-inside-avoid rounded-md shadow-sm border border-gray-200 overflow-hidden">
+      {/* 图片区域 */}
       <div
         className={`relative w-full cursor-pointer overflow-hidden animate-${animationTypeList[animationIndex]}`}
         onClick={(e) => showQuote(e)}
-        style={{ height: imageHeight }}
       >
         <img
           ref={imageRef}
@@ -123,15 +106,14 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
 
         {/* Quote 气泡 */}
         {displayedQuote && (
-          <div className="absolute top-0 left-0 w-full h-full pointer-events-none flex justify-center items-center">
-            <QuoteVisualPetal
-              quote={displayedQuote}
-              position={positionStyle}
-              color={quoteColor}
-            />
-          </div>
+          <QuoteVisualPetal
+            quote={displayedQuote}
+            position={positionStyle}
+            color={quoteColor}
+          />
         )}
 
+        {/* 初始提示或颜色切换按钮 */}
         <div className="absolute top-3 right-3 z-10">
           {!hasPlayed ? (
             <div className="bg-purple-500/40 hover:bg-purple-600 text-white text-xs px-3 py-1 rounded-full shadow transition">
@@ -150,6 +132,38 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
           ) : null}
         </div>
 
+        {/* 分享按钮组 */}
+        <div className="absolute bottom-3 right-3 z-10 flex gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              navigator.clipboard.writeText(window.location.href)
+            }}
+            className="text-white bg-purple-500/50 hover:bg-purple-600 text-xs px-3 py-1 rounded-full shadow"
+          >
+            Copy Link
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              window.open(`mailto:?subject=Check this out&body=${window.location.href}`, '_blank')
+            }}
+            className="text-white bg-purple-500/50 hover:bg-purple-600 text-xs px-3 py-1 rounded-full shadow"
+          >
+            Email
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              window.open(`https://wa.me/?text=${encodeURIComponent(window.location.href)}`, '_blank')
+            }}
+            className="text-white bg-purple-500/50 hover:bg-purple-600 text-xs px-3 py-1 rounded-full shadow"
+          >
+            WhatsApp
+          </button>
+        </div>
+
+        {/* Ripple 效果 */}
         {ripples.map((r) => (
           <span
             key={r.id}
@@ -164,10 +178,12 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
         ))}
       </div>
 
+      {/* description 文本展示区 */}
       <div className="w-full p-4 text-sm text-gray-700 bg-white border-t border-gray-200 leading-relaxed">
         {description}
       </div>
 
+      {/* 跳转链接 */}
       <div className="w-full px-4 pb-4">
         <Link
           href="/feelink/upload"
@@ -178,6 +194,7 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
         </Link>
       </div>
 
+      {/* 动画样式 */}
       <style>{`
         @keyframes ripple {
           0% { transform: scale(0); opacity: 0.6; }
