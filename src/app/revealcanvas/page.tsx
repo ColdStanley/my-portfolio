@@ -10,9 +10,9 @@ export default function RevealCanvasPage() {
   const [masks, setMasks] = useState<MaskData[]>([])
   const [isAdding, setIsAdding] = useState(false)
   const [maskSetting, setMaskSetting] = useState({
-    opacity: 85,
-    width: 200,
-    height: 100,
+    opacity: 95,
+    width: 500,
+    height: 300,
     color: 'rgba(155, 89, 182, 0.3)',
   })
   const [deletableMode, setDeletableMode] = useState(false)
