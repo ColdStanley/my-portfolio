@@ -31,7 +31,6 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
   const animationType = animationTypeList[animationIndex]
   const [hasClicked, setHasClicked] = useState(false)
 
-  // 新增：字体颜色切换
   const [quoteColor, setQuoteColor] = useState<'white' | 'black'>('black')
   const [renderKey, setRenderKey] = useState(0)
   const toggleQuoteColor = () => {
@@ -39,7 +38,6 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
     setRenderKey(prev => prev + 1)
   }
 
-  // 新增：记录最后一次点击时间
   const [lastClickTime, setLastClickTime] = useState(Date.now())
 
   const getRandomOffset = (min: number, max: number): string =>
@@ -92,7 +90,6 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
     setAnimationIndex((prev) => (prev + 1) % animationTypeList.length)
   }
 
-  // 新增：定时检测是否无点击并自动触发 quote
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now()
@@ -107,30 +104,31 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
   }, [lastClickTime, quotes])
 
   return (
-    <div className="w-full mb-6 break-inside-avoid rounded-md shadow-sm border border-gray-200 overflow-hidden">
+    <div className="w-full mb-8 break-inside-avoid rounded-xl shadow-md border border-gray-200 overflow-hidden bg-white transition-transform hover:scale-[1.01] hover:shadow-lg">
       {/* 图片区域 */}
       <div
         className={`relative w-full cursor-pointer overflow-hidden animate-${animationType}`}
         onClick={handleClick}
       >
         <img
-          ref={imageRef}
-          src={imageUrl}
-          alt="interactive"
-          className="w-full h-auto object-contain rounded-t-md"
-        />
+  ref={imageRef}
+  src={imageUrl}
+  alt="interactive"
+  className="w-full h-auto object-contain rounded-t-xl"
+/>
+
 
         {/* Quote 气泡 */}
         {displayedQuote && (
-  <QuoteVisualPetal
-    quote={displayedQuote}
-    position={positionStyle}
-    triggerKey={displayedQuote + renderKey}
-    color={quoteColor}
-  />
-)}
+          <QuoteVisualPetal
+            quote={displayedQuote}
+            position={positionStyle}
+            triggerKey={displayedQuote + renderKey}
+            color={quoteColor}
+          />
+        )}
 
-        {/* 提示按钮（新逻辑） */}
+        {/* 提示按钮 */}
         <div className="absolute top-3 right-3 z-10">
           {!hasClicked ? (
             <div className="bg-purple-500/40 hover:bg-purple-600 text-white text-xs px-3 py-1 rounded-full shadow transition">
@@ -165,7 +163,7 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
       </div>
 
       {/* description 文本展示区 */}
-      <div className="w-full p-4 text-sm text-gray-700 bg-white border-t border-gray-200 leading-relaxed">
+      <div className="w-full px-4 pt-4 pb-2 text-sm md:text-base text-gray-700 leading-relaxed">
         {description}
       </div>
 
@@ -180,7 +178,6 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
         </Link>
       </div>
 
-      {/* CSS 动画样式 */}
       <style>{`
         @keyframes ripple {
           0% { transform: scale(0); opacity: 0.6; }

@@ -24,12 +24,9 @@ export default function PicGameGalleryPage() {
       {/* 顶部 Header 区块 */}
       <PicGameHeader />
 
-      {/* 顶部锚点导航 */}
-      <div className="text-center text-sm text-purple-600 space-x-6 mt-4 mb-10 font-medium">
-        <a href="#love" className="hover:underline transition-all duration-200">❤️ Love</a>
-        <a href="#sorry" className="hover:underline transition-all duration-200">🙏 Sorry</a>
-        <a href="#blessing" className="hover:underline transition-all duration-200">✨ Blessing</a>
-        <a href="#thanks" className="hover:underline transition-all duration-200">💜 Thanks</a>
+      {/* 滚动引导箭头 */}
+      <div className="mt-6 mb-4 text-center text-purple-400 text-2xl animate-bounce">
+        ↓
       </div>
 
       {/* 分区展示区域 */}
@@ -38,15 +35,24 @@ export default function PicGameGalleryPage() {
         <CardGroup components={[PicGameLove01AnimateAnon, PicGameLove04AnimateMitsumi, PicGameLove05AnimateFrieren, PicGame10, PicGameLove03RealCoupleWine, PicGameLove02RealCouple, PicGame02]} />
       </section>
 
+      {/* 分隔线 */}
+      <div className="h-8" />
+
       <section id="sorry" className="scroll-mt-24 py-8 mb-14 bg-purple-50/80 rounded-xl shadow-inner backdrop-blur-md px-6 max-w-6xl mx-auto">
         <TitleBlock emoji="🙏" title="Say Sorry" desc="Some apologies are better said with pixels than words." />
         <CardGroup components={[ PicGameApology01, PicGameApology02]} />
       </section>
 
+      {/* 分隔线 */}
+      <div className="h-8" />
+
       <section id="blessing" className="scroll-mt-24 py-8 mb-14 bg-indigo-50/70 rounded-xl shadow-inner backdrop-blur-md px-6 max-w-6xl mx-auto">
         <TitleBlock emoji="✨" title="Send Blessings" desc="Whisper magic, courage, and warmth into someone's world." />
         <CardGroup components={[PicGame06, PicGameBlessing01Graduation, PicGame07]} />
       </section>
+
+      {/* 分隔线 */}
+      <div className="h-8" />
 
       <section id="thanks" className="scroll-mt-24 py-8 mb-14 bg-orange-50/60 rounded-xl shadow-inner backdrop-blur-md px-6 max-w-6xl mx-auto">
         <TitleBlock emoji="💜" title="Say Thanks" desc="A little appreciation goes a long way—let your gratitude shine." />
@@ -55,6 +61,10 @@ export default function PicGameGalleryPage() {
 
       {/* 全局动效样式 */}
       <style jsx global>{`
+        html {
+          scroll-behavior: smooth;
+        }
+
         @keyframes fade-in {
           0% { opacity: 0; }
           100% { opacity: 1; }
@@ -69,6 +79,14 @@ export default function PicGameGalleryPage() {
         }
         .animate-slide-up {
           animation: slide-up 0.6s ease-in-out;
+        }
+
+        .animate-bounce {
+          animation: bounce 1.5s infinite;
+        }
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(6px); }
         }
       `}</style>
     </div>

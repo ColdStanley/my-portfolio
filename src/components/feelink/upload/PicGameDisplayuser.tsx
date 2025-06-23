@@ -4,6 +4,12 @@ import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi'
 import QuoteVisualPetal from '../QuoteVisualPetal'
+import { motion, AnimatePresence } from 'framer-motion'
+
+const fadeVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0 },
+}
 
 type Position = {
   top?: string
@@ -34,6 +40,7 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
   const animationTypeList = ['shake', 'scale', 'bounce', 'fade-in', 'ripple'] as const
   const [animationIndex, setAnimationIndex] = useState(0)
   const [lastClickTime, setLastClickTime] = useState(Date.now())
+  const [copied, setCopied] = useState(false)
 
   const toggleQuoteColor = () => {
     setQuoteColor(prev => (prev === 'white' ? 'black' : 'white'))
@@ -49,7 +56,6 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
     const x = e ? e.clientX - rect.left : xPos ?? rect.width / 2
     const y = e ? e.clientY - rect.top : yPos ?? rect.height / 2
 
-    // 重置状态，确保不会被上一个定时器覆盖
     setDisplayedQuote('')
     setTimeout(() => {
       const quote = quoteArray[Math.floor(Math.random() * quoteArray.length)]
@@ -58,8 +64,6 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
         ...(y <= rect.height / 2 ? { top: getRandomOffset(5, 15) } : { bottom: getRandomOffset(5, 15) }),
         ...(x <= rect.width / 2 ? { left: getRandomOffset(5, 15) } : { right: getRandomOffset(5, 15) }),
       })
-
-      // 设置 quote 12 秒后消失
       setTimeout(() => {
         setDisplayedQuote('')
       }, 12000)
@@ -94,21 +98,21 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
     const interval = setInterval(() => {
       if (!imageRef.current || quoteArray.length === 0) return
       const now = Date.now()
-      if (now - lastClickTime >= 9000) {  // ⏱️ 自动触发间隔：9 秒
+      if (now - lastClickTime >= 9000) {
         const rect = imageRef.current.getBoundingClientRect()
         const randX = Math.floor(Math.random() * rect.width)
         const randY = Math.floor(Math.random() * rect.height)
         showQuote(null, randX, randY)
       }
-    }, 2000)  // 🔁 每 2 秒检测一次
+    }, 2000)
     return () => clearInterval(interval)
   }, [lastClickTime, quoteArray])
 
   const safeImageUrl = imageUrl?.startsWith('http') ? imageUrl : `https://${imageUrl}`
+  const pageUrl = typeof window !== 'undefined' ? window.location.href : ''
 
   return (
     <div className="w-full mb-6 break-inside-avoid rounded-md shadow-sm border border-gray-200 overflow-hidden">
-      {/* 图片区域 */}
       <div
         className={`relative w-full cursor-pointer overflow-hidden animate-${animationTypeList[animationIndex]}`}
         onClick={(e) => showQuote(e)}
@@ -120,16 +124,24 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
           className="w-full h-auto object-contain rounded-t-md"
         />
 
-        {/* Quote 气泡 */}
-        {displayedQuote && (
-          <QuoteVisualPetal
-            quote={displayedQuote}
-            position={positionStyle}
-            color={quoteColor}
-          />
-        )}
+        <AnimatePresence>
+          {displayedQuote && (
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              variants={fadeVariants}
+              transition={{ duration: 0.6 }}
+            >
+              <QuoteVisualPetal
+                quote={displayedQuote}
+                position={positionStyle}
+                color={quoteColor}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* 初始提示或颜色切换按钮 */}
         <div className="absolute top-3 right-3 z-10">
           {!hasPlayed ? (
             <div className="bg-purple-500/40 hover:bg-purple-600 text-white text-xs px-3 py-1 rounded-full shadow transition">
@@ -148,7 +160,6 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
           ) : null}
         </div>
 
-        {/* Ripple 效果 */}
         {ripples.map((r) => (
           <span
             key={r.id}
@@ -161,14 +172,40 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
             }}
           />
         ))}
+
+        {/* 分享功能按钮组 */}
+        <div className="absolute bottom-3 right-3 z-20 space-x-2">
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(pageUrl)
+              setCopied(true)
+              setTimeout(() => setCopied(false), 1500)
+            }}
+            className="bg-white/80 text-gray-800 text-xs px-3 py-1 rounded shadow hover:bg-purple-100"
+          >
+            {copied ? 'Copied!' : 'Copy Link'}
+          </button>
+          <a
+            href={`mailto:?subject=Check this out&body=${encodeURIComponent(pageUrl)}`}
+            className="bg-white/80 text-gray-800 text-xs px-3 py-1 rounded shadow hover:bg-purple-100"
+          >
+            Email
+          </a>
+          <a
+            href={`https://wa.me/?text=${encodeURIComponent(pageUrl)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-white/80 text-gray-800 text-xs px-3 py-1 rounded shadow hover:bg-purple-100"
+          >
+            WhatsApp
+          </a>
+        </div>
       </div>
 
-      {/* description 文本展示区 */}
       <div className="w-full p-4 text-sm text-gray-700 bg-white border-t border-gray-200 leading-relaxed">
         {description}
       </div>
 
-      {/* 跳转链接 */}
       <div className="w-full px-4 pb-4">
         <Link
           href="/feelink/upload"
@@ -179,7 +216,6 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
         </Link>
       </div>
 
-      {/* 动画样式 */}
       <style>{`
         @keyframes ripple {
           0% { transform: scale(0); opacity: 0.6; }
