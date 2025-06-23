@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ImageCanvas from './components/ImageCanvas'
 import { MaskData } from './page'
 import CardWrapper from './components/CardWrapper'
@@ -16,6 +16,24 @@ export default function RevealCanvasPage() {
     color: 'rgba(155, 89, 182, 0.3)',
   })
   const [deletableMode, setDeletableMode] = useState(false)
+
+  // ✅ 从 localStorage 恢复遮罩
+  useEffect(() => {
+    const stored = localStorage.getItem('revealcanvas-masks')
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed)) setMasks(parsed)
+      } catch (err) {
+        console.error('Failed to parse masks from storage:', err)
+      }
+    }
+  }, [])
+
+  // ✅ 每次更新遮罩时保存
+  useEffect(() => {
+    localStorage.setItem('revealcanvas-masks', JSON.stringify(masks))
+  }, [masks])
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
