@@ -30,14 +30,14 @@ export default function RegisterPageClient() {
     })
 
     if (signUpError) {
-      setMessage(`注册失败：${signUpError.message}`)
+      setMessage(`Registration failed: ${signUpError.message}`)
       setLoading(false)
       return
     }
 
     const userId = signUpData.user?.id
     if (!userId) {
-      setMessage('注册成功，但用户 ID 获取失败')
+      setMessage('Registration succeeded, but user ID was not retrieved.')
       setLoading(false)
       return
     }
@@ -53,13 +53,13 @@ export default function RegisterPageClient() {
     ])
 
     if (insertError) {
-      console.error('插入 membership 失败：', insertError)
-      setMessage(`插入会员信息失败：${insertError.message}`)
+      console.error('Failed to insert membership info:', insertError)
+      setMessage(`Failed to insert membership info: ${insertError.message}`)
       setLoading(false)
       return
     }
 
-    setMessage('注册成功，欢迎加入！正在跳转...')
+    setMessage('Registration successful! Redirecting...')
     setTimeout(() => {
       router.push(redirectPath)
     }, 1500)
@@ -69,25 +69,25 @@ export default function RegisterPageClient() {
 
   return (
     <div className="max-w-md mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-4">注册账户</h1>
+      <h1 className="text-2xl font-bold mb-4">Create an Account</h1>
 
       <input
         type="email"
-        placeholder="邮箱"
+        placeholder="Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         className="w-full border p-2 mb-3 rounded"
       />
       <input
         type="password"
-        placeholder="密码"
+        placeholder="Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         className="w-full border p-2 mb-3 rounded"
       />
       <input
         type="text"
-        placeholder="邀请码（可选）"
+        placeholder="Invite code (optional)"
         value={inviteCode}
         onChange={(e) => setInviteCode(e.target.value)}
         className="w-full border p-2 mb-3 rounded"
@@ -98,7 +98,7 @@ export default function RegisterPageClient() {
         disabled={loading}
         className="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700"
       >
-        {loading ? '注册中…' : '立即注册'}
+        {loading ? 'Registering...' : 'Register Now'}
       </button>
 
       {message && <p className="mt-4 text-sm text-center text-gray-700">{message}</p>}
