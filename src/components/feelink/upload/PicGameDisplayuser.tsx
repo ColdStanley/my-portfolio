@@ -4,32 +4,26 @@ import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi'
 import QuoteVisualPetal from '../QuoteVisualPetal'
-
 import { motion, AnimatePresence } from 'framer-motion'
 
-import { FaRegCopy, FaEnvelope, FaWhatsapp } from 'react-icons/fa'
-
-// 类型定义
 interface Props {
   imageUrl: string
   description: string
   quotes: string
 }
 
-interface Position {
-  top?: string
-  bottom?: string
-  left?: string
-  right?: string
-}
-
 export default function PicGameDisplayuser({ imageUrl, description, quotes }: Props) {
   const imageRef = useRef<HTMLImageElement>(null)
   const quoteArray = quotes?.split('\n').filter(line => line.trim() !== '') || []
 
-  const [displayedQuote, setDisplayedQuote] = useState<string>('')
-  const [quoteId, setQuoteId] = useState<number | null>(null)
-  const [positionStyle, setPositionStyle] = useState<Position>({})
+  const [displayedQuote, setDisplayedQuote] = useState('')
+  const [quoteId, setQuoteId] = useState(0)
+  const [positionStyle, setPositionStyle] = useState<{
+    top?: string
+    bottom?: string
+    left?: string
+    right?: string
+  }>({})
   const [ripples, setRipples] = useState<{ x: number; y: number; id: number }[]>([])
   const [imageHeight, setImageHeight] = useState<number>(300)
 
@@ -40,8 +34,6 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
   const animationTypeList = ['shake', 'scale', 'bounce', 'fade-in', 'ripple'] as const
   const [animationIndex, setAnimationIndex] = useState(0)
   const [lastClickTime, setLastClickTime] = useState(Date.now())
-
-  const [copied, setCopied] = useState(false)
 
   const toggleQuoteColor = () => {
     setQuoteColor(prev => (prev === 'white' ? 'black' : 'white'))
@@ -58,22 +50,19 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
     const y = e ? e.clientY - rect.top : yPos ?? rect.height / 2
 
     const quote = quoteArray[Math.floor(Math.random() * quoteArray.length)]
-    const currentId = Date.now()
+    const newId = Date.now()
 
-    setQuoteId(currentId)
     setDisplayedQuote(quote)
+    setQuoteId(newId)
     setPositionStyle({
       ...(y <= rect.height / 2 ? { top: getRandomOffset(5, 15) } : { bottom: getRandomOffset(5, 15) }),
       ...(x <= rect.width / 2 ? { left: getRandomOffset(5, 15) } : { right: getRandomOffset(5, 15) }),
     })
 
     setTimeout(() => {
-      setQuoteId(prevId => {
-        if (prevId === currentId) {
-          setDisplayedQuote('')
-          return null
-        }
-        return prevId
+      setDisplayedQuote(prev => {
+        if (quoteId === newId) return ''
+        return prev
       })
     }, 12000)
 
@@ -118,8 +107,6 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
 
   const safeImageUrl = imageUrl?.startsWith('http') ? imageUrl : `https://${imageUrl}`
 
-  const shareLink = typeof window !== 'undefined' ? window.location.href : ''
-
   return (
     <div className="w-full mb-6 break-inside-avoid rounded-md shadow-sm border border-gray-200 overflow-hidden">
       {/* 图片区域 */}
@@ -135,53 +122,20 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
         />
 
         {/* Quote 气泡 */}
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
           {displayedQuote && (
             <motion.div
               key={quoteId}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.4 }}
-              className="absolute"
-              style={{ ...positionStyle, maxWidth: '80%' }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.6, ease: 'easeInOut' }}
+              style={{ position: 'absolute', ...positionStyle, display: 'inline-block' }}
             >
-              <QuoteVisualPetal
-                quote={displayedQuote}
-                position={{}}
-                color={quoteColor}
-              />
+              <QuoteVisualPetal quote={displayedQuote} position={{}} color={quoteColor} />
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* 分享按钮组 */}
-        <div className="absolute bottom-3 right-3 z-10 flex flex-col gap-2 items-end">
-          <button
-            onClick={() => {
-              navigator.clipboard.writeText(shareLink)
-              setCopied(true)
-              setTimeout(() => setCopied(false), 2000)
-            }}
-            className="flex items-center gap-1 bg-white/80 text-xs px-3 py-1 rounded-full shadow hover:bg-purple-100 transition"
-          >
-            <FaRegCopy className="w-3 h-3" /> {copied ? 'Copied!' : 'Copy'}
-          </button>
-          <a
-            href={`mailto:?subject=Check this out&body=${encodeURIComponent(shareLink)}`}
-            className="flex items-center gap-1 bg-white/80 text-xs px-3 py-1 rounded-full shadow hover:bg-purple-100 transition"
-          >
-            <FaEnvelope className="w-3 h-3" /> Email
-          </a>
-          <a
-            href={`https://wa.me/?text=${encodeURIComponent(shareLink)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 bg-white/80 text-xs px-3 py-1 rounded-full shadow hover:bg-purple-100 transition"
-          >
-            <FaWhatsapp className="w-3 h-3" /> WhatsApp
-          </a>
-        </div>
 
         {/* 初始提示或颜色切换按钮 */}
         <div className="absolute top-3 right-3 z-10">
@@ -215,6 +169,30 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: Pr
             }}
           />
         ))}
+
+        {/* 分享按钮组横排排列 */}
+        <div className="absolute bottom-3 right-3 flex flex-row gap-2 z-10">
+          <button
+            onClick={() => navigator.clipboard.writeText(window.location.href)}
+            className="bg-white/80 hover:bg-purple-100 text-xs px-2 py-1 rounded shadow text-gray-700"
+          >
+            Copy Link
+          </button>
+          <a
+            href={`mailto:?subject=Check%20this%20out&body=${encodeURIComponent(window.location.href)}`}
+            className="bg-white/80 hover:bg-purple-100 text-xs px-2 py-1 rounded shadow text-gray-700"
+          >
+            Email
+          </a>
+          <a
+            href={`https://wa.me/?text=${encodeURIComponent(window.location.href)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-white/80 hover:bg-purple-100 text-xs px-2 py-1 rounded shadow text-gray-700"
+          >
+            WhatsApp
+          </a>
+        </div>
       </div>
 
       {/* description 文本展示区 */}
