@@ -9,12 +9,7 @@ export default function RevealCanvasPage() {
   const [imageList, setImageList] = useState<string[]>([])
   const [masks, setMasks] = useState<MaskData[]>([])
   const [isAdding, setIsAdding] = useState(false)
-  const [maskSetting, setMaskSetting] = useState({
-    opacity: 95,
-    width: 500,
-    height: 300,
-    color: 'rgba(155, 89, 182, 0.3)',
-  })
+  
   const [deletableMode, setDeletableMode] = useState(false)
 
   // ✅ 从 localStorage 恢复遮罩
@@ -42,22 +37,34 @@ export default function RevealCanvasPage() {
     setImageList(prev => [...newUrls.reverse(), ...prev])
   }
 
-  const handleAddMask = () => {
-    const top = 200
-    const left = 150
-    const newMask: MaskData = {
-      id: Date.now(),
-      top,
-      left,
-      width: maskSetting.width,
-      height: maskSetting.height,
-      color: maskSetting.color,
-      opacity: maskSetting.opacity,
-    }
-    setMasks(prev => [...prev, newMask])
-    setIsAdding(true)
-    setDeletableMode(false)
+  const [maskSetting, setMaskSetting] = useState({
+  opacity: 100,
+  width: 500,
+  height: 300,
+  color: 'rgba(155, 89, 182, 1.0)', // 颜色可换，默认纯紫不透明
+})
+
+const handleAddMask = () => {
+  const { width, height, color, opacity } = maskSetting
+
+  const top = window.scrollY + window.innerHeight / 2 - height / 2
+  const left = window.scrollX + window.innerWidth / 2 - width / 2
+
+  const newMask: MaskData = {
+    id: Date.now(),
+    top,
+    left,
+    width,
+    height,
+    color,
+    opacity,
   }
+
+  setMasks(prev => [...prev, newMask])
+  setIsAdding(true)
+  setDeletableMode(false)
+}
+
 
   const handleCompleteMaskSettings = () => {
     setIsAdding(false)
