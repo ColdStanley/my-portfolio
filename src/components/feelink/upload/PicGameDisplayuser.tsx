@@ -17,7 +17,7 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: { 
   const [ripples, setRipples] = useState<{ x: number; y: number; id: number }[]>([])
   const [imageHeight, setImageHeight] = useState<number>(300)
 
-  const [quoteColor, setQuoteColor] = useState<'white' | 'black'>('white')
+  const [quoteColor, setQuoteColor] = useState<'white' | 'black'>('black')
   const [hasPlayed, setHasPlayed] = useState(false)
   const [showColorToggle, setShowColorToggle] = useState(false)
 
