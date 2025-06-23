@@ -32,7 +32,7 @@ export default function PicGameDisplay({ imageUrl, quotes, description }: Props)
   const [hasClicked, setHasClicked] = useState(false)
 
   // 新增：字体颜色切换
-+ const [quoteColor, setQuoteColor] = useState<'white' | 'black'>('black')
+  const [quoteColor, setQuoteColor] = useState<'white' | 'black'>('black')
   const [renderKey, setRenderKey] = useState(0)
   const toggleQuoteColor = () => {
     setQuoteColor(prev => (prev === 'white' ? 'black' : 'white'))
