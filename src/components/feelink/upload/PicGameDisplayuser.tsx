@@ -138,6 +138,7 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: { 
             onClick={(e) => {
               e.stopPropagation()
               navigator.clipboard.writeText(window.location.href)
+              alert('✅ Link copied!')
             }}
             className="text-white bg-purple-500/50 hover:bg-purple-600 text-xs px-3 py-1 rounded-full shadow"
           >
@@ -147,6 +148,7 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: { 
             onClick={(e) => {
               e.stopPropagation()
               window.open(`mailto:?subject=Check this out&body=${window.location.href}`, '_blank')
+              alert('✅ Email client opened!')
             }}
             className="text-white bg-purple-500/50 hover:bg-purple-600 text-xs px-3 py-1 rounded-full shadow"
           >
@@ -156,6 +158,7 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: { 
             onClick={(e) => {
               e.stopPropagation()
               window.open(`https://wa.me/?text=${encodeURIComponent(window.location.href)}`, '_blank')
+              alert('✅ WhatsApp share opened!')
             }}
             className="text-white bg-purple-500/50 hover:bg-purple-600 text-xs px-3 py-1 rounded-full shadow"
           >
