@@ -46,7 +46,7 @@ export default function PicGameDisplayuser({ imageUrl, description, quotes }: { 
         ...(y <= rect.height / 2 ? { top: getRandomOffset(5, 15) } : { bottom: getRandomOffset(5, 15) }),
         ...(x <= rect.width / 2 ? { left: getRandomOffset(5, 15) } : { right: getRandomOffset(5, 15) }),
       })
-      setTimeout(() => setDisplayedQuote(''), 12000)
+      setTimeout(() => setDisplayedQuote(''), 20000)
     }, 10)
 
     setLastClickTime(Date.now())
