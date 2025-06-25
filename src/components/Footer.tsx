@@ -79,14 +79,7 @@ export default function Footer() {
                   IELTS Speaking
                 </a>
               </li>
-              <li>
-                <a
-                  href="/ielts-reading"
-                  className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors duration-200"
-                >
-                  IELTS Reading
-                </a>
-              </li>
+              
             </ul>
           </div>
 

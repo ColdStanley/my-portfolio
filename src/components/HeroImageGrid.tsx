@@ -21,7 +21,7 @@ export default function HeroTextBanner() {
   }, [])
 
   return (
-    <section className="w-full flex justify-center items-center h-[160px] sm:h-[180px]">
+    <section className="w-full flex justify-center items-center h-[160px] sm:h-[180px] px-4">
       <AnimatePresence mode="wait">
         <motion.div
           key={index}
@@ -29,13 +29,13 @@ export default function HeroTextBanner() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.5 }}
-          className="text-center text-3xl sm:text-5xl font-semibold text-purple-600"
+          className="flex flex-col sm:flex-row items-center justify-center text-center text-2xl sm:text-5xl font-semibold text-purple-600 gap-1 sm:gap-6"
         >
-          <span className="mr-6">
+          <span>
             Less <span className="font-bold">{phrases[index].less.split(' ')[1]}</span>
           </span>
-          →
-          <span className="ml-6">
+          <span className="hidden sm:inline">→</span>
+          <span>
             More <span className="font-bold">{phrases[index].more.split(' ')[1]}</span>
           </span>
         </motion.div>
