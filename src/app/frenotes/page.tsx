@@ -10,6 +10,7 @@ import FrenotesContentMasonry from './components/FrenotesContentMasonry'
 export default function FrenotesPage() {
   const [allItems, setAllItems] = useState<FrenotesItem[]>([])
   const [filteredItems, setFilteredItems] = useState<FrenotesItem[]>([])
+  const [selectedMothertongue, setSelectedMothertongue] = useState<string | null>(null)
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null)
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null)
 
@@ -24,20 +25,23 @@ export default function FrenotesPage() {
 
   useEffect(() => {
     const filtered = allItems.filter((item) => {
+      const matchMother = selectedMothertongue ? item.mothertongue === selectedMothertongue : true
       const matchTopic = selectedTopic ? item.topic === selectedTopic : true
       const matchDiff = selectedDifficulty ? item.difficulty === selectedDifficulty : true
-      return matchTopic && matchDiff
+      return matchMother && matchTopic && matchDiff
     })
     setFilteredItems(filtered)
-  }, [selectedTopic, selectedDifficulty, allItems])
+  }, [selectedMothertongue, selectedTopic, selectedDifficulty, allItems])
 
   return (
     <main className="max-w-7xl mx-auto px-4 py-10">
       <FrenotesHeader />
       <FrenotesFilterPanel
         allItems={allItems}
+        selectedMothertongue={selectedMothertongue}
         selectedTopic={selectedTopic}
         selectedDifficulty={selectedDifficulty}
+        onSelectMothertongue={setSelectedMothertongue}
         onSelectTopic={setSelectedTopic}
         onSelectDifficulty={setSelectedDifficulty}
       />
