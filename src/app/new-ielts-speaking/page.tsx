@@ -12,14 +12,14 @@ export default function NewIELTSSpeakingPage() {
   const [tabKey, setTabKey] = useState<'main' | 'custom' | 'plan'>('main')
 
   return (
-    <div className="flex min-h-screen font-sans text-gray-800">
-      {/* 左侧固定导航栏（仅桌面端显示） */}
+    <div className="flex min-h-screen font-sans text-gray-800 relative">
+      {/* 左侧固定导航栏（仅桌面端） */}
       <div className="hidden md:block">
         <SideNavigation currentTab={tabKey} onTabChange={setTabKey} />
       </div>
 
-      {/* 移动端顶部 tab 切换按钮 */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-white border-b border-gray-200 px-4 py-2 flex justify-around gap-2">
+      {/* 移动端右上角竖排按钮（在 NavBar 下方） */}
+      <div className="md:hidden fixed top-[64px] right-4 z-30 flex flex-col gap-2">
         {[
           { key: 'main', label: '📚 题库' },
           { key: 'custom', label: '✨ 定制' },
@@ -28,9 +28,9 @@ export default function NewIELTSSpeakingPage() {
           <button
             key={key}
             onClick={() => setTabKey(key as 'main' | 'custom' | 'plan')}
-            className={`px-3 py-1 rounded-full text-sm font-medium transition-all ${
+            className={`px-4 py-2 rounded-full text-sm font-medium shadow transition-all ${
               tabKey === key
-                ? 'bg-purple-600 text-white shadow'
+                ? 'bg-purple-600 text-white'
                 : 'bg-gray-100 text-gray-600'
             }`}
           >
