@@ -28,9 +28,9 @@ export default function BoosterSpeakingPlanCardList() {
 
   return (
     <div className="w-full mb-8">
-      <div className="flex flex-col sm:flex-row sm:items-start gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
         {/* 左侧提示词标签 */}
-        <div className="sm:w-28 text-sm font-semibold text-purple-700 pt-1 whitespace-nowrap">
+        <div className="w-full sm:w-28 text-sm font-semibold text-purple-700 pt-1 whitespace-nowrap">
           🗓️ 学习计划
         </div>
 
