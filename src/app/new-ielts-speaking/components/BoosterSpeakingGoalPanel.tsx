@@ -10,7 +10,7 @@ export default function BoosterSpeakingGoalPanel() {
       <div className="flex flex-col sm:flex-row sm:items-start gap-2">
         {/* 左侧提示词标签 */}
         <div className="sm:w-28 text-sm font-semibold text-purple-700 pt-1 whitespace-nowrap">
-          🎯 提升目标
+          目标/Target
         </div>
 
         {/* 右侧卡片区域 */}
