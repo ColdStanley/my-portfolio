@@ -69,25 +69,6 @@ export default function NewIELTSCustomHeader() {
             <li>5- 获取个性化答案</li>
           </ul>
         </div>
-
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-6 gap-3">
-          <span className="text-xs text-gray-500 flex items-center">
-            属于你自己的，考场才能脱口而出
-            <span className="ml-1 animate-bounce-x text-purple-500 text-base">→</span>
-          </span>
-          <button
-            onClick={handleSubmit}
-            disabled={submitted || submitting}
-            className={clsx(
-              'w-[160px] h-[40px] text-sm font-medium text-gray-700',
-              'bg-gray-200 hover:bg-gray-300 transition-all rounded-lg',
-              'flex items-center justify-center',
-              submitted && 'bg-gray-300 cursor-not-allowed'
-            )}
-          >
-            {submitted ? '感谢反馈！' : submitting ? '提交中...' : '提交'}
-          </button>
-        </div>
       </div>
 
       {/* 右侧：反馈状态说明卡片 */}
@@ -113,6 +94,22 @@ export default function NewIELTSCustomHeader() {
                 <p className="text-sm text-purple-600 font-medium">感谢你的建议，我们会认真考虑！</p>
               </>
             )}
+          </div>
+
+          {/* ✅ 提交按钮移至右侧卡片底部 */}
+          <div className="mt-6 flex justify-end">
+            <button
+              onClick={handleSubmit}
+              disabled={submitted || submitting}
+              className={clsx(
+                'w-[160px] h-[40px] text-sm font-medium text-gray-700',
+                'bg-gray-200 hover:bg-gray-300 transition-all rounded-lg',
+                'flex items-center justify-center',
+                submitted && 'bg-gray-300 cursor-not-allowed'
+              )}
+            >
+              {submitted ? '感谢反馈！' : submitting ? '提交中...' : '提交'}
+            </button>
           </div>
         </div>
       </div>
