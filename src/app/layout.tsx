@@ -48,7 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body className="pt-24 font-sans bg-white text-gray-900">
+      <body className="pt-12 font-sans bg-white text-gray-900">
         <NavBar />
         {children}
         <Footer />

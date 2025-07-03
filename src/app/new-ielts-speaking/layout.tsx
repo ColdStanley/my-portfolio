@@ -1,5 +1,11 @@
 // src/app/new-ielts-speaking/layout.tsx
-export const metadata = {
+
+import type { Metadata } from 'next'
+import NavBar from '@/components/NavBar'
+import Footer from '@/components/Footer'
+import { Toaster } from 'sonner'
+
+export const metadata: Metadata = {
   title: 'IELTS Speaking 高分范文 · 雅思口语题库精选',
   description:
     'Explore high-scoring sample answers (Band 6–8) for real IELTS Speaking questions. 真实雅思口语题库，涵盖高分范文、关键词解释与表达训练。',
@@ -45,5 +51,10 @@ export default function NewIELTSSpeakingLayout({
 }: {
   children: React.ReactNode
 }) {
-  return <>{children}</>
+  return (
+    <>
+      <main>{children}</main>
+      <Toaster richColors position="top-center" />
+    </>
+  )
 }

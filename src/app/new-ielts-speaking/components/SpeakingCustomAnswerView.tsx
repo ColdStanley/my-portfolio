@@ -1,20 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import NewQuestionKeywordSelector from './components/NewQuestionKeywordSelector'
-import NewKeywordAndInput from './components/NewKeywordAndInput'
-import NewAnswerDisplayCustom from './components/NewAnswerDisplayCustom'
-import NewIELTSCustomHeader from './components/NewIELTSCustomHeader'
+import { useState } from 'react'
+import NewQuestionKeywordSelector from './NewQuestionKeywordSelector'
+import NewKeywordAndInput from './NewKeywordAndInput'
+import NewAnswerDisplayCustom from './NewAnswerDisplayCustom'
+import NewIELTSCustomHeader from './NewIELTSCustomHeader'
+import UpgradeModal from './UpgradeModal'
 import { useAnswerCounter } from '@/hooks/useAnswerCounter'
-import { toast } from 'sonner'
-import UpgradeModal from './components/UpgradeModal'
-import { supabase } from '@/utils/supabase' 
-import { useCurrentUserType } from '@/hooks/useCurrentUserType' // ✅ 导入 hook
-import { useRouter, usePathname } from 'next/navigation' // ✅ 补充路由 hook
+import { useCurrentUserType } from '@/hooks/useCurrentUserType'
+import { usePathname, useRouter } from 'next/navigation'
 
-export default function CustomAnswerPage() {
-  const router = useRouter() // ✅ 路由跳转实例
-  const pathname = usePathname() // ✅ 当前路径获取
+export default function SpeakingCustomAnswerView() {
+  const router = useRouter()
+  const pathname = usePathname()
 
   const [part, setPart] = useState<'Part 1' | 'Part 2' | 'Part 3'>('Part 1')
   const [questionText, setQuestionText] = useState('')
@@ -27,8 +25,7 @@ export default function CustomAnswerPage() {
   } | null>(null)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
-  const { userId, userType, loading: userLoading } = useCurrentUserType()
-
+  const { userId, userType } = useCurrentUserType()
   const {
     count,
     limit,
@@ -64,14 +61,12 @@ export default function CustomAnswerPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt }),
       })
-
       const data = await res.json()
       setAnswers({
         band6: data.band6,
         band7: data.band7,
         band8: data.band8,
       })
-
       increaseCount()
     } catch (err) {
       console.error('生成答案失败', err)
@@ -79,7 +74,7 @@ export default function CustomAnswerPage() {
   }
 
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-12 text-base">
+    <div className="w-full space-y-12 text-base">
       {/* 顶部介绍模块 */}
       <NewIELTSCustomHeader />
 
@@ -100,14 +95,12 @@ export default function CustomAnswerPage() {
             userInput={userInput}
           />
 
-          {/* ✅ 今日使用次数提示 */}
           {!counterLoading && (
             <div className="mt-2 text-sm bg-purple-50 border border-purple-200 text-purple-800 py-2 px-4 rounded-xl shadow-sm text-center">
               今日已使用 {count} / {limit} 次定制口语服务
             </div>
           )}
 
-          {/* ✅ 状态提示：关键词已更新但答案还未生成 */}
           {answers === null && (
             <div className="mt-4 text-sm text-gray-500 italic px-2">
               我们将为你重新生成参考答案，请稍候...
@@ -128,7 +121,6 @@ export default function CustomAnswerPage() {
         <>
           <NewAnswerDisplayCustom answers={answers} />
 
-          {/* ✅ 本轮完成提示 */}
           <div className="mt-6 text-sm text-gray-700 leading-relaxed bg-purple-50 p-4 rounded-xl shadow-inner border border-purple-200">
             <p className="font-semibold text-purple-700 mb-1">本轮定制已完成</p>
             <p>我们刚刚为你生成的答案，是结合你个人输入与关键词定制的。这将有助于你在考场中表达得更加真实、自然、自信。</p>
@@ -139,6 +131,6 @@ export default function CustomAnswerPage() {
 
       {/* ✅ 升级提示弹窗 */}
       <UpgradeModal open={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
-    </section>
+    </div>
   )
 }

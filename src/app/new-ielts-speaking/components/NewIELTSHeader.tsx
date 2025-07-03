@@ -77,21 +77,6 @@ export default function NewIELTSHeader() {
             <li>4- 掌握Highlight词汇</li>
           </ul>
         </div>
-
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-6 gap-3">
-          <span className="text-xs text-gray-500 flex items-center">
-            属于你自己的，考场才能脱口而出
-            <span className="ml-1 animate-bounce-x text-purple-500 text-base">→</span>
-          </span>
-          <Link
-            href="/new-ielts-speaking/custom-answer"
-            className="text-sm font-semibold text-white bg-gradient-to-r from-purple-500 to-purple-700
-                       hover:scale-105 transition-transform rounded-full px-5 py-2 shadow-md
-                       flex items-center justify-center"
-          >
-            口语私人定制
-          </Link>
-        </div>
       </div>
 
       {/* 右侧：反馈问卷卡片 */}

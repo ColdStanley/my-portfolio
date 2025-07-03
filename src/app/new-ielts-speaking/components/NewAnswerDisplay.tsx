@@ -185,6 +185,3 @@ export default function NewAnswerDisplay({ questionId }: Props) {
     </div>
   )
 }
-
-
-// end

@@ -2,14 +2,11 @@
 
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import clsx from 'clsx'
 
 export default function NewIELTSCustomHeader() {
-  const router = useRouter()
   const [response, setResponse] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -41,10 +38,10 @@ export default function NewIELTSCustomHeader() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
-      {/* 左栏：标题 + 引言 */}
+      {/* 左侧：标题卡片 */}
       <div className="bg-white shadow rounded-xl p-6 flex flex-col justify-between">
         <div>
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex flex-row items-center gap-3 mb-3">
             <h1 className="text-4xl font-extrabold text-purple-600">IELTS Speaking</h1>
             <motion.div animate={{ rotate: [0, -5, 5, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
               <Image src="/images/IELTS7.png" alt="IELTS7" width={60} height={60} />
@@ -60,21 +57,40 @@ export default function NewIELTSCustomHeader() {
         </div>
       </div>
 
-      {/* 中栏：步骤说明 */}
+      {/* 中间：功能介绍卡片 */}
       <div className="bg-white shadow rounded-xl p-6 flex flex-col justify-between">
         <div className="space-y-3">
           <h2 className="text-lg font-semibold text-gray-800">快速了解</h2>
-          <ul className="text-sm text-gray-700 leading-relaxed list-none space-y-1">
-            <li>1. 选择 Part 1, 2 or 3</li>
-            <li>2. 单击选择题目</li>
-            <li>3. 单击确认提供答题思路关键词</li>
-            <li>4. 输入答题思路（中文即可）</li>
-            <li>5. 点击确认，定制化的参考答案</li>
+          <ul className="text-sm text-gray-700 leading-relaxed list-none pl-0 space-y-1">
+            <li>1- 选择 Part (Part 1, Part 2, Part 3)</li>
+            <li>2- 点击题目</li>
+            <li>3- 提供关键词</li>
+            <li>4- 输入答题思路</li>
+            <li>5- 获取个性化答案</li>
           </ul>
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-6 gap-3">
+          <span className="text-xs text-gray-500 flex items-center">
+            属于你自己的，考场才能脱口而出
+            <span className="ml-1 animate-bounce-x text-purple-500 text-base">→</span>
+          </span>
+          <button
+            onClick={handleSubmit}
+            disabled={submitted || submitting}
+            className={clsx(
+              'w-[160px] h-[40px] text-sm font-medium text-gray-700',
+              'bg-gray-200 hover:bg-gray-300 transition-all rounded-lg',
+              'flex items-center justify-center',
+              submitted && 'bg-gray-300 cursor-not-allowed'
+            )}
+          >
+            {submitted ? '感谢反馈！' : submitting ? '提交中...' : '提交'}
+          </button>
         </div>
       </div>
 
-      {/* 右栏：反馈表单 */}
+      {/* 右侧：反馈状态说明卡片 */}
       <div className="bg-white shadow rounded-xl p-6 flex flex-col justify-between">
         <div className="flex flex-col justify-between h-full">
           <div className="space-y-4">
@@ -92,28 +108,11 @@ export default function NewIELTSCustomHeader() {
                 />
               </>
             ) : (
-              <div className="h-[136px] flex flex-col justify-center">
+              <>
                 <p className="text-sm text-gray-600 italic mb-2">页面下方邮件订阅获取最新资讯！</p>
                 <p className="text-sm text-purple-600 font-medium">感谢你的建议，我们会认真考虑！</p>
-              </div>
+              </>
             )}
-          </div>
-
-          {/* 提交按钮 */}
-          <div className="mt-6 flex justify-end">
-            <button
-              onClick={handleSubmit}
-              disabled={submitted || submitting}
-              className={clsx(
-                'w-[160px] h-[40px] text-sm font-semibold text-white',
-                'bg-gradient-to-r from-purple-500 to-purple-700',
-                'hover:scale-105 transition-transform rounded-full shadow-md',
-                'flex items-center justify-center',
-                submitted && 'bg-gray-400 cursor-not-allowed hover:scale-100'
-              )}
-            >
-              {submitted ? '感谢反馈！' : submitting ? '提交中...' : '提交'}
-            </button>
           </div>
         </div>
       </div>
