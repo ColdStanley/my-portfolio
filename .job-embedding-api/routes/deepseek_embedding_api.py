@@ -1,17 +1,32 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from routes.deepseek_embedding_api import router as embedding_router
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+import os
+import requests
 
-app = FastAPI()
+router = APIRouter()
 
-# ✅ CORS 设置：允许前端访问（包括本地和生产环境）
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # 可改为 ["https://your-site.com"] 更严格
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
+DEEPSEEK_URL = "https://api.deepseek.com/v1/embeddings"
 
-# ✅ 注册 DeepSeek 向量生成路由
-app.include_router(embedding_router)
+class EmbeddingRequest(BaseModel):
+    input: str
+
+@router.post("/generate-embedding")
+async def generate_embedding(req: EmbeddingRequest):
+    headers = {
+        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+        "Content-Type": "application/json",
+    }
+
+    payload = {
+        "input": [req.input],
+        "model": "deepseek-embedding"
+    }
+
+    response = requests.post(DEEPSEEK_URL, headers=headers, json=payload)
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=500, detail="Failed to call DeepSeek API")
+
+    data = response.json()
+    return {"embedding": data["data"][0]["embedding"]}
