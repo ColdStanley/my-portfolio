@@ -2,15 +2,13 @@
 
 import Image from 'next/image'
 import { Check, X } from 'lucide-react'
-import { createClient } from '@supabase/supabase-js'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
+import { supabase } from '@/lib/supabaseClient'
+import { useAuthStore } from '@/store/useAuthStore'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const projectId = 'new-ielts-speaking' // ✅ 当前项目的 ID
 
 const plans = [
   {
@@ -53,55 +51,51 @@ const plans = [
 
 export default function MembershipPage() {
   const router = useRouter()
-  const [membershipTier, setMembershipTier] = useState<string | null>(null)
+  const user = useAuthStore((s) => s.user)
+  const membershipTier = useAuthStore((s) => s.membershipTier)
+  const setMembershipTier = useAuthStore((s) => s.setMembershipTier)
 
   useEffect(() => {
     const fetchMembership = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
       const { data, error } = await supabase
-        .from('user_product_membership')
+        .from('user_project_membership')
         .select('membership_tier')
         .eq('user_id', user.id)
-        .eq('product_id', 'ielts-speaking')
+        .eq('project_id', projectId)
         .single()
 
-      if (error) {
-        console.error('获取会员等级失败:', error)
-        return
+      if (!error && data?.membership_tier) {
+        setMembershipTier(data.membership_tier)
       }
-
-      setMembershipTier(data?.membership_tier ?? null)
     }
 
     fetchMembership()
-  }, [])
+  }, [user, setMembershipTier])
 
   const handleUpgradeToTier = async (tier: 'pro' | 'vip') => {
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
     if (!user) {
       toast.error('请先注册登录（右上角），然后再升级为 Pro / VIP', {
-        duration: 10000,
+        duration: 8000,
       })
       return
     }
 
-    const { error: updateError } = await supabase
-      .from('user_product_membership')
+    const { error } = await supabase
+      .from('user_project_membership')
       .update({ membership_tier: tier })
       .eq('user_id', user.id)
-      .eq('product_id', 'ielts-speaking')
+      .eq('project_id', projectId)
 
-    if (updateError) {
-      console.error('升级失败:', updateError)
+    if (error) {
+      console.error('升级失败:', error)
       toast.error('升级失败，请联系管理员', {
-        duration: 10000,
+        duration: 8000,
       })
     } else {
       toast.success(`升级成功！您现在是 ${tier.toUpperCase()} 用户`, {
-        duration: 10000,
+        duration: 8000,
       })
       setMembershipTier(tier)
       router.refresh?.()
@@ -115,7 +109,7 @@ export default function MembershipPage() {
 
       {membershipTier && (
         <div className="mt-6 text-center text-sm text-purple-800 bg-purple-50 border border-purple-200 py-3 px-4 rounded-xl shadow-sm">
-          当前登录账户在 IELTS Speaking 产品中的会员等级：
+          当前账号在本产品中的会员等级：
           <span className="font-semibold ml-1 text-purple-700">{membershipTier.toUpperCase()}</span>
         </div>
       )}

@@ -7,12 +7,9 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Menu } from 'lucide-react'
 import YouTube from 'react-youtube'
 import clsx from 'clsx'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { supabase } from '@/lib/supabaseClient' // ✅ 替换 createClient
+import { useAuthStore } from '@/store/useAuthStore'
+import { logout } from '@/lib/logout' // ✅ 使用统一登出函数
 
 const navItems = [
   { label: 'Home', href: '/' },
@@ -29,9 +26,10 @@ export default function NavBar() {
   const [player, setPlayer] = useState<any>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [hasInitiated, setHasInitiated] = useState(false)
-  const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [userProducts, setUserProducts] = useState<string[]>([]) // ✅ 新增
   const [showDropdown, setShowDropdown] = useState(false)
+
+  const user = useAuthStore((s) => s.user)
+  const membershipTier = useAuthStore((s) => s.membershipTier)
 
   const onPlayerReady = (event: any) => {
     setPlayer(event.target)
@@ -53,45 +51,9 @@ export default function NavBar() {
     }
   }
 
-  const checkUser = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    setUserEmail(user?.email ?? null)
-
-    // ✅ 查询用户产品
-    if (user?.id) {
-      const { data, error } = await supabase
-        .from('user_product_membership')
-        .select('product_id, products(name)')
-        .eq('user_id', user.id)
-
-      if (!error && data) {
-        const products = data.map((row) => row.products?.name).filter(Boolean)
-        setUserProducts(products)
-      }
-    }
+  const handleLogout = async () => {
+    await logout('/')
   }
-
-  const signOut = async () => {
-    await supabase.auth.signOut()
-    setUserEmail(null)
-    setUserProducts([]) // ✅ 清除产品
-    setShowDropdown(false)
-    window.location.reload()
-  }
-
-  useEffect(() => {
-    checkUser()
-
-    const { data: listener } = supabase.auth.onAuthStateChange(() => {
-      checkUser()
-    })
-
-    return () => {
-      listener.subscription.unsubscribe()
-    }
-  }, [])
 
   return (
     <nav className="fixed top-0 left-0 w-full z-50 bg-white/90 dark:bg-black/80 backdrop-blur border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center shadow-sm transition-colors">
@@ -165,26 +127,30 @@ export default function NavBar() {
           </Link>
         ))}
 
-        {userEmail ? (
+        {user ? (
           <div className="relative ml-4">
             <button
               onClick={() => setShowDropdown(!showDropdown)}
               className="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
             >
-              {userEmail.split('@')[0]} ▼
+              {user.email?.split('@')[0]} ▼
             </button>
             {showDropdown && (
-              <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 border rounded shadow p-2 text-sm space-y-1">
-                {userProducts.map((p) => (
-                  <div key={p} className="text-gray-500 dark:text-gray-400 italic">
-                    {p}
-                  </div>
-                ))}
-                <button
-                  onClick={signOut}
-                  className="text-left w-full text-gray-700 dark:text-gray-300 hover:text-purple-600 mt-2"
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg p-3 text-sm space-y-1 z-50">
+                <div className="text-gray-600 dark:text-gray-400 italic mb-2">
+                  权限等级：<span className="font-semibold text-purple-600 dark:text-purple-300">{membershipTier.toUpperCase()}</span>
+                </div>
+                <Link
+                  href="/membership"
+                  className="block text-gray-700 dark:text-gray-300 hover:text-purple-600"
                 >
-                  Sign out
+                  我的会员权限
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="text-left w-full text-red-600 hover:text-red-700 mt-2"
+                >
+                  退出登录
                 </button>
               </div>
             )}
@@ -235,29 +201,26 @@ export default function NavBar() {
             </div>
 
             <div className="border-t border-gray-200 dark:border-gray-700 mt-8 pt-4">
-              {userEmail ? (
-                <div>
-                  <button
-                    onClick={() => setShowDropdown(!showDropdown)}
-                    className="text-base font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600"
+              {user ? (
+                <div className="space-y-3">
+                  <div className="text-sm text-gray-700 dark:text-gray-300">
+                    登录账号：<span className="font-semibold">{user.email}</span>
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    权限：<span className="text-purple-600 dark:text-purple-300 font-medium">{membershipTier}</span>
+                  </div>
+                  <Link
+                    href="/membership"
+                    className="block text-sm text-purple-600 hover:underline"
                   >
-                    {userEmail.split('@')[0]} ▼
+                    我的会员权限
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="text-sm text-red-600 hover:text-red-700"
+                  >
+                    退出登录
                   </button>
-                  {showDropdown && (
-                    <div className="mt-2 space-y-1">
-                      {userProducts.map((p) => (
-                        <div key={p} className="text-sm text-gray-500 italic">
-                          {p}
-                        </div>
-                      ))}
-                      <button
-                        onClick={signOut}
-                        className="text-left w-full text-sm text-gray-700 dark:text-gray-300 hover:text-purple-600 mt-2"
-                      >
-                        Sign out
-                      </button>
-                    </div>
-                  )}
                 </div>
               ) : (
                 <div className="flex gap-4">
