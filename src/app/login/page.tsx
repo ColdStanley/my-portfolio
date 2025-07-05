@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 
-const projectId = 'new-ielts-speaking' // ✅ 当前项目 ID（便于权限查询）
+const projectId = 'new-ielts-speaking' // ✅ 当前项目 ID
 
-export default function LoginPage() {
+function LoginPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectPath = searchParams?.get('redirect') || '/'
@@ -42,10 +42,8 @@ export default function LoginPage() {
       return
     }
 
-    // ✅ 写入 Zustand 状态
     setUser(user)
 
-    // ✅ 查询权限等级（可选，GlobalAuthListener 已会处理，但这里可冗余写入）
     const { data, error: tierError } = await supabase
       .from('user_project_membership')
       .select('membership_tier')
@@ -56,7 +54,7 @@ export default function LoginPage() {
     if (data?.membership_tier) {
       setMembershipTier(data.membership_tier)
     } else {
-      setMembershipTier('registered') // 默认值
+      setMembershipTier('registered')
     }
 
     setMessage('登录成功，正在跳转...')
@@ -101,5 +99,13 @@ export default function LoginPage() {
         <a href="/register" className="text-purple-600 hover:underline">立即注册</a>
       </p>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="text-center text-sm text-gray-500 mt-20">正在加载登录页面...</div>}>
+      <LoginPageInner />
+    </Suspense>
   )
 }
