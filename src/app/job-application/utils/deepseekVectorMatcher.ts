@@ -1,7 +1,5 @@
 import { supabase } from '@/lib/supabaseClient'
-
-const DEEPSEEK_EMBEDDING_URL = 'https://api.deepseek.com/v1/embeddings'
-const DEEPSEEK_API_KEY = process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY || ''
+import { getSingleEmbedding } from './deepseekEmbedding' // ✅ 改为调用你自己的 API
 
 interface RawVectorItem {
   id: string
@@ -23,30 +21,6 @@ export interface VectorMatchResult {
 }
 
 /**
- * 使用 DeepSeek API 将 JD 编码为 embedding 向量
- */
-async function getEmbeddingFromJD(jdText: string): Promise<number[]> {
-  const res = await fetch(DEEPSEEK_EMBEDDING_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
-    },
-    body: JSON.stringify({
-      input: [jdText],
-      model: 'deepseek-embedding',
-    }),
-  })
-
-  if (!res.ok) {
-    throw new Error('❌ Failed to get embedding from DeepSeek')
-  }
-
-  const data = await res.json()
-  return data.data[0].embedding
-}
-
-/**
  * 计算余弦相似度
  */
 function cosineSimilarity(vecA: number[], vecB: number[]): number {
@@ -64,7 +38,10 @@ export async function matchJDWithVector(
   topK = 20,
   userId?: string
 ): Promise<VectorMatchResult> {
-  const jdEmbedding = await getEmbeddingFromJD(jdText)
+  const jdEmbedding = await getSingleEmbedding(jdText)
+  if (!jdEmbedding) {
+    throw new Error('❌ 无法获取 JD 的向量')
+  }
 
   const query = supabase
     .from('cv_vector_data')
