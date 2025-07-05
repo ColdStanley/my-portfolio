@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 
-const projectId = 'cv-builder' // ✅ 正确 product_id
+const projectId = 'cv-builder'
 
-export default function RegisterPage() {
+function RegisterPageInner() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [inviteCode, setInviteCode] = useState('')
@@ -42,7 +42,6 @@ export default function RegisterPage() {
       return
     }
 
-    // ✅ 正确字段：product_id
     const { error: insertError } = await supabase.from('user_product_membership').insert([
       {
         user_id: user.id,
@@ -107,5 +106,13 @@ export default function RegisterPage() {
 
       {message && <p className="mt-4 text-sm text-center text-gray-700">{message}</p>}
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="text-center text-sm text-gray-500 mt-20">正在加载注册页面...</div>}>
+      <RegisterPageInner />
+    </Suspense>
   )
 }
