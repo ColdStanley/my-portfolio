@@ -1,7 +1,5 @@
-'use client'
-
 import React from 'react'
-import GlobalAuthListener from '@/components/global/GlobalAuthListener'
+import ClientLayoutWrapper from '@/components/feelink/ClientLayoutWrapper'
 
 export const metadata = {
   title: 'Say I love you, apologize, bless, and thank – through an image with quotes.',
@@ -37,10 +35,5 @@ export default function FeelinkLayout({
 }: {
   children: React.ReactNode
 }) {
-  return (
-    <>
-      <GlobalAuthListener projectId="feelink" />
-      {children}
-    </>
-  )
+  return <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
 }
