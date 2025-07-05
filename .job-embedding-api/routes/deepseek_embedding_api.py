@@ -20,13 +20,15 @@ async def generate_embedding(req: EmbeddingRequest):
 
     payload = {
         "input": [req.input],
-        "model": "deepseek-embedding"
+        "model": "deepseek-embedding-001"  # ✅ 修复模型名称
     }
+
+    print("📤 Payload sent to DeepSeek:", payload)
 
     response = requests.post(DEEPSEEK_URL, headers=headers, json=payload)
 
     if response.status_code != 200:
-        print("💥 DeepSeek API error:", response.status_code, response.text)  # ✅ 添加这一行
+        print("💥 DeepSeek API error:", response.status_code, response.text)
         raise HTTPException(status_code=500, detail="Failed to call DeepSeek API")
 
     data = response.json()
