@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabaseClient'
-import { getSingleEmbedding } from './deepseekEmbedding' // ✅ 改为调用你自己的 API
+import { getSingleEmbedding } from './deepseekEmbedding'
 
 interface RawVectorItem {
   id: string
@@ -9,8 +9,9 @@ interface RawVectorItem {
   embedding: number[]
 }
 
-interface MatchDetail {
+export interface MatchDetail {
   content: string
+  matchedJD: string
   similarity: number
   contentType: string
 }
@@ -31,14 +32,26 @@ function cosineSimilarity(vecA: number[], vecB: number[]): number {
 }
 
 /**
- * 向量匹配主函数：给定 JD，返回相似度 Top K 的内容（仅限当前用户）
+ * 将 JD 文本按句拆分为数组（用于匹配来源追踪）
+ */
+function splitJDToSentences(jdText: string): string[] {
+  return jdText
+    .split(/(?<=[.。!?！？””])\s+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)
+}
+
+/**
+ * 主函数：匹配 JD 向量和简历向量，返回匹配结果（带来源 JD）
  */
 export async function matchJDWithVector(
   jdText: string,
   topK = 20,
-  userId?: string
+  userId?: string,
+  embedding?: number[]
 ): Promise<VectorMatchResult> {
-  const jdEmbedding = await getSingleEmbedding(jdText)
+  const jdEmbedding = embedding || (await getSingleEmbedding(jdText))
+
   if (!jdEmbedding) {
     throw new Error('❌ 无法获取 JD 的向量')
   }
@@ -57,10 +70,27 @@ export async function matchJDWithVector(
     throw new Error('❌ Failed to load vector data from Supabase')
   }
 
+  const jdSentences = splitJDToSentences(jdText)
+  const jdSentenceEmbeddings = await Promise.all(jdSentences.map(getSingleEmbedding))
+
   const matches: MatchDetail[] = (data as RawVectorItem[]).map((item) => {
     const similarity = cosineSimilarity(jdEmbedding, item.embedding)
+
+    let bestJD = ''
+    let bestSim = -1
+    jdSentenceEmbeddings.forEach((sentVec, idx) => {
+      if (sentVec) {
+        const sim = cosineSimilarity(item.embedding, sentVec)
+        if (sim > bestSim) {
+          bestSim = sim
+          bestJD = jdSentences[idx]
+        }
+      }
+    })
+
     return {
       content: item.raw_text,
+      matchedJD: bestJD,
       similarity: parseFloat(similarity.toFixed(4)),
       contentType: item.content_type,
     }

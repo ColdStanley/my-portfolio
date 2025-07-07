@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 
-const projectId = 'new-ielts-speaking' // ✅ 当前项目 ID
+const projectId = 'new-ielts-speaking' // ✅ Current project ID
 
 function LoginPageInner() {
   const router = useRouter()
@@ -30,14 +30,14 @@ function LoginPageInner() {
     })
 
     if (error) {
-      setMessage('登录失败：' + error.message)
+      setMessage('Login failed: ' + error.message)
       setLoading(false)
       return
     }
 
     const user = signInData.user
     if (!user) {
-      setMessage('登录成功，但未能获取用户信息')
+      setMessage('Login succeeded, but failed to retrieve user info.')
       setLoading(false)
       return
     }
@@ -57,7 +57,7 @@ function LoginPageInner() {
       setMembershipTier('registered')
     }
 
-    setMessage('登录成功，正在跳转...')
+    setMessage('Login successful. Redirecting...')
     setTimeout(() => {
       router.push(redirectPath)
     }, 1000)
@@ -67,18 +67,18 @@ function LoginPageInner() {
 
   return (
     <div className="max-w-md mx-auto mt-24 p-6 bg-white dark:bg-black rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-      <h1 className="text-2xl font-bold text-center mb-6 text-gray-800 dark:text-gray-100">登录账号</h1>
+      <h1 className="text-2xl font-bold text-center mb-6 text-gray-800 dark:text-gray-100">Log In</h1>
 
       <input
         type="email"
-        placeholder="邮箱"
+        placeholder="Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         className="w-full border border-gray-300 dark:border-gray-600 p-3 rounded mb-4 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100"
       />
       <input
         type="password"
-        placeholder="密码"
+        placeholder="Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         className="w-full border border-gray-300 dark:border-gray-600 p-3 rounded mb-4 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100"
@@ -89,14 +89,14 @@ function LoginPageInner() {
         disabled={loading}
         className="w-full bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold py-2 rounded transition duration-200"
       >
-        {loading ? '登录中...' : '立即登录'}
+        {loading ? 'Logging in...' : 'Log In'}
       </button>
 
       {message && <p className="text-sm text-center text-red-600 dark:text-red-400 mt-4">{message}</p>}
 
       <p className="text-center text-sm mt-6 text-gray-600 dark:text-gray-400">
-        还没有账号？{' '}
-        <a href="/register" className="text-purple-600 hover:underline">立即注册</a>
+        Don't have an account?{' '}
+        <a href="/register" className="text-purple-600 hover:underline">Sign up here</a>
       </p>
     </div>
   )
@@ -104,7 +104,7 @@ function LoginPageInner() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="text-center text-sm text-gray-500 mt-20">正在加载登录页面...</div>}>
+    <Suspense fallback={<div className="text-center text-sm text-gray-500 mt-20">Loading login page...</div>}>
       <LoginPageInner />
     </Suspense>
   )

@@ -30,14 +30,14 @@ function RegisterPageInner() {
     })
 
     if (signUpError) {
-      setMessage(`注册失败：${signUpError.message}`)
+      setMessage(`Registration failed: ${signUpError.message}`)
       setLoading(false)
       return
     }
 
     const user = signUpData.user
     if (!user) {
-      setMessage('注册成功，但未能获取用户 ID')
+      setMessage('Registered, but failed to retrieve user ID.')
       setLoading(false)
       return
     }
@@ -53,8 +53,8 @@ function RegisterPageInner() {
     ])
 
     if (insertError) {
-      console.error('权限插入失败:', insertError)
-      setMessage(`注册成功，但添加权限失败：${insertError.message}`)
+      console.error('Failed to insert membership:', insertError)
+      setMessage(`Registered, but failed to assign membership: ${insertError.message}`)
       setLoading(false)
       return
     }
@@ -62,7 +62,7 @@ function RegisterPageInner() {
     setUser(user)
     setMembershipTier('registered')
 
-    setMessage('注册成功！即将跳转...')
+    setMessage('Registration successful! Redirecting...')
     setTimeout(() => {
       router.push(redirectPath)
     }, 1200)
@@ -72,25 +72,25 @@ function RegisterPageInner() {
 
   return (
     <div className="max-w-md mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-4">创建账号</h1>
+      <h1 className="text-2xl font-bold mb-4">Create Your Account</h1>
 
       <input
         type="email"
-        placeholder="邮箱"
+        placeholder="Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         className="w-full border p-2 mb-3 rounded"
       />
       <input
         type="password"
-        placeholder="密码"
+        placeholder="Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         className="w-full border p-2 mb-3 rounded"
       />
       <input
         type="text"
-        placeholder="邀请码（可选）"
+        placeholder="Invite code (optional)"
         value={inviteCode}
         onChange={(e) => setInviteCode(e.target.value)}
         className="w-full border p-2 mb-3 rounded"
@@ -101,7 +101,7 @@ function RegisterPageInner() {
         disabled={loading}
         className="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700"
       >
-        {loading ? '注册中...' : '立即注册'}
+        {loading ? 'Registering...' : 'Register Now'}
       </button>
 
       {message && <p className="mt-4 text-sm text-center text-gray-700">{message}</p>}
@@ -111,7 +111,7 @@ function RegisterPageInner() {
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={<div className="text-center text-sm text-gray-500 mt-20">正在加载注册页面...</div>}>
+    <Suspense fallback={<div className="text-center text-sm text-gray-500 mt-20">Loading registration page...</div>}>
       <RegisterPageInner />
     </Suspense>
   )

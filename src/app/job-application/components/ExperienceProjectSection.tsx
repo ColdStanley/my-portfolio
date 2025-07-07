@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useJobAppInputStore } from '../store/useJobAppInputStore'
 import { saveInputsToSupabase } from '../utils/saveInputsToSupabase'
 import { useAuthStore } from '@/store/useAuthStore'
-import { toast } from 'sonner' // ✅ 如你没用 sonner，可换成 alert
+import { toast } from 'sonner'
 
 export default function ExperienceProjectSection() {
   const {
@@ -16,6 +16,11 @@ export default function ExperienceProjectSection() {
     addProject,
     removeProject,
     updateProject,
+    skills,
+    addSkill,
+    updateSkill,
+    removeSkill,
+    setSkills,
   } = useJobAppInputStore()
 
   const { user } = useAuthStore()
@@ -41,6 +46,9 @@ export default function ExperienceProjectSection() {
           duration: '',
           description: '',
         })
+      }
+      if (skills.length === 0) {
+        addSkill('')
       }
       hasMountedOnce.current = true
     }
@@ -77,7 +85,7 @@ export default function ExperienceProjectSection() {
     <div className={`transition-opacity duration-500 ${fadeIn ? 'opacity-100' : 'opacity-0'} space-y-12`}>
       {/* Work Experience */}
       <section>
-        <h2 className="text-xl font-bold text-gray-800 mb-4">💼 Work Experience</h2>
+        <h2 className="text-xl font-bold text-gray-800 mb-4">Work Experience</h2>
 
         {workExperience.map((work, index) => (
           <div key={index} className="mb-6 border border-purple-200 rounded p-4 space-y-3 relative">
@@ -140,7 +148,7 @@ export default function ExperienceProjectSection() {
 
       {/* Project Experience */}
       <section>
-        <h2 className="text-xl font-bold text-gray-800 mb-4">📁 Projects</h2>
+        <h2 className="text-xl font-bold text-gray-800 mb-4">Projects</h2>
 
         {projects.map((proj, index) => (
           <div key={index} className="mb-6 border border-purple-200 rounded p-4 space-y-3 relative">
@@ -181,6 +189,40 @@ export default function ExperienceProjectSection() {
         </button>
       </section>
 
+      {/* Skills */}
+      <section>
+        <h2 className="text-xl font-bold text-gray-800 mb-2">Skills</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Please use commas to separate each skill or phrase. For example: Python, SQL, machine learning
+        </p>
+
+        {skills.map((skill, index) => (
+          <div key={index} className="mb-6 border border-purple-200 rounded p-4 space-y-3 relative">
+            <input
+              className="w-full border rounded px-3 py-2"
+              placeholder="Skill name (e.g. Python, Figma, Communication)"
+              value={skill}
+              onChange={(e) => updateSkill(index, e.target.value)}
+            />
+            <div className="flex justify-end">
+              <button
+                onClick={() => removeSkill(index)}
+                className="text-sm text-red-500 hover:underline"
+              >
+                Delete this skill
+              </button>
+            </div>
+          </div>
+        ))}
+
+        <button
+          onClick={() => addSkill('')}
+          className="w-48 mt-2 px-4 py-2 rounded bg-purple-600 text-white text-sm hover:bg-purple-700 transition"
+        >
+          + Add Skill
+        </button>
+      </section>
+
       {/* Save */}
       <div className="pt-4 pb-8">
         <button
@@ -192,7 +234,7 @@ export default function ExperienceProjectSection() {
               : 'bg-purple-600 hover:bg-purple-700'
           }`}
         >
-          {saving ? 'Saving...' : '💾 Save This Section'}
+          {saving ? 'Saving...' : 'Save This Section'}
         </button>
       </div>
     </div>

@@ -1,9 +1,6 @@
-// src/app/job-application/utils/deepseekSupabaseUploader.ts
-
 import { supabase } from '@/lib/supabaseClient'
-
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY
-const EMBEDDING_MODEL = 'deepseek-embedding'
+import { getSingleEmbedding } from './deepseekEmbedding'
+import { splitAndEmbedSentences } from './splitAndEmbedSentences'
 
 interface UploadContent {
   userId: string
@@ -14,30 +11,9 @@ interface UploadContent {
   skills: string[]
 }
 
-interface EmbeddingResponse {
-  data: number[][]
-}
-
-async function getEmbeddings(texts: string[]): Promise<number[][]> {
-  const response = await fetch('https://api.deepseek.com/v1/embeddings', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: EMBEDDING_MODEL,
-      input: texts,
-    }),
-  })
-
-  if (!response.ok) {
-    console.error('❌ DeepSeek embedding failed:', await response.text())
-    throw new Error('Failed to fetch embeddings')
-  }
-
-  const result = (await response.json()) as EmbeddingResponse
-  return result.data
+// 为每条数据生成唯一标识的哈希 key，用于 localStorage 缓存
+function hashKey(type: string, raw: string) {
+  return `embedding_cache:${type}:${btoa(unescape(encodeURIComponent(raw))).slice(0, 100)}`
 }
 
 export async function uploadEmbeddingsToSupabase(data: UploadContent) {
@@ -47,45 +23,73 @@ export async function uploadEmbeddingsToSupabase(data: UploadContent) {
     const raw = [w.company, w.title, w.responsibilities, w.achievements]
       .filter(Boolean)
       .join(' ')
-    rows.push({ content_type: 'work', raw_text: raw, user_id: data.userId })
+    if (raw.trim()) rows.push({ content_type: 'work', raw_text: raw, user_id: data.userId })
   })
 
   data.project.forEach((p) => {
     const raw = [p.title, p.description].filter(Boolean).join(' ')
-    rows.push({ content_type: 'project', raw_text: raw, user_id: data.userId })
+    if (raw.trim()) rows.push({ content_type: 'project', raw_text: raw, user_id: data.userId })
   })
 
   data.education.forEach((e) => {
     const raw = [e.school, e.degree, e.major, e.description]
       .filter(Boolean)
       .join(' ')
-    rows.push({ content_type: 'education', raw_text: raw, user_id: data.userId })
+    if (raw.trim()) rows.push({ content_type: 'education', raw_text: raw, user_id: data.userId })
   })
 
   data.award.forEach((a) => {
     const raw = [a.title, a.source, a.description].filter(Boolean).join(' ')
-    rows.push({ content_type: 'award', raw_text: raw, user_id: data.userId })
+    if (raw.trim()) rows.push({ content_type: 'award', raw_text: raw, user_id: data.userId })
   })
 
   data.skills.forEach((s) => {
-    if (s && s.trim()) {
-      rows.push({ content_type: 'skill', raw_text: s.trim(), user_id: data.userId })
+    const trimmed = s.trim()
+    if (trimmed) {
+      rows.push({ content_type: 'skill', raw_text: trimmed, user_id: data.userId })
     }
   })
 
   if (rows.length === 0) {
-    console.warn('⚠️ No content to upload')
+    console.warn('⚠️ No content to upload.')
     return
   }
 
-  const embeddings = await getEmbeddings(rows.map((r) => r.raw_text))
+  const insertPayload = []
 
-  const insertPayload = rows.map((r, idx) => ({
-    user_id: r.user_id,
-    content_type: r.content_type,
-    raw_text: r.raw_text,
-    embedding: embeddings[idx],
-  }))
+  for (const row of rows) {
+    const key = hashKey(row.content_type, row.raw_text)
+    const existing = localStorage.getItem(key)
+
+    if (existing === 'uploaded') {
+      console.log(`ℹ️ Skipped cached: ${row.content_type} → ${row.raw_text.slice(0, 40)}...`)
+      continue
+    }
+
+    const embedding = await getSingleEmbedding(row.raw_text)
+    if (!embedding) {
+      console.warn('⚠️ Failed to get embedding for:', row.raw_text)
+      continue
+    }
+
+    // 新增：生成句子级 embedding
+    const { sentences, embeddings } = await splitAndEmbedSentences(row.raw_text)
+
+    insertPayload.push({
+      user_id: row.user_id,
+      content_type: row.content_type,
+      raw_text: row.raw_text,
+      embedding,
+      sentence_embeddings: JSON.stringify({ sentences, embeddings }),
+    })
+
+    localStorage.setItem(key, 'uploaded') // ✅ 标记该条已上传
+  }
+
+  if (insertPayload.length === 0) {
+    console.warn('⚠️ All items cached, no new embeddings uploaded.')
+    return
+  }
 
   const { error } = await supabase.from('cv_vector_data').insert(insertPayload)
 
@@ -94,5 +98,5 @@ export async function uploadEmbeddingsToSupabase(data: UploadContent) {
     throw new Error('Failed to upload embeddings to Supabase')
   }
 
-  console.log(`✅ Uploaded ${insertPayload.length} embeddings to Supabase`)
+  console.log(`✅ Uploaded ${insertPayload.length} new embeddings to Supabase.`)
 }

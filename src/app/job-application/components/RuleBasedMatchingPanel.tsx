@@ -2,49 +2,65 @@
 
 import { useEffect, useState } from 'react'
 import { useJdInputStore } from '../store/useJdInputStore'
-import { useJobAppInputStore } from '../store/useJobAppInputStore'
-import { useJobAppStore } from '../store/useJobAppStore'
-import { matchJDWithVector, VectorMatchResult } from '../utils/deepseekVectorMatcher'
 import { useAuthStore } from '@/store/useAuthStore'
-import { highlightMatch } from '../utils/highlightMatcher'
-import MatchTypeFilter from './MatchTypeFilter' // ✅ 新增
+import { matchJDWithVector } from '../utils/deepseekVectorMatcher'
+import { matchJDWithResumeSentences, MatchResult } from '../utils/matchJDWithResumeSentences'
+import { extractUnmatchedJDLines } from '../utils/missingDetector'
+import { supabase } from '@/lib/supabaseClient'
 
-export default function RuleBasedMatchingPanel() {
+import OverallSimilarityPanel from './analysis/OverallSimilarityPanel'
+import Top3MatchesPanel from './analysis/Top3MatchesPanel'
+import MissingCoveragePanel from './analysis/MissingCoveragePanel'
+import SentenceHighlightViewer from './analysis/SentenceHighlightViewer'
+
+interface MatchItem {
+  content: string
+  similarity: number
+  contentType: string
+}
+
+interface MatchAnalysisResult {
+  jdText: string
+  resumeCentroidSimilarity: number
+  matches: MatchItem[]
+  unmatchedJDLines: string[]
+}
+
+interface Props {
+  active: boolean
+}
+
+export default function RuleBasedMatchingPanel({ active }: Props) {
+  if (!active) return null
+
   const jdText = useJdInputStore((s) => s.jdText)
-  const { getSelectedData } = useJobAppInputStore()
-  const {
-    selectedWorkIndices,
-    selectedProjectIndices,
-    selectedSkillIndices,
-    selectedEducationIndices,
-    selectedAwardIndices,
-  } = useJobAppStore()
+  const jdEmbedding = useJdInputStore((s) => s.jdEmbedding)
+  const jdSentenceEmbeddings = useJdInputStore((s) => s.jdSentenceEmbeddings)
 
-  const {
-    selectedWork,
-    selectedProjects,
-    selectedSkills,
-    selectedEducation,
-    selectedAwards,
-  } = getSelectedData(
-    selectedWorkIndices,
-    selectedProjectIndices,
-    selectedSkillIndices,
-    selectedEducationIndices,
-    selectedAwardIndices
-  )
-
-  const [result, setResult] = useState<VectorMatchResult | null>(null)
+  const [analysisResult, setAnalysisResult] = useState<MatchAnalysisResult | null>(null)
+  const [sentenceMatchResults, setSentenceMatchResults] = useState<MatchResult[]>([])
   const [loading, setLoading] = useState(false)
   const [fadeIn, setFadeIn] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  const [selectedType, setSelectedType] = useState<'all' | 'work' | 'project' | 'skill' | 'education' | 'award'>('all') // ✅ 新增
 
   useEffect(() => {
     const timeout = setTimeout(() => setFadeIn(true), 50)
     return () => clearTimeout(timeout)
   }, [])
+
+  const fetchResumeDataFromSupabase = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('cv_builder_data')
+      .select('data')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (error || !data) throw new Error('❌ Failed to fetch resume data')
+
+    return data.data // resume JSON: { workExperience, projects, skills, education, awards }
+  }
 
   const handleVectorMatch = async () => {
     setLoading(true)
@@ -52,10 +68,35 @@ export default function RuleBasedMatchingPanel() {
 
     try {
       const userId = useAuthStore.getState().user?.id
-      const res = await matchJDWithVector(jdText, 20, userId)
-      setResult(res)
+      if (!userId) throw new Error('Missing userId')
+
+      const resume = await fetchResumeDataFromSupabase(userId)
+
+      const result = await matchJDWithVector(jdText, 20, userId, jdEmbedding, {
+        work: resume.workExperience,
+        project: resume.projects,
+        education: resume.education,
+        award: resume.awards,
+        skills: resume.skills,
+      })
+
+      const unmatched = extractUnmatchedJDLines(jdText, result.matches)
+
+      setAnalysisResult({
+        jdText,
+        resumeCentroidSimilarity: result.overallScore,
+        matches: result.matches,
+        unmatchedJDLines: unmatched,
+      })
+
+      if (jdSentenceEmbeddings.length > 0) {
+        const sentenceResults = await matchJDWithResumeSentences(jdSentenceEmbeddings, userId)
+        console.log('✅ sentenceMatchResults:', sentenceResults)
+        setSentenceMatchResults(sentenceResults)
+      }
     } catch (err) {
-      setError('匹配分析失败，请稍后重试')
+      console.error(err)
+      setError('❌ Matching analysis failed. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -65,9 +106,10 @@ export default function RuleBasedMatchingPanel() {
     <div
       className={`transition-opacity duration-500 ${
         fadeIn ? 'opacity-100' : 'opacity-0'
-      } max-w-3xl mx-auto px-4 py-10 space-y-8`}
+      } max-w-5xl mx-auto px-4 py-10 space-y-8`}
     >
-      <h2 className="text-xl font-bold text-gray-800">🧠 Matching Score (Vector-Based)</h2>
+      <h2 className="text-2xl font-bold text-gray-800">Matching Analysis</h2>
+      <p className="text-sm text-gray-600">Here’s how your resume aligns with this job.</p>
 
       <div className="flex justify-end">
         <button
@@ -78,40 +120,22 @@ export default function RuleBasedMatchingPanel() {
         </button>
       </div>
 
-      {loading && <p className="text-gray-500 text-sm">正在分析中，请稍候...</p>}
+      {loading && <p className="text-gray-500 text-sm">Analyzing... Please wait.</p>}
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
-      {result && (
-        <div className="text-gray-700 text-sm space-y-4">
-          <p>
-            <strong>Average Similarity Score:</strong>{' '}
-            <span className="text-purple-700 font-semibold">{(result.overallScore * 100).toFixed(2)}%</span>
-          </p>
+      {analysisResult && (
+        <div className="space-y-8">
+          <OverallSimilarityPanel
+            resumeCentroidSimilarity={analysisResult.resumeCentroidSimilarity}
+          />
 
-          <p>
-            <strong>Top Matches:</strong>
-          </p>
+          <Top3MatchesPanel topMatches={analysisResult.matches.slice(0, 3)} />
 
-          <MatchTypeFilter selectedType={selectedType} onSelect={setSelectedType} /> {/* ✅ 新增 */}
+          {sentenceMatchResults.length > 0 && (
+            <SentenceHighlightViewer matches={sentenceMatchResults} />
+          )}
 
-          <ul className="flex flex-col gap-2">
-            {(selectedType === 'all' ? result.matches : result.matches.filter((m) => m.contentType === selectedType)).map((match, idx) => (
-              <li
-                key={idx}
-                className="border border-gray-200 rounded-lg px-4 py-2 shadow-sm bg-white"
-              >
-                <div className="text-xs text-gray-500 mb-1">
-                  {match.contentType.toUpperCase()} · Similarity:{' '}
-                  <span className="text-purple-700 font-medium">
-                    {(match.similarity * 100).toFixed(2)}%
-                  </span>
-                </div>
-                <div className="text-sm text-gray-800">
-                  {highlightMatch(match.content, jdText)}
-                </div>
-              </li>
-            ))}
-          </ul>
+          <MissingCoveragePanel unmatchedLines={analysisResult.unmatchedJDLines} />
         </div>
       )}
     </div>

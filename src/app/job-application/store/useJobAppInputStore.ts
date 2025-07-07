@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 
+const LOCAL_KEY = 'cvbuilder_resume_data'
+
 interface BasicInfo {
   name: string
   email: string
@@ -49,6 +51,9 @@ interface JobAppInputState {
 
   setBasic: (key: keyof BasicInfo, value: string) => void
   setSkills: (skills: string[]) => void
+  addSkill: (newSkill: string) => void
+  updateSkill: (index: number, value: string) => void
+  removeSkill: (index: number) => void
 
   addEducation: (item: Education) => void
   updateEducation: (index: number, value: Partial<Education>) => void
@@ -83,144 +88,218 @@ interface JobAppInputState {
   }
 }
 
-export const useJobAppInputStore = create<JobAppInputState>((set) => ({
-  basic: {
-    name: '',
-    email: '',
-    phone: '',
-    location: '',
-    linkedin: '',
-    github: '',
-    portfolio: '',
-    website: '',
-  },
-  education: [],
-  workExperience: [],
-  projects: [],
-  awards: [],
-  skills: [],
-
-  setBasic: (key, value) =>
-    set((state) => ({
-      basic: {
-        ...state.basic,
-        [key]: value,
-      },
-    })),
-
-  setSkills: (skills) => set({ skills }),
-
-  // 教育经历
-  addEducation: (item) =>
-    set((state) => ({
-      education: [...state.education, item],
-    })),
-
-  updateEducation: (index, value) =>
-    set((state) => ({
-      education: state.education.map((edu, i) =>
-        i === index ? { ...edu, ...value } : edu
-      ),
-    })),
-
-  removeEducation: (index) =>
-    set((state) => ({
-      education: state.education.filter((_, i) => i !== index),
-    })),
-
-  // 奖项
-  addAward: (item) =>
-    set((state) => ({
-      awards: [...state.awards, item],
-    })),
-
-  updateAward: (index, value) =>
-    set((state) => ({
-      awards: state.awards.map((award, i) =>
-        i === index ? { ...award, ...value } : award
-      ),
-    })),
-
-  removeAward: (index) =>
-    set((state) => ({
-      awards: state.awards.filter((_, i) => i !== index),
-    })),
-
-  // 工作
-  addWork: (item) =>
-    set((state) => ({
-      workExperience: [...state.workExperience, item],
-    })),
-
-  updateWork: (index, value) =>
-    set((state) => ({
-      workExperience: state.workExperience.map((work, i) =>
-        i === index ? { ...work, ...value } : work
-      ),
-    })),
-
-  removeWork: (index) =>
-    set((state) => ({
-      workExperience: state.workExperience.filter((_, i) => i !== index),
-    })),
-
-  // 项目
-  addProject: (item) =>
-    set((state) => ({
-      projects: [...state.projects, item],
-    })),
-
-  updateProject: (index, value) =>
-    set((state) => ({
-      projects: state.projects.map((proj, i) =>
-        i === index ? { ...proj, ...value } : proj
-      ),
-    })),
-
-  removeProject: (index) =>
-    set((state) => ({
-      projects: state.projects.filter((_, i) => i !== index),
-    })),
-
-  setEducation: (list) => set({ education: list }),
-
-  getSelectedData: (
-    workIndices,
-    projectIndices,
-    skillIndices,
-    educationIndices,
-    awardIndices
-  ) => {
-    const state = useJobAppInputStore.getState()
-
-    const selectedWork = workIndices
-      .map((i) => state.workExperience[i])
-      .filter(Boolean)
-
-    const selectedProjects = projectIndices
-      .map((i) => state.projects[i])
-      .filter(Boolean)
-
-    const selectedSkills = skillIndices
-      .map((i) => state.skills[i])
-      .filter(Boolean)
-
-    const selectedEducation = educationIndices
-      .map((i) => state.education[i])
-      .filter(Boolean)
-
-    const selectedAwards = awardIndices
-      .map((i) => state.awards[i])
-      .filter(Boolean)
-
-    return {
-      selectedWork,
-      selectedProjects,
-      selectedSkills,
-      selectedEducation,
-      selectedAwards,
+export const useJobAppInputStore = create<JobAppInputState>((set, get) => {
+  const persist = () => {
+    const state = get()
+    const dataToStore = {
+      basic: state.basic,
+      education: state.education,
+      workExperience: state.workExperience,
+      projects: state.projects,
+      awards: state.awards,
+      skills: state.skills,
     }
-  },
-}))
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(dataToStore))
+  }
+
+  return {
+    basic: {
+      name: '',
+      email: '',
+      phone: '',
+      location: '',
+      linkedin: '',
+      github: '',
+      portfolio: '',
+      website: '',
+    },
+    education: [],
+    workExperience: [],
+    projects: [],
+    awards: [],
+    skills: [],
+
+    setBasic: (key, value) =>
+      set((state) => {
+        const updated = {
+          basic: {
+            ...state.basic,
+            [key]: value,
+          },
+        }
+        persist()
+        return updated
+      }),
+
+    setSkills: (skills) =>
+  set(() => {
+    const updated = { skills }
+    localStorage.setItem(
+      LOCAL_KEY,
+      JSON.stringify({
+        ...get(),
+        skills, 
+      })
+    )
+    return updated
+  }),
+
+
+    addSkill: (newSkill) =>
+      set((state) => {
+        const updated = { skills: [...state.skills, newSkill] }
+        persist()
+        return updated
+      }),
+
+    updateSkill: (index, value) =>
+      set((state) => {
+        const updated = [...state.skills]
+        updated[index] = value
+        persist()
+        return { skills: updated }
+      }),
+
+    removeSkill: (index) =>
+      set((state) => {
+        const updated = state.skills.filter((_, i) => i !== index)
+        persist()
+        return { skills: updated }
+      }),
+
+    addEducation: (item) =>
+      set((state) => {
+        const updated = { education: [...state.education, item] }
+        persist()
+        return updated
+      }),
+
+    updateEducation: (index, value) =>
+      set((state) => {
+        const updated = {
+          education: state.education.map((edu, i) =>
+            i === index ? { ...edu, ...value } : edu
+          ),
+        }
+        persist()
+        return updated
+      }),
+
+    removeEducation: (index) =>
+      set((state) => {
+        const updated = { education: state.education.filter((_, i) => i !== index) }
+        persist()
+        return updated
+      }),
+
+    addAward: (item) =>
+      set((state) => {
+        const updated = { awards: [...state.awards, item] }
+        persist()
+        return updated
+      }),
+
+    updateAward: (index, value) =>
+      set((state) => {
+        const updated = {
+          awards: state.awards.map((award, i) =>
+            i === index ? { ...award, ...value } : award
+          ),
+        }
+        persist()
+        return updated
+      }),
+
+    removeAward: (index) =>
+      set((state) => {
+        const updated = { awards: state.awards.filter((_, i) => i !== index) }
+        persist()
+        return updated
+      }),
+
+    addWork: (item) =>
+      set((state) => {
+        const updated = { workExperience: [...state.workExperience, item] }
+        persist()
+        return updated
+      }),
+
+    updateWork: (index, value) =>
+      set((state) => {
+        const updated = {
+          workExperience: state.workExperience.map((work, i) =>
+            i === index ? { ...work, ...value } : work
+          ),
+        }
+        persist()
+        return updated
+      }),
+
+    removeWork: (index) =>
+      set((state) => {
+        const updated = {
+          workExperience: state.workExperience.filter((_, i) => i !== index),
+        }
+        persist()
+        return updated
+      }),
+
+    addProject: (item) =>
+      set((state) => {
+        const updated = { projects: [...state.projects, item] }
+        persist()
+        return updated
+      }),
+
+    updateProject: (index, value) =>
+      set((state) => {
+        const updated = {
+          projects: state.projects.map((proj, i) =>
+            i === index ? { ...proj, ...value } : proj
+          ),
+        }
+        persist()
+        return updated
+      }),
+
+    removeProject: (index) =>
+      set((state) => {
+        const updated = { projects: state.projects.filter((_, i) => i !== index) }
+        persist()
+        return updated
+      }),
+
+    setEducation: (list) =>
+      set(() => {
+        const updated = { education: list }
+        persist()
+        return updated
+      }),
+
+    getSelectedData: (
+      workIndices,
+      projectIndices,
+      skillIndices,
+      educationIndices,
+      awardIndices
+    ) => {
+      const state = useJobAppInputStore.getState()
+
+      const selectedWork = workIndices.map((i) => state.workExperience[i]).filter(Boolean)
+      const selectedProjects = projectIndices.map((i) => state.projects[i]).filter(Boolean)
+      const selectedSkills = skillIndices.map((i) => state.skills[i]).filter(Boolean)
+      const selectedEducation = educationIndices.map((i) => state.education[i]).filter(Boolean)
+      const selectedAwards = awardIndices.map((i) => state.awards[i]).filter(Boolean)
+
+      return {
+        selectedWork,
+        selectedProjects,
+        selectedSkills,
+        selectedEducation,
+        selectedAwards,
+      }
+    },
+  }
+})
 
 export type { JobAppInputState }

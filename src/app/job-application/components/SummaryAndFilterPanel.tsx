@@ -51,7 +51,11 @@ export default function SummaryAndFilterPanel() {
   }
 
   return (
-    <div className={`transition-opacity duration-500 ${fadeIn ? 'opacity-100' : 'opacity-0'} space-y-12 max-w-4xl mx-auto px-4 py-10`}>
+    <div
+      className={`transition-opacity duration-500 ${
+        fadeIn ? 'opacity-100' : 'opacity-0'
+      } space-y-12 max-w-5xl mx-auto px-4 py-10`}
+    >
       {/* Resume Display */}
       <section className="space-y-10">
         {/* Basic Info */}
@@ -131,12 +135,17 @@ export default function SummaryAndFilterPanel() {
           <div>
             <h2 className="text-xl font-bold text-gray-800 mb-2">🛠 Skills</h2>
             <div className="flex flex-wrap gap-2">
-              {skills.map((skill, index) => (
+              {skills.flatMap((skill) =>
+                skill
+                  .split(',')
+                  .map((s) => s.trim())
+                  .filter(Boolean)
+              ).map((cleanedSkill, index) => (
                 <span
                   key={index}
                   className="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-full"
                 >
-                  {skill}
+                  {cleanedSkill}
                 </span>
               ))}
             </div>
