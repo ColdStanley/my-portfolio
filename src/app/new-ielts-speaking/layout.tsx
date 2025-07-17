@@ -1,9 +1,10 @@
 // src/app/new-ielts-speaking/layout.tsx
 
 import type { Metadata } from 'next'
-import NavBar from '@/components/NavBar'
-import Footer from '@/components/Footer'
 import { Toaster } from 'sonner'
+import { TabProvider } from './context/TabContext'
+import SideNavigation from './components/SideNavigation'
+import MobileTabNavigation from './components/MobileTabNavigation'
 
 export const metadata: Metadata = {
   title: 'IELTS Speaking 高分范文 · 雅思口语题库精选',
@@ -52,9 +53,22 @@ export default function NewIELTSSpeakingLayout({
   children: React.ReactNode
 }) {
   return (
-    <>
-      <main>{children}</main>
+    <TabProvider>
+      <div className="flex min-h-screen font-sans text-gray-800 relative">
+        {/* 左侧固定导航栏（仅桌面端） */}
+        <div className="hidden md:block">
+          <SideNavigation />
+        </div>
+
+        {/* 移动端右上角竖排按钮 */}
+        <MobileTabNavigation />
+
+        {/* 右侧主内容区域 */}
+        <main className="w-full md:ml-56 flex-1 flex flex-col justify-start gap-8 px-4 md:px-6 py-4 md:py-6 scroll-smooth pt-16 md:pt-6 max-w-none min-h-[calc(100vh-3.5rem)]">
+          {children}
+        </main>
+      </div>
       <Toaster richColors position="top-center" />
-    </>
+    </TabProvider>
   )
 }

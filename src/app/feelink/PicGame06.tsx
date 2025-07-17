@@ -1,7 +1,7 @@
 // src/app/feelink/PicGame06.tsx
 'use client'
 
-import PicGameDisplay from '@/components/feelink/PicGameDisplay'
+import FeelinkDisplay from '@/components/feelink/FeelinkDisplay'
 
 const quotes = {
   lt: [
@@ -44,7 +44,7 @@ const description = (
 
 export default function PicGame06() {
   return (
-    <PicGameDisplay
+    <FeelinkDisplay
       imageUrl="/images/picgame06.png"
       quotes={quotes}
       description={description}

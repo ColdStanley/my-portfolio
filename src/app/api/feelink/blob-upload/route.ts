@@ -14,12 +14,10 @@ export async function POST(req: NextRequest) {
     const ext = file.name.split('.').pop() || 'png'
     const filename = `PicGame_${timestamp}.${ext}`
 
-    // 👇 官方推荐的写法，直接使用 File 对象
     const blob = await put(filename, file, {
       access: 'public',
       contentType: file.type,
     })
-console.log('📦 blob =', blob)
 
     return NextResponse.json({ url: blob.url })
   } catch (error) {

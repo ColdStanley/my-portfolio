@@ -10,7 +10,7 @@ const phrases = [
   { less: 'Less distraction', more: 'More clarity' },
 ]
 
-export default function HeroTextBanner() {
+export default function HeroImageGrid() {
   const [index, setIndex] = useState(0)
 
   useEffect(() => {

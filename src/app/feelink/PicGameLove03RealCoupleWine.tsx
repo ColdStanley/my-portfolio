@@ -1,6 +1,6 @@
 'use client'
 
-import PicGameDisplay from '@/components/feelink/PicGameDisplay'
+import FeelinkDisplay from '@/components/feelink/FeelinkDisplay'
 
 const quotes = {
   lt: [
@@ -43,7 +43,7 @@ const description = (
 
 export default function PicGameLove03RealCoupleWine() {
   return (
-    <PicGameDisplay
+    <FeelinkDisplay
       imageUrl="/images/picgamelove03realcouplewine.png"
       quotes={quotes}
       description={description}

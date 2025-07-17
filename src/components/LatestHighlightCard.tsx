@@ -1,47 +1,40 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import { useNotionHighlights } from '@/hooks/useNotionData'
+import { HighlightItem } from '@/types/common'
 
-interface HighlightItem {
-  title: string
-  description?: string
-  slug?: string
-  category?: string
-  section?: string
-  status?: string
-  order?: number
-  tag?: string[]
-  visibleOnSite?: boolean
+interface LatestSectionProps {
+  initialHighlights?: HighlightItem[]
 }
 
-export default function LatestSection() {
-  const [data, setData] = useState<HighlightItem[]>([])
+export default function LatestSection({ initialHighlights = [] }: LatestSectionProps) {
   const router = useRouter()
+  
+  // 如果有初始数据，使用它，否则客户端加载（向后兼容）
+  const { highlights: clientHighlights, loading, error } = useNotionHighlights(initialHighlights.length > 0)
+  
+  // 使用初始数据或客户端加载的数据
+  const data = initialHighlights.length > 0 ? initialHighlights : clientHighlights
 
-  useEffect(() => {
-    fetch('/api/notion?pageId=home-latest')
-      .then(async (res) => {
-        if (!res.ok) throw new Error('Fetch failed')
-        return await res.json()
-      })
-      .then((res) => {
-        if (res?.data && Array.isArray(res.data)) {
-          const filtered = res.data
-            .filter((item: any) => item?.status === 'Published' && item?.visibleOnSite === true)
-            .sort((a: any, b: any) => (a.order ?? 999) - (b.order ?? 999))
-          setData(filtered)
-        } else {
-          setData([])
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to load highlights', err)
-        setData([])
-      })
-  }, [])
+  // 只有在没有初始数据时才显示加载状态
+  if (initialHighlights.length === 0 && loading) {
+    return (
+      <section className="w-full flex flex-col gap-6">
+        <div className="text-center text-gray-500">Loading latest highlights...</div>
+      </section>
+    )
+  }
+
+  if (initialHighlights.length === 0 && error) {
+    return (
+      <section className="w-full flex flex-col gap-6">
+        <div className="text-center text-red-500">Failed to load highlights: {error}</div>
+      </section>
+    )
+  }
 
   const leftCards = data.slice(0, 2)
   const rightCards = data.slice(2)

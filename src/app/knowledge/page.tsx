@@ -1,23 +1,14 @@
-import KnowledgeCardSection from '@/components/KnowledgeCardSection'
-import ComingSoonCard from '@/components/ComingSoonCard'
-
+import UnifiedCardSection from '@/components/common/UnifiedCardSection'
+import PageLayout from '@/components/layout/PageLayout'
 
 export default function KnowledgePage() {
   return (
-    <main className="min-h-screen pt-28 pb-20 px-6 md:px-12 bg-gray-50 dark:bg-background">
-      <h1 className="text-4xl font-bold text-purple-700 dark:text-purple-300 text-center mb-12">
-        Knowledge
-      </h1>
-
-      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-10 max-w-7xl mx-auto">
-        {/* 左侧：卡片区域 */}
-        <KnowledgeCardSection />
-
-        {/* 右侧：预留扩展 */}
-        <aside className="hidden lg:block">
-                <ComingSoonCard />
-              </aside>
-      </div>
-    </main>
+    <PageLayout
+      title="Knowledge"
+      subtitle="Learning never stops"
+      description="Documenting my continuous learning journey across various fields and sharing insights."
+    >
+      <UnifiedCardSection category="knowledge" />
+    </PageLayout>
   )
 }

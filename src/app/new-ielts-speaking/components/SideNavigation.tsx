@@ -1,55 +1,37 @@
 'use client'
 
-import Link from 'next/link'
+import { useTab } from '../context/TabContext'
 
-interface Props {
-  currentTab: 'main' | 'custom' | 'plan'
-  onTabChange: (tab: 'main' | 'custom' | 'plan') => void
-}
+const tabs = [
+  { key: 'main', label: 'Question Bank' },
+  { key: 'custom', label: 'Custom Practice' },
+  { key: 'plan', label: 'Study Plan' },
+]
 
-export default function SideNavigation({ currentTab, onTabChange }: Props) {
+export default function SideNavigation() {
+  const { activeTab, setActiveTab } = useTab()
   return (
-    <aside className="w-64 h-screen fixed top-0 left-0 bg-gray-50 border-r border-gray-200 p-6 pt-[64px] flex flex-col">
-      {/* 标题：再下移 + 居中 */}
-      <div className="mt-10 text-2xl font-extrabold text-purple-700 text-center mb-6">
-        IELTS Speaking
+    <div className="fixed left-0 top-14 w-56 bg-white border-r border-gray-200 h-[calc(100vh-3.5rem)] flex flex-col z-10">
+      <div className="p-6 border-b border-gray-200">
+        <h1 className="text-2xl font-bold text-purple-600">IELTS Speaking</h1>
       </div>
-
-      {/* Tab 区域：整体再往下推一些 */}
-      <div className="flex flex-col gap-2 mt-8">
-        <button
-          onClick={() => onTabChange('main')}
-          className={`text-sm font-semibold rounded-md px-4 py-2 text-left transition-all
-            ${currentTab === 'main'
-              ? 'bg-purple-600 text-white shadow-md'
-              : 'bg-white text-gray-700 hover:bg-purple-50'
-            }`}
-        >
-          📘 学习题库
-        </button>
-
-        <button
-          onClick={() => onTabChange('custom')}
-          className={`text-sm font-semibold rounded-md px-4 py-2 text-left transition-all
-            ${currentTab === 'custom'
-              ? 'bg-purple-600 text-white shadow-md'
-              : 'bg-white text-gray-700 hover:bg-purple-50'
-            }`}
-        >
-          🧠 口语私人定制
-        </button>
-
-        <button
-          onClick={() => onTabChange('plan')}
-          className={`text-sm font-semibold rounded-md px-4 py-2 text-left transition-all
-            ${currentTab === 'plan'
-              ? 'bg-purple-600 text-white shadow-md'
-              : 'bg-white text-gray-700 hover:bg-purple-50'
-            }`}
-        >
-          📅 提分计划制定
-        </button>
-      </div>
-    </aside>
+      <nav className="flex-1 p-4">
+        <div className="space-y-2">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key as 'main' | 'custom' | 'plan')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-300 transform ${
+                activeTab === tab.key
+                  ? 'bg-purple-100 text-purple-700 font-medium scale-105 shadow-md'
+                  : 'text-gray-600 hover:bg-gray-100 hover:scale-102'
+              }`}
+            >
+              <span className="transition-all duration-300">{tab.label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
+    </div>
   )
 }

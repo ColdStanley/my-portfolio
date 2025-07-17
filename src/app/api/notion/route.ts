@@ -167,7 +167,7 @@ export async function GET(request: Request) {
     const data = await fetchCardItems()
     return NextResponse.json({ data })
   } catch (error) {
-    console.error('❌ Error fetching Notion content:', error)
+    console.error('Error fetching Notion content:', error)
     return NextResponse.json({ error: 'Failed to fetch Notion content' }, { status: 500 })
   }
 }

@@ -1,0 +1,28 @@
+User-agent: *
+Allow: /
+
+# Allow social media crawlers
+User-agent: facebookexternalhit/1.1
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+User-agent: TelegramBot
+Allow: /
+
+# Specifically allow Feelink pages
+Allow: /feelink/
+Allow: /feelink/user-view/
+
+# Sitemap
+Sitemap: https://www.stanleyhi.com/sitemap.xml
+
+# Crawl-delay for better performance
+Crawl-delay: 1

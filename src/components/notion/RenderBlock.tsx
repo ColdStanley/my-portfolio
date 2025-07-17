@@ -2,16 +2,18 @@
 // ✅ 自动匹配 block 类型，并渲染对应组件（支持嵌套 children）
 
 import React from 'react'
-import ParagraphBlock from './blocks/ParagraphBlock'
+import { 
+  ParagraphBlock, 
+  QuoteBlock, 
+  ListBlock, 
+  NumberedListBlock, 
+  CalloutBlock,
+  DividerBlock 
+} from './blocks/SimpleBlocks'
 import HeadingBlock from './blocks/HeadingBlock'
 import ImageBlock from './blocks/ImageBlock'
-import QuoteBlock from './blocks/QuoteBlock'
-import ListBlock from './blocks/ListBlock'
-import NumberedListBlock from './blocks/NumberedListBlock'
 import TodoBlock from './blocks/TodoBlock'
 import ToggleBlock from './blocks/ToggleBlock'
-import CalloutBlock from './blocks/CalloutBlock'
-import DividerBlock from './blocks/DividerBlock'
 import TableBlock from './blocks/TableBlock'
 import ChildDatabaseBlock from './blocks/ChildDatabaseBlock'
 import DatabaseInlineBlock from './blocks/DatabaseInlineBlock'

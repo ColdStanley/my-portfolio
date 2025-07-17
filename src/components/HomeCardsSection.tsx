@@ -1,24 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-
-interface CardItem {
-  id: string
-  title: string
-  content: string
-  subtext: string
-  link: string
-  imageUrl: string
-  category: string
-  slug: string
-  section: string
-  tech?: string[]
-  pageId?: string
-}
+import { useNotionCards } from '@/hooks/useNotionData'
+import { CardItem } from '@/types/common'
 
 function CardColumn({ cards, title }: { cards: CardItem[], title: string }) {
   const router = useRouter()
@@ -105,30 +92,48 @@ function CardColumn({ cards, title }: { cards: CardItem[], title: string }) {
   )
 }
 
-export default function HomeCardsSection() {
-  const [cards, setCards] = useState<CardItem[]>([])
+interface HomeCardsSectionProps {
+  initialCards?: CardItem[]
+}
 
-  useEffect(() => {
-  fetch('/api/notion?pageId=cards')
-    .then(async (res) => {
-      if (!res.ok) {
-        throw new Error('Failed to fetch card data')
-      }
-      const data = await res.json()
-      const cardItems: CardItem[] = data.data.filter(
-        (item: CardItem) => item.section === 'Cards'
-      )
-      setCards(cardItems)
-    })
-    .catch((err) => {
-      console.error('❌ Error loading cards:', err)
-    })
-}, [])
+export default function HomeCardsSection({ initialCards = [] }: HomeCardsSectionProps) {
+  // 如果有初始数据，使用它，否则客户端加载（向后兼容）
+  const { cards: allCards, loading, error } = useNotionCards(initialCards.length > 0 ? undefined : 'cards')
 
+  // 使用初始数据或客户端加载的数据
+  const cards = initialCards.length > 0 ? initialCards : allCards.filter((item: CardItem) => item.section === 'Cards')
 
   const techCards = cards.filter(c => c.category === 'technology')
   const knowCards = cards.filter(c => c.category === 'knowledge')
   const lifeCards = cards.filter(c => c.category === 'life')
+
+  // 只有在没有初始数据时才显示加载状态
+  if (initialCards.length === 0 && loading) {
+    return (
+      <section id="home-cards" className="pt-4 px-6 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {['Technology', 'Knowledge', 'Life'].map((title) => (
+            <div key={title} className="flex flex-col gap-6">
+              <div className="text-lg font-semibold text-purple-800 text-center bg-white border border-purple-200 rounded-xl px-4 py-3 shadow-sm animate-pulse">
+                {title}
+              </div>
+              <div className="text-center text-gray-500">Loading...</div>
+            </div>
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  if (initialCards.length === 0 && error) {
+    return (
+      <section id="home-cards" className="pt-4 px-6 max-w-7xl mx-auto">
+        <div className="text-center text-red-500 py-8">
+          Failed to load project cards: {error}
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section id="home-cards" className="pt-4 px-6 max-w-7xl mx-auto">

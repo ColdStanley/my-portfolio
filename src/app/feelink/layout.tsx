@@ -1,5 +1,5 @@
 import React from 'react'
-import ClientLayoutWrapper from '@/components/feelink/ClientLayoutWrapper'
+import FeelinkLayoutWrapper from '@/components/feelink/FeelinkLayoutWrapper'
 
 export const metadata = {
   title: 'Say I love you, apologize, bless, and thank – through an image with quotes.',
@@ -35,5 +35,5 @@ export default function FeelinkLayout({
 }: {
   children: React.ReactNode
 }) {
-  return <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
+  return <FeelinkLayoutWrapper>{children}</FeelinkLayoutWrapper>
 }
