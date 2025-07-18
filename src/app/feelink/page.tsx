@@ -1,24 +1,90 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import FeelinkHeader from '@/components/feelink/FeelinkHeader'
-import PicGame02 from './PicGame02'
-import PicGame06 from './PicGame06'
-import PicGame07 from './PicGame07'
-import PicGame08 from './PicGame08'
-import PicGame09 from './PicGame09'
-import PicGame10 from './PicGame10'
-import PicGame11 from './PicGame11'
-import PicGameApology01 from './PicGameApology01'
-import PicGameThanks01HappyBirthday from './PicGameThanks01HappyBirthday'
-import PicGameBlessing01Graduation from './PicGameBlessing01Graduation'
-import PicGameLove02RealCouple from './PicGameLove02RealCouple'
-import PicGameLove03RealCoupleWine from './PicGameLove03RealCoupleWine'
-import PicGameLove01AnimateAnon from './PicGameLove01AnimateAnon'
-import PicGameLove04AnimateMitsumi from './PicGameLove04AnimateMitsumi'
-import PicGameLove05AnimateFrieren from './PicGameLove05AnimateFrieren'
-import PicGameApology02 from './PicGameApology02'
+import FeelinkTemplateCard from '@/components/feelink/FeelinkTemplateCard'
 
-export default function PicGameGalleryPage() {
+interface FeelinkTemplate {
+  id: string
+  name: string
+  imageUrl: string
+  quotes: string
+  description: string
+  category: string
+  section: string
+  webUrl: string
+  createdAt: string
+}
+
+interface TemplatesBySection {
+  love: FeelinkTemplate[]
+  sorry: FeelinkTemplate[]
+  blessing: FeelinkTemplate[]
+  thanks: FeelinkTemplate[]
+}
+
+export default function FeelinkPage() {
+  const [templates, setTemplates] = useState<TemplatesBySection>({
+    love: [],
+    sorry: [],
+    blessing: [],
+    thanks: []
+  })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchTemplates()
+  }, [])
+
+  const fetchTemplates = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/feelink/templates')
+      const data = await response.json()
+
+      if (!data.success) {
+        throw new Error(data.error || '获取模板失败')
+      }
+
+      setTemplates(data.templatesBySection)
+      setError(null)
+    } catch (err) {
+      console.error('❌ 获取模板失败:', err)
+      setError(err instanceof Error ? err.message : '获取模板失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-purple-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">加载模板中...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-purple-50">
+        <div className="text-center">
+          <div className="text-red-500 text-xl mb-4">⚠️</div>
+          <p className="text-gray-600 mb-4">加载模板时出错: {error}</p>
+          <button
+            onClick={fetchTemplates}
+            className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+          >
+            重试
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen py-12 px-4 sm:px-6 md:px-10 bg-gradient-to-b from-white to-purple-50 animate-fade-in scroll-smooth">
       {/* 顶部 Header 区块 */}
@@ -29,34 +95,48 @@ export default function PicGameGalleryPage() {
         ↓
       </div>
 
-      {/* 分区展示区域 */}
+      {/* Love Section */}
       <section id="love" className="scroll-mt-24 py-8 mb-14 bg-white/70 rounded-xl shadow-inner backdrop-blur-md px-6">
-        <TitleBlock emoji="❤️" title="Say Love" desc="When your heart is full, let a catgirl or Miku say it for you." />
-        <CardGroup components={[PicGameLove01AnimateAnon, PicGameLove04AnimateMitsumi, PicGameLove05AnimateFrieren, PicGame10, PicGameLove03RealCoupleWine, PicGameLove02RealCouple, PicGame02]} />
+        <TitleBlock 
+          emoji="❤️" 
+          title="Say Love" 
+          desc="When your heart is full, let a catgirl or Miku say it for you." 
+          count={templates.love.length}
+        />
+        <TemplateGrid templates={templates.love} />
       </section>
 
-      {/* 分隔线 */}
-      <div className="h-8" />
-
+      {/* Sorry Section */}
       <section id="sorry" className="scroll-mt-24 py-8 mb-14 bg-purple-50/80 rounded-xl shadow-inner backdrop-blur-md px-6">
-        <TitleBlock emoji="🙏" title="Say Sorry" desc="Some apologies are better said with pixels than words." />
-        <CardGroup components={[ PicGameApology01, PicGameApology02]} />
+        <TitleBlock 
+          emoji="🙏" 
+          title="Say Sorry" 
+          desc="Some apologies are better said with pixels than words." 
+          count={templates.sorry.length}
+        />
+        <TemplateGrid templates={templates.sorry} />
       </section>
 
-      {/* 分隔线 */}
-      <div className="h-8" />
-
+      {/* Blessing Section */}
       <section id="blessing" className="scroll-mt-24 py-8 mb-14 bg-indigo-50/70 rounded-xl shadow-inner backdrop-blur-md px-6">
-        <TitleBlock emoji="✨" title="Send Blessings" desc="Whisper magic, courage, and warmth into someone's world." />
-        <CardGroup components={[PicGame06, PicGameBlessing01Graduation, PicGame07]} />
+        <TitleBlock 
+          emoji="✨" 
+          title="Send Blessings" 
+          desc="Whisper magic, courage, and warmth into someone's world." 
+          count={templates.blessing.length}
+        />
+        <TemplateGrid templates={templates.blessing} />
       </section>
 
-      {/* 分隔线 */}
-      <div className="h-8" />
-
+      {/* Thanks Section */}
       <section id="thanks" className="scroll-mt-24 py-8 mb-14 bg-orange-50/60 rounded-xl shadow-inner backdrop-blur-md px-6">
-        <TitleBlock emoji="💜" title="Say Thanks" desc="A little appreciation goes a long way—let your gratitude shine." />
-        <CardGroup components={[PicGame08, PicGameThanks01HappyBirthday, PicGame09, PicGame11]} />
+        <TitleBlock 
+          emoji="💜" 
+          title="Say Thanks" 
+          desc="A little appreciation goes a long way—let your gratitude shine." 
+          count={templates.thanks.length}
+        />
+        <TemplateGrid templates={templates.thanks} />
       </section>
 
       {/* 全局动效样式 */}
@@ -88,34 +168,51 @@ export default function PicGameGalleryPage() {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(6px); }
         }
+
+        .line-clamp-3 {
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
       `}</style>
     </div>
   )
 }
 
-// ✅ 情绪标题组件
-function TitleBlock({ emoji, title, desc }: { emoji: string; title: string; desc: string }) {
+// 情绪标题组件
+function TitleBlock({ emoji, title, desc, count }: { emoji: string; title: string; desc: string; count: number }) {
   return (
     <div className="mb-8">
       <h2 className="text-2xl font-bold text-purple-800 flex items-center gap-2">
         <span className="text-3xl">{emoji}</span>
         <span className="animate-pulse">{title}</span>
+        <span className="text-lg font-normal text-purple-600">({count})</span>
       </h2>
       <p className="text-gray-600 italic mt-1">{desc}</p>
     </div>
   )
 }
 
-// ✅ 柔和暖感 hover 效果组件，使用masonry布局
-function CardGroup({ components }: { components: React.ElementType[] }) {
+// 模板网格组件
+function TemplateGrid({ templates }: { templates: FeelinkTemplate[] }) {
+  if (templates.length === 0) {
+    return (
+      <div className="text-center py-12 text-gray-500">
+        <p>暂无模板</p>
+      </div>
+    )
+  }
+
   return (
-    <div className="columns-1 md:columns-2 lg:columns-3 gap-6">
-      {components.map((Component, index) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {templates.map((template, index) => (
         <div
-          key={index}
-          className="mb-6 break-inside-avoid animate-slide-up transition-all ease-in-out duration-300 transform hover:-translate-y-[2px] hover:scale-[1.01] hover:shadow-lg hover:bg-orange-50/40 rounded-xl"
+          key={template.id}
+          className="animate-slide-up transition-all ease-in-out duration-300 transform hover:-translate-y-[2px] hover:scale-[1.01]"
+          style={{ animationDelay: `${index * 0.1}s` }}
         >
-          <Component />
+          <FeelinkTemplateCard template={template} />
         </div>
       ))}
     </div>

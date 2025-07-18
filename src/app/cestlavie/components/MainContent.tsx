@@ -6,19 +6,27 @@ import JDTrackerPanel from './Career/JDTrackerPanel'
 import CVModuleVaultPanel from './Career/CVModuleVaultPanel'
 import UserMatcherPanel from './Career/UserMatcherPanel'
 import FigmaBuilderPanel from './Career/FigmaBuilderPanel'
+import LifeSubTabNav from './Life/LifeSubTabNav'
+import StrategyPanel from './Life/StrategyPanel'
+import PlanPanel from './Life/PlanPanel'
+import TaskPanel from './Life/TaskPanel'
+import TBDPanel from './Life/TBDPanel'
 
 interface MainContentProps {
   activeMainTab: string
 }
 
-const subTabs = ['user-matcher', 'notion', 'cv-modules', 'figma-builder'] as const
-type SubTabKey = typeof subTabs[number]
+const careerSubTabs = ['user-matcher', 'notion', 'cv-modules', 'figma-builder'] as const
+const lifeSubTabs = ['strategy', 'plan', 'task', 'tbd'] as const
+type CareerSubTabKey = typeof careerSubTabs[number]
+type LifeSubTabKey = typeof lifeSubTabs[number]
 
 export default function MainContent({ activeMainTab }: MainContentProps) {
-  const [activeSubTab, setActiveSubTab] = useState<SubTabKey>('cv-modules')
+  const [activeCareerSubTab, setActiveCareerSubTab] = useState<CareerSubTabKey>('cv-modules')
+  const [activeLifeSubTab, setActiveLifeSubTab] = useState<LifeSubTabKey>('task')
 
   const renderCareerContent = () => {
-    switch (activeSubTab) {
+    switch (activeCareerSubTab) {
       case 'user-matcher': return <UserMatcherPanel />
       case 'notion': return <JDTrackerPanel />
       case 'cv-modules': return <CVModuleVaultPanel />
@@ -27,22 +35,29 @@ export default function MainContent({ activeMainTab }: MainContentProps) {
     }
   }
 
+  const renderLifeContent = () => {
+    switch (activeLifeSubTab) {
+      case 'strategy': return <StrategyPanel />
+      case 'plan': return <PlanPanel />
+      case 'task': return <TaskPanel />
+      case 'tbd': return <TBDPanel />
+      default: return <div className="text-gray-500 text-sm">This section is under construction.</div>
+    }
+  }
+
   const renderContent = () => {
     switch (activeMainTab) {
       case 'life':
         return (
-          <div className="flex-1 p-6 flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-6xl mb-4">🌱</div>
-              <h2 className="text-2xl font-bold text-gray-700 mb-2">Life</h2>
-              <p className="text-gray-500">Coming soon...</p>
-            </div>
-          </div>
+          <>
+            <LifeSubTabNav activeTab={activeLifeSubTab} setActiveTab={setActiveLifeSubTab} />
+            <div className="flex-1 overflow-y-auto p-6">{renderLifeContent()}</div>
+          </>
         )
       case 'career':
         return (
           <>
-            <ResumeSubTabNav activeTab={activeSubTab} setActiveTab={setActiveSubTab} />
+            <ResumeSubTabNav activeTab={activeCareerSubTab} setActiveTab={setActiveCareerSubTab} />
             <div className="flex-1 overflow-y-auto p-6">{renderCareerContent()}</div>
           </>
         )
