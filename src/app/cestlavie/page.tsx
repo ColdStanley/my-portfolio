@@ -10,10 +10,10 @@ export default function CestLaViePage() {
 
   return (
     <div className="h-[calc(100vh-3.5rem)] flex relative">
-      {/* 移动端汉堡菜单按钮 */}
+      {/* 移动端导航菜单按钮 - 右上角 */}
       <button
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-md border border-gray-200 hover:bg-gray-50 transition-colors"
+        className="md:hidden fixed top-4 right-4 z-50 p-2 bg-white rounded-lg shadow-md border border-gray-200 hover:bg-gray-50 transition-colors"
         aria-label="Toggle menu"
       >
         <div className="w-5 h-5 flex flex-col justify-center space-y-1">
@@ -23,13 +23,6 @@ export default function CestLaViePage() {
         </div>
       </button>
 
-      {/* 移动端遮罩层 */}
-      {mobileMenuOpen && (
-        <div 
-          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
-          onClick={() => setMobileMenuOpen(false)}
-        ></div>
-      )}
 
       {/* 侧边栏 */}
       <Sidebar 
@@ -40,7 +33,7 @@ export default function CestLaViePage() {
       />
       
       {/* 主内容区域 */}
-      <div className="flex-1 overflow-hidden pt-16 md:pt-0">
+      <div className="flex-1 overflow-hidden">
         <MainContent activeMainTab={activeTab} />
       </div>
     </div>

@@ -115,19 +115,21 @@ function PlanFormPanel({
   if (!isOpen) return null
 
   return (
-    <div className="fixed top-0 right-0 h-full w-96 bg-white shadow-2xl z-50 border-l border-purple-200 flex flex-col">
-      <div className="p-4 border-b border-purple-200 flex items-center justify-between">
-        <h4 className="text-lg font-semibold text-purple-900">
-          {plan ? 'Edit Plan' : 'New Plan'}
-        </h4>
-        <button
-          onClick={onClose}
-          className="text-gray-400 hover:text-gray-600 transition-colors text-xl"
-        >
-          ×
-        </button>
-      </div>
-      <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1 space-y-4">
+    <>
+      {/* 桌面端侧边栏表单 */}
+      <div className="hidden md:flex fixed top-0 right-0 h-full w-96 bg-white shadow-2xl z-50 border-l border-purple-200 flex-col">
+        <div className="p-4 border-b border-purple-200 flex items-center justify-between">
+          <h4 className="text-lg font-semibold text-purple-900">
+            {plan ? 'Edit Plan' : 'New Plan'}
+          </h4>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors text-xl"
+          >
+            ×
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1 space-y-4">
         <div>
           <label className="block text-sm font-medium text-purple-700 mb-1">Parent Strategy (所属长期目标)</label>
           <select
@@ -258,25 +260,201 @@ function PlanFormPanel({
           />
         </div>
 
-        <div className="flex justify-end gap-3 pt-4">
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-all duration-200 transform hover:scale-105 active:scale-95"
+            >
+              <span>✕</span>
+              <span>Cancel</span>
+            </button>
+            <button
+              type="submit"
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-all duration-200 shadow-sm transform hover:scale-105 active:scale-95"
+            >
+              <span>{plan ? '📝' : '🎯'}</span>
+              <span>{plan ? 'Update' : 'Create'}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* 移动端全屏表单 */}
+      <div className="md:hidden fixed inset-0 bg-white z-50 flex flex-col">
+        {/* 移动端标题栏 */}
+        <div className="p-4 border-b border-purple-200 flex items-center justify-between bg-white shadow-sm">
+          <h4 className="text-lg font-semibold text-purple-900">
+            {plan ? 'Edit Plan' : 'New Plan'}
+          </h4>
           <button
-            type="button"
             onClick={onClose}
-            className="flex items-center gap-2 px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-all duration-200 transform hover:scale-105 active:scale-95"
+            className="text-gray-400 hover:text-gray-600 transition-colors text-xl p-1"
           >
-            <span>✕</span>
-            <span>Cancel</span>
-          </button>
-          <button
-            type="submit"
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-all duration-200 shadow-sm transform hover:scale-105 active:scale-95"
-          >
-            <span>{plan ? '📝' : '🎯'}</span>
-            <span>{plan ? 'Update' : 'Create'}</span>
+            ×
           </button>
         </div>
-      </form>
-    </div>
+        
+        {/* 移动端表单内容 */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* 核心信息优先 */}
+          <div>
+            <label className="block text-sm font-medium text-purple-700 mb-1">Objective (子目标) *</label>
+            <input
+              type="text"
+              required
+              value={formData.objective}
+              onChange={(e) => setFormData(prev => ({ ...prev, objective: e.target.value }))}
+              placeholder="简洁的子目标标题"
+              className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-purple-700 mb-1">Parent Strategy</label>
+            <select
+              value={formData.parent_goal[0] || ''}
+              onChange={(e) => setFormData(prev => ({ 
+                ...prev, 
+                parent_goal: e.target.value ? [e.target.value] : [] 
+              }))}
+              className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="">Select Strategy</option>
+              {strategyOptions.map(strategy => (
+                <option key={strategy.id} value={strategy.id}>{strategy.title}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-purple-700 mb-1">Start Date</label>
+              <input
+                type="date"
+                value={formData.start_date}
+                onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
+                className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-purple-700 mb-1">Due Date</label>
+              <input
+                type="date"
+                value={formData.due_date}
+                onChange={(e) => setFormData(prev => ({ ...prev, due_date: e.target.value }))}
+                className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-purple-700 mb-1">Status</label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="">Select Status</option>
+                {statusOptions.map(option => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-purple-700 mb-1">Priority</label>
+              <select
+                value={formData.priority_quadrant}
+                onChange={(e) => setFormData(prev => ({ ...prev, priority_quadrant: e.target.value }))}
+                className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="">Select Priority</option>
+                {priorityOptions.map(option => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* 可选的详细信息 - 折叠式 */}
+          <details className="border border-gray-200 rounded-md">
+            <summary className="px-3 py-2 bg-gray-50 cursor-pointer text-sm font-medium text-gray-700 hover:bg-gray-100">
+              Additional Details (Optional)
+            </summary>
+            <div className="p-3 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-purple-700 mb-1">Description</label>
+                <textarea
+                  rows={2}
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="背景、理由或详细说明"
+                  className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-purple-700 mb-1">Budget ($)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.budget_money}
+                    onChange={(e) => setFormData(prev => ({ ...prev, budget_money: parseFloat(e.target.value) || 0 }))}
+                    className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-purple-700 mb-1">Time (h)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={formData.budget_time}
+                    onChange={(e) => setFormData(prev => ({ ...prev, budget_time: parseFloat(e.target.value) || 0 }))}
+                    className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-purple-700 mb-1">Resources</label>
+                <textarea
+                  rows={2}
+                  value={formData.estimate_resources}
+                  onChange={(e) => setFormData(prev => ({ ...prev, estimate_resources: e.target.value }))}
+                  placeholder="时间、人力、预算等资源需求"
+                  className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+            </div>
+          </details>
+
+          {/* 移动端操作按钮 - 固定在底部 */}
+          <div className="sticky bottom-0 bg-white pt-4 border-t border-gray-200">
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-all duration-200"
+              >
+                <span>✕</span>
+                <span>Cancel</span>
+              </button>
+              <button
+                type="submit"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-all duration-200 shadow-sm"
+              >
+                <span>{plan ? '📝' : '🎯'}</span>
+                <span>{plan ? 'Update' : 'Create'}</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </>
   )
 }
 
@@ -739,8 +917,9 @@ export default function PlanPanel() {
           </button>
         </div>
       ) : (
-        {/* 桌面端双列布局 */}
-        <div className="hidden md:grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <>
+          {/* 桌面端双列布局 */}
+          <div className="hidden md:grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredPlans.map((plan) => (
             <div
               key={plan.id}
@@ -965,6 +1144,7 @@ export default function PlanPanel() {
             </div>
           ))}
         </div>
+        </>
       )}
 
       <PlanFormPanel
