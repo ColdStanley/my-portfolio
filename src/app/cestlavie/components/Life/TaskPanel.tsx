@@ -13,7 +13,17 @@ function TaskPlanChart({ tasks, planOptions }: { tasks: TaskRecord[], planOption
     return acc
   }, {} as Record<string, number>)
 
-  const colors = ['#9333ea', '#a855f7', '#c084fc', '#ddd6fe', '#ede9fe']
+  // 更有区分度的颜色方案
+  const colors = [
+    '#8b5cf6', // 紫色
+    '#06b6d4', // 青色
+    '#10b981', // 绿色
+    '#f59e0b', // 橙色
+    '#ef4444', // 红色
+    '#ec4899', // 粉色
+    '#6366f1', // 靛蓝
+    '#84cc16'  // 柠檬绿
+  ]
   const entries = Object.entries(planCounts)
   const total = tasks.length
 
@@ -44,18 +54,18 @@ function TaskPlanChart({ tasks, planOptions }: { tasks: TaskRecord[], planOption
         </div>
         <div className="text-xs text-gray-500 font-mono">{total}</div>
       </div>
-      {/* Legend */}
-      <div className="mt-2 flex flex-wrap gap-2">
+      {/* Legend - 每个plan独占一行 */}
+      <div className="mt-2 space-y-1">
         {entries.map(([planName, count], index) => (
-          <div key={planName} className="flex items-center gap-1">
+          <div key={planName} className="flex items-center gap-2">
             <div 
-              className="w-2 h-2 rounded-full"
+              className="w-3 h-3 rounded-full flex-shrink-0"
               style={{ backgroundColor: colors[index % colors.length] }}
             />
-            <span className="text-xs text-gray-600 truncate max-w-16" title={planName}>
-              {planName.length > 8 ? planName.substring(0, 8) + '...' : planName}
+            <span className="text-xs text-gray-600 flex-1" title={planName}>
+              {planName}
             </span>
-            <span className="text-xs text-gray-400">({count})</span>
+            <span className="text-xs text-gray-400 font-medium">({count})</span>
           </div>
         ))}
       </div>
@@ -72,15 +82,31 @@ function TaskQuadrantChart({ tasks }: { tasks: TaskRecord[] }) {
   }, {} as Record<string, number>)
 
   const quadrantColors: Record<string, string> = {
-    '重要且紧急': '#dc2626',
-    '重要不紧急': '#d97706', 
-    '不重要但紧急': '#eab308',
-    '不重要不紧急': '#6b7280',
+    '重要且紧急': '#dc2626',      // 红色 - 最高优先级
+    '重要不紧急': '#f97316',      // 橙色 - 高优先级  
+    '不重要但紧急': '#eab308',    // 黄色 - 中优先级
+    '不重要不紧急': '#6b7280',    // 灰色 - 低优先级
     'Important & Urgent': '#dc2626',
-    'Important & Not Urgent': '#d97706',
+    'Important & Not Urgent': '#f97316',
     'Not Important & Urgent': '#eab308', 
     'Not Important & Not Urgent': '#6b7280',
-    'No Priority': '#e5e7eb'
+    'No Priority': '#a1a1aa'     // 浅灰色
+  }
+
+  // 为了更好的显示，定义简化的标签
+  const getQuadrantLabel = (quadrant: string) => {
+    switch (quadrant) {
+      case '重要且紧急': return '重要且紧急'
+      case '重要不紧急': return '重要不紧急'
+      case '不重要但紧急': return '不重要但紧急'
+      case '不重要不紧急': return '不重要不紧急'
+      case 'Important & Urgent': return 'Important & Urgent'
+      case 'Important & Not Urgent': return 'Important & Not Urgent'
+      case 'Not Important & Urgent': return 'Not Important & Urgent'
+      case 'Not Important & Not Urgent': return 'Not Important & Not Urgent'
+      case 'No Priority': return 'No Priority'
+      default: return quadrant
+    }
   }
 
   const entries = Object.entries(quadrantCounts)
@@ -105,7 +131,7 @@ function TaskQuadrantChart({ tasks }: { tasks: TaskRecord[] }) {
                     width: `${percentage}%`,
                     backgroundColor: quadrantColors[quadrant] || '#9333ea'
                   }}
-                  title={`${quadrant}: ${count} tasks (${percentage.toFixed(1)}%)`}
+                  title={`${getQuadrantLabel(quadrant)}: ${count} tasks (${percentage.toFixed(1)}%)`}
                 />
               )
             })}
@@ -113,19 +139,18 @@ function TaskQuadrantChart({ tasks }: { tasks: TaskRecord[] }) {
         </div>
         <div className="text-xs text-gray-500 font-mono">{total}</div>
       </div>
-      {/* Legend */}
-      <div className="mt-2 flex flex-wrap gap-2">
+      {/* Legend - 每个优先级独占一行 */}
+      <div className="mt-2 space-y-1">
         {entries.map(([quadrant, count]) => (
-          <div key={quadrant} className="flex items-center gap-1">
+          <div key={quadrant} className="flex items-center gap-2">
             <div 
-              className="w-2 h-2 rounded-full"
+              className="w-3 h-3 rounded-full flex-shrink-0"
               style={{ backgroundColor: quadrantColors[quadrant] || '#9333ea' }}
             />
-            <span className="text-xs text-gray-600 truncate max-w-20" title={quadrant}>
-              {quadrant === 'No Priority' ? 'None' : 
-               quadrant.length > 12 ? quadrant.substring(0, 12) + '...' : quadrant}
+            <span className="text-xs text-gray-600 flex-1" title={quadrant}>
+              {getQuadrantLabel(quadrant)}
             </span>
-            <span className="text-xs text-gray-400">({count})</span>
+            <span className="text-xs text-gray-400 font-medium">({count})</span>
           </div>
         ))}
       </div>
@@ -758,13 +783,17 @@ export default function TaskPanel() {
     }
   }
 
-  // 获取优先级颜色（统一紫色主题）
+  // 获取优先级颜色（与图表一致的颜色方案）
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case '重要且紧急': return 'bg-purple-200 text-purple-900 border-purple-300'
-      case '重要不紧急': return 'bg-purple-100 text-purple-800 border-purple-200'
-      case '不重要但紧急': return 'bg-purple-150 text-purple-800 border-purple-250'
-      case '不重要不紧急': return 'bg-purple-50 text-purple-700 border-purple-150'
+      case '重要且紧急': return 'bg-red-100 text-red-800 border-red-300'
+      case '重要不紧急': return 'bg-orange-100 text-orange-800 border-orange-300'
+      case '不重要但紧急': return 'bg-yellow-100 text-yellow-800 border-yellow-300'
+      case '不重要不紧急': return 'bg-gray-100 text-gray-800 border-gray-300'
+      case 'Important & Urgent': return 'bg-red-100 text-red-800 border-red-300'
+      case 'Important & Not Urgent': return 'bg-orange-100 text-orange-800 border-orange-300'
+      case 'Not Important & Urgent': return 'bg-yellow-100 text-yellow-800 border-yellow-300'
+      case 'Not Important & Not Urgent': return 'bg-gray-100 text-gray-800 border-gray-300'
       default: return 'bg-purple-100 text-purple-800 border-purple-200'
     }
   }
@@ -1244,9 +1273,13 @@ export default function TaskPanel() {
   const getQuadrantColor = (quadrant: string) => {
     switch (quadrant) {
       case '重要且紧急': return 'bg-red-100 text-red-800'
-      case '重要不紧急': return 'bg-yellow-100 text-yellow-800'
-      case '不重要但紧急': return 'bg-orange-100 text-orange-800'
+      case '重要不紧急': return 'bg-orange-100 text-orange-800'
+      case '不重要但紧急': return 'bg-yellow-100 text-yellow-800'
       case '不重要不紧急': return 'bg-gray-100 text-gray-800'
+      case 'Important & Urgent': return 'bg-red-100 text-red-800'
+      case 'Important & Not Urgent': return 'bg-orange-100 text-orange-800'
+      case 'Not Important & Urgent': return 'bg-yellow-100 text-yellow-800'
+      case 'Not Important & Not Urgent': return 'bg-gray-100 text-gray-800'
       default: return 'bg-purple-100 text-purple-800'
     }
   }
@@ -1351,7 +1384,8 @@ export default function TaskPanel() {
               ))}
             </select>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border border-purple-200 p-3 md:p-6">
+          {/* Web端日历 - 保持原样 */}
+          <div className="hidden md:block bg-white rounded-lg shadow-sm border border-purple-200 p-6">
             {/* 日历头部 */}
             <div className="flex items-center justify-between mb-4">
               <button
@@ -1392,7 +1426,7 @@ export default function TaskPanel() {
                     key={index}
                     onClick={() => setSelectedDate(day.dateString)}
                     className={`
-                      relative p-1 md:p-2 text-xs md:text-sm rounded-lg transition-all duration-200 hover:scale-105 min-h-[2.5rem] md:min-h-[3rem]
+                      relative p-2 text-sm rounded-lg transition-all duration-200 hover:scale-105 min-h-[3rem]
                       ${day.isCurrentMonth 
                         ? 'text-gray-900 hover:bg-purple-50' 
                         : 'text-gray-400 hover:bg-gray-50'
@@ -1420,9 +1454,84 @@ export default function TaskPanel() {
                 )
               })}
             </div>
+          </div>
 
-            {/* Task Analytics */}
-            <div className="mt-4 pt-4 border-t border-gray-200">
+          {/* 移动端紧凑日历 */}
+          <div className="md:hidden bg-white rounded-lg shadow-sm border border-purple-200 p-3">
+            {/* 日历头部 */}
+            <div className="flex items-center justify-between mb-3">
+              <button
+                onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
+                className="p-1.5 hover:bg-purple-100 rounded-full transition-colors"
+              >
+                <span className="text-purple-600 text-sm">‹</span>
+              </button>
+              <h2 className="text-base font-semibold text-purple-900">
+                {currentMonth.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}
+              </h2>
+              <button
+                onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
+                className="p-1.5 hover:bg-purple-100 rounded-full transition-colors"
+              >
+                <span className="text-purple-600 text-sm">›</span>
+              </button>
+            </div>
+
+            {/* 星期标题 */}
+            <div className="grid grid-cols-7 gap-0.5 mb-2">
+              {['日', '一', '二', '三', '四', '五', '六'].map(day => (
+                <div key={day} className="text-center text-xs font-medium text-gray-500 p-1">
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* 日历天数 - 移动端紧凑版 */}
+            <div className="grid grid-cols-7 gap-0.5">
+              {calendarDays.map((day, index) => {
+                const taskCount = getTaskCountForDate(day.dateString)
+                const isSelected = selectedDate === day.dateString
+                const isTodayDate = isToday(day.dateString)
+                
+                return (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedDate(day.dateString)}
+                    className={`
+                      relative p-1 text-xs rounded-md transition-all duration-200 min-h-[2rem] flex items-center justify-center
+                      ${day.isCurrentMonth 
+                        ? 'text-gray-900 hover:bg-purple-50' 
+                        : 'text-gray-400 hover:bg-gray-50'
+                      }
+                      ${isSelected 
+                        ? 'bg-purple-600 text-white hover:bg-purple-700' 
+                        : ''
+                      }
+                      ${isTodayDate && !isSelected 
+                        ? 'bg-purple-100 text-purple-700 font-semibold' 
+                        : ''
+                      }
+                    `}
+                  >
+                    {day.date.getDate()}
+                    {taskCount > 0 && (
+                      <div className={`
+                        absolute -top-0.5 -left-0.5 w-3 h-3 rounded-full text-xs flex items-center justify-center
+                        ${isSelected ? 'bg-white text-purple-600' : 'bg-purple-600 text-white'}
+                      `}>
+                        {taskCount > 9 ? '•' : taskCount}
+                      </div>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+
+          </div>
+          
+          {/* Task Analytics - 共享组件 */}
+          <div className="bg-white rounded-lg shadow-sm border border-purple-200 p-3 md:p-6 mt-6">
+            <div className="pt-4 border-t border-gray-200">
               <p className="text-sm text-gray-600 mb-3">
                 Selected: <span className="font-medium text-purple-700">
                   {new Date(selectedDate).toLocaleDateString('en-US', { 
