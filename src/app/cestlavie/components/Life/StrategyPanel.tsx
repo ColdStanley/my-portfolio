@@ -93,7 +93,14 @@ function StrategyFormPanel({ isOpen, onClose, strategy, onSave, statusOptions, c
   if (!isOpen) return null
 
   return (
-    <div className="fixed top-0 right-0 h-full w-96 bg-white shadow-2xl z-50 border-l border-purple-200 flex flex-col">
+    <>
+      {/* 移动端全屏覆盖 */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+        onClick={onClose}
+      ></div>
+      
+      <div className="fixed top-0 right-0 h-full w-full md:w-96 bg-white shadow-2xl z-50 md:border-l border-purple-200 flex flex-col">
       <div className="p-4 border-b border-purple-200 flex items-center justify-between">
         <h4 className="text-lg font-semibold text-purple-900">
           {strategy ? 'Edit Strategy' : 'New Strategy'}
@@ -105,7 +112,7 @@ function StrategyFormPanel({ isOpen, onClose, strategy, onSave, statusOptions, c
           ×
         </button>
       </div>
-      <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1 space-y-4">
+      <form onSubmit={handleSubmit} className="p-4 md:p-6 overflow-y-auto flex-1 space-y-4">
         <div>
           <label className="block text-sm font-medium text-purple-700 mb-1">Objective *</label>
           <input
@@ -233,7 +240,8 @@ function StrategyFormPanel({ isOpen, onClose, strategy, onSave, statusOptions, c
           </button>
         </div>
       </form>
-    </div>
+      </div>
+    </>
   )
 }
 

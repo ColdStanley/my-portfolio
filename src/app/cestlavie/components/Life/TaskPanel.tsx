@@ -296,13 +296,19 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
     <>
       {/* 透明点击区域，点击关闭 */}
       <div 
-        className="fixed top-0 left-0 h-full z-40"
+        className="fixed top-0 left-0 h-full z-40 md:block hidden"
         style={{ width: 'calc(100vw - 384px)' }}
         onClick={onClose}
       ></div>
       
+      {/* 移动端全屏覆盖 */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+        onClick={onClose}
+      ></div>
+      
       {/* 表单面板 */}
-      <div className="fixed top-0 right-0 h-full w-96 bg-white shadow-2xl z-50 border-l border-purple-200 flex flex-col">
+      <div className="fixed top-0 right-0 h-full w-full md:w-96 bg-white shadow-2xl z-50 md:border-l border-purple-200 flex flex-col">
       <div className="p-4 border-b border-purple-200 flex items-center justify-between">
         <h4 className="text-lg font-semibold text-purple-900">
           {task ? 'Edit Task' : 'New Task'}
@@ -314,7 +320,7 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
           ×
         </button>
       </div>
-      <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1 space-y-4">
+      <form onSubmit={handleSubmit} className="p-4 md:p-6 overflow-y-auto flex-1 space-y-4">
         <div>
           <label className="block text-sm font-medium text-purple-700 mb-1">Related Plan (关联计划) *</label>
           <select
@@ -1314,15 +1320,15 @@ export default function TaskPanel() {
       </div>
 
       {/* 日历和任务布局 */}
-      <div className="grid grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* 左侧日历 */}
-        <div className="col-span-5">
+        <div className="lg:col-span-5">
           {/* Refresh按钮与筛选框 */}
-          <div className="flex justify-start items-center gap-3 mb-4">
+          <div className="flex flex-col sm:flex-row justify-start items-stretch sm:items-center gap-3 mb-4">
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 text-sm rounded-md hover:bg-purple-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 text-sm rounded-md hover:bg-purple-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95"
             >
               <div className={`${refreshing ? 'animate-spin' : ''}`}>
                 {refreshing ? '⟳' : '↻'}
@@ -1334,7 +1340,7 @@ export default function TaskPanel() {
             <select
               value={selectedPlanFilter}
               onChange={(e) => setSelectedPlanFilter(e.target.value)}
-              className="px-3 py-2 bg-white border border-purple-200 rounded-md text-sm text-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:border-purple-300 transition-all duration-200"
+              className="px-3 py-2 bg-white border border-purple-200 rounded-md text-sm text-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:border-purple-300 transition-all duration-200 flex-1 sm:flex-initial"
             >
               <option value="all">All Plans</option>
               <option value="none">No Plan</option>
@@ -1345,7 +1351,7 @@ export default function TaskPanel() {
               ))}
             </select>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border border-purple-200 p-6">
+          <div className="bg-white rounded-lg shadow-sm border border-purple-200 p-3 md:p-6">
             {/* 日历头部 */}
             <div className="flex items-center justify-between mb-4">
               <button
@@ -1386,7 +1392,7 @@ export default function TaskPanel() {
                     key={index}
                     onClick={() => setSelectedDate(day.dateString)}
                     className={`
-                      relative p-2 text-sm rounded-lg transition-all duration-200 hover:scale-105
+                      relative p-1 md:p-2 text-xs md:text-sm rounded-lg transition-all duration-200 hover:scale-105 min-h-[2.5rem] md:min-h-[3rem]
                       ${day.isCurrentMonth 
                         ? 'text-gray-900 hover:bg-purple-50' 
                         : 'text-gray-400 hover:bg-gray-50'
@@ -1441,17 +1447,17 @@ export default function TaskPanel() {
           
           {/* 本周任务 */}
           {thisWeekTasks.length > 0 && (
-            <div className="mt-6 bg-white rounded-lg shadow-sm border border-purple-200 p-6">
+            <div className="mt-6 bg-white rounded-lg shadow-sm border border-purple-200 p-3 md:p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-purple-900">This Week Tasks</h3>
                 <span className="text-sm text-purple-600">{thisWeekTasks.length} tasks</span>
               </div>
               <div className="space-y-3">
                 {thisWeekTasks.map(task => (
-                  <div key={task.id} className="p-4 bg-white rounded-lg border border-purple-200 hover:shadow-md transition-all duration-200">
-                    <div className="flex gap-4">
+                  <div key={task.id} className="p-3 md:p-4 bg-white rounded-lg border border-purple-200 hover:shadow-md transition-all duration-200">
+                    <div className="flex flex-col md:flex-row gap-3 md:gap-4">
                       {/* 左侧时间列 */}
-                      <div className="w-24 flex-shrink-0">
+                      <div className="md:w-24 flex-shrink-0">
                         {/* 日期和星期 */}
                         <div className="text-xs text-purple-600 font-medium mb-1">
                           {formatDateWithWeekday(task.start_date)}
@@ -1522,7 +1528,7 @@ export default function TaskPanel() {
         </div>
 
         {/* 右侧任务列表 */}
-        <div className="col-span-7">
+        <div className="lg:col-span-7">
           {/* NewTask按钮与今日任务左对齐 */}
           <div className="flex justify-start mb-4">
             <button
@@ -1536,7 +1542,7 @@ export default function TaskPanel() {
               <span className="whitespace-nowrap">New Task</span>
             </button>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border border-purple-200 p-6">
+          <div className="bg-white rounded-lg shadow-sm border border-purple-200 p-3 md:p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-purple-900">
                 {isToday(selectedDate) ? '今日任务' : '选定日期任务'}
@@ -1585,8 +1591,8 @@ export default function TaskPanel() {
                             isRunning ? 'border-purple-400 bg-purple-50' : 'border-purple-200'
                           }`}
                         >
-                          {/* 三列布局 */}
-                          <div className="flex items-start gap-3">
+                          {/* 移动端垂直布局，桌面端三列布局 */}
+                          <div className="flex flex-col md:flex-row md:items-start gap-3">
                             {/* 第一列：时间范围显示 */}
                             <div className="flex-shrink-0 text-center">
                               <div className={`px-2 py-1 rounded text-xs font-medium ${
@@ -1659,8 +1665,8 @@ export default function TaskPanel() {
                               )}
                             </div>
                             
-                            {/* 第三列：操作按钮竖向排列 */}
-                            <div className="flex flex-col gap-1 flex-shrink-0">
+                            {/* 第三列：操作按钮移动端横向，桌面端竖向 */}
+                            <div className="flex md:flex-col gap-1 flex-shrink-0 justify-center md:justify-start flex-wrap">
                               {/* 计时器按钮 */}
                               <button
                                 onClick={() => handleStartStopTimer(task)}
