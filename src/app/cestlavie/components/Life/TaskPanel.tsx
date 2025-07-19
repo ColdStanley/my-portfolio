@@ -1413,14 +1413,18 @@ export default function TaskPanel() {
                       return (
                         <div
                           key={task.id}
-                          className={`bg-gradient-to-r from-purple-50 to-white rounded-lg border p-3 ${
+                          className={`bg-gradient-to-r from-purple-50 to-white rounded-lg border p-4 ${
                             isRunning ? 'border-purple-400 bg-purple-50' : 'border-purple-200'
                           }`}
                         >
-                          <div className="flex items-start gap-3">
-                            {/* 时间 */}
-                            <div className="flex-shrink-0">
-                              <div className={`px-2 py-1 rounded text-xs font-medium ${
+                          {/* 顶部：标题和操作按钮 */}
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1 min-w-0 pr-2">
+                              <h4 className="font-bold text-purple-900 text-base mb-1 line-clamp-2">
+                                {task.title}
+                              </h4>
+                              {/* 时间显示 */}
+                              <div className={`inline-block px-2 py-1 rounded text-xs font-medium ${
                                 isRunning ? 'bg-purple-700 text-white' : 'bg-purple-600 text-white'
                               }`}>
                                 {task.start_date && task.end_date ? (
@@ -1433,53 +1437,54 @@ export default function TaskPanel() {
                               </div>
                             </div>
                             
-                            {/* 内容 */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-semibold text-purple-900 text-sm truncate">{task.title}</h4>
-                              </div>
-                              
-                              <div className="flex flex-wrap items-center gap-1 text-xs">
-                                <span className="px-1.5 py-0.5 bg-purple-100 text-purple-800 rounded">
-                                  {task.status}
-                                </span>
-                                {task.priority_quadrant && (
-                                  <span className={`px-1.5 py-0.5 rounded border ${getPriorityColor(task.priority_quadrant)}`}>
-                                    {task.priority_quadrant}
-                                  </span>
-                                )}
-                                {task.budget_time > 0 && (
-                                  <span className="px-1.5 py-0.5 bg-purple-50 text-purple-600 rounded border border-purple-200">
-                                    {task.budget_time}h
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            
-                            {/* 操作按钮 */}
-                            <div className="flex gap-1">
+                            {/* 操作按钮 - 右上角 */}
+                            <div className="flex gap-1 flex-shrink-0">
                               <button
                                 onClick={() => {
                                   setEditingTask(task)
                                   setFormPanelOpen(true)
                                 }}
-                                className="p-1.5 text-purple-600 hover:bg-purple-100 rounded transition-colors"
+                                className="p-2 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors"
+                                title="Edit task"
                               >
                                 ✏️
                               </button>
                               <button
                                 onClick={() => handleDeleteTask(task.id)}
-                                className="p-1.5 text-red-600 hover:bg-red-100 rounded transition-colors"
+                                className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                                title="Delete task"
                               >
                                 🗑️
                               </button>
                             </div>
                           </div>
                           
-                          {/* Note */}
+                          {/* 中部：标签信息 - 左对齐 */}
+                          <div className="space-y-2 mb-3">
+                            <div className="flex flex-wrap items-center gap-2 text-sm">
+                              <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded font-medium">
+                                Status: {task.status}
+                              </span>
+                              {task.priority_quadrant && (
+                                <span className={`px-2 py-1 rounded border font-medium ${getPriorityColor(task.priority_quadrant)}`}>
+                                  Priority: {task.priority_quadrant}
+                                </span>
+                              )}
+                              {task.budget_time > 0 && (
+                                <span className="px-2 py-1 bg-green-50 text-green-700 rounded border border-green-200 font-medium">
+                                  Budget: {task.budget_time}h
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* 底部：Note */}
                           {task.note && (
-                            <div className="mt-2 pt-2 border-t border-purple-200">
-                              <p className="text-xs text-purple-700 line-clamp-2">{task.note}</p>
+                            <div className="pt-3 border-t border-purple-200">
+                              <div className="flex items-start gap-2">
+                                <span className="text-purple-500 text-xs">📝</span>
+                                <p className="text-xs text-purple-700 line-clamp-2 flex-1">{task.note}</p>
+                              </div>
                             </div>
                           )}
                         </div>
