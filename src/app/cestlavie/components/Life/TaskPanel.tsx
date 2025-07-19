@@ -1326,7 +1326,7 @@ export default function TaskPanel() {
   const groupedTasks = getGroupedTasks(selectedDateTasks)
 
   return (
-    <div className="w-full py-8 space-y-6">
+    <div className="w-full py-8 space-y-6 md:pr-0 pr-16">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-purple-900">Task Management</h1>

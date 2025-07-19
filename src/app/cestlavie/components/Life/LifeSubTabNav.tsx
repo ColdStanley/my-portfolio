@@ -27,7 +27,7 @@ export default function LifeSubTabNav({ activeTab, setActiveTab }) {
       </div>
 
       {/* Mobile navigation - vertical at top-right, below main menu */}
-      <div className="md:hidden fixed top-20 right-4 z-30 flex flex-col space-y-2">
+      <div className="md:hidden fixed top-36 right-4 z-30 flex flex-col space-y-2">
         {lifeTabs.map((tab) => (
           <button
             key={tab.key}

@@ -50,7 +50,7 @@ export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMo
       </div>
 
       {/* 移动端右上角下拉菜单 */}
-      <div className={`md:hidden fixed top-16 right-4 bg-white shadow-xl z-40 rounded-lg border border-gray-200 transform transition-all duration-300 ease-in-out ${
+      <div className={`md:hidden fixed top-32 right-4 bg-white shadow-xl z-40 rounded-lg border border-gray-200 transform transition-all duration-300 ease-in-out ${
         mobileMenuOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
       }`}>
         <nav className="p-2">
