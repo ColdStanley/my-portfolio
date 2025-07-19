@@ -452,25 +452,67 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-purple-700 mb-2">时间设置</label>
+            <label className="block text-sm font-medium text-purple-700 mb-2">Time Settings</label>
             
             {/* 时间输入 */}
             <div className="grid grid-cols-1 gap-3">
               <div className="flex items-center gap-3">
-                <label className="text-sm text-purple-600 w-12 flex-shrink-0">开始:</label>
+                <label className="text-sm text-purple-600 w-12 flex-shrink-0">Start:</label>
                 <input
                   type="datetime-local"
                   value={formData.start_date}
-                  onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
+                  onChange={(e) => {
+                    const newStartDate = e.target.value
+                    setFormData(prev => {
+                      const updates = { ...prev, start_date: newStartDate }
+                      
+                      // 如果设置了开始时间且结束时间为空或早于开始时间，自动设置结束时间
+                      if (newStartDate && (!prev.end_date || prev.end_date <= newStartDate)) {
+                        const startDate = new Date(newStartDate)
+                        const endDate = new Date(startDate.getTime() + 60 * 60 * 1000) // 默认1小时后
+                        const endDateStr = endDate.getFullYear() + '-' +
+                                          String(endDate.getMonth() + 1).padStart(2, '0') + '-' +
+                                          String(endDate.getDate()).padStart(2, '0') + 'T' +
+                                          String(endDate.getHours()).padStart(2, '0') + ':' +
+                                          String(endDate.getMinutes()).padStart(2, '0')
+                        updates.end_date = endDateStr
+                      }
+                      
+                      // 自动计算budget_time
+                      if (updates.start_date && updates.end_date) {
+                        const start = new Date(updates.start_date)
+                        const end = new Date(updates.end_date)
+                        const diffHours = Math.max(0, (end.getTime() - start.getTime()) / (1000 * 60 * 60))
+                        updates.budget_time = parseFloat(diffHours.toFixed(1))
+                      }
+                      
+                      return updates
+                    })
+                  }}
                   className="flex-1 px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                 />
               </div>
               <div className="flex items-center gap-3">
-                <label className="text-sm text-purple-600 w-12 flex-shrink-0">结束:</label>
+                <label className="text-sm text-purple-600 w-12 flex-shrink-0">End:</label>
                 <input
                   type="datetime-local"
                   value={formData.end_date}
-                  onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
+                  onChange={(e) => {
+                    const newEndDate = e.target.value
+                    setFormData(prev => {
+                      const updates = { ...prev, end_date: newEndDate }
+                      
+                      // 自动计算budget_time
+                      if (prev.start_date && newEndDate) {
+                        const start = new Date(prev.start_date)
+                        const end = new Date(newEndDate)
+                        const diffHours = Math.max(0, (end.getTime() - start.getTime()) / (1000 * 60 * 60))
+                        updates.budget_time = parseFloat(diffHours.toFixed(1))
+                      }
+                      
+                      return updates
+                    })
+                  }}
                   className="flex-1 px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                 />
               </div>
@@ -494,12 +536,18 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
           <input
             type="number"
             min="0"
-            step="0.5"
+            step="0.1"
             value={formData.budget_time}
             onChange={(e) => setFormData(prev => ({ ...prev, budget_time: parseFloat(e.target.value) || 0 }))}
             className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-            placeholder="Expected time to complete this task"
+            placeholder="Auto-calculated from End - Start time"
+            readOnly={formData.start_date && formData.end_date}
           />
+          {formData.start_date && formData.end_date && (
+            <p className="text-xs text-gray-500 mt-1">
+              ✨ Auto-calculated based on time duration
+            </p>
+          )}
         </div>
 
         <div>
@@ -1419,8 +1467,17 @@ export default function TaskPanel() {
                         >
                           {/* 顶部：标题和时间 */}
                           <div className="mb-3">
-                            <h4 className="font-bold text-purple-900 text-base mb-2 line-clamp-2 pr-20">
+                            <h4 
+                              className="font-bold text-purple-900 text-base mb-2 line-clamp-2 pr-20 cursor-pointer hover:text-purple-600 hover:underline transition-colors flex items-center gap-1"
+                              onClick={() => {
+                                // 构建Notion页面URL
+                                const notionPageUrl = `https://www.notion.so/${task.id.replace(/-/g, '')}`
+                                window.open(notionPageUrl, '_blank')
+                              }}
+                              title="Click to edit in Notion"
+                            >
                               {task.title}
+                              <span className="text-xs text-gray-400">🔗</span>
                             </h4>
                             {/* 时间显示 */}
                             <div className={`inline-block px-2 py-1 rounded text-xs font-medium ${
@@ -1890,8 +1947,17 @@ export default function TaskPanel() {
                             
                             {/* 第二列：任务信息 */}
                             <div className="flex-1 min-w-0">
-                              <h4 className="text-sm font-semibold text-purple-900 truncate mb-2">
+                              <h4 
+                                className="text-sm font-semibold text-purple-900 truncate mb-2 cursor-pointer hover:text-purple-600 hover:underline transition-colors flex items-center gap-1"
+                                onClick={() => {
+                                  // 构建Notion页面URL
+                                  const notionPageUrl = `https://www.notion.so/${task.id.replace(/-/g, '')}`
+                                  window.open(notionPageUrl, '_blank')
+                                }}
+                                title="Click to edit in Notion"
+                              >
                                 {task.title || 'Untitled Task'}
+                                <span className="text-xs text-gray-400">🔗</span>
                               </h4>
                               
                               {/* 计划归属显示 */}
