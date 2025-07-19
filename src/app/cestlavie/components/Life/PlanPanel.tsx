@@ -600,8 +600,8 @@ export default function PlanPanel() {
         <h1 className="text-2xl font-bold text-purple-900">Plans</h1>
       </div>
       
-      {/* 按钮和筛选器布局 */}
-      <div className="flex items-center justify-between">
+      {/* 桌面端控制区 */}
+      <div className="hidden md:flex items-center justify-between">
         {/* 左侧：Refresh按钮和筛选器 */}
         <div className="flex items-center gap-3">
           <button
@@ -660,6 +660,62 @@ export default function PlanPanel() {
         </div>
       </div>
 
+      {/* 移动端简化控制区 */}
+      <div className="md:hidden space-y-3">
+        {/* 第一行：主要筛选器和New Plan按钮 */}
+        <div className="flex items-center gap-2">
+          <select
+            value={selectedStrategyFilter}
+            onChange={(e) => setSelectedStrategyFilter(e.target.value)}
+            className="flex-1 px-3 py-2 bg-white border border-purple-200 rounded-md text-sm text-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          >
+            <option value="all">All Strategies</option>
+            <option value="none">No Strategy</option>
+            {strategyOptions.map(strategy => (
+              <option key={strategy.id} value={strategy.id}>
+                {strategy.title.length > 15 ? strategy.title.substring(0, 15) + '...' : strategy.title}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => {
+              setEditingPlan(null)
+              setFormPanelOpen(true)
+            }}
+            className="flex items-center gap-1 px-3 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200 shadow-sm"
+          >
+            <span>🎯</span>
+            <span>New</span>
+          </button>
+        </div>
+        
+        {/* 第二行：次要控制 */}
+        <div className="flex items-center justify-between">
+          <select
+            value={selectedMonthFilter}
+            onChange={(e) => setSelectedMonthFilter(e.target.value)}
+            className="flex-1 px-3 py-2 bg-white border border-purple-200 rounded-md text-sm text-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 mr-2"
+          >
+            <option value="all">All Months</option>
+            {availableMonths.map(month => (
+              <option key={month} value={month}>
+                {new Date(month + '-01').toLocaleDateString('zh-CN', { year: 'numeric', month: 'short' })}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center gap-1 px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200 transition-all duration-200 disabled:opacity-50"
+          >
+            <div className={`${refreshing ? 'animate-spin' : ''}`}>
+              {refreshing ? '⟳' : '↻'}
+            </div>
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+        </div>
+      </div>
+
       {filteredPlans.length === 0 ? (
         <div className="text-center py-16">
           <div className="text-gray-400 text-6xl font-light mb-4">📋</div>
@@ -683,7 +739,8 @@ export default function PlanPanel() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* 桌面端双列布局 */}
+        <div className="hidden md:grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredPlans.map((plan) => (
             <div
               key={plan.id}
@@ -811,6 +868,100 @@ export default function PlanPanel() {
                   </div>
                 </div>
               )}
+            </div>
+          ))}
+        </div>
+
+        {/* 移动端单列简化布局 */}
+        <div className="md:hidden space-y-4">
+          {filteredPlans.map((plan) => (
+            <div
+              key={plan.id}
+              className="bg-white rounded-lg border border-purple-200 p-4 hover:shadow-md transition-all duration-200"
+            >
+              {/* 头部信息 - 紧凑布局 */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-lg">{getStatusIcon(plan.status)}</span>
+                    <h3 className="text-base font-semibold text-purple-900 truncate">
+                      {plan.objective || 'Untitled Plan'}
+                    </h3>
+                  </div>
+                  <div className="flex items-center gap-1 mb-2">
+                    {plan.status && (
+                      <span className="px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs rounded">
+                        {plan.status}
+                      </span>
+                    )}
+                    {plan.priority_quadrant && (
+                      <span className={`px-1.5 py-0.5 text-xs rounded border ${getQuadrantColor(plan.priority_quadrant)}`}>
+                        {plan.priority_quadrant.replace('且', '&').replace('不', '非')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="flex gap-1 ml-2">
+                  <button
+                    onClick={() => {
+                      setEditingPlan(plan)
+                      setFormPanelOpen(true)
+                    }}
+                    className="p-1.5 text-purple-600 hover:bg-purple-100 text-sm rounded transition-all duration-200"
+                    title="Edit"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    onClick={() => handleDeletePlan(plan.id)}
+                    className="p-1.5 text-red-600 hover:bg-red-100 text-sm rounded transition-all duration-200"
+                    title="Delete"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+
+              {/* 进度显示 - 简化 */}
+              <div className="mb-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-gray-600">Progress</span>
+                  <span className="text-sm font-bold text-purple-700">{plan.progress}%</span>
+                </div>
+                <div className="w-full bg-purple-100 rounded-full h-2 overflow-hidden">
+                  <div 
+                    className="h-2 rounded-full transition-all duration-500 bg-purple-600"
+                    style={{ width: `${plan.progress}%` }}
+                  >
+                  </div>
+                </div>
+              </div>
+
+              {/* 核心信息 - 只显示关键内容 */}
+              <div className="space-y-1 text-xs text-gray-600">
+                {/* 时间范围 */}
+                <div className="flex items-center gap-1">
+                  <span>📅</span>
+                  <span className="truncate">{formatDateRange(plan.start_date, plan.due_date)}</span>
+                </div>
+                
+                {/* 任务统计 */}
+                <div className="flex items-center gap-1">
+                  <span>✅</span>
+                  <span>{plan.completed_tasks || 0} / {plan.total_tasks || 0} Tasks</span>
+                </div>
+                
+                {/* 关联策略 */}
+                {getParentStrategyTitle(plan.parent_goal) && (
+                  <div className="flex items-center gap-1">
+                    <span>🎯</span>
+                    <span className="text-purple-600 truncate">
+                      {getParentStrategyTitle(plan.parent_goal)}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
