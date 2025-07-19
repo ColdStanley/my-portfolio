@@ -1470,6 +1470,33 @@ export default function TaskPanel() {
                             <div className="flex gap-1">
                               <button
                                 onClick={() => {
+                                  // 构建Outlook日历添加链接
+                                  const subject = encodeURIComponent(task.title || 'Task')
+                                  const startDate = task.start_date ? new Date(task.start_date) : new Date()
+                                  const endDate = task.end_date ? new Date(task.end_date) : new Date(startDate.getTime() + 60 * 60 * 1000) // 默认1小时
+                                  
+                                  const formatDate = (date: Date) => {
+                                    return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+                                  }
+                                  
+                                  const body = encodeURIComponent(
+                                    `Status: ${task.status || 'N/A'}\n` +
+                                    `Priority: ${task.priority_quadrant || 'N/A'}\n` +
+                                    `Budget: ${task.budget_time || 0}h\n` +
+                                    `${task.note ? '\nNote: ' + task.note : ''}`
+                                  )
+                                  
+                                  const outlookUrl = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${subject}&startdt=${formatDate(startDate)}&enddt=${formatDate(endDate)}&body=${body}&path=%2Fcalendar%2Faction%2Fcompose&rru=addevent`
+                                  
+                                  window.open(outlookUrl, '_blank')
+                                }}
+                                className="p-1.5 text-blue-600 hover:bg-blue-100 rounded transition-colors"
+                                title="Add to Outlook Calendar"
+                              >
+                                🌐
+                              </button>
+                              <button
+                                onClick={() => {
                                   setEditingTask(task)
                                   setFormPanelOpen(true)
                                 }}
