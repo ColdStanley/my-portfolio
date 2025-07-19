@@ -38,6 +38,16 @@ interface StrategyOption {
   title: string
 }
 
+interface TaskRecord {
+  id: string
+  title: string
+  status: string
+  start_date: string
+  end_date: string
+  budget_time: number
+  plan: string[]
+}
+
 
 interface PlanFormPanelProps {
   isOpen: boolean
@@ -488,6 +498,39 @@ function formatDateRange(startDate: string, endDate: string): string {
   return start || end
 }
 
+// 格式化Task的时间显示
+function formatTaskTime(startDate: string, endDate: string): string {
+  if (!startDate && !endDate) return '时间待定'
+  
+  try {
+    const start = startDate ? new Date(startDate) : null
+    const end = endDate ? new Date(endDate) : null
+    
+    if (start && end) {
+      const isSameDay = start.toDateString() === end.toDateString()
+      if (isSameDay) {
+        const startTime = start.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })
+        const endTime = end.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })
+        return `${start.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })} ${startTime}-${endTime}`
+      } else {
+        return `${start.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })} - ${end.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}`
+      }
+    }
+    
+    if (start) {
+      return start.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })
+    }
+    
+    if (end) {
+      return end.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })
+    }
+    
+    return '时间待定'
+  } catch (error) {
+    return '时间待定'
+  }
+}
+
 export default function PlanPanel() {
   const [data, setData] = useState<PlanRecord[]>([])
   const [loading, setLoading] = useState(true)
@@ -497,14 +540,27 @@ export default function PlanPanel() {
   const [statusOptions, setStatusOptions] = useState<string[]>([])
   const [priorityOptions, setPriorityOptions] = useState<string[]>([])
   const [strategyOptions, setStrategyOptions] = useState<StrategyOption[]>([])
+  const [tasks, setTasks] = useState<TaskRecord[]>([])
   const [refreshing, setRefreshing] = useState(false)
   const [selectedStrategyFilter, setSelectedStrategyFilter] = useState<string>('all')
   const [selectedMonthFilter, setSelectedMonthFilter] = useState<string>('all')
+
+  // 根据Plan ID获取关联的Tasks
+  const getTasksForPlan = (planId: string) => {
+    return tasks.filter(task => task.plan && task.plan.includes(planId))
+      .sort((a, b) => {
+        // 按开始时间排序
+        const aTime = a.start_date || ''
+        const bTime = b.start_date || ''
+        return aTime.localeCompare(bTime)
+      })
+  }
 
   useEffect(() => {
     fetchPlans()
     fetchSchema()
     fetchRelatedData()
+    fetchTasks()
   }, [])
 
   const fetchSchema = async () => {
@@ -567,10 +623,32 @@ export default function PlanPanel() {
     }
   }
 
+  const fetchTasks = async () => {
+    try {
+      const response = await fetch('/api/tasks')
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      const result = await response.json()
+      
+      if (result.error) {
+        throw new Error(result.error)
+      }
+      
+      setTasks(result.data || [])
+    } catch (err) {
+      console.error('Failed to fetch tasks:', err)
+      // 不设置错误状态，因为 tasks 是可选的
+    }
+  }
+
   const handleRefresh = async () => {
     setRefreshing(true)
     await fetchPlans()
     await fetchRelatedData()
+    await fetchTasks()
     setRefreshing(false)
   }
 
@@ -931,8 +1009,17 @@ export default function PlanPanel() {
                   <div className="mb-2">
                     <div className="flex items-center gap-3 mb-1">
                       <span className="text-xl">{getStatusIcon(plan.status)}</span>
-                      <h3 className="text-lg font-semibold text-purple-900 flex-1">
+                      <h3 
+                        className="text-lg font-semibold text-purple-900 flex-1 cursor-pointer hover:text-purple-600 hover:underline transition-colors flex items-center gap-1"
+                        onClick={() => {
+                          // 构建Notion页面URL
+                          const notionPageUrl = `https://www.notion.so/${plan.id.replace(/-/g, '')}`
+                          window.open(notionPageUrl, '_blank')
+                        }}
+                        title="Click to edit in Notion"
+                      >
                         {plan.objective || 'Untitled Plan'}
+                        <span className="text-xs text-gray-400">🔗</span>
                       </h3>
                     </div>
                     <div className="ml-8 flex items-center gap-2">
@@ -1042,11 +1129,54 @@ export default function PlanPanel() {
               {plan.estimate_resources && (
                 <div className="mt-3 pt-3 border-t border-gray-100">
                   <div className="flex items-start gap-2">
-                    <span className="text-sm text-gray-500 flex-shrink-0">💰 资源需求:</span>
-                    <span className="text-sm text-gray-600">{plan.estimate_resources}</span>
+                    <span className="text-sm text-purple-600 flex-shrink-0">💰 Resources:</span>
+                    <span className="text-sm text-purple-700">{plan.estimate_resources}</span>
                   </div>
                 </div>
               )}
+
+              {/* Related Tasks */}
+              {(() => {
+                const planTasks = getTasksForPlan(plan.id)
+                if (planTasks.length === 0) return null
+                
+                return (
+                  <div className="mt-4 pt-4 border-t border-purple-100">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-sm font-medium text-purple-700">Related Tasks</span>
+                      <span className="text-xs text-purple-500 bg-purple-50 px-2 py-0.5 rounded-full">({planTasks.length})</span>
+                    </div>
+                    <div className="space-y-2">
+                      {planTasks.map((task) => (
+                        <div key={task.id} className="p-3 bg-purple-50 rounded-lg border border-purple-100 hover:bg-purple-100 transition-colors">
+                          {/* 第一行：时间 + title */}
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-purple-600 flex-shrink-0 font-medium">
+                              {formatTaskTime(task.start_date, task.end_date)}
+                            </span>
+                            <span className="text-sm font-medium text-purple-900 ml-2 truncate">
+                              {task.title || 'Untitled Task'}
+                            </span>
+                          </div>
+                          {/* 第二行：status + budget_time */}
+                          <div className="flex items-center gap-2">
+                            {task.status && (
+                              <span className="px-2 py-0.5 bg-purple-200 text-purple-800 text-xs rounded-full font-medium">
+                                {task.status}
+                              </span>
+                            )}
+                            {task.budget_time > 0 && (
+                              <span className="px-2 py-0.5 bg-purple-200 text-purple-700 text-xs rounded-full font-medium">
+                                {task.budget_time}h
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
           ))}
         </div>
@@ -1063,8 +1193,17 @@ export default function PlanPanel() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-lg">{getStatusIcon(plan.status)}</span>
-                    <h3 className="text-base font-semibold text-purple-900 truncate">
+                    <h3 
+                      className="text-base font-semibold text-purple-900 truncate cursor-pointer hover:text-purple-600 hover:underline transition-colors flex items-center gap-1"
+                      onClick={() => {
+                        // 构建Notion页面URL
+                        const notionPageUrl = `https://www.notion.so/${plan.id.replace(/-/g, '')}`
+                        window.open(notionPageUrl, '_blank')
+                      }}
+                      title="Click to edit in Notion"
+                    >
                       {plan.objective || 'Untitled Plan'}
+                      <span className="text-xs text-gray-400">🔗</span>
                     </h3>
                   </div>
                   <div className="flex items-center gap-1 mb-2">
@@ -1141,6 +1280,49 @@ export default function PlanPanel() {
                   </div>
                 )}
               </div>
+
+              {/* Related Tasks - 移动端 */}
+              {(() => {
+                const planTasks = getTasksForPlan(plan.id)
+                if (planTasks.length === 0) return null
+                
+                return (
+                  <div className="mt-3 pt-3 border-t border-purple-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs font-medium text-purple-700">Related Tasks</span>
+                      <span className="text-xs text-purple-500 bg-purple-50 px-1.5 py-0.5 rounded-full">({planTasks.length})</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {planTasks.map((task) => (
+                        <div key={task.id} className="p-2 bg-purple-50 rounded border border-purple-100">
+                          {/* 第一行：时间 + title */}
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-purple-600 flex-shrink-0 font-medium">
+                              {formatTaskTime(task.start_date, task.end_date)}
+                            </span>
+                            <span className="text-xs font-medium text-purple-900 ml-2 truncate">
+                              {task.title || 'Untitled Task'}
+                            </span>
+                          </div>
+                          {/* 第二行：status + budget_time */}
+                          <div className="flex items-center gap-1">
+                            {task.status && (
+                              <span className="px-1.5 py-0.5 bg-purple-200 text-purple-800 text-xs rounded-full font-medium">
+                                {task.status}
+                              </span>
+                            )}
+                            {task.budget_time > 0 && (
+                              <span className="px-1.5 py-0.5 bg-purple-200 text-purple-700 text-xs rounded-full font-medium">
+                                {task.budget_time}h
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
           ))}
         </div>

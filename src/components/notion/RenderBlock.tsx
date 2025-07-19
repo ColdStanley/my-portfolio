@@ -32,6 +32,7 @@ export default function RenderBlock({ blocks }: { blocks: any[] }) {
             return <ParagraphBlock key={id} block={block} />
           case 'heading_1':
           case 'heading_2':
+          case 'heading_3':
             return <HeadingBlock key={id} block={block} />
           case 'image':
             return <ImageBlock key={id} block={block} />

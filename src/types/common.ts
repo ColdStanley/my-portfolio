@@ -11,6 +11,9 @@ export interface CardItem {
   section: string
   tech?: string[]
   pageId?: string
+  visibleOnSite?: boolean
+  status?: string
+  order?: number
 }
 
 export interface HighlightItem {

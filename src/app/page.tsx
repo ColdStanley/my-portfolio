@@ -50,7 +50,7 @@ async function getNotionData() {
       .sort((a: any, b: any) => (a.order ?? 999) - (b.order ?? 999))
     
     return {
-      cards: cards.filter((item: CardItem) => item.section === 'Cards'),
+      cards: cards.filter((item: CardItem) => item.section === 'Cards' && item.visibleOnSite === true),
       highlights
     }
   } catch (error) {

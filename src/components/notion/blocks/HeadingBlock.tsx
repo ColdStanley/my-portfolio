@@ -21,5 +21,13 @@ export default function HeadingBlock({ block }: { block: any }) {
     )
   }
 
+  if (type === 'heading_3') {
+    return (
+      <h3 className="text-xl font-medium my-3 text-gray-800 dark:text-gray-100">
+        {text}
+      </h3>
+    )
+  }
+
   return null
 }

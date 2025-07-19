@@ -3,6 +3,78 @@
 import { useEffect, useState } from 'react'
 import { useOutlookAuth } from '@/hooks/useOutlookAuth'
 
+// Task Progress Distribution Chart Component
+function TaskProgressChart({ tasks }: { tasks: TaskRecord[] }) {
+  if (tasks.length === 0) return null
+
+  const completedTasks = tasks.filter(task => task.status === 'Completed').length
+  const inProgressTasks = tasks.filter(task => task.status === 'In Progress').length
+  const notStartedTasks = tasks.filter(task => task.status === 'Not Started').length
+  const otherTasks = tasks.length - completedTasks - inProgressTasks - notStartedTasks
+
+  const total = tasks.length
+  const completedPercentage = (completedTasks / total) * 100
+  const inProgressPercentage = (inProgressTasks / total) * 100
+  const notStartedPercentage = (notStartedTasks / total) * 100
+  const otherPercentage = (otherTasks / total) * 100
+
+  const statusColors = {
+    'Completed': '#10b981', // 绿色
+    'In Progress': '#f59e0b', // 橙色
+    'Not Started': '#6b7280', // 灰色
+    'Other': '#a1a1aa' // 浅灰色
+  }
+
+  const statusData = [
+    { name: 'Completed', count: completedTasks, percentage: completedPercentage, color: statusColors['Completed'] },
+    { name: 'In Progress', count: inProgressTasks, percentage: inProgressPercentage, color: statusColors['In Progress'] },
+    { name: 'Not Started', count: notStartedTasks, percentage: notStartedPercentage, color: statusColors['Not Started'] },
+    { name: 'Other', count: otherTasks, percentage: otherPercentage, color: statusColors['Other'] }
+  ].filter(item => item.count > 0)
+
+  return (
+    <div>
+      <h4 className="text-xs font-medium text-purple-700 mb-2">Progress Distribution</h4>
+      <div className="flex items-center gap-3">
+        {/* Progress bar */}
+        <div className="flex-1">
+          <div className="flex h-3 bg-gray-100 rounded-full overflow-hidden">
+            {statusData.map((status) => (
+              <div
+                key={status.name}
+                className="h-full"
+                style={{
+                  width: `${status.percentage}%`,
+                  backgroundColor: status.color
+                }}
+                title={`${status.name}: ${status.count} tasks (${status.percentage.toFixed(1)}%)`}
+              />
+            ))}
+          </div>
+        </div>
+        <div className="text-xs text-gray-500 font-mono">
+          {completedPercentage.toFixed(0)}%
+        </div>
+      </div>
+      {/* Legend */}
+      <div className="mt-2 space-y-1">
+        {statusData.map((status) => (
+          <div key={status.name} className="flex items-center gap-2">
+            <div 
+              className="w-3 h-3 rounded-full flex-shrink-0"
+              style={{ backgroundColor: status.color }}
+            />
+            <span className="text-xs text-gray-600 flex-1" title={status.name}>
+              {status.name}
+            </span>
+            <span className="text-xs text-gray-400 font-medium">({status.count})</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // Task Plan Distribution Chart Component
 function TaskPlanChart({ tasks, planOptions }: { tasks: TaskRecord[], planOptions: PlanOption[] }) {
   const planCounts = tasks.reduce((acc, task) => {
@@ -819,6 +891,33 @@ export default function TaskPanel() {
 
   const thisWeekTasks = getThisWeekTasks()
 
+  // 获取本月任务的函数
+  const getThisMonthTasks = () => {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = now.getMonth()
+    
+    // 获取本月第一天
+    const firstDayOfMonth = new Date(year, month, 1)
+    
+    // 获取本月最后一天
+    const lastDayOfMonth = new Date(year, month + 1, 0)
+    
+    const monthTasks = data.filter(task => {
+      if (!task.start_date) return false
+      const taskDate = new Date(task.start_date.split('T')[0])
+      return taskDate >= firstDayOfMonth && taskDate <= lastDayOfMonth
+    }).sort((a, b) => {
+      const dateA = new Date(a.start_date)
+      const dateB = new Date(b.start_date)
+      return dateA.getTime() - dateB.getTime()
+    })
+    
+    return filterTasksByPlan(monthTasks)
+  }
+
+  const thisMonthTasks = getThisMonthTasks()
+
   // 获取状态图标
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -1022,6 +1121,14 @@ export default function TaskPanel() {
       const taskDateString = taskDate.split('T')[0]
       return taskDateString === dateString
     }).sort((a, b) => {
+      // 首先按status排序：completed任务排在最后
+      const aCompleted = a.status === 'Completed'
+      const bCompleted = b.status === 'Completed'
+      
+      if (aCompleted && !bCompleted) return 1  // a是completed，排在后面
+      if (!aCompleted && bCompleted) return -1 // b是completed，a排在前面
+      
+      // 如果两个任务的completed状态相同，再按时间排序
       const aTime = a.start_date || a.end_date
       const bTime = b.start_date || b.end_date
       if (!aTime || !bTime) return 0
@@ -1237,10 +1344,13 @@ export default function TaskPanel() {
       const isRunning = isTaskRunning(task)
       const now = new Date().toISOString() // 已经是UTC格式
       
+      // 自动更新状态：开始时设为"In Progress"，结束时设为"Completed"
+      const newStatus = isRunning ? 'Completed' : 'In Progress'
+      
       const updateData = {
         id: task.id,
         title: task.title,
-        status: task.status,
+        status: newStatus, // 自动更新状态
         start_date: task.start_date, // 保持原有UTC格式，不重新转换
         end_date: task.end_date, // 保持原有UTC格式，不重新转换
         all_day: task.all_day,
@@ -1305,12 +1415,6 @@ export default function TaskPanel() {
     window.open(`https://outlook.live.com/calendar/0/deeplink/compose?${params}`, '_blank')
   }
 
-  const getProgressColor = (progress: number) => {
-    if (progress >= 80) return 'bg-purple-600'
-    if (progress >= 60) return 'bg-purple-500'
-    if (progress >= 40) return 'bg-purple-400'
-    return 'bg-purple-300'
-  }
   
   const getPlanTitle = (planIds: string[]) => {
     if (!planIds || planIds.length === 0) return null
@@ -1773,6 +1877,9 @@ export default function TaskPanel() {
             
             {selectedDateTasks.length > 0 && (
               <div className="space-y-3">
+                {/* Progress Distribution */}
+                <TaskProgressChart tasks={selectedDateTasks} />
+                
                 {/* Plans Distribution */}
                 <TaskPlanChart tasks={selectedDateTasks} planOptions={planOptions} />
                 
@@ -1789,76 +1896,371 @@ export default function TaskPanel() {
                 <h3 className="text-lg font-semibold text-purple-900">This Week Tasks</h3>
                 <span className="text-sm text-purple-600">{thisWeekTasks.length} tasks</span>
               </div>
+              
+              {/* Week Analytics Charts */}
+              <div className="mb-6 space-y-3">
+                {/* Progress Distribution */}
+                <TaskProgressChart tasks={thisWeekTasks} />
+                
+                {/* Plans Distribution */}
+                <TaskPlanChart tasks={thisWeekTasks} planOptions={planOptions} />
+                
+                {/* Priority Quadrant Distribution */}
+                <TaskQuadrantChart tasks={thisWeekTasks} />
+              </div>
+              
               <div className="space-y-3">
-                {thisWeekTasks.map(task => (
-                  <div key={task.id} className="p-3 md:p-4 bg-white rounded-lg border border-purple-200 hover:shadow-md transition-all duration-200">
-                    <div className="flex flex-col md:flex-row gap-3 md:gap-4">
-                      {/* 左侧时间列 */}
-                      <div className="md:w-24 flex-shrink-0">
-                        {/* 日期和星期 */}
-                        <div className="text-xs text-purple-600 font-medium mb-1">
-                          {formatDateWithWeekday(task.start_date)}
+                {thisWeekTasks.map(task => {
+                  const isRunning = isTaskRunning(task)
+                  const isUpdating = updatingTimer === task.id
+                  
+                  return (
+                    <div key={task.id} className="p-3 md:p-4 bg-white rounded-lg border border-purple-200 hover:shadow-md transition-all duration-200">
+                      <div className="flex flex-col md:flex-row gap-3 md:gap-4">
+                        {/* 左侧时间列 */}
+                        <div className="md:w-24 flex-shrink-0">
+                          {/* 日期和星期 */}
+                          <div className="text-xs text-purple-600 font-medium mb-1">
+                            {formatDateWithWeekday(task.start_date)}
+                          </div>
+                          {/* 时间 */}
+                          <div className="text-xs text-purple-800 font-semibold">
+                            {formatTimeOnly(task.start_date, task.end_date)}
+                          </div>
                         </div>
-                        {/* 时间 */}
-                        <div className="text-xs text-purple-800 font-semibold">
-                          {formatTimeOnly(task.start_date, task.end_date)}
+                        
+                        {/* 右侧内容列 */}
+                        <div className="flex-1 flex flex-col">
+                          {/* 标题行 - 可点击跳转到Notion */}
+                          <div className="mb-2">
+                            <span 
+                              className="font-semibold text-purple-900 cursor-pointer hover:text-purple-600 hover:underline transition-colors flex items-center gap-1"
+                              onClick={() => {
+                                // 构建Notion页面URL
+                                const notionPageUrl = `https://www.notion.so/${task.id.replace(/-/g, '')}`
+                                window.open(notionPageUrl, '_blank')
+                              }}
+                              title="Click to edit in Notion"
+                            >
+                              {task.title}
+                              <span className="text-xs text-gray-400">🔗</span>
+                            </span>
+                          </div>
+                          
+                          {/* Status行 */}
+                          <div className="mb-2">
+                            <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
+                              Status: {task.status}
+                            </span>
+                          </div>
+                          
+                          {/* Priority行 */}
+                          {task.priority_quadrant && (
+                            <div className="mb-2">
+                              <span className={`px-2 py-1 text-xs rounded-full border ${getPriorityColor(task.priority_quadrant)}`}>
+                                Priority: {task.priority_quadrant}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {/* Budget行 */}
+                          {(task.budget_time > 0 || task.all_day) && (
+                            <div className="mb-2">
+                              {task.budget_time > 0 && (
+                                <span className="px-2 py-1 bg-purple-50 text-purple-600 text-xs rounded border border-purple-200 mr-2">
+                                  Budget: {task.budget_time}h
+                                </span>
+                              )}
+                              {task.all_day && (
+                                <span className="px-2 py-1 bg-purple-50 text-purple-600 text-xs rounded border border-purple-200">
+                                  All Day
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* 时间显示 */}
+                          <TimeDisplay task={task} />
+                          
+                          {/* 实际运行时间显示 */}
+                          {(task.actual_start || task.actual_end) && (
+                            <div className="text-xs text-purple-700 mt-1 font-mono mb-2">
+                              实际: {task.actual_start ? formatDateTime(task.actual_start).split(' ')[1] : '--:--'} - 
+                              {task.actual_end ? formatDateTime(task.actual_end).split(' ')[1] : (isRunning ? '进行中' : '--:--')}
+                            </div>
+                          )}
+                          
+                          {/* 操作按钮 - 右列底部 */}
+                          <div className="mt-auto">
+                            <div className="flex gap-1 justify-end">
+                          {/* 计时器按钮 */}
+                          <button
+                            onClick={() => handleStartStopTimer(task)}
+                            disabled={isUpdating}
+                            className={`px-2 py-1 text-xs rounded border transition-all duration-200 ${
+                              isRunning 
+                                ? 'bg-purple-100 text-purple-700 border-purple-300 hover:bg-purple-200' 
+                                : 'bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-100'
+                            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                            title={isRunning ? 'Stop timer' : 'Start timer'}
+                          >
+                            {isUpdating ? (
+                              <div className="animate-spin rounded-full h-3 w-3 border-b border-current"></div>
+                            ) : (
+                              isRunning ? '⏹️' : '▶️'
+                            )}
+                          </button>
+                          
+                          {/* API按钮 */}
+                          <button
+                            onClick={() => handleAddToOutlook(task)}
+                            disabled={addingToCalendar === task.id}
+                            className="px-2 py-1 bg-purple-50 text-purple-700 text-xs rounded hover:bg-purple-100 transition-all duration-200 disabled:opacity-50"
+                            title={isAuthenticated ? "Add to Outlook Calendar via API" : "Connect to Outlook first"}
+                          >
+                            {addingToCalendar === task.id ? (
+                              <div className="animate-spin rounded-full h-2 w-2 border-b border-purple-600"></div>
+                            ) : (
+                              'API'
+                            )}
+                          </button>
+                          
+                          {/* Web按钮 */}
+                          <button
+                            onClick={() => handleAddToOutlookWeb(task)}
+                            className="px-2 py-1 bg-purple-50 text-purple-700 text-xs rounded hover:bg-purple-100 transition-all duration-200"
+                            title="Add to Outlook Calendar via web interface"
+                          >
+                            Web
+                          </button>
+                          
+                          {/* 编辑按钮 */}
+                          <button
+                            onClick={() => {
+                              setEditingTask(task)
+                              setFormPanelOpen(true)
+                            }}
+                            className="px-2 py-1 text-purple-600 hover:text-white hover:bg-purple-600 text-xs rounded transition-all duration-200 border border-purple-200 hover:border-purple-600"
+                            title="Edit this task"
+                          >
+                            ✏️
+                          </button>
+                          
+                          {/* 删除按钮 */}
+                          <button
+                            onClick={() => handleDeleteTask(task.id)}
+                            className="px-2 py-1 text-red-600 hover:text-white hover:bg-red-600 text-xs rounded transition-all duration-200 border border-red-200 hover:border-red-600"
+                            title="Delete this task"
+                          >
+                            🗑️
+                          </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                       
-                      {/* 右侧内容列 */}
-                      <div className="flex-1">
-                        {/* 标题行 */}
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="font-semibold text-purple-900">{task.title}</span>
+                      {/* Note占满整行（如果有） */}
+                      {task.note && (
+                        <div className="mt-3 pt-3 border-t border-purple-200">
+                          <div className="flex items-start gap-2">
+                            <span className="text-purple-500 text-xs mt-0.5">📝</span>
+                            <p className="text-sm text-purple-700 whitespace-pre-wrap break-words flex-1">
+                              {task.note}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+          
+          {/* 本月任务 */}
+          {thisMonthTasks.length > 0 && (
+            <div className="mt-6 bg-white rounded-lg shadow-sm border border-purple-200 p-3 md:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-purple-900">This Month Tasks</h3>
+                <span className="text-sm text-purple-600">{thisMonthTasks.length} tasks</span>
+              </div>
+              
+              {/* Month Analytics Charts */}
+              <div className="mb-6 space-y-3">
+                {/* Progress Distribution */}
+                <TaskProgressChart tasks={thisMonthTasks} />
+                
+                {/* Plans Distribution */}
+                <TaskPlanChart tasks={thisMonthTasks} planOptions={planOptions} />
+                
+                {/* Priority Quadrant Distribution */}
+                <TaskQuadrantChart tasks={thisMonthTasks} />
+              </div>
+              
+              <div className="space-y-3">
+                {thisMonthTasks.map(task => {
+                  const isRunning = isTaskRunning(task)
+                  const isUpdating = updatingTimer === task.id
+                  
+                  return (
+                    <div key={task.id} className="p-3 md:p-4 bg-white rounded-lg border border-purple-200 hover:shadow-md transition-all duration-200">
+                      <div className="flex flex-col md:flex-row gap-3 md:gap-4">
+                        {/* 左侧时间列 */}
+                        <div className="md:w-24 flex-shrink-0">
+                          {/* 日期和星期 */}
+                          <div className="text-xs text-purple-600 font-medium mb-1">
+                            {formatDateWithWeekday(task.start_date)}
+                          </div>
+                          {/* 时间 */}
+                          <div className="text-xs text-purple-800 font-semibold">
+                            {formatTimeOnly(task.start_date, task.end_date)}
+                          </div>
                         </div>
                         
-                        {/* Status行 */}
-                        <div className="mb-1">
-                          <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
-                            Status: {task.status}
-                          </span>
-                        </div>
-                        
-                        {/* Priority行 */}
-                        {task.priority_quadrant && (
-                          <div className="mb-1">
-                            <span className={`px-2 py-1 text-xs rounded-full border ${getPriorityColor(task.priority_quadrant)}`}>
-                              Priority: {task.priority_quadrant}
+                        {/* 右侧内容列 */}
+                        <div className="flex-1 flex flex-col">
+                          {/* 标题行 - 可点击跳转到Notion */}
+                          <div className="mb-2">
+                            <span 
+                              className="font-semibold text-purple-900 cursor-pointer hover:text-purple-600 hover:underline transition-colors flex items-center gap-1"
+                              onClick={() => {
+                                // 构建Notion页面URL
+                                const notionPageUrl = `https://www.notion.so/${task.id.replace(/-/g, '')}`
+                                window.open(notionPageUrl, '_blank')
+                              }}
+                              title="Click to edit in Notion"
+                            >
+                              {task.title}
+                              <span className="text-xs text-gray-400">🔗</span>
                             </span>
                           </div>
-                        )}
-                        
-                        {/* Budget行 */}
-                        {(task.budget_time > 0 || task.all_day) && (
-                          <div className="mb-1">
-                            {task.budget_time > 0 && (
-                              <span className="px-2 py-1 bg-purple-50 text-purple-600 text-xs rounded border border-purple-200 mr-2">
-                                Budget: {task.budget_time}h
-                              </span>
-                            )}
-                            {task.all_day && (
-                              <span className="px-2 py-1 bg-purple-50 text-purple-600 text-xs rounded border border-purple-200">
-                                All Day
-                              </span>
-                            )}
+                          
+                          {/* Status行 */}
+                          <div className="mb-2">
+                            <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
+                              Status: {task.status}
+                            </span>
                           </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* Note占满整行（如果有） */}
-                    {task.note && (
-                      <div className="mt-3 pt-3 border-t border-purple-200">
-                        <div className="flex items-start gap-2">
-                          <span className="text-purple-500 text-xs mt-0.5">📝</span>
-                          <p className="text-sm text-purple-700 whitespace-pre-wrap break-words flex-1">
-                            {task.note}
-                          </p>
+                          
+                          {/* Priority行 */}
+                          {task.priority_quadrant && (
+                            <div className="mb-2">
+                              <span className={`px-2 py-1 text-xs rounded-full border ${getPriorityColor(task.priority_quadrant)}`}>
+                                Priority: {task.priority_quadrant}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {/* Budget行 */}
+                          {(task.budget_time > 0 || task.all_day) && (
+                            <div className="mb-2">
+                              {task.budget_time > 0 && (
+                                <span className="px-2 py-1 bg-purple-50 text-purple-600 text-xs rounded border border-purple-200 mr-2">
+                                  Budget: {task.budget_time}h
+                                </span>
+                              )}
+                              {task.all_day && (
+                                <span className="px-2 py-1 bg-purple-50 text-purple-600 text-xs rounded border border-purple-200">
+                                  All Day
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* 时间显示 */}
+                          <TimeDisplay task={task} />
+                          
+                          {/* 实际运行时间显示 */}
+                          {(task.actual_start || task.actual_end) && (
+                            <div className="text-xs text-purple-700 mt-1 font-mono mb-2">
+                              实际: {task.actual_start ? formatDateTime(task.actual_start).split(' ')[1] : '--:--'} - 
+                              {task.actual_end ? formatDateTime(task.actual_end).split(' ')[1] : (isRunning ? '进行中' : '--:--')}
+                            </div>
+                          )}
+                          
+                          {/* 操作按钮 - 右列底部 */}
+                          <div className="mt-auto">
+                            <div className="flex gap-1 justify-end">
+                          {/* 计时器按钮 */}
+                          <button
+                            onClick={() => handleStartStopTimer(task)}
+                            disabled={isUpdating}
+                            className={`px-2 py-1 text-xs rounded border transition-all duration-200 ${
+                              isRunning 
+                                ? 'bg-purple-100 text-purple-700 border-purple-300 hover:bg-purple-200' 
+                                : 'bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-100'
+                            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                            title={isRunning ? 'Stop timer' : 'Start timer'}
+                          >
+                            {isUpdating ? (
+                              <div className="animate-spin rounded-full h-3 w-3 border-b border-current"></div>
+                            ) : (
+                              isRunning ? '⏹️' : '▶️'
+                            )}
+                          </button>
+                          
+                          {/* API按钮 */}
+                          <button
+                            onClick={() => handleAddToOutlook(task)}
+                            disabled={addingToCalendar === task.id}
+                            className="px-2 py-1 bg-purple-50 text-purple-700 text-xs rounded hover:bg-purple-100 transition-all duration-200 disabled:opacity-50"
+                            title={isAuthenticated ? "Add to Outlook Calendar via API" : "Connect to Outlook first"}
+                          >
+                            {addingToCalendar === task.id ? (
+                              <div className="animate-spin rounded-full h-2 w-2 border-b border-purple-600"></div>
+                            ) : (
+                              'API'
+                            )}
+                          </button>
+                          
+                          {/* Web按钮 */}
+                          <button
+                            onClick={() => handleAddToOutlookWeb(task)}
+                            className="px-2 py-1 bg-purple-50 text-purple-700 text-xs rounded hover:bg-purple-100 transition-all duration-200"
+                            title="Add to Outlook Calendar via web interface"
+                          >
+                            Web
+                          </button>
+                          
+                          {/* 编辑按钮 */}
+                          <button
+                            onClick={() => {
+                              setEditingTask(task)
+                              setFormPanelOpen(true)
+                            }}
+                            className="px-2 py-1 text-purple-600 hover:text-white hover:bg-purple-600 text-xs rounded transition-all duration-200 border border-purple-200 hover:border-purple-600"
+                            title="Edit this task"
+                          >
+                            ✏️
+                          </button>
+                          
+                          {/* 删除按钮 */}
+                          <button
+                            onClick={() => handleDeleteTask(task.id)}
+                            className="px-2 py-1 text-red-600 hover:text-white hover:bg-red-600 text-xs rounded transition-all duration-200 border border-red-200 hover:border-red-600"
+                            title="Delete this task"
+                          >
+                            🗑️
+                          </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    )}
-                  </div>
-                ))}
+                      
+                      {/* Note占满整行（如果有） */}
+                      {task.note && (
+                        <div className="mt-3 pt-3 border-t border-purple-200">
+                          <div className="flex items-start gap-2">
+                            <span className="text-purple-500 text-xs mt-0.5">📝</span>
+                            <p className="text-sm text-purple-700 whitespace-pre-wrap break-words flex-1">
+                              {task.note}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )}

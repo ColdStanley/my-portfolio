@@ -18,6 +18,28 @@ interface StrategyRecord {
   completed_plans: number
 }
 
+interface PlanRecord {
+  id: string
+  objective: string
+  start_date: string
+  due_date: string
+  status: string
+  priority_quadrant: string
+  budget_time: number
+  parent_goal: string[]
+}
+
+interface TaskRecord {
+  id: string
+  title: string
+  start_date: string
+  end_date: string
+  status: string
+  priority: string
+  budget_time: number
+  plan: string[]
+}
+
 interface StrategyFormData {
   objective: string
   description: string
@@ -292,10 +314,14 @@ export default function StrategyPanel() {
   const [categoryOptions, setCategoryOptions] = useState<string[]>([])
   const [priorityOptions, setPriorityOptions] = useState<string[]>([])
   const [refreshing, setRefreshing] = useState(false)
+  const [plans, setPlans] = useState<PlanRecord[]>([])
+  const [tasks, setTasks] = useState<TaskRecord[]>([])
 
   useEffect(() => {
     fetchStrategies()
     fetchSchema()
+    fetchPlans()
+    fetchTasks()
   }, [])
 
   const fetchSchema = async () => {
@@ -341,6 +367,8 @@ export default function StrategyPanel() {
   const handleRefresh = async () => {
     setRefreshing(true)
     await fetchStrategies()
+    await fetchPlans()
+    await fetchTasks()
     setRefreshing(false)
   }
 
@@ -415,6 +443,103 @@ export default function StrategyPanel() {
       case '家庭': return '👨‍👩‍👧‍👦'
       case '个人成长': return '🌱'
       default: return '🎯'
+    }
+  }
+
+  const fetchPlans = async () => {
+    try {
+      const response = await fetch('/api/plan')
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      const result = await response.json()
+      
+      if (result.error) {
+        throw new Error(result.error)
+      }
+      
+      setPlans(result.data || [])
+    } catch (err) {
+      console.error('Failed to fetch plans:', err)
+      // 不设置错误状态，因为 plans 是可选的
+    }
+  }
+
+  const fetchTasks = async () => {
+    try {
+      const response = await fetch('/api/tasks')
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      const result = await response.json()
+      
+      if (result.error) {
+        throw new Error(result.error)
+      }
+      
+      setTasks(result.data || [])
+    } catch (err) {
+      console.error('Failed to fetch tasks:', err)
+      // 不设置错误状态，因为 tasks 是可选的
+    }
+  }
+
+  // 根据Strategy ID获取关联的Plans
+  const getPlansForStrategy = (strategyId: string) => {
+    return plans.filter(plan => plan.parent_goal && plan.parent_goal.includes(strategyId))
+      .sort((a, b) => {
+        // 按开始时间排序
+        const aTime = a.start_date || ''
+        const bTime = b.start_date || ''
+        return aTime.localeCompare(bTime)
+      })
+  }
+
+  // 根据Plan ID获取关联的Tasks
+  const getTasksForPlan = (planId: string) => {
+    return tasks.filter(task => task.plan && task.plan.includes(planId))
+      .sort((a, b) => {
+        // 按开始时间排序
+        const aTime = a.start_date || ''
+        const bTime = b.start_date || ''
+        return aTime.localeCompare(bTime)
+      })
+  }
+
+  // 格式化时间显示
+  const formatTimeRange = (startDate: string, endDate: string): string => {
+    if (!startDate && !endDate) return 'No dates'
+    
+    try {
+      const start = startDate ? new Date(startDate) : null
+      const end = endDate ? new Date(endDate) : null
+      
+      if (start && end) {
+        const isSameDay = start.toDateString() === end.toDateString()
+        if (isSameDay) {
+          const startTime = start.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+          const endTime = end.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+          return `${start.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })} ${startTime}-${endTime}`
+        } else {
+          return `${start.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })}`
+        }
+      }
+      
+      if (start) {
+        return start.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })
+      }
+      
+      if (end) {
+        return end.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })
+      }
+      
+      return 'No dates'
+    } catch (error) {
+      return 'Invalid dates'
     }
   }
 
@@ -542,8 +667,17 @@ export default function StrategyPanel() {
                 <div className="flex items-center gap-4 flex-1">
                   <span className="text-3xl">{getCategoryIcon(strategy.category)}</span>
                   <div className="flex-1">
-                    <h3 className="text-xl font-bold text-purple-900 mb-1">
+                    <h3 
+                      className="text-xl font-bold text-purple-900 mb-1 cursor-pointer hover:text-purple-600 hover:underline transition-colors flex items-center gap-1"
+                      onClick={() => {
+                        // 构建Notion页面URL
+                        const notionPageUrl = `https://www.notion.so/${strategy.id.replace(/-/g, '')}`
+                        window.open(notionPageUrl, '_blank')
+                      }}
+                      title="Click to edit in Notion"
+                    >
                       {strategy.objective || 'Untitled Strategy'}
+                      <span className="text-xs text-gray-400">🔗</span>
                     </h3>
                     <div className="flex items-center gap-4 text-sm text-gray-600">
                       {strategy.category && (
@@ -606,8 +740,17 @@ export default function StrategyPanel() {
                   <div className="flex items-start gap-3 flex-1">
                     <span className="text-2xl mt-1">{getCategoryIcon(strategy.category)}</span>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-purple-900 mb-2 line-clamp-2">
+                      <h3 
+                        className="text-lg font-bold text-purple-900 mb-2 line-clamp-2 cursor-pointer hover:text-purple-600 hover:underline transition-colors flex items-center gap-1"
+                        onClick={() => {
+                          // 构建Notion页面URL
+                          const notionPageUrl = `https://www.notion.so/${strategy.id.replace(/-/g, '')}`
+                          window.open(notionPageUrl, '_blank')
+                        }}
+                        title="Click to edit in Notion"
+                      >
                         {strategy.objective || 'Untitled Strategy'}
+                        <span className="text-xs text-gray-400">🔗</span>
                       </h3>
                       <div className="flex flex-wrap items-center gap-2 text-xs">
                         {strategy.category && (
@@ -668,9 +811,207 @@ export default function StrategyPanel() {
                 <div className="flex items-center text-xs text-gray-600">
                   <span>{formatDateRange(strategy.start_date, strategy.due_date)}</span>
                 </div>
+
+                {/* Related Plans and Tasks - 移动端 */}
+                {(() => {
+                  const strategyPlans = getPlansForStrategy(strategy.id)
+                  if (strategyPlans.length === 0) return null
+                  
+                  return (
+                    <div className="mt-3 pt-3 border-t border-purple-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-medium text-purple-700">Related Plans & Tasks</span>
+                        <span className="text-xs text-purple-500 bg-purple-50 px-1.5 py-0.5 rounded-full">
+                          {strategyPlans.length}
+                        </span>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        {strategyPlans.map((plan) => {
+                          const planTasks = getTasksForPlan(plan.id)
+                          
+                          return (
+                            <div key={plan.id} className="bg-purple-50 rounded border border-purple-100 p-2">
+                              {/* Plan Information - 移动端简化 */}
+                              <div className="mb-2">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-xs font-semibold text-purple-900 truncate flex-1">
+                                    {plan.objective || 'Untitled Plan'}
+                                  </span>
+                                  <div className="flex items-center gap-1 ml-2">
+                                    {plan.status && (
+                                      <span className="px-1.5 py-0.5 bg-purple-200 text-purple-800 text-xs rounded-full font-medium">
+                                        {plan.status}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                <div className="flex items-center gap-2 text-xs text-purple-600">
+                                  <span className="font-medium">
+                                    {formatTimeRange(plan.start_date, plan.due_date)}
+                                  </span>
+                                  {plan.budget_time > 0 && (
+                                    <span className="bg-purple-200 text-purple-700 px-1.5 py-0.5 rounded-full font-medium">
+                                      {plan.budget_time}h
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {/* Plan's Tasks - 移动端简化 */}
+                              {planTasks.length > 0 && (
+                                <div className="ml-2 space-y-1">
+                                  <div className="flex items-center gap-1 mb-1">
+                                    <span className="text-xs font-medium text-purple-600">Tasks</span>
+                                    <span className="text-xs text-purple-500 bg-purple-100 px-1 py-0.5 rounded-full">
+                                      {planTasks.length}
+                                    </span>
+                                  </div>
+                                  
+                                  {planTasks.map((task) => (
+                                    <div key={task.id} className="bg-white rounded border border-purple-100 p-1.5">
+                                      <div className="flex items-center justify-between mb-0.5">
+                                        <span className="text-xs font-medium text-purple-900 truncate flex-1">
+                                          {task.title || 'Untitled Task'}
+                                        </span>
+                                        <div className="flex items-center gap-1 ml-1">
+                                          {task.status && (
+                                            <span className="px-1 py-0.5 bg-purple-100 text-purple-800 text-xs rounded font-medium">
+                                              {task.status}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="flex items-center gap-2 text-xs text-purple-600">
+                                        <span className="font-medium">
+                                          {formatTimeRange(task.start_date, task.end_date)}
+                                        </span>
+                                        {task.budget_time > 0 && (
+                                          <span className="bg-purple-100 text-purple-700 px-1 py-0.5 rounded font-medium">
+                                            {task.budget_time}h
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })()}
               </div>
 
               
+              {/* Related Plans and Tasks */}
+              {(() => {
+                const strategyPlans = getPlansForStrategy(strategy.id)
+                if (strategyPlans.length === 0) return null
+                
+                return (
+                  <div className="mt-4 pt-4 border-t border-purple-100">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-sm font-medium text-purple-700">Related Plans & Tasks</span>
+                      <span className="text-xs text-purple-500 bg-purple-50 px-2 py-0.5 rounded-full">
+                        {strategyPlans.length} {strategyPlans.length === 1 ? 'Plan' : 'Plans'}
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {strategyPlans.map((plan) => {
+                        const planTasks = getTasksForPlan(plan.id)
+                        
+                        return (
+                          <div key={plan.id} className="bg-purple-50 rounded-lg border border-purple-100 p-3">
+                            {/* Plan Information */}
+                            <div className="mb-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="text-sm font-semibold text-purple-900 truncate flex-1">
+                                  {plan.objective || 'Untitled Plan'}
+                                </h4>
+                                <div className="flex items-center gap-2 ml-2">
+                                  {plan.status && (
+                                    <span className="px-2 py-0.5 bg-purple-200 text-purple-800 text-xs rounded-full font-medium">
+                                      {plan.status}
+                                    </span>
+                                  )}
+                                  {plan.priority_quadrant && (
+                                    <span className="px-2 py-0.5 bg-purple-200 text-purple-700 text-xs rounded-full font-medium">
+                                      {plan.priority_quadrant}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center gap-4 text-xs text-purple-600">
+                                <span className="font-medium">
+                                  {formatTimeRange(plan.start_date, plan.due_date)}
+                                </span>
+                                {plan.budget_time > 0 && (
+                                  <span className="bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full font-medium">
+                                    {plan.budget_time}h
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            
+                            {/* Plan's Tasks */}
+                            {planTasks.length > 0 && (
+                              <div className="ml-4 space-y-2">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-xs font-medium text-purple-600">Tasks</span>
+                                  <span className="text-xs text-purple-500 bg-purple-100 px-1.5 py-0.5 rounded-full">
+                                    {planTasks.length}
+                                  </span>
+                                </div>
+                                
+                                {planTasks.map((task) => (
+                                  <div key={task.id} className="bg-white rounded border border-purple-100 p-2">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-xs font-medium text-purple-900 truncate flex-1">
+                                        {task.title || 'Untitled Task'}
+                                      </span>
+                                      <div className="flex items-center gap-1 ml-2">
+                                        {task.status && (
+                                          <span className="px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs rounded font-medium">
+                                            {task.status}
+                                          </span>
+                                        )}
+                                        {task.priority && (
+                                          <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-xs rounded font-medium">
+                                            {task.priority}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-3 text-xs text-purple-600">
+                                      <span className="font-medium">
+                                        {formatTimeRange(task.start_date, task.end_date)}
+                                      </span>
+                                      {task.budget_time > 0 && (
+                                        <span className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-medium">
+                                          {task.budget_time}h
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })()}
+
               {/* 可展开的详细信息 */}
               {(strategy.key_results || strategy.description || strategy.estimate_cost) && (
                 <div className="mt-4 pt-4 border-t border-purple-100">
