@@ -54,29 +54,33 @@ function StrategyFormPanel({ isOpen, onClose, strategy, onSave, statusOptions, c
   })
 
   useEffect(() => {
-    const currentDate = new Date()
-    const currentYearMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`
-    const nextYearMonth = `${currentDate.getFullYear() + 1}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`
-    
     if (strategy) {
+      // 编辑模式：使用现有strategy的数据，保持原有时间
       setFormData({
         objective: strategy.objective || '',
         description: strategy.description || '',
         key_results: strategy.key_results || '',
-        start_date: strategy.start_date || currentYearMonth,
-        due_date: strategy.due_date || nextYearMonth,
+        start_date: strategy.start_date || '',
+        due_date: strategy.due_date || '',
         status: strategy.status || '',
         category: strategy.category || '',
         priority_quadrant: strategy.priority_quadrant || '',
         estimate_cost: strategy.estimate_cost || ''
       })
     } else {
+      // 新建模式：使用默认时间
+      const currentDate = new Date()
+      const currentDateStr = currentDate.toISOString().split('T')[0] // YYYY-MM-DD format
+      const nextYear = new Date(currentDate)
+      nextYear.setFullYear(currentDate.getFullYear() + 1)
+      const nextYearStr = nextYear.toISOString().split('T')[0]
+      
       setFormData({
         objective: '',
         description: '',
         key_results: '',
-        start_date: currentYearMonth,
-        due_date: nextYearMonth,
+        start_date: currentDateStr,
+        due_date: nextYearStr,
         status: '',
         category: '',
         priority_quadrant: '',
@@ -181,19 +185,22 @@ function StrategyFormPanel({ isOpen, onClose, strategy, onSave, statusOptions, c
           <div>
             <label className="block text-sm font-medium text-purple-700 mb-1">Start Date</label>
             <input
-              type="month"
+              type="date"
               value={formData.start_date}
               onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
               className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="Select start date"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-purple-700 mb-1">Due Date</label>
             <input
-              type="month"
+              type="date"
               value={formData.due_date}
               onChange={(e) => setFormData(prev => ({ ...prev, due_date: e.target.value }))}
               className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="Select due date"
+              min={formData.start_date || undefined}
             />
           </div>
         </div>
@@ -245,15 +252,19 @@ function StrategyFormPanel({ isOpen, onClose, strategy, onSave, statusOptions, c
   )
 }
 
-// 格式化月份显示
-function formatMonth(monthString: string): string {
-  if (!monthString) return ''
+// 格式化日期显示
+function formatDate(dateString: string): string {
+  if (!dateString) return ''
   
   try {
-    const [year, month] = monthString.split('-')
-    return `${year}年${month}月`
+    const date = new Date(dateString)
+    return date.toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
   } catch (error) {
-    return monthString
+    return dateString
   }
 }
 
@@ -261,8 +272,8 @@ function formatMonth(monthString: string): string {
 function formatDateRange(startDate: string, endDate: string): string {
   if (!startDate && !endDate) return '时间待定'
   
-  const start = startDate ? formatMonth(startDate) : ''
-  const end = endDate ? formatMonth(endDate) : ''
+  const start = startDate ? formatDate(startDate) : ''
+  const end = endDate ? formatDate(endDate) : ''
   
   if (start && end) {
     return `${start} - ${end}`
@@ -448,8 +459,7 @@ export default function StrategyPanel() {
       {/* 桌面端标题和控制区 */}
       <div className="hidden md:flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-purple-900">Strategy & OKRs</h1>
-          <p className="text-sm text-gray-600 mt-1">长期目标与关键结果管理</p>
+          <h1 className="text-2xl font-bold text-purple-900">Strategy</h1>
         </div>
         <div className="flex gap-3">
           <button
@@ -478,7 +488,7 @@ export default function StrategyPanel() {
       {/* 移动端简化标题和控制区 */}
       <div className="md:hidden">
         <div className="mb-4">
-          <h1 className="text-xl font-bold text-purple-900">Strategy & OKRs</h1>
+          <h1 className="text-xl font-bold text-purple-900">Strategy</h1>
         </div>
         <div className="flex items-center justify-between mb-4">
           <button
@@ -541,7 +551,7 @@ export default function StrategyPanel() {
                           {strategy.category}
                         </span>
                       )}
-                      <span>📅 {formatDateRange(strategy.start_date, strategy.due_date)}</span>
+                      <span>{formatDateRange(strategy.start_date, strategy.due_date)}</span>
                       {strategy.status && (
                         <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
                           {strategy.status}
@@ -656,8 +666,7 @@ export default function StrategyPanel() {
 
                 {/* 底部：时间信息 */}
                 <div className="flex items-center text-xs text-gray-600">
-                  <span>📅</span>
-                  <span className="ml-1">{formatDateRange(strategy.start_date, strategy.due_date)}</span>
+                  <span>{formatDateRange(strategy.start_date, strategy.due_date)}</span>
                 </div>
               </div>
 
@@ -667,7 +676,7 @@ export default function StrategyPanel() {
                 <div className="mt-4 pt-4 border-t border-purple-100">
                   <details className="group">
                     <summary className="cursor-pointer text-sm text-purple-600 hover:text-purple-700 font-medium">
-                      ⛹️ 查看详细信息
+                      View Details
                     </summary>
                     <div className="mt-3 space-y-3">
                       {strategy.key_results && (
@@ -690,7 +699,7 @@ export default function StrategyPanel() {
                         <div>
                           <h4 className="text-sm font-semibold text-purple-700 mb-1">Estimate Cost:</h4>
                           <p className="text-sm text-gray-600">
-                            💰 {strategy.estimate_cost}
+                            {strategy.estimate_cost}
                           </p>
                         </div>
                       )}
