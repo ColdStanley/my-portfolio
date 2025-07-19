@@ -100,11 +100,6 @@ export async function GET(request: NextRequest) {
       const properties = page.properties
       const planId = page.id
       
-      // 计算budget_time
-      const startDate = extractDateValue(properties.start_date?.date)
-      const endDate = extractDateValue(properties.due_date?.date)
-      const budgetTime = calculateHours(startDate, endDate)
-      
       // 计算该Plan下的Tasks进度
       const relatedTasks = taskResponse.results.filter((task: any) => {
         const planRelations = task.properties.plan?.relation || []
@@ -124,15 +119,15 @@ export async function GET(request: NextRequest) {
         objective: extractTitleContent(properties.objective?.title),
         description: extractTextContent(properties.description?.rich_text),
         parent_goal: extractRelationValue(properties.parent_goal?.relation),
-        start_date: startDate,
-        due_date: endDate,
+        start_date: extractDateValue(properties.start_date?.date),
+        due_date: extractDateValue(properties.due_date?.date),
         status: extractSelectValue(properties.status?.select),
         priority_quadrant: extractSelectValue(properties.priority_quadrant?.select),
         progress: calculatedProgress,
         linked_tasks: extractRelationValue(properties.linked_tasks?.relation),
         estimate_resources: extractTextContent(properties.estimate_resources?.rich_text),
         budget_money: extractNumberValue(properties.budget_money?.number),
-        budget_time: budgetTime,
+        budget_time: extractNumberValue(properties.budget_time?.number),
         total_tasks: totalTasks,
         completed_tasks: completedTasks
       }
@@ -164,6 +159,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    
     const { 
       id,
       objective, 
@@ -173,9 +169,9 @@ export async function POST(request: NextRequest) {
       due_date, 
       status,
       priority_quadrant,
-      linked_tasks,
       estimate_resources,
-      budget_money
+      budget_money,
+      budget_time
     } = body
 
     const properties: any = {
@@ -192,17 +188,9 @@ export async function POST(request: NextRequest) {
     if (due_date) properties.due_date = { date: { start: due_date } }
     if (status) properties.status = { select: { name: status } }
     if (priority_quadrant) properties.priority_quadrant = { select: { name: priority_quadrant } }
-    if (linked_tasks && linked_tasks.length > 0) {
-      properties.linked_tasks = { relation: linked_tasks.map((id: string) => ({ id })) }
-    }
     if (estimate_resources) properties.estimate_resources = { rich_text: [{ text: { content: estimate_resources } }] }
     if (typeof budget_money === 'number') properties.budget_money = { number: budget_money }
-    
-    // Auto-calculate budget_time if start_date and due_date are provided
-    if (start_date && due_date) {
-      const calculatedBudgetTime = calculateHours(start_date, due_date)
-      properties.budget_time = { number: calculatedBudgetTime }
-    }
+    if (typeof budget_time === 'number') properties.budget_time = { number: budget_time }
 
     let response
     

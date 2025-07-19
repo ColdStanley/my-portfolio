@@ -54,24 +54,23 @@ function StrategyFormPanel({ isOpen, onClose, strategy, onSave, statusOptions, c
   })
 
   useEffect(() => {
+    const currentDate = new Date()
+    const currentYearMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`
+    const nextYearMonth = `${currentDate.getFullYear() + 1}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`
+    
     if (strategy) {
       setFormData({
         objective: strategy.objective || '',
         description: strategy.description || '',
         key_results: strategy.key_results || '',
-        start_date: strategy.start_date || '',
-        due_date: strategy.due_date || '',
+        start_date: strategy.start_date || currentYearMonth,
+        due_date: strategy.due_date || nextYearMonth,
         status: strategy.status || '',
         category: strategy.category || '',
         priority_quadrant: strategy.priority_quadrant || '',
         estimate_cost: strategy.estimate_cost || ''
       })
     } else {
-      // 创建新目标时，使用当前年月作为默认值
-      const currentDate = new Date()
-      const currentYearMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`
-      const nextYearMonth = `${currentDate.getFullYear() + 1}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`
-      
       setFormData({
         objective: '',
         description: '',
@@ -108,43 +107,43 @@ function StrategyFormPanel({ isOpen, onClose, strategy, onSave, statusOptions, c
       </div>
       <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-purple-700 mb-1">Objective (目标) *</label>
+          <label className="block text-sm font-medium text-purple-700 mb-1">Objective *</label>
           <input
             type="text"
             required
             value={formData.objective}
             onChange={(e) => setFormData(prev => ({ ...prev, objective: e.target.value }))}
-            placeholder="清晰的长期目标描述"
+            placeholder="Clear long-term objective description"
             className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-purple-700 mb-1">Description (补充说明)</label>
+          <label className="block text-sm font-medium text-purple-700 mb-1">Description</label>
           <textarea
             rows={3}
             value={formData.description}
             onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-            placeholder="为什么要实现这个目标？背景和动机是什么？"
+            placeholder="Why do you want to achieve this objective? Background and motivation."
             className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-purple-700 mb-1">Key Results (关键结果) *</label>
+          <label className="block text-sm font-medium text-purple-700 mb-1">Key Results *</label>
           <textarea
             rows={4}
             required
             value={formData.key_results}
             onChange={(e) => setFormData(prev => ({ ...prev, key_results: e.target.value }))}
-            placeholder="可量化的结果指标，例如：&#10;1. 完成10个项目&#10;2. 收入达到XX万&#10;3. 获得XX认证"
+            placeholder="Quantifiable result metrics, for example:&#10;1. Complete 10 projects&#10;2. Achieve revenue of $XX&#10;3. Obtain XX certification"
             className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-purple-700 mb-1">Category (类型)</label>
+            <label className="block text-sm font-medium text-purple-700 mb-1">Category</label>
             <select
               value={formData.category}
               onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
@@ -173,7 +172,7 @@ function StrategyFormPanel({ isOpen, onClose, strategy, onSave, statusOptions, c
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-purple-700 mb-1">Start Date (开始)</label>
+            <label className="block text-sm font-medium text-purple-700 mb-1">Start Date</label>
             <input
               type="month"
               value={formData.start_date}
@@ -182,7 +181,7 @@ function StrategyFormPanel({ isOpen, onClose, strategy, onSave, statusOptions, c
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-purple-700 mb-1">Due Date (截止)</label>
+            <label className="block text-sm font-medium text-purple-700 mb-1">Due Date</label>
             <input
               type="month"
               value={formData.due_date}
@@ -193,7 +192,7 @@ function StrategyFormPanel({ isOpen, onClose, strategy, onSave, statusOptions, c
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-purple-700 mb-1">Status (状态)</label>
+          <label className="block text-sm font-medium text-purple-700 mb-1">Status</label>
           <select
             value={formData.status}
             onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
@@ -208,12 +207,12 @@ function StrategyFormPanel({ isOpen, onClose, strategy, onSave, statusOptions, c
 
 
         <div>
-          <label className="block text-sm font-medium text-purple-700 mb-1">Estimate Cost (预估成本)</label>
+          <label className="block text-sm font-medium text-purple-700 mb-1">Estimate Cost</label>
           <textarea
             rows={2}
             value={formData.estimate_cost}
             onChange={(e) => setFormData(prev => ({ ...prev, estimate_cost: e.target.value }))}
-            placeholder="时间、金钱、精力等资源投入预估"
+            placeholder="Estimated investment of time, money, energy and other resources"
             className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
         </div>
@@ -224,14 +223,12 @@ function StrategyFormPanel({ isOpen, onClose, strategy, onSave, statusOptions, c
             onClick={onClose}
             className="flex items-center gap-2 px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-all duration-200 transform hover:scale-105 active:scale-95"
           >
-            <span>✕</span>
             <span>Cancel</span>
           </button>
           <button
             type="submit"
             className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-all duration-200 shadow-sm transform hover:scale-105 active:scale-95"
           >
-            <span>{strategy ? '📝' : '🎯'}</span>
             <span>{strategy ? 'Update' : 'Create'}</span>
           </button>
         </div>
@@ -596,127 +593,6 @@ export default function StrategyPanel() {
         </div>
       )}
 
-      {/* 字段说明和使用指南 */}
-      <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-200 p-6 mt-8">
-        <div className="flex items-start gap-3 mb-4">
-          <span className="text-2xl">📖</span>
-          <div>
-            <h3 className="text-lg font-semibold text-purple-900 mb-2">OKR策略框架使用指南</h3>
-            <p className="text-sm text-gray-600">
-              基于目标与关键结果(Objectives and Key Results)方法论，帮助你设定和追踪长期目标的实现进度
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* 核心字段说明 */}
-          <div className="space-y-4">
-            <h4 className="font-semibold text-purple-800 text-sm">🎯 核心字段说明</h4>
-            <div className="space-y-3 text-sm">
-              <div>
-                <span className="font-medium text-purple-700">Objective (目标):</span>
-                <span className="text-gray-600 ml-2">清晰、鼓舞人心的长期目标描述</span>
-              </div>
-              <div>
-                <span className="font-medium text-purple-700">Description (说明):</span>
-                <span className="text-gray-600 ml-2">为什么要实现这个目标？背景和动机</span>
-              </div>
-              <div>
-                <span className="font-medium text-purple-700">Key Results (关键结果):</span>
-                <span className="text-gray-600 ml-2">3-5个可量化的成功指标，用于衡量目标完成度</span>
-              </div>
-              <div>
-                <span className="font-medium text-purple-700">Progress (进度):</span>
-                <span className="text-gray-600 ml-2">自动计算：该策略下已完成Plans数量 / 总 Plans数量</span>
-              </div>
-            </div>
-          </div>
-
-          {/* 分类和管理 */}
-          <div className="space-y-4">
-            <h4 className="font-semibold text-purple-800 text-sm">📋 分类和管理</h4>
-            <div className="space-y-3 text-sm">
-              <div>
-                <span className="font-medium text-purple-700">Category (类别):</span>
-                <span className="text-gray-600 ml-2">职业、健康、财务、学业、家庭、个人成长等领域</span>
-              </div>
-              <div>
-                <span className="font-medium text-purple-700">Priority Quadrant (优先级):</span>
-                <span className="text-gray-600 ml-2">基于重要性和紧急性的四象限分类</span>
-              </div>
-              <div>
-                <span className="font-medium text-purple-700">Time Range (时间范围):</span>
-                <span className="text-gray-600 ml-2">精确到年月的计划起止时间，建议3-12个月</span>
-              </div>
-              <div>
-                <span className="font-medium text-purple-700">Estimate Cost (预估成本):</span>
-                <span className="text-gray-600 ml-2">实现目标需要的时间、金钱、精力等资源投入</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 使用建议 */}
-        <div className="mt-6 p-4 bg-white rounded-lg border border-purple-100">
-          <h4 className="font-semibold text-purple-800 text-sm mb-3">💡 最佳实践建议</h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-gray-600">
-            <div>
-              <span className="font-medium text-purple-600">设定目标:</span>
-              <ul className="mt-1 space-y-1 ml-2">
-                <li>• 目标要具体、有挑战性但可实现</li>
-                <li>• 每季度设定3-5个主要目标</li>
-                <li>• 关注长期价值而非短期任务</li>
-              </ul>
-            </div>
-            <div>
-              <span className="font-medium text-purple-600">关键结果:</span>
-              <ul className="mt-1 space-y-1 ml-2">
-                <li>• 必须可量化和可验证</li>
-                <li>• 每个目标设定2-4个关键结果</li>
-                <li>• 使用数字、百分比、完成状态</li>
-              </ul>
-            </div>
-            <div>
-              <span className="font-medium text-purple-600">进度跟踪:</span>
-              <ul className="mt-1 space-y-1 ml-2">
-                <li>• 每周更新进度状态</li>
-                <li>• 定期回顾和调整策略</li>
-                <li>• 70%完成度已经是成功</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* 示例 */}
-        <details className="mt-4">
-          <summary className="cursor-pointer text-sm font-medium text-purple-700 hover:text-purple-800">
-            📝 查看OKR设定示例
-          </summary>
-          <div className="mt-3 p-4 bg-gray-50 rounded-lg text-xs text-gray-700">
-            <div className="space-y-3">
-              <div>
-                <span className="font-medium text-purple-600">目标示例:</span>
-                <span className="ml-2">"提升专业技能，成为行业专家"</span>
-              </div>
-              <div>
-                <span className="font-medium text-purple-600">关键结果:</span>
-                <div className="ml-2 mt-1">
-                  1. 完成3个专业认证课程<br/>
-                  2. 发表5篇行业文章，获得1000+阅读<br/>
-                  3. 在2个技术会议上发表演讲<br/>
-                  4. 建立包含100+专业人士的网络
-                </div>
-              </div>
-              <div>
-                <span className="font-medium text-purple-600">类别:</span>
-                <span className="ml-2">职业</span>
-                <span className="ml-4 font-medium text-purple-600">优先级:</span>
-                <span className="ml-2">重要不紧急</span>
-              </div>
-            </div>
-          </div>
-        </details>
-      </div>
 
       <StrategyFormPanel
         isOpen={formPanelOpen}

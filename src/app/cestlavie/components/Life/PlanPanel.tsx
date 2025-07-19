@@ -28,9 +28,9 @@ interface PlanFormData {
   due_date: string
   status: string
   priority_quadrant: string
-  linked_tasks: string[]
   estimate_resources: string
   budget_money: number
+  budget_time: number
 }
 
 interface StrategyOption {
@@ -38,10 +38,6 @@ interface StrategyOption {
   title: string
 }
 
-interface TaskOption {
-  id: string
-  title: string
-}
 
 interface PlanFormPanelProps {
   isOpen: boolean
@@ -51,7 +47,6 @@ interface PlanFormPanelProps {
   statusOptions: string[]
   priorityOptions: string[]
   strategyOptions: StrategyOption[]
-  taskOptions: TaskOption[]
 }
 
 function PlanFormPanel({ 
@@ -61,8 +56,7 @@ function PlanFormPanel({
   onSave, 
   statusOptions, 
   priorityOptions,
-  strategyOptions,
-  taskOptions 
+  strategyOptions
 }: PlanFormPanelProps) {
   const [formData, setFormData] = useState<PlanFormData>({
     objective: '',
@@ -72,9 +66,9 @@ function PlanFormPanel({
     due_date: '',
     status: '',
     priority_quadrant: '',
-    linked_tasks: [],
     estimate_resources: '',
-    budget_money: 0
+    budget_money: 0,
+    budget_time: 0
   })
 
   useEffect(() => {
@@ -87,9 +81,9 @@ function PlanFormPanel({
         due_date: plan.due_date || '',
         status: plan.status || '',
         priority_quadrant: plan.priority_quadrant || '',
-        linked_tasks: plan.linked_tasks || [],
         estimate_resources: plan.estimate_resources || '',
-        budget_money: plan.budget_money || 0
+        budget_money: plan.budget_money || 0,
+        budget_time: plan.budget_time || 0
       })
     } else {
       // 创建新计划时，使用当前日期作为默认值
@@ -106,9 +100,9 @@ function PlanFormPanel({
         due_date: defaultDue,
         status: '',
         priority_quadrant: '',
-        linked_tasks: [],
         estimate_resources: '',
-        budget_money: 0
+        budget_money: 0,
+        budget_time: 0
       })
     }
   }, [plan, isOpen])
@@ -225,47 +219,33 @@ function PlanFormPanel({
         </div>
 
 
-        <div>
-          <label className="block text-sm font-medium text-purple-700 mb-1">Budget Money (预算金额)</label>
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={formData.budget_money}
-            onChange={(e) => setFormData(prev => ({ ...prev, budget_money: parseFloat(e.target.value) || 0 }))}
-            placeholder="项目预算金额"
-            className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-purple-700 mb-1">Linked Tasks (关联任务)</label>
-          <div className="space-y-2 max-h-32 overflow-y-auto border border-purple-200 rounded-md p-2">
-            {taskOptions.map(task => (
-              <label key={task.id} className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={formData.linked_tasks.includes(task.id)}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setFormData(prev => ({ 
-                        ...prev, 
-                        linked_tasks: [...prev.linked_tasks, task.id] 
-                      }))
-                    } else {
-                      setFormData(prev => ({ 
-                        ...prev, 
-                        linked_tasks: prev.linked_tasks.filter(id => id !== task.id) 
-                      }))
-                    }
-                  }}
-                  className="mr-2 rounded text-purple-600 focus:ring-purple-500"
-                />
-                <span className="text-sm text-gray-700 truncate">{task.title}</span>
-              </label>
-            ))}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-purple-700 mb-1">Budget Money (预算金额)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={formData.budget_money}
+              onChange={(e) => setFormData(prev => ({ ...prev, budget_money: parseFloat(e.target.value) || 0 }))}
+              placeholder="项目预算金额"
+              className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-purple-700 mb-1">Budget Time (预算时间)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              value={formData.budget_time}
+              onChange={(e) => setFormData(prev => ({ ...prev, budget_time: parseFloat(e.target.value) || 0 }))}
+              placeholder="预计工时(小时)"
+              className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
           </div>
         </div>
+
 
         <div>
           <label className="block text-sm font-medium text-purple-700 mb-1">Estimate Resources (预估资源)</label>
@@ -339,8 +319,9 @@ export default function PlanPanel() {
   const [statusOptions, setStatusOptions] = useState<string[]>([])
   const [priorityOptions, setPriorityOptions] = useState<string[]>([])
   const [strategyOptions, setStrategyOptions] = useState<StrategyOption[]>([])
-  const [taskOptions, setTaskOptions] = useState<TaskOption[]>([])
   const [refreshing, setRefreshing] = useState(false)
+  const [selectedStrategyFilter, setSelectedStrategyFilter] = useState<string>('all')
+  const [selectedMonthFilter, setSelectedMonthFilter] = useState<string>('all')
 
   useEffect(() => {
     fetchPlans()
@@ -353,8 +334,12 @@ export default function PlanPanel() {
       const response = await fetch('/api/plan?action=schema')
       if (response.ok) {
         const result = await response.json()
+        console.log('Plan schema loaded:', result)
         setStatusOptions(result.schema?.statusOptions || [])
         setPriorityOptions(result.schema?.priorityOptions || [])
+        console.log('Priority options set:', result.schema?.priorityOptions || [])
+      } else {
+        console.error('Schema fetch failed:', response.status)
       }
     } catch (err) {
       console.error('Failed to fetch schema:', err)
@@ -372,17 +357,6 @@ export default function PlanPanel() {
           title: s.objective || 'Untitled Strategy'
         })) || []
         setStrategyOptions(strategies)
-      }
-
-      // Fetch tasks for linked_tasks relation
-      const taskResponse = await fetch('/api/tasks')
-      if (taskResponse.ok) {
-        const taskResult = await taskResponse.json()
-        const tasks = taskResult.data?.map((t: any) => ({
-          id: t.id,
-          title: t.title || 'Untitled Task'
-        })) || []
-        setTaskOptions(tasks)
       }
     } catch (err) {
       console.error('Failed to fetch related data:', err)
@@ -435,8 +409,11 @@ export default function PlanPanel() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to save plan')
+        const errorText = await response.text()
+        throw new Error(`HTTP ${response.status}: ${errorText}`)
       }
+
+      const responseData = await response.json()
 
       setFormPanelOpen(false)
       setEditingPlan(null)
@@ -501,6 +478,82 @@ export default function PlanPanel() {
     return strategy?.title || 'Unknown Strategy'
   }
 
+  // 筛选函数
+  const getFilteredPlans = () => {
+    let filteredData = [...data]
+    
+    // 按策略筛选
+    if (selectedStrategyFilter !== 'all') {
+      if (selectedStrategyFilter === 'none') {
+        filteredData = filteredData.filter(plan => !plan.parent_goal || plan.parent_goal.length === 0)
+      } else {
+        filteredData = filteredData.filter(plan => plan.parent_goal && plan.parent_goal.includes(selectedStrategyFilter))
+      }
+    }
+    
+    // 按月份筛选
+    if (selectedMonthFilter !== 'all') {
+      filteredData = filteredData.filter(plan => {
+        const startDate = plan.start_date
+        const endDate = plan.due_date
+        
+        if (!startDate && !endDate) return false
+        
+        // 如果只有开始日期或结束日期，检查该日期是否在选择的月份
+        if (!startDate || !endDate) {
+          const dateToCheck = startDate || endDate
+          const dateMonth = dateToCheck.substring(0, 7) // YYYY-MM format
+          return dateMonth === selectedMonthFilter
+        }
+        
+        // 如果有开始和结束日期，检查选择的月份是否在时间范围内
+        const selectedMonthStart = new Date(selectedMonthFilter + '-01')
+        const selectedMonthEnd = new Date(selectedMonthStart.getFullYear(), selectedMonthStart.getMonth() + 1, 0)
+        const planStart = new Date(startDate)
+        const planEnd = new Date(endDate)
+        
+        // 检查月份范围是否与Plan时间范围有重叠
+        return (selectedMonthStart <= planEnd && selectedMonthEnd >= planStart)
+      })
+    }
+    
+    return filteredData
+  }
+
+  // 获取所有可用的月份选项
+  const getAvailableMonths = () => {
+    const months = new Set<string>()
+    
+    data.forEach(plan => {
+      const startDate = plan.start_date
+      const endDate = plan.due_date
+      
+      if (!startDate && !endDate) return
+      
+      // 如果只有一个日期，添加该日期的月份
+      if (!startDate || !endDate) {
+        const dateToCheck = startDate || endDate
+        months.add(dateToCheck.substring(0, 7))
+        return
+      }
+      
+      // 如果有开始和结束日期，添加所有跨越的月份
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      
+      const current = new Date(start.getFullYear(), start.getMonth(), 1)
+      const endMonth = new Date(end.getFullYear(), end.getMonth(), 1)
+      
+      while (current <= endMonth) {
+        const monthStr = current.getFullYear() + '-' + String(current.getMonth() + 1).padStart(2, '0')
+        months.add(monthStr)
+        current.setMonth(current.getMonth() + 1)
+      }
+    })
+    
+    return Array.from(months).sort()
+  }
+
   if (loading) {
     return (
       <div className="w-full py-8">
@@ -537,13 +590,20 @@ export default function PlanPanel() {
     )
   }
 
+  const filteredPlans = getFilteredPlans()
+  const availableMonths = getAvailableMonths()
+
   return (
     <div className="w-full py-8 space-y-6">
+      {/* 标题 */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-purple-900">Plans</h1>
+      </div>
+      
+      {/* 按钮和筛选器布局 */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-purple-900">Plans</h1>
-        </div>
-        <div className="flex gap-3">
+        {/* 左侧：Refresh按钮和筛选器 */}
+        <div className="flex items-center gap-3">
           <button
             onClick={handleRefresh}
             disabled={refreshing}
@@ -554,6 +614,39 @@ export default function PlanPanel() {
             </div>
             <span>Refresh</span>
           </button>
+          
+          {/* Strategy筛选框 */}
+          <select
+            value={selectedStrategyFilter}
+            onChange={(e) => setSelectedStrategyFilter(e.target.value)}
+            className="px-3 py-2 bg-white border border-purple-200 rounded-md text-sm text-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:border-purple-300 transition-all duration-200"
+          >
+            <option value="all">All Strategies</option>
+            <option value="none">No Strategy</option>
+            {strategyOptions.map(strategy => (
+              <option key={strategy.id} value={strategy.id}>
+                {strategy.title}
+              </option>
+            ))}
+          </select>
+          
+          {/* 月份筛选框 */}
+          <select
+            value={selectedMonthFilter}
+            onChange={(e) => setSelectedMonthFilter(e.target.value)}
+            className="px-3 py-2 bg-white border border-purple-200 rounded-md text-sm text-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:border-purple-300 transition-all duration-200"
+          >
+            <option value="all">All Months</option>
+            {availableMonths.map(month => (
+              <option key={month} value={month}>
+                {new Date(month + '-01').toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}
+              </option>
+            ))}
+          </select>
+        </div>
+        
+        {/* 右侧：New Plan按钮 */}
+        <div>
           <button
             onClick={() => {
               setEditingPlan(null)
@@ -567,11 +660,18 @@ export default function PlanPanel() {
         </div>
       </div>
 
-      {data.length === 0 ? (
+      {filteredPlans.length === 0 ? (
         <div className="text-center py-16">
           <div className="text-gray-400 text-6xl font-light mb-4">📋</div>
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">No Plans Yet</h3>
-          <p className="text-gray-600 mb-6">Create your first sub-goal to bridge strategies and tasks</p>
+          <h3 className="text-xl font-semibold text-gray-700 mb-2">
+            {data.length === 0 ? 'No Plans Yet' : 'No Plans Match Filters'}
+          </h3>
+          <p className="text-gray-600 mb-6">
+            {data.length === 0 
+              ? 'Create your first sub-goal to bridge strategies and tasks'
+              : 'Try adjusting your filters or create a new plan'
+            }
+          </p>
           <button
             onClick={() => {
               setEditingPlan(null)
@@ -579,12 +679,12 @@ export default function PlanPanel() {
             }}
             className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all duration-200 shadow-sm transform hover:scale-105 active:scale-95"
           >
-            Create First Plan
+            {data.length === 0 ? 'Create First Plan' : 'Create New Plan'}
           </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {data.map((plan) => (
+          {filteredPlans.map((plan) => (
             <div
               key={plan.id}
               className="bg-white rounded-lg border border-purple-200 p-6 hover:shadow-md transition-all duration-200"
@@ -592,22 +692,31 @@ export default function PlanPanel() {
               {/* 头部信息 */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="text-xl">{getStatusIcon(plan.status)}</span>
-                    <h3 className="text-lg font-semibold text-purple-900">
-                      {plan.objective || 'Untitled Plan'}
-                    </h3>
-                    {plan.status && (
-                      <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
-                        {plan.status}
-                      </span>
-                    )}
+                  <div className="mb-2">
+                    <div className="flex items-center gap-3 mb-1">
+                      <span className="text-xl">{getStatusIcon(plan.status)}</span>
+                      <h3 className="text-lg font-semibold text-purple-900 flex-1">
+                        {plan.objective || 'Untitled Plan'}
+                      </h3>
+                    </div>
+                    <div className="ml-8 flex items-center gap-2">
+                      {plan.status && (
+                        <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
+                          {plan.status}
+                        </span>
+                      )}
+                      {plan.priority_quadrant && (
+                        <span className={`px-2 py-1 text-xs rounded-full border ${getQuadrantColor(plan.priority_quadrant)}`}>
+                          {plan.priority_quadrant}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   
                   {/* 关联的长期目标 */}
                   {getParentStrategyTitle(plan.parent_goal) && (
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-sm text-gray-500">来自策略:</span>
+                      <span className="text-sm text-gray-500">Strategy:</span>
                       <span className="text-sm text-purple-600 font-medium">
                         {getParentStrategyTitle(plan.parent_goal)}
                       </span>
@@ -689,21 +798,8 @@ export default function PlanPanel() {
                     </div>
                   )}
                   
-                  {/* 关联任务数 */}
-                  {plan.linked_tasks && plan.linked_tasks.length > 0 && (
-                    <div className="flex items-center gap-1">
-                      <span>✓</span>
-                      <span className="text-blue-600 font-medium">{plan.linked_tasks.length} 个任务</span>
-                    </div>
-                  )}
                 </div>
                 
-                {/* 优先级 */}
-                {plan.priority_quadrant && (
-                  <span className={`px-2 py-1 text-xs rounded-full border ${getQuadrantColor(plan.priority_quadrant)}`}>
-                    {plan.priority_quadrant}
-                  </span>
-                )}
               </div>
 
               {/* 资源估算 */}
@@ -731,7 +827,6 @@ export default function PlanPanel() {
         statusOptions={statusOptions}
         priorityOptions={priorityOptions}
         strategyOptions={strategyOptions}
-        taskOptions={taskOptions}
       />
     </div>
   )
