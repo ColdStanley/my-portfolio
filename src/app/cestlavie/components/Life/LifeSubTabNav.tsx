@@ -26,22 +26,20 @@ export default function LifeSubTabNav({ activeTab, setActiveTab }) {
         ))}
       </div>
 
-      {/* Mobile navigation - horizontal at top */}
-      <div className="md:hidden flex justify-center space-x-2 mb-4 bg-white p-3 rounded-lg shadow-sm border border-purple-200">
+      {/* Mobile navigation - compact horizontal at top */}
+      <div className="md:hidden flex justify-center space-x-1 mb-3 bg-white p-2 rounded-lg shadow-sm border border-purple-200">
         {lifeTabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+            title={tab.title}
+            className={`flex-1 px-2 py-2 rounded-md text-xl font-medium transition-all min-h-[44px] flex items-center justify-center ${
               activeTab === tab.key 
-                ? 'bg-purple-600 text-white shadow-sm' 
-                : 'bg-gray-100 text-gray-600 hover:bg-purple-100'
+                ? 'bg-purple-600 text-white shadow-sm scale-105' 
+                : 'bg-gray-100 text-gray-600 hover:bg-purple-100 hover:scale-102'
             }`}
           >
-            <div className="flex flex-col items-center space-y-1">
-              <span className="text-lg">{tab.label}</span>
-              <span className="text-xs">{tab.title}</span>
-            </div>
+            {tab.label}
           </button>
         ))}
       </div>

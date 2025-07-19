@@ -1531,27 +1531,25 @@ export default function TaskPanel() {
           
           {/* Task Analytics - 共享组件 */}
           <div className="bg-white rounded-lg shadow-sm border border-purple-200 p-3 md:p-6 mt-6">
-            <div className="pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-600 mb-3">
-                Selected: <span className="font-medium text-purple-700">
-                  {new Date(selectedDate).toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric' 
-                  })}
-                </span>
-                <span className="text-xs text-gray-500 ml-2">({selectedDateTasks.length} tasks)</span>
-              </p>
-              
-              {selectedDateTasks.length > 0 && (
-                <div className="space-y-3">
-                  {/* Plans Distribution */}
-                  <TaskPlanChart tasks={selectedDateTasks} planOptions={planOptions} />
-                  
-                  {/* Priority Quadrant Distribution */}
-                  <TaskQuadrantChart tasks={selectedDateTasks} />
-                </div>
-              )}
-            </div>
+            <p className="text-sm text-gray-600 mb-3">
+              Selected: <span className="font-medium text-purple-700">
+                {new Date(selectedDate).toLocaleDateString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric' 
+                })}
+              </span>
+              <span className="text-xs text-gray-500 ml-2">({selectedDateTasks.length} tasks)</span>
+            </p>
+            
+            {selectedDateTasks.length > 0 && (
+              <div className="space-y-3">
+                {/* Plans Distribution */}
+                <TaskPlanChart tasks={selectedDateTasks} planOptions={planOptions} />
+                
+                {/* Priority Quadrant Distribution */}
+                <TaskQuadrantChart tasks={selectedDateTasks} />
+              </div>
+            )}
           </div>
           
           {/* 本周任务 */}
