@@ -26,17 +26,17 @@ export default function LifeSubTabNav({ activeTab, setActiveTab }) {
         ))}
       </div>
 
-      {/* Mobile navigation - vertical at top-right, below main menu */}
-      <div className="md:hidden fixed top-36 right-4 z-30 flex flex-col space-y-2">
+      {/* Mobile navigation - 悬浮紧凑设计 */}
+      <div className="md:hidden fixed top-48 right-4 z-30 flex flex-col space-y-1.5">
         {lifeTabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             title={tab.title}
-            className={`w-10 h-10 rounded-full shadow-md flex items-center justify-center text-lg transition-all ${
+            className={`w-9 h-9 rounded-full shadow-lg backdrop-blur-sm flex items-center justify-center text-base transition-all ${
               activeTab === tab.key 
-                ? 'bg-purple-600 text-white scale-110' 
-                : 'bg-white text-gray-600 hover:bg-purple-100 hover:scale-105'
+                ? 'bg-purple-600/90 text-white scale-110 shadow-purple-300' 
+                : 'bg-white/90 text-gray-600 hover:bg-purple-100/90 hover:scale-105'
             }`}
           >
             {tab.label}

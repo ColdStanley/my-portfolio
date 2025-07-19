@@ -772,7 +772,7 @@ export default function PlanPanel() {
   const availableMonths = getAvailableMonths()
 
   return (
-    <div className="w-full py-8 space-y-6 md:pr-0 pr-16">
+    <div className="w-full py-8 space-y-6">
       {/* 标题 */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-purple-900">Plans</h1>

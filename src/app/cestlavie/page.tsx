@@ -10,10 +10,10 @@ export default function CestLaViePage() {
 
   return (
     <div className="h-[calc(100vh-3.5rem)] flex relative overflow-hidden">
-      {/* 移动端导航菜单按钮 - 右上角，避开NavBar */}
+      {/* 移动端导航菜单按钮 - 悬浮设计 */}
       <button
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="md:hidden fixed top-20 right-4 z-50 p-2 bg-white rounded-lg shadow-md border border-gray-200 hover:bg-gray-50 transition-colors"
+        className="md:hidden fixed top-20 right-4 z-50 p-2.5 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 hover:bg-gray-50/90 transition-all duration-200 hover:scale-110"
         aria-label="Toggle menu"
       >
         <div className="w-5 h-5 flex flex-col justify-center space-y-1">

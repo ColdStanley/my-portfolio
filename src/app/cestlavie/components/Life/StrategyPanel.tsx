@@ -444,7 +444,7 @@ export default function StrategyPanel() {
   }
 
   return (
-    <div className="w-full py-8 space-y-6 md:pr-0 pr-16">
+    <div className="w-full py-8 space-y-6">
       {/* 桌面端标题和控制区 */}
       <div className="hidden md:flex items-center justify-between">
         <div>
