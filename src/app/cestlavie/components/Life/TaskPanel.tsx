@@ -1352,6 +1352,147 @@ export default function TaskPanel() {
         </div>
       </div>
 
+      {/* 移动端顶部：今日任务和New Task按钮 */}
+      <div className="md:hidden mb-6">
+        {/* New Task按钮 */}
+        <div className="flex justify-start mb-4">
+          <button
+            onClick={() => {
+              setEditingTask(null)
+              setFormPanelOpen(true)
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200 shadow-sm transform hover:scale-105 active:scale-95"
+          >
+            <span>+</span>
+            <span className="whitespace-nowrap">New Task</span>
+          </button>
+        </div>
+        
+        {/* 今日任务 */}
+        <div className="bg-white rounded-lg shadow-sm border border-purple-200 p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-purple-900">
+              {isToday(selectedDate) ? '今日任务' : '选定日期任务'}
+            </h3>
+            <span className="text-sm text-gray-500">
+              {selectedDateTasks.length} 个任务
+            </span>
+          </div>
+
+          {selectedDateTasks.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-gray-400 text-3xl font-light">📅</div>
+              <p className="text-gray-600 mt-2">这一天没有任务</p>
+              <button
+                onClick={() => {
+                  setEditingTask(null)
+                  setFormPanelOpen(true)
+                }}
+                className="mt-2 text-purple-600 hover:text-purple-700 text-sm underline"
+              >
+                添加任务
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {Object.entries(groupedTasks).map(([timeGroup, tasks]) => 
+                tasks.length > 0 && (
+                  <div key={timeGroup} className="space-y-2">
+                    {/* 时间段标题 */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-base">{getTimeGroupIcon(timeGroup)}</span>
+                      <span className="text-sm font-semibold text-purple-800">{timeGroup}</span>
+                      <div className="flex-1 h-px bg-purple-200"></div>
+                      <span className="text-xs text-gray-500">{tasks.length}个</span>
+                    </div>
+                    
+                    {/* 该时间段的任务列表 - 简化移动端显示 */}
+                    {tasks.map((task) => {
+                      const isRunning = isTaskRunning(task)
+                      
+                      return (
+                        <div
+                          key={task.id}
+                          className={`bg-gradient-to-r from-purple-50 to-white rounded-lg border p-3 ${
+                            isRunning ? 'border-purple-400 bg-purple-50' : 'border-purple-200'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            {/* 时间 */}
+                            <div className="flex-shrink-0">
+                              <div className={`px-2 py-1 rounded text-xs font-medium ${
+                                isRunning ? 'bg-purple-700 text-white' : 'bg-purple-600 text-white'
+                              }`}>
+                                {task.start_date && task.end_date ? (
+                                  formatTimeRange(task.start_date, task.end_date)
+                                ) : (task.start_date || task.end_date) ? (
+                                  formatDateTime(task.start_date || task.end_date).split(' ')[1]
+                                ) : (
+                                  '--:--'
+                                )}
+                              </div>
+                            </div>
+                            
+                            {/* 内容 */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-semibold text-purple-900 text-sm truncate">{task.title}</h4>
+                              </div>
+                              
+                              <div className="flex flex-wrap items-center gap-1 text-xs">
+                                <span className="px-1.5 py-0.5 bg-purple-100 text-purple-800 rounded">
+                                  {task.status}
+                                </span>
+                                {task.priority_quadrant && (
+                                  <span className={`px-1.5 py-0.5 rounded border ${getPriorityColor(task.priority_quadrant)}`}>
+                                    {task.priority_quadrant}
+                                  </span>
+                                )}
+                                {task.budget_time > 0 && (
+                                  <span className="px-1.5 py-0.5 bg-purple-50 text-purple-600 rounded border border-purple-200">
+                                    {task.budget_time}h
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            
+                            {/* 操作按钮 */}
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => {
+                                  setEditingTask(task)
+                                  setFormPanelOpen(true)
+                                }}
+                                className="p-1.5 text-purple-600 hover:bg-purple-100 rounded transition-colors"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTask(task.id)}
+                                className="p-1.5 text-red-600 hover:bg-red-100 rounded transition-colors"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+                          
+                          {/* Note */}
+                          {task.note && (
+                            <div className="mt-2 pt-2 border-t border-purple-200">
+                              <p className="text-xs text-purple-700 line-clamp-2">{task.note}</p>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* 日历和任务布局 */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* 左侧日历 */}
@@ -1634,10 +1775,10 @@ export default function TaskPanel() {
           )}
         </div>
 
-        {/* 右侧任务列表 */}
+        {/* 右侧任务列表 - 桌面端 */}
         <div className="lg:col-span-7">
-          {/* NewTask按钮与今日任务左对齐 */}
-          <div className="flex justify-start mb-4">
+          {/* NewTask按钮与今日任务左对齐 - 仅桌面端显示 */}
+          <div className="hidden md:flex justify-start mb-4">
             <button
               onClick={() => {
                 setEditingTask(null)
@@ -1649,7 +1790,7 @@ export default function TaskPanel() {
               <span className="whitespace-nowrap">New Task</span>
             </button>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border border-purple-200 p-3 md:p-6">
+          <div className="hidden md:block bg-white rounded-lg shadow-sm border border-purple-200 p-3 md:p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-purple-900">
                 {isToday(selectedDate) ? '今日任务' : '选定日期任务'}

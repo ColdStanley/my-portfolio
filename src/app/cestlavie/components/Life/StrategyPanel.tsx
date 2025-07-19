@@ -444,8 +444,9 @@ export default function StrategyPanel() {
   }
 
   return (
-    <div className="w-full py-8 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="w-full py-8 space-y-6 md:pr-0 pr-16">
+      {/* 桌面端标题和控制区 */}
+      <div className="hidden md:flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-purple-900">Strategy & OKRs</h1>
           <p className="text-sm text-gray-600 mt-1">长期目标与关键结果管理</p>
@@ -474,6 +475,35 @@ export default function StrategyPanel() {
         </div>
       </div>
 
+      {/* 移动端简化标题和控制区 */}
+      <div className="md:hidden">
+        <div className="mb-4">
+          <h1 className="text-xl font-bold text-purple-900">Strategy & OKRs</h1>
+        </div>
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={() => {
+              setEditingStrategy(null)
+              setFormPanelOpen(true)
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200 shadow-sm"
+          >
+            <span>🎯</span>
+            <span>New Strategy</span>
+          </button>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center gap-1 px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200 transition-all duration-200 disabled:opacity-50"
+          >
+            <div className={`${refreshing ? 'animate-spin' : ''}`}>
+              {refreshing ? '⟳' : '↻'}
+            </div>
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+        </div>
+      </div>
+
       {data.length === 0 ? (
         <div className="text-center py-16">
           <div className="text-gray-400 text-6xl font-light mb-4">🎯</div>
@@ -496,8 +526,8 @@ export default function StrategyPanel() {
               key={strategy.id}
               className="bg-white rounded-xl border border-purple-200 p-6 hover:shadow-lg transition-all duration-300"
             >
-              {/* 横向布局 - 适合全宽卡片 */}
-              <div className="flex items-center justify-between gap-6">
+              {/* 桌面端横向布局 */}
+              <div className="hidden md:flex items-center justify-between gap-6">
                 {/* 左侧：基本信息 */}
                 <div className="flex items-center gap-4 flex-1">
                   <span className="text-3xl">{getCategoryIcon(strategy.category)}</span>
@@ -556,6 +586,78 @@ export default function StrategyPanel() {
                   >
                     🗑️
                   </button>
+                </div>
+              </div>
+
+              {/* 移动端垂直布局 */}
+              <div className="md:hidden space-y-4">
+                {/* 顶部：标题和图标 */}
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3 flex-1">
+                    <span className="text-2xl mt-1">{getCategoryIcon(strategy.category)}</span>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-bold text-purple-900 mb-2 line-clamp-2">
+                        {strategy.objective || 'Untitled Strategy'}
+                      </h3>
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        {strategy.category && (
+                          <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded font-medium">
+                            {strategy.category}
+                          </span>
+                        )}
+                        {strategy.status && (
+                          <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded">
+                            {strategy.status}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  {/* 操作按钮 */}
+                  <div className="flex gap-1 ml-2">
+                    <button
+                      onClick={() => {
+                        setEditingStrategy(strategy)
+                        setFormPanelOpen(true)
+                      }}
+                      className="p-2 text-purple-600 hover:bg-purple-100 rounded-lg transition-all duration-200"
+                      title="Edit"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      onClick={() => handleDeleteStrategy(strategy.id)}
+                      className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-all duration-200"
+                      title="Delete"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+
+                {/* 中部：进度显示 */}
+                <div className="bg-purple-50 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-purple-700">Progress</span>
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-purple-700">{strategy.progress}%</div>
+                      <div className="text-xs text-gray-500">
+                        {strategy.completed_plans || 0}/{strategy.total_plans || 0} Plans
+                      </div>
+                    </div>
+                  </div>
+                  <div className="w-full bg-purple-200 rounded-full h-2 overflow-hidden">
+                    <div 
+                      className="h-2 rounded-full transition-all duration-500 bg-purple-600"
+                      style={{ width: `${strategy.progress}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* 底部：时间信息 */}
+                <div className="flex items-center text-xs text-gray-600">
+                  <span>📅</span>
+                  <span className="ml-1">{formatDateRange(strategy.start_date, strategy.due_date)}</span>
                 </div>
               </div>
 
