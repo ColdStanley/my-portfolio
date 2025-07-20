@@ -50,8 +50,12 @@ export async function POST(request: NextRequest) {
     })
 
     if (existingRecords.results.length > 0) {
+      const existingPageId = existingRecords.results[0].id
       return NextResponse.json(
-        { error: 'Record with same title and company already exists' },
+        { 
+          error: 'Record with same title and company already exists',
+          existingPageId: existingPageId
+        },
         { status: 409 }
       )
     }

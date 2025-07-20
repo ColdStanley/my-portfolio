@@ -95,6 +95,9 @@ export default function JD2CVPanel() {
         setSaveMessage('Job Description saved successfully')
       } else if (response.status === 409) {
         const data = await response.json()
+        if (data.existingPageId) {
+          setCurrentPageId(data.existingPageId)
+        }
         setSaveMessage(data.error || 'Record with same title and company already exists')
       } else {
         setSaveMessage('Failed to save Job Description')
