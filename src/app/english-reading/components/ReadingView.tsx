@@ -54,27 +54,59 @@ export default function ReadingView({ articleId, content, onNewArticle }: Readin
       return
     }
 
-    // Calculate text offsets
+    // Simple and direct approach: find the selected text in original content
+    // Get all text content from the DOM (which may include formatting)
+    const domTextContent = textRef.current.textContent || ''
+    
+    // Calculate position within DOM text
     const walker = document.createTreeWalker(
       textRef.current,
       NodeFilter.SHOW_TEXT,
       null
     )
 
-    let currentOffset = 0
-    let startOffset = -1
+    let domOffset = 0
     let node
+    let selectionStartInDOM = -1
 
+    // Find where the selection starts in the DOM text
     while ((node = walker.nextNode())) {
-      if (range.startContainer === node) {
-        startOffset = currentOffset + range.startOffset
+      if (node === range.startContainer) {
+        selectionStartInDOM = domOffset + range.startOffset
         break
       }
-      currentOffset += node.textContent?.length || 0
+      domOffset += node.textContent?.length || 0
     }
 
-    if (startOffset === -1) return
+    if (selectionStartInDOM === -1) return
 
+    // Now find this text in the original content
+    // Look for the selected text around the expected position
+    const searchWindowStart = Math.max(0, selectionStartInDOM - 100)
+    const searchWindowEnd = Math.min(content.length, selectionStartInDOM + 100)
+    const searchWindow = content.slice(searchWindowStart, searchWindowEnd)
+    
+    const relativeIndex = searchWindow.indexOf(selectedText)
+    if (relativeIndex === -1) {
+      // Fallback: search in entire content
+      const globalIndex = content.indexOf(selectedText)
+      if (globalIndex === -1) return
+      
+      const startOffset = globalIndex
+      const endOffset = startOffset + selectedText.length
+      
+      setSelectionData({
+        text: selectedText,
+        range: { start: startOffset, end: endOffset },
+        position: {
+          x: range.getBoundingClientRect().left + range.getBoundingClientRect().width / 2,
+          y: range.getBoundingClientRect().top - 10
+        }
+      })
+      return
+    }
+
+    const startOffset = searchWindowStart + relativeIndex
     const endOffset = startOffset + selectedText.length
 
     // Check if already highlighted - if yes, scroll to existing card
@@ -99,7 +131,7 @@ export default function ReadingView({ articleId, content, onNewArticle }: Readin
       }
     })
     
-  }, [isHighlighted, wordQueries, sentenceQueries])
+  }, [content, wordQueries, sentenceQueries])
 
   const handleHighlightClick = useCallback((e: React.MouseEvent) => {
     const target = e.target as HTMLElement
@@ -229,7 +261,7 @@ export default function ReadingView({ articleId, content, onNewArticle }: Readin
       return content.split('\n').map((paragraph, index) => (
         paragraph.trim() ? (
           <p key={index} className="mb-4 leading-relaxed">
-            {paragraph.trim()}
+            {paragraph}
           </p>
         ) : (
           <br key={index} />
@@ -259,10 +291,10 @@ export default function ReadingView({ articleId, content, onNewArticle }: Readin
     // Add remaining text
     result += content.slice(lastIndex)
     
-    // Convert to paragraphs with proper formatting
+    // Convert to paragraphs with proper formatting - preserve original spacing
     const formattedResult = result
       .split('\n')
-      .map(paragraph => paragraph.trim() ? `<p class="mb-4 leading-relaxed">${paragraph.trim()}</p>` : '<br/>')
+      .map(paragraph => paragraph ? `<p class="mb-4 leading-relaxed">${paragraph}</p>` : '<br/>')
       .join('')
     
     return formattedResult
