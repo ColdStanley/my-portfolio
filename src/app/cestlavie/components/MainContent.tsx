@@ -23,7 +23,7 @@ type CareerSubTabKey = typeof careerSubTabs[number]
 type LifeSubTabKey = typeof lifeSubTabs[number]
 
 export default function MainContent({ activeMainTab }: MainContentProps) {
-  const [activeCareerSubTab, setActiveCareerSubTab] = useState<CareerSubTabKey>('cv-modules')
+  const [activeCareerSubTab, setActiveCareerSubTab] = useState<CareerSubTabKey>('jd2cv')
   const [activeLifeSubTab, setActiveLifeSubTab] = useState<LifeSubTabKey>('task')
 
   const renderCareerContent = () => {
