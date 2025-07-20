@@ -18,6 +18,7 @@ interface PlanRecord {
   budget_time: number
   total_tasks: number
   completed_tasks: number
+  display_order?: number
 }
 
 interface PlanFormData {
@@ -46,6 +47,7 @@ interface TaskRecord {
   end_date: string
   budget_time: number
   plan: string[]
+  is_plan_critical?: boolean
 }
 
 
@@ -699,6 +701,78 @@ export default function PlanPanel() {
     }
   }
 
+  // 移动卡片向上
+  const movePlanUp = async (planId: string) => {
+    try {
+      const currentPlans = [...data].sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+      const currentIndex = currentPlans.findIndex(p => p.id === planId)
+      
+      if (currentIndex > 0) {
+        const currentPlan = currentPlans[currentIndex]
+        const prevPlan = currentPlans[currentIndex - 1]
+        
+        // 交换display_order
+        const tempOrder = currentPlan.display_order || currentIndex
+        const newCurrentOrder = prevPlan.display_order || (currentIndex - 1)
+        const newPrevOrder = tempOrder
+        
+        // 更新两个计划的order
+        await updatePlanOrder(currentPlan.id, newCurrentOrder)
+        await updatePlanOrder(prevPlan.id, newPrevOrder)
+        
+        // 刷新数据
+        fetchPlans()
+      }
+    } catch (err) {
+      console.error('Failed to move plan up:', err)
+      setError('Failed to move plan')
+    }
+  }
+
+  // 移动卡片向下
+  const movePlanDown = async (planId: string) => {
+    try {
+      const currentPlans = [...data].sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+      const currentIndex = currentPlans.findIndex(p => p.id === planId)
+      
+      if (currentIndex < currentPlans.length - 1) {
+        const currentPlan = currentPlans[currentIndex]
+        const nextPlan = currentPlans[currentIndex + 1]
+        
+        // 交换display_order
+        const tempOrder = currentPlan.display_order || currentIndex
+        const newCurrentOrder = nextPlan.display_order || (currentIndex + 1)
+        const newNextOrder = tempOrder
+        
+        // 更新两个计划的order
+        await updatePlanOrder(currentPlan.id, newCurrentOrder)
+        await updatePlanOrder(nextPlan.id, newNextOrder)
+        
+        // 刷新数据
+        fetchPlans()
+      }
+    } catch (err) {
+      console.error('Failed to move plan down:', err)
+      setError('Failed to move plan')
+    }
+  }
+
+  // 更新计划的display_order
+  const updatePlanOrder = async (planId: string, newOrder: number) => {
+    const response = await fetch('/api/plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: planId,
+        display_order: newOrder
+      })
+    })
+    
+    if (!response.ok) {
+      throw new Error('Failed to update plan order')
+    }
+  }
+
   const getProgressColor = (progress: number) => {
     if (progress >= 80) return 'bg-green-500'
     if (progress >= 60) return 'bg-blue-500'
@@ -773,7 +847,12 @@ export default function PlanPanel() {
       })
     }
     
-    return filteredData
+    // 按display_order排序，如果没有order则按创建顺序
+    return filteredData.sort((a, b) => {
+      const orderA = a.display_order ?? 999999
+      const orderB = b.display_order ?? 999999
+      return orderA - orderB
+    })
   }
 
   // 获取所有可用的月份选项
@@ -1055,6 +1134,24 @@ export default function PlanPanel() {
                 </div>
                 
                 <div className="flex gap-1 ml-4">
+                  {/* 上移按钮 */}
+                  <button
+                    onClick={() => movePlanUp(plan.id)}
+                    disabled={filteredPlans.findIndex(p => p.id === plan.id) === 0}
+                    className="p-2 text-purple-600 hover:text-white hover:bg-purple-600 text-sm rounded-lg transition-all duration-200 border border-purple-200 hover:border-purple-600 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-purple-600 disabled:hover:bg-transparent"
+                    title="Move up"
+                  >
+                    ▲
+                  </button>
+                  {/* 下移按钮 */}
+                  <button
+                    onClick={() => movePlanDown(plan.id)}
+                    disabled={filteredPlans.findIndex(p => p.id === plan.id) === filteredPlans.length - 1}
+                    className="p-2 text-purple-600 hover:text-white hover:bg-purple-600 text-sm rounded-lg transition-all duration-200 border border-purple-200 hover:border-purple-600 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-purple-600 disabled:hover:bg-transparent"
+                    title="Move down"
+                  >
+                    ▼
+                  </button>
                   <button
                     onClick={() => {
                       setEditingPlan(plan)
@@ -1148,13 +1245,19 @@ export default function PlanPanel() {
                     </div>
                     <div className="space-y-2">
                       {planTasks.map((task) => (
-                        <div key={task.id} className="p-3 bg-purple-50 rounded-lg border border-purple-100 hover:bg-purple-100 transition-colors">
+                        <div key={task.id} className={`p-3 rounded-lg border transition-colors ${
+                          task.is_plan_critical 
+                            ? 'border-l-4 border-purple-500 bg-purple-50/80 shadow-md hover:bg-purple-100/80' 
+                            : 'bg-purple-50 border-purple-100 hover:bg-purple-100'
+                        }`}>
                           {/* 第一行：时间 + title */}
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-xs text-purple-600 flex-shrink-0 font-medium">
                               {formatTaskTime(task.start_date, task.end_date)}
                             </span>
-                            <span className="text-sm font-medium text-purple-900 ml-2 truncate">
+                            <span className={`text-sm ml-2 truncate text-purple-900 ${
+                              task.is_plan_critical ? 'font-semibold' : 'font-medium'
+                            }`}>
                               {task.title || 'Untitled Task'}
                             </span>
                           </div>
@@ -1221,6 +1324,24 @@ export default function PlanPanel() {
                 </div>
                 
                 <div className="flex gap-1 ml-2">
+                  {/* 上移按钮 */}
+                  <button
+                    onClick={() => movePlanUp(plan.id)}
+                    disabled={filteredPlans.findIndex(p => p.id === plan.id) === 0}
+                    className="p-1.5 text-purple-600 hover:bg-purple-100 text-sm rounded transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Move up"
+                  >
+                    ▲
+                  </button>
+                  {/* 下移按钮 */}
+                  <button
+                    onClick={() => movePlanDown(plan.id)}
+                    disabled={filteredPlans.findIndex(p => p.id === plan.id) === filteredPlans.length - 1}
+                    className="p-1.5 text-purple-600 hover:bg-purple-100 text-sm rounded transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Move down"
+                  >
+                    ▼
+                  </button>
                   <button
                     onClick={() => {
                       setEditingPlan(plan)
@@ -1294,13 +1415,19 @@ export default function PlanPanel() {
                     </div>
                     <div className="space-y-1.5">
                       {planTasks.map((task) => (
-                        <div key={task.id} className="p-2 bg-purple-50 rounded border border-purple-100">
+                        <div key={task.id} className={`p-2 rounded border ${
+                          task.is_plan_critical 
+                            ? 'border-l-4 border-purple-500 bg-purple-50/80 shadow-md' 
+                            : 'bg-purple-50 border-purple-100'
+                        }`}>
                           {/* 第一行：时间 + title */}
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-xs text-purple-600 flex-shrink-0 font-medium">
                               {formatTaskTime(task.start_date, task.end_date)}
                             </span>
-                            <span className="text-xs font-medium text-purple-900 ml-2 truncate">
+                            <span className={`text-xs ml-2 truncate text-purple-900 ${
+                              task.is_plan_critical ? 'font-semibold' : 'font-medium'
+                            }`}>
                               {task.title || 'Untitled Task'}
                             </span>
                           </div>

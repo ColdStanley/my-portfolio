@@ -127,6 +127,7 @@ export async function GET(request: NextRequest) {
         category: extractSelectValue(properties.category?.select),
         priority_quadrant: extractSelectValue(properties.priority_quadrant?.select),
         estimate_cost: extractTextContent(properties.estimate_cost?.rich_text),
+        order: extractNumberValue(properties.order?.number),
         total_plans: totalPlans,
         completed_plans: completedPlans
       }
@@ -162,6 +163,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    console.log('Strategy API received body:', body)
+    
     const { 
       id,
       objective, 
@@ -172,50 +175,69 @@ export async function POST(request: NextRequest) {
       status,
       category,
       priority_quadrant,
-      estimate_cost
+      estimate_cost,
+      order
     } = body
 
-    const properties: any = {
-      objective: {
-        title: [{ text: { content: objective || '' } }]
-      }
-    }
+    const properties: any = {}
 
-    if (description) properties.description = { rich_text: [{ text: { content: description } }] }
-    if (key_results) properties.key_results = { rich_text: [{ text: { content: key_results } }] }
-    if (start_date) properties.start_date = { date: { start: start_date } }
-    if (due_date) properties.due_date = { date: { start: due_date } }
-    if (status) properties.status = { select: { name: status } }
-    if (category) properties.category = { select: { name: category } }
-    if (priority_quadrant) properties.priority_quadrant = { select: { name: priority_quadrant } }
-    if (estimate_cost) properties.estimate_cost = { rich_text: [{ text: { content: estimate_cost } }] }
+    // For creating new strategy, objective is required. For updates, it's optional
+    if (id) {
+      // Update mode - only update provided fields
+      if (objective !== undefined) properties.objective = { title: [{ text: { content: objective } }] }
+    } else {
+      // Create mode - objective is required
+      properties.objective = { title: [{ text: { content: objective || '' } }] }
+    }
+    if (description !== undefined) properties.description = { rich_text: [{ text: { content: description } }] }
+    if (key_results !== undefined) properties.key_results = { rich_text: [{ text: { content: key_results } }] }
+    if (start_date !== undefined) properties.start_date = { date: { start: start_date } }
+    if (due_date !== undefined) properties.due_date = { date: { start: due_date } }
+    if (status !== undefined) properties.status = { select: { name: status } }
+    if (category !== undefined) properties.category = { select: { name: category } }
+    if (priority_quadrant !== undefined) properties.priority_quadrant = { select: { name: priority_quadrant } }
+    if (estimate_cost !== undefined) properties.estimate_cost = { rich_text: [{ text: { content: estimate_cost } }] }
+    if (typeof order === 'number') properties.order = { number: order }
+
+    console.log('Properties to update:', properties)
 
     let response
     
     if (id) {
       // Update existing strategy
+      console.log('Updating strategy with ID:', id)
       response = await notion.pages.update({
         page_id: id,
         properties
       })
       
+      console.log('Update response:', response.id)
       return NextResponse.json({ success: true, id: response.id, updated: true })
     } else {
       // Create new strategy
+      console.log('Creating new strategy')
       response = await notion.pages.create({
         parent: { database_id: STRATEGY_DB_ID },
         properties
       })
       
+      console.log('Create response:', response.id)
       return NextResponse.json({ success: true, id: response.id, created: true })
     }
 
   } catch (error) {
-    console.error('Error creating strategy:', error)
+    console.error('Error in strategy operation:', error)
+    console.error('Error details:', {
+      name: (error as any)?.name,
+      message: (error as any)?.message,
+      code: (error as any)?.code,
+      status: (error as any)?.status
+    })
     
     if (error instanceof Error) {
       return NextResponse.json({ 
-        error: `Failed to create strategy: ${error.message}` 
+        error: `Failed to process strategy: ${error.message}`,
+        details: error.stack
       }, { status: 500 })
     }
     

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useOutlookAuth } from '@/hooks/useOutlookAuth'
+import TaskCompletionModal from './TaskCompletionModal'
+import RenderBlock from '@/components/notion/RenderBlock'
 
 // Task Progress Distribution Chart Component
 function TaskProgressChart({ tasks }: { tasks: TaskRecord[] }) {
@@ -19,10 +21,10 @@ function TaskProgressChart({ tasks }: { tasks: TaskRecord[] }) {
   const otherPercentage = (otherTasks / total) * 100
 
   const statusColors = {
-    'Completed': '#10b981', // 绿色
-    'In Progress': '#f59e0b', // 橙色
-    'Not Started': '#6b7280', // 灰色
-    'Other': '#a1a1aa' // 浅灰色
+    'Completed': '#10b981',
+    'In Progress': '#f59e0b',
+    'Not Started': '#6b7280',
+    'Other': '#a1a1aa'
   }
 
   const statusData = [
@@ -85,16 +87,16 @@ function TaskPlanChart({ tasks, planOptions }: { tasks: TaskRecord[], planOption
     return acc
   }, {} as Record<string, number>)
 
-  // 更有区分度的颜色方案
+  // Color scheme for better differentiation
   const colors = [
-    '#8b5cf6', // 紫色
-    '#06b6d4', // 青色
-    '#10b981', // 绿色
-    '#f59e0b', // 橙色
-    '#ef4444', // 红色
-    '#ec4899', // 粉色
-    '#6366f1', // 靛蓝
-    '#84cc16'  // 柠檬绿
+    '#8b5cf6',
+    '#06b6d4',
+    '#10b981',
+    '#f59e0b',
+    '#ef4444',
+    '#ec4899',
+    '#6366f1',
+    '#84cc16'
   ]
   const entries = Object.entries(planCounts)
   const total = tasks.length
@@ -126,7 +128,7 @@ function TaskPlanChart({ tasks, planOptions }: { tasks: TaskRecord[], planOption
         </div>
         <div className="text-xs text-gray-500 font-mono">{total}</div>
       </div>
-      {/* Legend - 每个plan独占一行 */}
+      {/* Legend - each plan on its own line */}
       <div className="mt-2 space-y-1">
         {entries.map(([planName, count], index) => (
           <div key={planName} className="flex items-center gap-2">
@@ -154,24 +156,16 @@ function TaskQuadrantChart({ tasks }: { tasks: TaskRecord[] }) {
   }, {} as Record<string, number>)
 
   const quadrantColors: Record<string, string> = {
-    '重要且紧急': '#dc2626',      // 红色 - 最高优先级
-    '重要不紧急': '#f97316',      // 橙色 - 高优先级  
-    '不重要但紧急': '#eab308',    // 黄色 - 中优先级
-    '不重要不紧急': '#6b7280',    // 灰色 - 低优先级
     'Important & Urgent': '#dc2626',
     'Important & Not Urgent': '#f97316',
     'Not Important & Urgent': '#eab308', 
     'Not Important & Not Urgent': '#6b7280',
-    'No Priority': '#a1a1aa'     // 浅灰色
+    'No Priority': '#a1a1aa'
   }
 
-  // 为了更好的显示，定义简化的标签
+  // Define simplified labels for better display
   const getQuadrantLabel = (quadrant: string) => {
     switch (quadrant) {
-      case '重要且紧急': return '重要且紧急'
-      case '重要不紧急': return '重要不紧急'
-      case '不重要但紧急': return '不重要但紧急'
-      case '不重要不紧急': return '不重要不紧急'
       case 'Important & Urgent': return 'Important & Urgent'
       case 'Important & Not Urgent': return 'Important & Not Urgent'
       case 'Not Important & Urgent': return 'Not Important & Urgent'
@@ -211,7 +205,7 @@ function TaskQuadrantChart({ tasks }: { tasks: TaskRecord[] }) {
         </div>
         <div className="text-xs text-gray-500 font-mono">{total}</div>
       </div>
-      {/* Legend - 每个优先级独占一行 */}
+      {/* Legend - each priority on its own line */}
       <div className="mt-2 space-y-1">
         {entries.map(([quadrant, count]) => (
           <div key={quadrant} className="flex items-center gap-2">
@@ -245,6 +239,10 @@ interface TaskRecord {
   actual_end?: string
   budget_time: number
   actual_time: number
+  quality_rating?: number
+  next?: string
+  is_plan_critical?: boolean
+  timer_status?: string
 }
 
 interface TaskFormData {
@@ -294,20 +292,29 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
   
   const [selectedPlanBudget, setSelectedPlanBudget] = useState<{money: number, time: number} | null>(null)
   const [remainingTime, setRemainingTime] = useState<number | null>(null)
+  const [conflictingTasks, setConflictingTasks] = useState<TaskRecord[]>([])
 
-  // 计算剩余时间的函数
+  // Function to calculate remaining time
   const calculateRemainingTime = (planId: string, planBudgetTime: number, currentTaskBudgetTime: number = 0) => {
     if (!planId || !allTasks) return null
     
-    // 找到属于该Plan的所有Tasks（排除当前正在编辑的Task）
+    // Find all Tasks belonging to this Plan (excluding the currently editing Task)
     const planTasks = allTasks.filter(t => 
       t.plan && t.plan.includes(planId) && t.id !== task?.id
     )
     
-    // 计算已分配的时间总和
-    const allocatedTime = planTasks.reduce((total, t) => total + (t.budget_time || 0), 0)
+    // Calculate total allocated time using new logic:
+    // - Use actual_time for completed tasks
+    // - Use budget_time for non-completed tasks (including In Progress)
+    const allocatedTime = planTasks.reduce((total, t) => {
+      if (t.status === 'Completed') {
+        return total + (t.actual_time || 0)
+      } else {
+        return total + (t.budget_time || 0)
+      }
+    }, 0)
     
-    // 加上当前正在输入的task的budget_time
+    // Add the budget_time of the current task being entered
     return planBudgetTime - allocatedTime - currentTaskBudgetTime
   }
 
@@ -326,9 +333,9 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
         budget_time: task.budget_time || 0
       })
     } else {
-      // 创建新任务时，使用当前时间作为默认值
+      // When creating a new task, use current time as default
       const defaultStart = getDefaultDateTime()
-      const defaultEnd = new Date(Date.now() + 60 * 60 * 1000) // 1小时后
+      const defaultEnd = new Date(Date.now() + 60 * 60 * 1000) // 1 hour later
       const defaultEndStr = defaultEnd.getFullYear() + '-' +
                             String(defaultEnd.getMonth() + 1).padStart(2, '0') + '-' +
                             String(defaultEnd.getDate()).padStart(2, '0') + 'T' +
@@ -350,7 +357,7 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
     }
   }, [task, isOpen])
 
-  // 当planOptions或formData.plan改变时，更新预算信息显示
+  // Update budget information display when planOptions or formData.plan changes
   useEffect(() => {
     if (formData.plan.length > 0 && planOptions.length > 0) {
       const selectedPlan = planOptions.find(p => p.id === formData.plan[0])
@@ -361,7 +368,7 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
         }
         setSelectedPlanBudget(budget)
         
-        // 计算剩余时间
+        // Calculate remaining time
         const remaining = calculateRemainingTime(selectedPlan.id, budget.time, formData.budget_time)
         setRemainingTime(remaining)
       }
@@ -382,6 +389,22 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
     }
   }, [formData.budget_time, formData.plan, selectedPlanBudget, planOptions, allTasks, task])
 
+  // Detect time conflicts when start_date or end_date changes
+  useEffect(() => {
+    if (formData.start_date && formData.end_date && allTasks.length > 0) {
+      const conflicts = detectTimeConflicts(
+        formData.start_date,
+        formData.start_date,
+        formData.end_date,
+        allTasks,
+        task?.id
+      )
+      setConflictingTasks(conflicts)
+    } else {
+      setConflictingTasks([])
+    }
+  }, [formData.start_date, formData.end_date, allTasks, task?.id])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSave(formData)
@@ -391,20 +414,20 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
 
   return (
     <>
-      {/* 透明点击区域，点击关闭 */}
+      {/* Transparent click area, click to close */}
       <div 
         className="fixed top-0 left-0 h-full z-40 md:block hidden"
         style={{ width: 'calc(100vw - 384px)' }}
         onClick={onClose}
       ></div>
       
-      {/* 移动端全屏覆盖 */}
+      {/* Mobile full screen overlay */}
       <div 
         className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
         onClick={onClose}
       ></div>
       
-      {/* 表单面板 */}
+      {/* Form panel */}
       <div className="fixed top-0 right-0 h-full w-full md:w-96 bg-white shadow-2xl z-50 md:border-l border-purple-200 flex flex-col">
       <div className="p-4 border-b border-purple-200 flex items-center justify-between">
         <h4 className="text-lg font-semibold text-purple-900">
@@ -419,7 +442,7 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
       </div>
       <form onSubmit={handleSubmit} className="p-4 md:p-6 overflow-y-auto flex-1 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-purple-700 mb-1">Related Plan (关联计划) *</label>
+          <label className="block text-sm font-medium text-purple-700 mb-1">Related Plan *</label>
           <select
             value={formData.plan[0] || ''}
             onChange={(e) => {
@@ -429,7 +452,7 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
                 plan: planId ? [planId] : [] 
               }))
               
-              // 查找并设置选中Plan的预算信息
+              // Find and set budget information for selected Plan
               if (planId) {
                 const selectedPlan = planOptions.find(p => p.id === planId)
                 if (selectedPlan) {
@@ -439,7 +462,7 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
                   }
                   setSelectedPlanBudget(budget)
                   
-                  // 计算剩余时间
+                  // Calculate remaining time
                   const remaining = calculateRemainingTime(planId, budget.time, formData.budget_time)
                   setRemainingTime(remaining)
                 } else {
@@ -459,9 +482,9 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
               <option key={plan.id} value={plan.id}>{plan.title}</option>
             ))}
           </select>
-          <p className="text-xs text-gray-500 mt-1">每个任务必须归属于一个计划</p>
+          <p className="text-xs text-gray-500 mt-1">Each task must belong to a plan</p>
           
-          {/* 显示选中Plan的预算信息 */}
+          {/* Display budget information for selected Plan */}
           {selectedPlanBudget && (selectedPlanBudget.money > 0 || selectedPlanBudget.time > 0) && (
             <div className="mt-2 p-2 bg-purple-50 rounded border border-purple-200">
               <div className="text-xs text-purple-700 font-medium mb-1">Plan Budget Reference:</div>
@@ -526,7 +549,7 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
           <div>
             <label className="block text-sm font-medium text-purple-700 mb-2">Time Settings</label>
             
-            {/* 时间输入 */}
+            {/* Time input */}
             <div className="grid grid-cols-1 gap-3">
               <div className="flex items-center gap-3">
                 <label className="text-sm text-purple-600 w-12 flex-shrink-0">Start:</label>
@@ -538,10 +561,10 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
                     setFormData(prev => {
                       const updates = { ...prev, start_date: newStartDate }
                       
-                      // 如果设置了开始时间且结束时间为空或早于开始时间，自动设置结束时间
+                      // If start time is set and end time is empty or earlier than start time, automatically set end time
                       if (newStartDate && (!prev.end_date || prev.end_date <= newStartDate)) {
                         const startDate = new Date(newStartDate)
-                        const endDate = new Date(startDate.getTime() + 60 * 60 * 1000) // 默认1小时后
+                        const endDate = new Date(startDate.getTime() + 60 * 60 * 1000) // Default 1 hour later
                         const endDateStr = endDate.getFullYear() + '-' +
                                           String(endDate.getMonth() + 1).padStart(2, '0') + '-' +
                                           String(endDate.getDate()).padStart(2, '0') + 'T' +
@@ -550,7 +573,7 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
                         updates.end_date = endDateStr
                       }
                       
-                      // 自动计算budget_time
+                      // Automatically calculate budget_time
                       if (updates.start_date && updates.end_date) {
                         const start = new Date(updates.start_date)
                         const end = new Date(updates.end_date)
@@ -574,7 +597,7 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
                     setFormData(prev => {
                       const updates = { ...prev, end_date: newEndDate }
                       
-                      // 自动计算budget_time
+                      // Automatically calculate budget_time
                       if (prev.start_date && newEndDate) {
                         const start = new Date(prev.start_date)
                         const end = new Date(newEndDate)
@@ -645,6 +668,28 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
           />
         </div>
 
+        {/* Time Conflict Warning */}
+        {conflictingTasks.length > 0 && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+            <h4 className="text-sm font-semibold text-red-800 mb-2">Time Conflict Warning</h4>
+            <p className="text-sm text-red-700 mb-2">This task overlaps with:</p>
+            <ul className="text-sm text-red-700 space-y-1 mb-3">
+              {conflictingTasks.map((conflictTask) => (
+                <li key={conflictTask.id} className="flex items-center">
+                  <span className="mr-2">-</span>
+                  <span className="font-medium">{conflictTask.title}</span>
+                  <span className="ml-2 text-red-600">
+                    ({formatTimeRange(conflictTask.start_date, conflictTask.end_date)})
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-red-600">
+              You can still save this task, but please review your schedule.
+            </p>
+          </div>
+        )}
+
         <div className="flex justify-end gap-3 pt-4">
           <button
             type="button"
@@ -670,12 +715,12 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
   )
 }
 
-// 格式化时间显示，避免时区转换，使用24小时制
+// Format time display, avoid timezone conversion, use 24-hour format
 function formatDateTime(dateTimeString: string): string {
   if (!dateTimeString) return ''
   
   try {
-    // 如果输入的是datetime-local格式，直接使用
+    // If input is datetime-local format, use directly
     if (dateTimeString.includes('T') && !dateTimeString.includes('Z')) {
       const [datePart, timePart] = dateTimeString.split('T')
       const [year, month, day] = datePart.split('-')
@@ -684,7 +729,7 @@ function formatDateTime(dateTimeString: string): string {
       return `${month}/${day} ${hour}:${minute}`
     }
     
-    // 否则作为ISO字符串处理
+    // Otherwise handle as ISO string
     const date = new Date(dateTimeString)
     return date.toLocaleDateString('en-US', { 
       month: 'numeric', 
@@ -699,7 +744,7 @@ function formatDateTime(dateTimeString: string): string {
   }
 }
 
-// 格式化时间范围显示
+// Format time range display
 function formatTimeRange(startDate: string, endDate: string): string {
   if (!startDate && !endDate) return ''
   
@@ -707,7 +752,7 @@ function formatTimeRange(startDate: string, endDate: string): string {
   const end = endDate ? formatDateTime(endDate) : ''
   
   if (start && end) {
-    // 如果是同一天，只显示时间范围
+    // If same day, only show time range
     const startDay = start.split(' ')[0]
     const endDay = end.split(' ')[0]
     const startTime = start.split(' ')[1]
@@ -723,12 +768,12 @@ function formatTimeRange(startDate: string, endDate: string): string {
   return start || end
 }
 
-// 检查任务是否正在运行
+// Check if task is currently running
 function isTaskRunning(task: TaskRecord): boolean {
   return !!(task.actual_start && !task.actual_end)
 }
 
-// 计算运行时间（小时）
+// Calculate running time (hours)
 function calculateElapsedTime(actualStart: string): number {
   if (!actualStart) return 0
   const start = new Date(actualStart)
@@ -737,35 +782,128 @@ function calculateElapsedTime(actualStart: string): number {
   return Math.max(0, diffMs / (1000 * 60 * 60)) // 转换为小时
 }
 
+// Calculate total elapsed time including accumulated time
+function calculateTotalElapsedTime(task: TaskRecord): number {
+  const accumulatedTime = task.actual_time || 0
+  if (task.timer_status === 'running' && task.actual_start) {
+    const currentSessionTime = calculateElapsedTime(task.actual_start)
+    return accumulatedTime + currentSessionTime
+  }
+  return accumulatedTime
+}
+
+// Check if two time ranges overlap
+function isTimeOverlapping(start1: string, end1: string, start2: string, end2: string): boolean {
+  if (!start1 || !end1 || !start2 || !end2) return false
+  
+  const startTime1 = new Date(start1).getTime()
+  const endTime1 = new Date(end1).getTime()
+  const startTime2 = new Date(start2).getTime()
+  const endTime2 = new Date(end2).getTime()
+  
+  // Check if ranges overlap: start1 < end2 && start2 < end1
+  return startTime1 < endTime2 && startTime2 < endTime1
+}
+
+// Detect time conflicts with existing tasks on the same day
+function detectTimeConflicts(
+  taskDate: string, 
+  startTime: string, 
+  endTime: string, 
+  allTasks: TaskRecord[], 
+  excludeTaskId?: string
+): TaskRecord[] {
+  if (!taskDate || !startTime || !endTime) return []
+  
+  const newTaskLocalDate = new Date(taskDate)
+  const newTaskDateStr = newTaskLocalDate.toLocaleDateString('en-CA')
+  
+  return allTasks.filter(task => {
+    if (task.id === excludeTaskId) return false // Exclude current editing task
+    if (!task.start_date || !task.end_date) return false
+    
+    // Check if on the same date using local timezone
+    const taskLocalDate = new Date(task.start_date)
+    const taskDateStr = taskLocalDate.toLocaleDateString('en-CA')
+    if (taskDateStr !== newTaskDateStr) return false
+    
+    // Check time overlap
+    return isTimeOverlapping(startTime, endTime, task.start_date, task.end_date)
+  })
+}
+
+// Check if a task has time conflicts with other tasks
+function hasTimeConflicts(task: TaskRecord, allTasks: TaskRecord[]): boolean {
+  if (!task.start_date || !task.end_date) return false
+  
+  const conflicts = detectTimeConflicts(
+    task.start_date,
+    task.start_date,
+    task.end_date,
+    allTasks,
+    task.id
+  )
+  
+  return conflicts.length > 0
+}
+
 // 时间显示组件
 function TimeDisplay({ task }: { task: TaskRecord }) {
-  const [elapsedTime, setElapsedTime] = useState(0)
+  const [totalElapsedTime, setTotalElapsedTime] = useState(0)
   
   useEffect(() => {
-    if (!isTaskRunning(task)) return
-    
     const updateElapsed = () => {
-      setElapsedTime(calculateElapsedTime(task.actual_start || ''))
+      setTotalElapsedTime(calculateTotalElapsedTime(task))
     }
     
     updateElapsed()
-    const interval = setInterval(updateElapsed, 1000) // 每秒更新
     
-    return () => clearInterval(interval)
-  }, [task.actual_start, task.actual_end])
+    // 只有在运行状态时才需要定时更新
+    if (task.timer_status === 'running') {
+      const interval = setInterval(updateElapsed, 1000) // 每秒更新
+      return () => clearInterval(interval)
+    }
+  }, [task.actual_start, task.actual_end, task.actual_time, task.timer_status])
   
-  if (!isTaskRunning(task) || !task.budget_time) return null
-  
-  return (
-    <div className="mt-2">
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-purple-600">进行中</span>
-        <span className="font-medium text-purple-700">
-          {elapsedTime.toFixed(1)}h / {task.budget_time}h
-        </span>
+  // 显示时间信息：运行中、暂停中或已完成且有时间记录
+  if (task.timer_status === 'running') {
+    return (
+      <div className="mt-2">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-green-600 font-medium">Running</span>
+          <span className="font-medium text-purple-700">
+            {totalElapsedTime.toFixed(1)}h {task.budget_time ? `/ ${task.budget_time}h` : ''}
+          </span>
+        </div>
       </div>
-    </div>
-  )
+    )
+  } else if (task.timer_status === 'paused') {
+    return (
+      <div className="mt-2">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-orange-600 font-medium">Paused</span>
+          <span className="font-medium text-purple-700">
+            {totalElapsedTime.toFixed(1)}h {task.budget_time ? `/ ${task.budget_time}h` : ''}
+          </span>
+        </div>
+      </div>
+    )
+  } else if ((task.timer_status === 'completed' || task.actual_time > 0) && task.budget_time) {
+    return (
+      <div className="mt-2">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-gray-600 font-medium">
+            {task.status === 'Completed' ? 'Time' : 'Completed'}
+          </span>
+          <span className="font-medium text-purple-700">
+            {totalElapsedTime.toFixed(1)}h / {task.budget_time}h
+          </span>
+        </div>
+      </div>
+    )
+  }
+  
+  return null
 }
 
 // 将datetime-local格式转换为显示格式
@@ -774,7 +912,7 @@ function convertToDateTimeLocal(isoString: string): string {
   
   try {
     const date = new Date(isoString)
-    // 格式化为 YYYY-MM-DDTHH:MM
+    // Format as YYYY-MM-DDTHH:MM
     return date.getFullYear() + '-' +
            String(date.getMonth() + 1).padStart(2, '0') + '-' +
            String(date.getDate()).padStart(2, '0') + 'T' +
@@ -847,13 +985,19 @@ export default function TaskPanel() {
   const [runningTasks, setRunningTasks] = useState<Set<string>>(new Set())
   const [updatingTimer, setUpdatingTimer] = useState<string | null>(null)
   
+  // 任务完成反馈浮窗状态
+  const [completionModal, setCompletionModal] = useState<{
+    isOpen: boolean;
+    task: TaskRecord | null;
+  }>({ isOpen: false, task: null })
+  
   // 日历相关状态
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0])
   const [currentMonth, setCurrentMonth] = useState(new Date())
   
   const { isAuthenticated, authenticate, addToCalendar } = useOutlookAuth()
 
-  // 按计划筛选任务的函数
+  // Function to filter tasks by plan
   const filterTasksByPlan = (tasks: TaskRecord[]) => {
     if (selectedPlanFilter === 'all') return tasks
     return tasks.filter(task => {
@@ -878,8 +1022,10 @@ export default function TaskPanel() {
     
     const weekTasks = data.filter(task => {
       if (!task.start_date) return false
-      const taskDate = new Date(task.start_date.split('T')[0])
-      return taskDate >= monday && taskDate <= sunday
+      // 使用本地时区的日期进行比较
+      const taskLocalDate = new Date(task.start_date)
+      const taskDateOnly = new Date(taskLocalDate.getFullYear(), taskLocalDate.getMonth(), taskLocalDate.getDate())
+      return taskDateOnly >= monday && taskDateOnly <= sunday
     }).sort((a, b) => {
       const dateA = new Date(a.start_date)
       const dateB = new Date(b.start_date)
@@ -905,8 +1051,10 @@ export default function TaskPanel() {
     
     const monthTasks = data.filter(task => {
       if (!task.start_date) return false
-      const taskDate = new Date(task.start_date.split('T')[0])
-      return taskDate >= firstDayOfMonth && taskDate <= lastDayOfMonth
+      // 使用本地时区的日期进行比较
+      const taskLocalDate = new Date(task.start_date)
+      const taskDateOnly = new Date(taskLocalDate.getFullYear(), taskLocalDate.getMonth(), taskLocalDate.getDate())
+      return taskDateOnly >= firstDayOfMonth && taskDateOnly <= lastDayOfMonth
     }).sort((a, b) => {
       const dateA = new Date(a.start_date)
       const dateB = new Date(b.start_date)
@@ -967,7 +1115,7 @@ export default function TaskPanel() {
     return `${dateStr} 周${weekday} ${timeStr}`
   }
 
-  // 格式化时间范围显示
+  // Format time range display
   const formatTimeRange = (startDate: string, endDate?: string) => {
     if (!startDate) return ''
     
@@ -1118,7 +1266,9 @@ export default function TaskPanel() {
       const taskDate = task.start_date || task.end_date
       if (!taskDate) return false
       
-      const taskDateString = taskDate.split('T')[0]
+      // 转换UTC时间到本地时区获取正确的日期
+      const taskLocalDate = new Date(taskDate)
+      const taskDateString = taskLocalDate.toLocaleDateString('en-CA') // 'en-CA' gives YYYY-MM-DD format
       return taskDateString === dateString
     }).sort((a, b) => {
       // 首先按status排序：completed任务排在最后
@@ -1344,13 +1494,23 @@ export default function TaskPanel() {
       const isRunning = isTaskRunning(task)
       const now = new Date().toISOString() // 已经是UTC格式
       
-      // 自动更新状态：开始时设为"In Progress"，结束时设为"Completed"
-      const newStatus = isRunning ? 'Completed' : 'In Progress'
+      if (isRunning) {
+        // 任务结束 - 显示反馈浮窗
+        setUpdatingTimer(null)
+        const taskWithEndTime = {
+          ...task,
+          actual_end: now,
+          timer_status: 'completed'
+        }
+        setCompletionModal({ isOpen: true, task: taskWithEndTime })
+        return
+      }
       
+      // 任务开始 - 直接更新为"In Progress"
       const updateData = {
         id: task.id,
         title: task.title,
-        status: newStatus, // 自动更新状态
+        status: 'In Progress', // 开始时设为"In Progress"
         start_date: task.start_date, // 保持原有UTC格式，不重新转换
         end_date: task.end_date, // 保持原有UTC格式，不重新转换
         all_day: task.all_day,
@@ -1358,8 +1518,9 @@ export default function TaskPanel() {
         plan: task.plan,
         priority_quadrant: task.priority_quadrant,
         note: task.note,
-        actual_start: isRunning ? task.actual_start : now, // UTC格式的当前时间
-        actual_end: isRunning ? now : undefined // UTC格式的当前时间
+        actual_start: now, // UTC格式的当前时间
+        actual_end: undefined, // 清除结束时间
+        timer_status: 'running'
       }
       
       const response = await fetch('/api/tasks', {
@@ -1373,15 +1534,7 @@ export default function TaskPanel() {
       }
       
       // 更新本地状态
-      if (isRunning) {
-        setRunningTasks(prev => {
-          const newSet = new Set(prev)
-          newSet.delete(task.id)
-          return newSet
-        })
-      } else {
-        setRunningTasks(prev => new Set(prev).add(task.id))
-      }
+      setRunningTasks(prev => new Set(prev).add(task.id))
       
       fetchTasks() // 刷新任务列表
       
@@ -1390,6 +1543,133 @@ export default function TaskPanel() {
       setError(err instanceof Error ? err.message : 'Failed to update timer')
     } finally {
       setUpdatingTimer(null)
+    }
+  }
+
+  // 处理暂停/继续计时
+  const handlePauseContinueTimer = async (task: TaskRecord) => {
+    try {
+      setUpdatingTimer(task.id)
+      
+      const isRunning = task.timer_status === 'running'
+      const now = new Date().toISOString()
+      
+      if (isRunning) {
+        // 暂停：累加当前会话时间到actual_time
+        const sessionTime = task.actual_start ? calculateElapsedTime(task.actual_start) : 0
+        const newActualTime = (task.actual_time || 0) + sessionTime
+        
+        const updateData = {
+          id: task.id,
+          title: task.title,
+          status: task.status,
+          start_date: task.start_date,
+          end_date: task.end_date,
+          all_day: task.all_day,
+          remind_before: task.remind_before,
+          plan: task.plan,
+          priority_quadrant: task.priority_quadrant,
+          note: task.note,
+          actual_start: null, // 清除当前会话开始时间
+          actual_end: task.actual_end,
+          actual_time: newActualTime,
+          timer_status: 'paused'
+        }
+        
+        const response = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updateData)
+        })
+        
+        if (!response.ok) throw new Error('Failed to pause task')
+        
+        // 刷新数据
+        await fetchData()
+      } else {
+        // 继续：重新开始计时
+        const updateData = {
+          id: task.id,
+          title: task.title,
+          status: task.status,
+          start_date: task.start_date,
+          end_date: task.end_date,
+          all_day: task.all_day,
+          remind_before: task.remind_before,
+          plan: task.plan,
+          priority_quadrant: task.priority_quadrant,
+          note: task.note,
+          actual_start: now,
+          actual_end: task.actual_end,
+          actual_time: task.actual_time,
+          timer_status: 'running'
+        }
+        
+        const response = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updateData)
+        })
+        
+        if (!response.ok) throw new Error('Failed to continue task')
+        
+        // 刷新数据
+        await fetchData()
+      }
+    } catch (error) {
+      console.error('Error handling pause/continue timer:', error)
+      alert('Failed to update timer. Please try again.')
+    } finally {
+      setUpdatingTimer(null)
+    }
+  }
+
+  // 处理任务完成反馈提交
+  const handleTaskCompletionSubmit = async (qualityRating: number, nextStep: string, isPlanCritical: boolean) => {
+    if (!completionModal.task) return
+
+    try {
+      const updateData = {
+        id: completionModal.task.id,
+        title: completionModal.task.title,
+        status: 'Completed', // 设为已完成
+        start_date: completionModal.task.start_date,
+        end_date: completionModal.task.end_date,
+        all_day: completionModal.task.all_day,
+        remind_before: completionModal.task.remind_before,
+        plan: completionModal.task.plan,
+        priority_quadrant: completionModal.task.priority_quadrant,
+        note: completionModal.task.note,
+        actual_start: completionModal.task.actual_start,
+        actual_end: completionModal.task.actual_end, // 使用浮窗打开时设置的结束时间
+        quality_rating: qualityRating,
+        next: nextStep,
+        is_plan_critical: isPlanCritical,
+        timer_status: 'completed'
+      }
+
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData)
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to complete task')
+      }
+
+      // 更新本地状态
+      setRunningTasks(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(completionModal.task!.id)
+        return newSet
+      })
+
+      fetchTasks() // 刷新任务列表
+
+    } catch (error) {
+      console.error('Failed to complete task:', error)
+      throw error // 重新抛出错误，让浮窗处理
     }
   }
 
@@ -1561,11 +1841,13 @@ export default function TaskPanel() {
                     {/* 该时间段的任务列表 - 简化移动端显示 */}
                     {tasks.map((task) => {
                       const isRunning = isTaskRunning(task)
+                      const hasConflicts = hasTimeConflicts(task, data)
                       
                       return (
                         <div
                           key={task.id}
                           className={`bg-gradient-to-r from-purple-50 to-white rounded-lg border p-4 relative ${
+                            hasConflicts ? 'border-l-4 border-red-500 bg-red-50' :
                             isRunning ? 'border-purple-400 bg-purple-50' : 'border-purple-200'
                           }`}
                         >
@@ -1583,6 +1865,14 @@ export default function TaskPanel() {
                               {task.title}
                               <span className="text-xs text-gray-400">🔗</span>
                             </h4>
+                            
+                            {/* Time Conflict Indicator */}
+                            {hasConflicts && (
+                              <div className="text-xs text-red-600 mb-2 font-medium">
+                                Time Conflict - Please review schedule
+                              </div>
+                            )}
+                            
                             {/* 时间显示 */}
                             <div className={`inline-block px-2 py-1 rounded text-xs font-medium ${
                               isRunning ? 'bg-purple-700 text-white' : 'bg-purple-600 text-white'
@@ -1985,10 +2275,18 @@ export default function TaskPanel() {
                           {/* 实际运行时间显示 */}
                           {(task.actual_start || task.actual_end) && (
                             <div className="text-xs text-purple-700 mt-1 font-mono mb-2">
-                              实际: {task.actual_start ? formatDateTime(task.actual_start).split(' ')[1] : '--:--'} - 
-                              {task.actual_end ? formatDateTime(task.actual_end).split(' ')[1] : (isRunning ? '进行中' : '--:--')}
+                              Actual: {task.actual_start ? (formatDateTime(task.actual_start).split(' ')[1] || '--:--') : '--:--'} - 
+                              {task.actual_end ? (formatDateTime(task.actual_end).split(' ')[1] || '--:--') : (isRunning ? 'In Progress' : '--:--')}
                             </div>
                           )}
+
+                          {/* 质量评分显示 */}
+                          {task.quality_rating !== null && task.quality_rating !== undefined && task.quality_rating > 0 && (
+                            <div className="text-xs text-purple-700 mt-1 font-medium">
+                              Quality Score: {task.quality_rating} / 5
+                            </div>
+                          )}
+
                           
                           {/* 操作按钮 - 右列底部 */}
                           <div className="mt-auto">
@@ -2058,6 +2356,25 @@ export default function TaskPanel() {
                           </div>
                         </div>
                       </div>
+                      
+                      {/* Next占满整行（如果有） - 在Note之前，更重要 */}
+                      {task.next && (
+                        <div className="mt-3 pt-3 border-t border-purple-200 bg-purple-50 rounded-lg">
+                          <div className="flex items-start gap-2 px-3 py-2">
+                            <span className="text-purple-600 text-sm font-semibold mt-0.5">🎯</span>
+                            <div className="flex-1">
+                              <span className="font-semibold text-purple-800 text-sm">Next Steps:</span>
+                              <div className="mt-1 text-sm text-purple-700">
+                                {Array.isArray(task.next) ? (
+                                  <RenderBlock blocks={task.next} />
+                                ) : (
+                                  <span className="whitespace-pre-wrap">{task.next}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       
                       {/* Note占满整行（如果有） */}
                       {task.note && (
@@ -2173,10 +2490,18 @@ export default function TaskPanel() {
                           {/* 实际运行时间显示 */}
                           {(task.actual_start || task.actual_end) && (
                             <div className="text-xs text-purple-700 mt-1 font-mono mb-2">
-                              实际: {task.actual_start ? formatDateTime(task.actual_start).split(' ')[1] : '--:--'} - 
-                              {task.actual_end ? formatDateTime(task.actual_end).split(' ')[1] : (isRunning ? '进行中' : '--:--')}
+                              Actual: {task.actual_start ? (formatDateTime(task.actual_start).split(' ')[1] || '--:--') : '--:--'} - 
+                              {task.actual_end ? (formatDateTime(task.actual_end).split(' ')[1] || '--:--') : (isRunning ? 'In Progress' : '--:--')}
                             </div>
                           )}
+
+                          {/* 质量评分显示 */}
+                          {task.quality_rating !== null && task.quality_rating !== undefined && task.quality_rating > 0 && (
+                            <div className="text-xs text-purple-700 mt-1 font-medium">
+                              Quality Score: {task.quality_rating} / 5
+                            </div>
+                          )}
+
                           
                           {/* 操作按钮 - 右列底部 */}
                           <div className="mt-auto">
@@ -2246,6 +2571,25 @@ export default function TaskPanel() {
                           </div>
                         </div>
                       </div>
+                      
+                      {/* Next占满整行（如果有） - 在Note之前，更重要 */}
+                      {task.next && (
+                        <div className="mt-3 pt-3 border-t border-purple-200 bg-purple-50 rounded-lg">
+                          <div className="flex items-start gap-2 px-3 py-2">
+                            <span className="text-purple-600 text-sm font-semibold mt-0.5">🎯</span>
+                            <div className="flex-1">
+                              <span className="font-semibold text-purple-800 text-sm">Next Steps:</span>
+                              <div className="mt-1 text-sm text-purple-700">
+                                {Array.isArray(task.next) ? (
+                                  <RenderBlock blocks={task.next} />
+                                ) : (
+                                  <span className="whitespace-pre-wrap">{task.next}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       
                       {/* Note占满整行（如果有） */}
                       {task.note && (
@@ -2322,11 +2666,13 @@ export default function TaskPanel() {
                       {tasks.map((task) => {
                         const isRunning = isTaskRunning(task)
                         const isUpdating = updatingTimer === task.id
+                        const hasConflicts = hasTimeConflicts(task, data)
                         
                         return (
                         <div
                           key={task.id}
                           className={`bg-gradient-to-r from-purple-50 to-white rounded-lg border p-3 hover:shadow-md transition-all duration-200 ${
+                            hasConflicts ? 'border-l-4 border-red-500 bg-red-50' :
                             isRunning ? 'border-purple-400 bg-purple-50' : 'border-purple-200'
                           }`}
                         >
@@ -2362,7 +2708,14 @@ export default function TaskPanel() {
                                 <span className="text-xs text-gray-400">🔗</span>
                               </h4>
                               
-                              {/* 计划归属显示 */}
+                              {/* Time Conflict Indicator */}
+                              {hasConflicts && (
+                                <div className="text-xs text-red-600 mb-2 font-medium">
+                                  Time Conflict - Please review schedule
+                                </div>
+                              )}
+                              
+                              {/* Plan attribution display */}
                               {getPlanTitle(task.plan) && (
                                 <div className="text-xs text-purple-600 mb-2">
                                   📋 {getPlanTitle(task.plan)}
@@ -2389,12 +2742,12 @@ export default function TaskPanel() {
                                   <div className="text-xs">
                                     {task.budget_time > 0 && (
                                       <span className="text-purple-700 font-medium mr-2">
-                                        预算: {task.budget_time}h
+                                        Budget: {task.budget_time}h
                                       </span>
                                     )}
                                     {task.actual_time > 0 && (
                                       <span className="text-purple-700 font-medium">
-                                        实际: {task.actual_time}h
+                                        Actual: {task.actual_time}h
                                       </span>
                                     )}
                                   </div>
@@ -2407,10 +2760,18 @@ export default function TaskPanel() {
                               {/* 实际运行时间显示 */}
                               {(task.actual_start || task.actual_end) && (
                                 <div className="text-xs text-purple-700 mt-1 font-mono">
-                                  实际: {task.actual_start ? formatDateTime(task.actual_start).split(' ')[1] : '--:--'} - 
-                                  {task.actual_end ? formatDateTime(task.actual_end).split(' ')[1] : (isRunning ? '进行中' : '--:--')}
+                                  Actual: {task.actual_start ? (formatDateTime(task.actual_start).split(' ')[1] || '--:--') : '--:--'} - 
+                                  {task.actual_end ? (formatDateTime(task.actual_end).split(' ')[1] || '--:--') : (isRunning ? 'In Progress' : '--:--')}
                                 </div>
                               )}
+
+                              {/* 质量评分显示 */}
+                              {task.quality_rating !== null && task.quality_rating !== undefined && task.quality_rating > 0 && (
+                                <div className="text-xs text-purple-700 mt-1 font-medium">
+                                  Quality Score: {task.quality_rating} / 5
+                                </div>
+                              )}
+
                             </div>
                             
                             {/* 第三列：操作按钮移动端横向，桌面端竖向 */}
@@ -2430,6 +2791,31 @@ export default function TaskPanel() {
                                   <div className="animate-spin rounded-full h-3 w-3 border-b border-current"></div>
                                 ) : (
                                   isRunning ? '⏹️' : '▶️'
+                                )}
+                              </button>
+                              
+                              {/* 暂停/继续按钮 - 仅今日任务显示 */}
+                              <button
+                                onClick={() => handlePauseContinueTimer(task)}
+                                disabled={isUpdating || (!task.timer_status || task.timer_status === 'completed')}
+                                className={`px-2 py-1 text-xs rounded border transition-all duration-200 ${
+                                  task.timer_status === 'running'
+                                    ? 'bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-200' 
+                                    : task.timer_status === 'paused'
+                                    ? 'bg-green-100 text-green-700 border-green-300 hover:bg-green-200'
+                                    : 'bg-gray-100 text-gray-400 border-gray-300'
+                                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                title={
+                                  task.timer_status === 'running' ? 'Pause timer' :
+                                  task.timer_status === 'paused' ? 'Continue timer' :
+                                  'Timer not active'
+                                }
+                              >
+                                {isUpdating ? (
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b border-current"></div>
+                                ) : (
+                                  task.timer_status === 'running' ? '⏸️' : 
+                                  task.timer_status === 'paused' ? '▶️' : '⏸️'
                                 )}
                               </button>
                               
@@ -2479,6 +2865,25 @@ export default function TaskPanel() {
                             </div>
                           </div>
                           
+                          {/* Next独占一整行（如果有） - 在Note之前，更重要 */}
+                          {task.next && (
+                            <div className="mt-3 pt-3 border-t border-purple-200 bg-purple-50 rounded-lg">
+                              <div className="flex items-start gap-2 px-3 py-2">
+                                <span className="text-purple-600 text-sm font-semibold mt-0.5">🎯</span>
+                                <div className="flex-1">
+                                  <span className="font-semibold text-purple-800 text-sm">Next Steps:</span>
+                                  <div className="mt-1 text-sm text-purple-700">
+                                    {Array.isArray(task.next) ? (
+                                      <RenderBlock blocks={task.next} />
+                                    ) : (
+                                      <span className="whitespace-pre-wrap">{task.next}</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          
                           {/* Note独占底部一整行 */}
                           {task.note && (
                             <div className="mt-3 pt-3 border-t border-purple-200">
@@ -2511,6 +2916,13 @@ export default function TaskPanel() {
         priorityOptions={priorityOptions}
         planOptions={planOptions}
         allTasks={data}
+      />
+
+      <TaskCompletionModal
+        isOpen={completionModal.isOpen}
+        onClose={() => setCompletionModal({ isOpen: false, task: null })}
+        onSubmit={handleTaskCompletionSubmit}
+        taskTitle={completionModal.task?.title || ''}
       />
     </div>
   )

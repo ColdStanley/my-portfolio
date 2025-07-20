@@ -16,6 +16,7 @@ interface StrategyRecord {
   estimate_cost: string
   total_plans: number
   completed_plans: number
+  order?: number
 }
 
 interface PlanRecord {
@@ -416,6 +417,83 @@ export default function StrategyPanel() {
     }
   }
 
+  // 移动策略向上
+  const moveStrategyUp = async (strategyId: string) => {
+    try {
+      const sortedStrategies = [...data].sort((a, b) => (a.order || 0) - (b.order || 0))
+      const currentIndex = sortedStrategies.findIndex(s => s.id === strategyId)
+      
+      if (currentIndex > 0) {
+        const currentStrategy = sortedStrategies[currentIndex]
+        const prevStrategy = sortedStrategies[currentIndex - 1]
+        
+        // 交换order值
+        const tempOrder = currentStrategy.order || currentIndex
+        const newCurrentOrder = prevStrategy.order || (currentIndex - 1)
+        const newPrevOrder = tempOrder
+        
+        // 更新两个策略的order
+        await updateStrategyOrder(currentStrategy.id, newCurrentOrder)
+        await updateStrategyOrder(prevStrategy.id, newPrevOrder)
+        
+        // 刷新数据
+        fetchStrategies()
+      }
+    } catch (err) {
+      console.error('Failed to move strategy up:', err)
+      setError('Failed to move strategy')
+    }
+  }
+
+  // 移动策略向下
+  const moveStrategyDown = async (strategyId: string) => {
+    try {
+      const sortedStrategies = [...data].sort((a, b) => (a.order || 0) - (b.order || 0))
+      const currentIndex = sortedStrategies.findIndex(s => s.id === strategyId)
+      
+      if (currentIndex < sortedStrategies.length - 1) {
+        const currentStrategy = sortedStrategies[currentIndex]
+        const nextStrategy = sortedStrategies[currentIndex + 1]
+        
+        // 交换order值
+        const tempOrder = currentStrategy.order || currentIndex
+        const newCurrentOrder = nextStrategy.order || (currentIndex + 1)
+        const newNextOrder = tempOrder
+        
+        // 更新两个策略的order
+        await updateStrategyOrder(currentStrategy.id, newCurrentOrder)
+        await updateStrategyOrder(nextStrategy.id, newNextOrder)
+        
+        // 刷新数据
+        fetchStrategies()
+      }
+    } catch (err) {
+      console.error('Failed to move strategy down:', err)
+      setError('Failed to move strategy')
+    }
+  }
+
+  // 更新策略的order
+  const updateStrategyOrder = async (strategyId: string, newOrder: number) => {
+    const response = await fetch('/api/strategy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: strategyId,
+        order: newOrder
+      })
+    })
+    
+    if (!response.ok) {
+      const errorData = await response.text()
+      console.error('API Error Response:', errorData)
+      throw new Error(`Failed to update strategy order: ${response.status} ${response.statusText}`)
+    }
+    
+    const result = await response.json()
+    console.log('Update successful:', result)
+  }
+
   const getProgressColor = (progress: number) => {
     if (progress >= 80) return 'bg-green-500'
     if (progress >= 60) return 'bg-blue-500'
@@ -656,7 +734,9 @@ export default function StrategyPanel() {
         </div>
       ) : (
         <div className="space-y-6">
-          {data.map((strategy) => (
+          {(() => {
+            const sortedData = data.sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999))
+            return sortedData.map((strategy) => (
             <div
               key={strategy.id}
               className="bg-white rounded-xl border border-purple-200 p-6 hover:shadow-lg transition-all duration-300"
@@ -713,6 +793,24 @@ export default function StrategyPanel() {
                 
                 {/* 右侧：操作按钮 */}
                 <div className="flex gap-2">
+                  {/* 上移按钮 */}
+                  <button
+                    onClick={() => moveStrategyUp(strategy.id)}
+                    disabled={sortedData.findIndex(s => s.id === strategy.id) === 0}
+                    className="p-2 text-purple-600 hover:text-white hover:bg-purple-600 text-sm rounded-lg transition-all duration-200 border border-purple-200 hover:border-purple-600 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-purple-600 disabled:hover:bg-transparent"
+                    title="Move up"
+                  >
+                    ▲
+                  </button>
+                  {/* 下移按钮 */}
+                  <button
+                    onClick={() => moveStrategyDown(strategy.id)}
+                    disabled={sortedData.findIndex(s => s.id === strategy.id) === sortedData.length - 1}
+                    className="p-2 text-purple-600 hover:text-white hover:bg-purple-600 text-sm rounded-lg transition-all duration-200 border border-purple-200 hover:border-purple-600 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-purple-600 disabled:hover:bg-transparent"
+                    title="Move down"
+                  >
+                    ▼
+                  </button>
                   <button
                     onClick={() => {
                       setEditingStrategy(strategy)
@@ -768,6 +866,24 @@ export default function StrategyPanel() {
                   </div>
                   {/* 操作按钮 */}
                   <div className="flex gap-1 ml-2">
+                    {/* 上移按钮 */}
+                    <button
+                      onClick={() => moveStrategyUp(strategy.id)}
+                      disabled={sortedData.findIndex(s => s.id === strategy.id) === 0}
+                      className="p-2 text-purple-600 hover:bg-purple-100 rounded-lg transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Move up"
+                    >
+                      ▲
+                    </button>
+                    {/* 下移按钮 */}
+                    <button
+                      onClick={() => moveStrategyDown(strategy.id)}
+                      disabled={sortedData.findIndex(s => s.id === strategy.id) === sortedData.length - 1}
+                      className="p-2 text-purple-600 hover:bg-purple-100 rounded-lg transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Move down"
+                    >
+                      ▼
+                    </button>
                     <button
                       onClick={() => {
                         setEditingStrategy(strategy)
@@ -1049,7 +1165,8 @@ export default function StrategyPanel() {
                 </div>
               )}
             </div>
-          ))}
+          ))
+          })()}
         </div>
       )}
 

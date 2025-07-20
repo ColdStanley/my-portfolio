@@ -26,17 +26,8 @@ function extractSelectValue(select: any): string {
 }
 
 function extractDateValue(date: any): string {
-  const dateStr = date?.start || ''
-  // 确保返回的是UTC格式的ISO字符串
-  if (dateStr && !dateStr.endsWith('Z')) {
-    try {
-      return new Date(dateStr).toISOString()
-    } catch (error) {
-      console.error('Error parsing date:', dateStr)
-      return dateStr
-    }
-  }
-  return dateStr
+  // 直接返回原始日期字符串，不进行UTC转换
+  return date?.start || ''
 }
 
 function extractNumberValue(number: any): number {
@@ -119,6 +110,10 @@ export async function GET(request: NextRequest) {
         actual_end: extractDateValue(properties.actual_end?.date),
         budget_time: extractNumberValue(properties.budget_time?.number),
         actual_time: extractNumberValue(properties.actual_time?.number),
+        quality_rating: extractNumberValue(properties.quality_rating?.number),
+        next: extractTextContent(properties.next?.rich_text),
+        is_plan_critical: extractCheckboxValue(properties.is_plan_critical?.checkbox),
+        timer_status: extractSelectValue(properties.timer_status?.select),
       }
     })
 
@@ -162,7 +157,11 @@ export async function POST(request: NextRequest) {
       actual_start,
       actual_end,
       budget_time,
-      actual_time
+      actual_time,
+      quality_rating,
+      next,
+      is_plan_critical,
+      timer_status
     } = body
 
     const properties: any = {
@@ -173,14 +172,12 @@ export async function POST(request: NextRequest) {
 
     if (status) properties.status = { select: { name: status } }
     if (start_date) {
-      // 确保时间是UTC格式
-      const utcStartDate = start_date.endsWith('Z') ? start_date : new Date(start_date).toISOString()
-      properties.start_date = { date: { start: utcStartDate } }
+      // 保持原始日期时间，不进行UTC转换以避免日期偏移
+      properties.start_date = { date: { start: start_date } }
     }
     if (end_date) {
-      // 确保时间是UTC格式
-      const utcEndDate = end_date.endsWith('Z') ? end_date : new Date(end_date).toISOString()
-      properties.end_date = { date: { start: utcEndDate } }
+      // 保持原始日期时间，不进行UTC转换以避免日期偏移
+      properties.end_date = { date: { start: end_date } }
     }
     if (typeof all_day === 'boolean') properties.all_day = { checkbox: all_day }
     if (typeof remind_before === 'number') properties.remind_before = { number: remind_before }
@@ -190,12 +187,12 @@ export async function POST(request: NextRequest) {
     if (priority_quadrant) properties.priority_quadrant = { select: { name: priority_quadrant } }
     if (note) properties.note = { rich_text: [{ text: { content: note } }] }
     if (actual_start) {
-      const utcActualStart = actual_start.endsWith('Z') ? actual_start : new Date(actual_start).toISOString()
-      properties.actual_start = { date: { start: utcActualStart } }
+      // 保持原始日期时间，不进行UTC转换以避免日期偏移
+      properties.actual_start = { date: { start: actual_start } }
     }
     if (actual_end) {
-      const utcActualEnd = actual_end.endsWith('Z') ? actual_end : new Date(actual_end).toISOString()
-      properties.actual_end = { date: { start: utcActualEnd } }
+      // 保持原始日期时间，不进行UTC转换以避免日期偏移
+      properties.actual_end = { date: { start: actual_end } }
     }
     
     // Auto-calculate budget_time if start_date and end_date are provided
@@ -212,6 +209,26 @@ export async function POST(request: NextRequest) {
       properties.actual_time = { number: calculatedActualTime }
     } else if (typeof actual_time === 'number') {
       properties.actual_time = { number: actual_time }
+    }
+
+    // Add quality_rating if provided
+    if (typeof quality_rating === 'number') {
+      properties.quality_rating = { number: quality_rating }
+    }
+
+    // Add next if provided
+    if (next) {
+      properties.next = { rich_text: [{ text: { content: next } }] }
+    }
+
+    // Add is_plan_critical if provided
+    if (typeof is_plan_critical === 'boolean') {
+      properties.is_plan_critical = { checkbox: is_plan_critical }
+    }
+
+    // Add timer_status if provided
+    if (timer_status) {
+      properties.timer_status = { select: { name: timer_status } }
     }
 
     let response

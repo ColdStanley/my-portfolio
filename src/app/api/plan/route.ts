@@ -128,6 +128,7 @@ export async function GET(request: NextRequest) {
         estimate_resources: extractTextContent(properties.estimate_resources?.rich_text),
         budget_money: extractNumberValue(properties.budget_money?.number),
         budget_time: extractNumberValue(properties.budget_time?.number),
+        display_order: extractNumberValue(properties.display_order?.number),
         total_tasks: totalTasks,
         completed_tasks: completedTasks
       }
@@ -171,7 +172,8 @@ export async function POST(request: NextRequest) {
       priority_quadrant,
       estimate_resources,
       budget_money,
-      budget_time
+      budget_time,
+      display_order
     } = body
 
     const properties: any = {
@@ -191,6 +193,7 @@ export async function POST(request: NextRequest) {
     if (estimate_resources) properties.estimate_resources = { rich_text: [{ text: { content: estimate_resources } }] }
     if (typeof budget_money === 'number') properties.budget_money = { number: budget_money }
     if (typeof budget_time === 'number') properties.budget_time = { number: budget_time }
+    if (typeof display_order === 'number') properties.display_order = { number: display_order }
 
     let response
     
