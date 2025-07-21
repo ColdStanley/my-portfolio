@@ -4,8 +4,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
-
-const projectId = 'cestlavie'
+import { PROJECT_CONFIG } from '@/config/projectConfig'
 
 function RegisterPageInner() {
   const [email, setEmail] = useState('')
@@ -45,8 +44,8 @@ function RegisterPageInner() {
     const { error: insertError } = await supabase.from('user_product_membership').insert([
       {
         user_id: user.id,
-        product_id: projectId,
-        membership_tier: 'registered',
+        product_id: PROJECT_CONFIG.getProductIdFromPath(window.location.pathname),
+        membership_tier: PROJECT_CONFIG.DEFAULT_MEMBERSHIP_TIER,
         invite_code: inviteCode || null,
         joined_at: new Date().toISOString(),
       },

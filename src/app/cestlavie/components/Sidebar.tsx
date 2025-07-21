@@ -5,6 +5,7 @@ interface SidebarProps {
   setActiveTab: (tab: string) => void
   mobileMenuOpen?: boolean
   setMobileMenuOpen?: (open: boolean) => void
+  onConfigClick?: () => void
 }
 
 const tabs = [

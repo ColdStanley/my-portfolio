@@ -1,13 +1,8 @@
 'use client'
 
 import { ReactNode } from 'react'
-import GlobalAuthListener from '@/components/global/GlobalAuthListener'
 
-export default function JobApplicationLayout({ children }: { children: ReactNode }) {
-  return (
-    <>
-      <GlobalAuthListener projectId="cestlavie" />
-      {children}
-    </>
-  )
+// 简化后不再需要GlobalAuthListener，认证逻辑直接在组件中处理
+export default function CestLaVieLayout({ children }: { children: ReactNode }) {
+  return <>{children}</>
 }

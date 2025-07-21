@@ -1,13 +1,16 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { User } from '@supabase/supabase-js'
 import { useAuthStore } from '@/store/useAuthStore'
+import { PROJECT_CONFIG } from '@/config/projectConfig'
 
 export function useCurrentUser() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const pathname = usePathname()
   const supabase = createClientComponentClient()
   
   // 获取全局store的setters
@@ -25,14 +28,18 @@ export function useCurrentUser() {
         setGlobalUser(user)
         
         if (user) {
+          // 获取当前路径对应的产品ID
+          const productId = PROJECT_CONFIG.getProductIdFromPath(pathname)
+          
           // 获取用户会员等级
           const { data: membership } = await supabase
             .from('user_product_membership')
-            .select('membership_level')
+            .select('membership_tier')
             .eq('user_id', user.id)
-            .single()
+            .eq('product_id', productId)
+            .maybeSingle()
           
-          const tier = membership?.membership_level || 'registered'
+          const tier = membership?.membership_tier || PROJECT_CONFIG.DEFAULT_MEMBERSHIP_TIER
           setMembershipTier(tier)
         } else {
           setMembershipTier('guest')

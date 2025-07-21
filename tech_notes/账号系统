@@ -1,0 +1,126 @@
+🧾 账户管理系统文档（StanleyHi 平台通用）
+📌 项目概况
+本系统是为 StanleyHi 网站平台构建的统一账户系统，适用于多个功能模块（如 new-ielts-speaking, feelink 等），支持：
+
+✅ 用户注册 / 登录 / 登出
+
+✅ 多项目权限管理（project-level membership）
+
+✅ Zustand 全局状态管理
+
+✅ 无冗余逻辑，模块化强，易复用
+
+🧱 技术结构概览
+模块	技术方案
+用户认证	Supabase Auth（Email + Password）
+权限管理	Supabase 数据库表 user_product_membership
+状态共享	Zustand → useAuthStore
+登录监听	GlobalAuthListener.tsx
+登出统一封装	logout() 工具函数
+权限判断	hasTier() 权限函数
+项目接入方式	通过 projectId 参数接入
+
+🧩 数据库结构
+✅ 表：auth.users（由 Supabase 自动创建）
+字段	说明
+id	用户唯一 ID
+email	邮箱
+created_at	创建时间
+
+✅ 表：products
+用于登记平台中所有支持权限管理的项目。
+
+字段	说明
+id	项目标识符（如 'new-ielts-speaking'）
+name	展示名称
+created_at	时间戳
+
+✅ 表：user_product_membership
+记录每个用户在每个项目中的权限等级。
+
+字段	说明
+user_id	用户 ID（外键）
+product_id	项目 ID（外键，对应 products.id）
+membership_tier	权限等级（如 'registered', 'pro', 'vip'）
+invite_code	可选字段
+joined_at	加入时间戳
+
+⚙️ 文件结构核心说明
+✅ useAuthStore.ts（Zustand 状态）
+ts
+Copy
+Edit
+{
+  user: User | null,
+  membershipTier: 'guest' | 'registered' | 'pro' | 'vip' | 'admin'
+}
+✅ GlobalAuthListener.tsx
+每个页面 layout 中通过：
+
+tsx
+Copy
+Edit
+<GlobalAuthListener projectId="new-ielts-speaking" />
+自动获取用户登录状态 + 当前项目权限等级 → 写入 useAuthStore
+
+✅ logout.ts
+统一登出方法，清空状态 + 页面跳转
+
+ts
+Copy
+Edit
+await logout('/login')
+✅ hasTier() 权限判断函数
+ts
+Copy
+Edit
+hasTier('vip') // 当前用户是否 ≥ vip 等级
+🚀 如何接入新项目（例如你要上线 freno 项目）
+在 products 表插入新行：
+
+sql
+Copy
+Edit
+INSERT INTO products (id, name, created_at)
+VALUES ('freno', 'Frenotes', now());
+在 layout.tsx 中注入监听器：
+
+tsx
+Copy
+Edit
+<GlobalAuthListener projectId="freno" />
+注册页使用 projectId = 'freno' 插入权限记录；
+
+NavBar、权限按钮直接使用 useAuthStore() 与 hasTier()；
+
+可选：加入 membership 页面展示项目权限等级。
+
+👀 权限等级定义（从低到高）
+ts
+Copy
+Edit
+['guest', 'registered', 'pro', 'vip', 'admin']
+✅ 当前已接入的项目
+项目 ID	展示名称	注册权限
+new-ielts-speaking	IELTS Speaking	✅ 注册即获得 registered 权限
+feelink	Feelink	✅ 注册后手动插入权限（也可接入自动注册）
+
+📎 依赖说明
+Supabase Auth & Database
+
+Zustand（全局状态管理）
+
+Next.js App Router（支持 layout.tsx）
+
+sonner Toast（权限提示）
+
+Tailwind CSS 风格统一
+
+📬 联系与备注
+如需添加项目 / 功能模块，请：
+
+统一使用小写英文 ID（如 freno、canvas-ai）；
+
+确保在 products 表中注册；
+
+避免写死 product_id，统一通过变量控制。

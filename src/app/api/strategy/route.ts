@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
-import { getDatabaseConfig } from '@/lib/getUserNotionConfig'
+import { getNotionDatabaseConfig } from '@/lib/getSimplifiedUserConfig'
 
 function extractTextContent(richText: any[]): string {
   if (!richText || !Array.isArray(richText)) return ''
@@ -27,7 +27,7 @@ function extractNumberValue(number: any): number {
 export async function GET(request: NextRequest) {
   try {
     // 获取用户的Strategy数据库配置
-    const { config: strategyConfig, user, error } = await getDatabaseConfig('strategy')
+    const { config: strategyConfig, user, error } = await getNotionDatabaseConfig('strategy')
     
     if (error || !strategyConfig) {
       return NextResponse.json({ 
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 获取Plan数据库配置（用于计算进度）
-    const { config: planConfig } = await getDatabaseConfig('plan')
+    const { config: planConfig } = await getNotionDatabaseConfig('plan')
     
     const notion = new Client({
       auth: strategyConfig.notion_api_key,
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
     console.log('=== STRATEGY POST API START ===')
     
     // 获取用户的Strategy数据库配置
-    const { config: strategyConfig, user, error } = await getDatabaseConfig('strategy')
+    const { config: strategyConfig, user, error } = await getNotionDatabaseConfig('strategy')
     
     console.log('Config result:', { 
       hasConfig: !!strategyConfig, 
@@ -284,7 +284,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     // 获取用户的Strategy数据库配置
-    const { config: strategyConfig, user, error } = await getDatabaseConfig('strategy')
+    const { config: strategyConfig, user, error } = await getNotionDatabaseConfig('strategy')
     
     if (error || !strategyConfig) {
       return NextResponse.json({ 

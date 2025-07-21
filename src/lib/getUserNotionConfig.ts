@@ -49,7 +49,8 @@ export async function getUserNotionConfig(): Promise<NotionConfigResult> {
     }
 
     // Fallback: 仅对特定开发者用户使用环境变量
-    const isDeveloper = user.email === 'stanleytonight@hotmail.com'
+    const developerEmails = process.env.DEVELOPER_EMAILS?.split(',') || ['stanleytonight@hotmail.com']
+    const isDeveloper = developerEmails.includes(user.email || '')
     
     if (isDeveloper && process.env.NOTION_API_KEY) {
       const fallbackConfig: UserNotionConfig = {

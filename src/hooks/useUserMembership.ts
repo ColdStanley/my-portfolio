@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-
-const PRODUCT_ID = 'ielts-speaking'  // ⚠️ 请根据你的数据库中产品 ID 替换
+import { PROJECT_CONFIG } from '@/config/projectConfig'
 
 export function useUserMembership() {
+  const pathname = usePathname()
   const supabase = createClientComponentClient()
   const [userId, setUserId] = useState<string | null>(null)
   const [isPro, setIsPro] = useState(false)
@@ -23,11 +24,12 @@ export function useUserMembership() {
 
       setUserId(user.id)
 
+      const productId = PROJECT_CONFIG.getProductIdFromPath(pathname)
       const { data, error } = await supabase
         .from('user_product_membership')
         .select('membership_tier')
         .eq('user_id', user.id)
-        .eq('product_id', PRODUCT_ID)
+        .eq('product_id', productId)
         .maybeSingle()
 
       if (error) {
@@ -41,7 +43,7 @@ export function useUserMembership() {
     }
 
     checkMembership()
-  }, [supabase])
+  }, [supabase, pathname])
 
   return { userId, isPro, loading }
 }

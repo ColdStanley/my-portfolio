@@ -1,18 +1,24 @@
 'use client'
 
 import { useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
+import { PROJECT_CONFIG } from '@/config/projectConfig'
 
 interface Props {
-  projectId: string
+  projectId?: string // 现在变为可选，优先使用路径推断
 }
 
 export default function GlobalAuthListener({ projectId }: Props) {
+  const pathname = usePathname()
   const setUser = useAuthStore((s) => s.setUser)
   const setMembershipTier = useAuthStore((s) => s.setMembershipTier)
-  const setAuthLoaded = useAuthStore((s) => s.setAuthLoaded) // ✅ 新增
+  const setAuthLoaded = useAuthStore((s) => s.setAuthLoaded)
   const resetAuth = useAuthStore((s) => s.resetAuth)
+  
+  // 动态获取产品ID：优先使用传入的projectId，否则从路径推断
+  const currentProjectId = projectId || PROJECT_CONFIG.getProductIdFromPath(pathname)
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -25,13 +31,13 @@ export default function GlobalAuthListener({ projectId }: Props) {
           .from('user_product_membership')
           .select('membership_tier')
           .eq('user_id', user.id)
-          .eq('product_id', projectId)
+          .eq('product_id', currentProjectId)
           .maybeSingle()
 
         if (data?.membership_tier) {
           setMembershipTier(data.membership_tier)
         } else {
-          setMembershipTier('registered') // 默认值（可自定义）
+          setMembershipTier(PROJECT_CONFIG.DEFAULT_MEMBERSHIP_TIER)
         }
       } else {
         resetAuth()
@@ -52,13 +58,13 @@ export default function GlobalAuthListener({ projectId }: Props) {
           .from('user_product_membership')
           .select('membership_tier')
           .eq('user_id', session.user.id)
-          .eq('product_id', projectId)
+          .eq('product_id', currentProjectId)
           .maybeSingle()
           .then(({ data }) => {
             if (data?.membership_tier) {
               setMembershipTier(data.membership_tier)
             } else {
-              setMembershipTier('registered')
+              setMembershipTier(PROJECT_CONFIG.DEFAULT_MEMBERSHIP_TIER)
             }
           })
       } else {
@@ -71,7 +77,7 @@ export default function GlobalAuthListener({ projectId }: Props) {
     return () => {
       listener.subscription.unsubscribe()
     }
-  }, [projectId, setUser, setMembershipTier, setAuthLoaded, resetAuth])
+  }, [currentProjectId, setUser, setMembershipTier, setAuthLoaded, resetAuth])
 
   return null
 }

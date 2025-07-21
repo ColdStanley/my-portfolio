@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
-import { getDatabaseConfig } from '@/lib/getUserNotionConfig'
+import { getNotionDatabaseConfig } from '@/lib/getSimplifiedUserConfig'
 
 function extractTextContent(richText: any[]): string {
   if (!richText || !Array.isArray(richText)) return ''
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     console.log('Tasks API: Starting request...')
     
     // 获取用户的Notion配置
-    const { config, user, error } = await getDatabaseConfig('tasks')
+    const { config, user, error } = await getNotionDatabaseConfig('tasks')
     
     console.log('Tasks API: Config result:', { 
       hasConfig: !!config, 
@@ -188,7 +188,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // 获取用户的Notion配置
-    const { config, user, error } = await getDatabaseConfig('tasks')
+    const { config, user, error } = await getNotionDatabaseConfig('tasks')
     
     if (error || !config) {
       return NextResponse.json({ 
@@ -327,7 +327,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     // 获取用户的Notion配置
-    const { config, error } = await getDatabaseConfig('tasks')
+    const { config, error } = await getNotionDatabaseConfig('tasks')
     
     if (error || !config) {
       return NextResponse.json({ 

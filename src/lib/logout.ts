@@ -1,19 +1,19 @@
 import { supabase } from './supabaseClient'
-import { useAuthStore } from '@/store/useAuthStore'
-import { redirect } from 'next/navigation'
 
 export async function logout(redirectTo: string = '/login') {
-  // 清空 Supabase 会话
-  await supabase.auth.signOut()
-
-  // 清空 Zustand 用户状态
-  const resetAuth = useAuthStore.getState().resetAuth
-  resetAuth()
-
-  // 重定向到登录页（仅在客户端中执行时有效）
-  if (typeof window !== 'undefined') {
-    window.location.href = redirectTo
-  } else {
-    redirect(redirectTo) // App Router 环境中 SSR 使用
+  try {
+    // 清空 Supabase 会话
+    await supabase.auth.signOut()
+    
+    // 重定向到指定页面
+    if (typeof window !== 'undefined') {
+      window.location.href = redirectTo
+    }
+  } catch (error) {
+    console.error('Logout error:', error)
+    // 即使logout失败，也尝试重定向
+    if (typeof window !== 'undefined') {
+      window.location.href = redirectTo
+    }
   }
 }

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserNotionConfig, getDatabaseConfig } from '@/lib/getUserNotionConfig'
+import { getUserProfile, getNotionDatabaseConfig } from '@/lib/getSimplifiedUserConfig'
 
 export async function GET(request: NextRequest) {
   try {
     console.log('=== DEBUG DEVELOPER PLAN API ===')
     
     // 检查用户基本配置
-    const { config: baseConfig, user, error: baseError } = await getUserNotionConfig()
+    const { profile, user, error: baseError } = await getUserProfile()
     
     console.log('Base config result:')
     console.log('- User email:', user?.email)
@@ -15,14 +15,14 @@ export async function GET(request: NextRequest) {
     console.log('- Config plan_db_id:', baseConfig?.plan_db_id)
     
     // 检查Plan数据库配置
-    const { config: planConfig, error: planError } = await getDatabaseConfig('plan')
+    const { config: planConfig, error: planError } = await getNotionDatabaseConfig('plan')
     
     console.log('Plan config result:')
     console.log('- Plan config:', planConfig)
     console.log('- Plan error:', planError)
     
     // 检查Tasks数据库配置
-    const { config: tasksConfig, error: tasksError } = await getDatabaseConfig('tasks')
+    const { config: tasksConfig, error: tasksError } = await getNotionDatabaseConfig('tasks')
     
     console.log('Tasks config result:')
     console.log('- Tasks config:', tasksConfig)
@@ -31,12 +31,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       debug: 'developer_plan_debug',
       user: user?.email,
-      isDeveloper: user?.email === 'stanleytonight@hotmail.com',
-      baseConfig: baseConfig ? {
-        has_api_key: !!baseConfig.notion_api_key,
-        plan_db_id: baseConfig.plan_db_id,
-        tasks_db_id: baseConfig.tasks_db_id,
-        strategy_db_id: baseConfig.strategy_db_id
+      isDeveloper: process.env.DEVELOPER_EMAILS?.split(',').includes(user?.email || '') || user?.email === 'stanleytonight@hotmail.com',
+      baseConfig: profile ? {
+        has_api_key: !!profile.notion_api_key,
+        plan_db_id: profile.notion_plan_db_id,
+        tasks_db_id: profile.notion_tasks_db_id,
+        strategy_db_id: profile.notion_strategy_db_id
       } : null,
       baseError,
       planConfig: planConfig ? {

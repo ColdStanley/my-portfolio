@@ -40,11 +40,16 @@ export default function NotionConfigModal({ isOpen, onClose, onConfigSaved }: No
   const fetchConfig = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/user-notion-config')
+      const response = await fetch('/api/user-profile')
       const result = await response.json()
       
       if (response.ok && result.data) {
-        setConfig(result.data)
+        setConfig({
+          notion_api_key: result.data.notion_api_key || '',
+          tasks_db_id: result.data.notion_tasks_db_id || '',
+          strategy_db_id: result.data.notion_strategy_db_id || '',
+          plan_db_id: result.data.notion_plan_db_id || ''
+        })
       }
     } catch (error) {
       console.error('Failed to fetch config:', error)
@@ -78,10 +83,15 @@ export default function NotionConfigModal({ isOpen, onClose, onConfigSaved }: No
     
     // 先临时保存配置以便测试
     try {
-      const saveResponse = await fetch('/api/user-notion-config', {
+      const saveResponse = await fetch('/api/user-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
+        body: JSON.stringify({
+          notion_api_key: config.notion_api_key,
+          notion_tasks_db_id: config.tasks_db_id,
+          notion_strategy_db_id: config.strategy_db_id,
+          notion_plan_db_id: config.plan_db_id
+        })
       })
       
       if (!saveResponse.ok) {
@@ -141,10 +151,15 @@ export default function NotionConfigModal({ isOpen, onClose, onConfigSaved }: No
 
     setSaving(true)
     try {
-      const response = await fetch('/api/user-notion-config', {
+      const response = await fetch('/api/user-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
+        body: JSON.stringify({
+          notion_api_key: config.notion_api_key,
+          notion_tasks_db_id: config.tasks_db_id,
+          notion_strategy_db_id: config.strategy_db_id,
+          notion_plan_db_id: config.plan_db_id
+        })
       })
 
       const result = await response.json()

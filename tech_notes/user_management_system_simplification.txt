@@ -1,0 +1,168 @@
+# 用户管理系统简化迁移方案
+# Created: 2025-01-21
+# Status: 规划完成，待实施
+
+## 问题背景
+原用户管理系统过于复杂，导致朋友无法正常使用cestlavie功能：
+- 多产品权限架构（8个产品ID）
+- 复杂的权限查询逻辑
+- 产品ID不一致问题（cv-builder vs cestlavie vs new-ielts-speaking）
+- 字段名不匹配（membership_level vs membership_tier）
+- 复杂的开发者fallback机制
+
+## 简化目标
+从复杂的多产品权限系统简化为：
+- 单一用户档案表
+- 2个角色：user + admin  
+- 直接的权限查询
+- 统一的Notion配置管理
+
+## 核心架构变更
+
+### 数据库结构简化
+旧结构：
+- user_product_membership（多产品权限关系）
+- products（产品定义表）
+- user_notion_configs（Notion配置）
+
+新结构：
+- user_profiles（统一用户档案表）
+
+```sql
+CREATE TABLE user_profiles (
+    user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+    notion_api_key TEXT,
+    notion_tasks_db_id TEXT,
+    notion_strategy_db_id TEXT,
+    notion_plan_db_id TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### 代码架构简化
+新增关键文件：
+- /src/lib/getSimplifiedUserConfig.ts - 简化的配置获取逻辑
+- /src/hooks/useSimplifiedAuth.ts - 统一认证Hook  
+- /src/app/api/user-profile/route.ts - 简化的用户档案API
+
+移除复杂文件：
+- /src/lib/getUserNotionConfig.ts
+- /src/config/projectConfig.ts
+- /src/components/global/GlobalAuthListener.tsx（简化）
+
+## 实施步骤
+
+### 第一阶段：数据备份和分析
+1. 导出现有用户数据
+```sql
+SELECT u.email, u.id, unc.notion_api_key, unc.tasks_db_id, 
+       unc.strategy_db_id, unc.plan_db_id, upm.membership_tier
+FROM auth.users u
+LEFT JOIN user_notion_configs unc ON u.id = unc.user_id
+LEFT JOIN user_product_membership upm ON u.id = upm.user_id;
+```
+
+2. 确认朋友的当前配置状态
+3. 记录现有表结构
+
+### 第二阶段：创建新表结构
+1. 创建user_profiles表
+2. 设置RLS策略
+3. 创建更新触发器
+4. 数据迁移脚本
+
+### 第三阶段：代码更新
+1. 创建简化的配置获取函数
+2. 创建统一的认证Hook
+3. 更新API路由（strategy, plan, tasks）
+4. 更新Notion配置弹窗
+5. 简化布局组件
+
+### 第四阶段：测试验证
+1. 验证数据迁移结果
+2. 测试朋友的登录和功能使用
+3. 确认Strategy/Plan/Tasks创建功能
+4. 验证预算时间计算功能
+
+### 第五阶段：清理
+1. 删除旧表结构
+2. 移除旧代码文件
+3. 清理相关API路由
+
+## 关键代码改动
+
+### 权限查询简化
+旧逻辑：
+```javascript
+const { config, user, error } = await getDatabaseConfig('strategy')
+// 需要处理产品ID、多表查询、复杂fallback
+```
+
+新逻辑：
+```javascript  
+const { config, user, error } = await getNotionDatabaseConfig('strategy')
+// 单表查询，简单fallback
+```
+
+### 认证流程简化
+旧逻辑：需要GlobalAuthListener + useCurrentUser + 产品ID映射
+新逻辑：单一useSimplifiedAuth Hook
+
+## 预期解决的问题
+
+1. **朋友的Strategy创建500错误**
+   - 原因：产品ID不匹配导致权限查询失败
+   - 解决：统一权限查询，不再依赖产品ID
+
+2. **预算时间计算失败**
+   - 原因：前端权限状态异常
+   - 解决：简化权限逻辑，减少异常情况
+
+3. **406权限错误**  
+   - 原因：.single()查询空结果
+   - 解决：使用.maybeSingle()和统一表结构
+
+## 风险评估
+
+### 低风险
+- 数据迁移：逻辑简单，数据量小
+- 功能影响：只是简化，不改变核心功能
+- 回滚方案：备份完整，可快速恢复
+
+### 需注意
+- 确保开发者fallback机制正常工作
+- 验证所有API路由更新正确
+- 测试Notion配置的保存和读取
+
+## 实施时机建议
+
+1. **立即实施**：朋友无法使用的问题需要尽快解决
+2. **分阶段执行**：先在开发环境测试完整流程
+3. **逐步上线**：数据库迁移 → 代码部署 → 功能测试
+
+## 成功标准
+
+1. 朋友能够正常登录系统
+2. 朋友能够成功创建Strategy/Plan/Tasks
+3. 预算时间计算功能正常
+4. 不再出现权限相关的错误（406, 500等）
+5. 开发者功能保持不变
+
+## 后续优化方向
+
+简化完成后可考虑：
+1. 改进Notion配置的用户体验
+2. 添加配置验证和错误提示优化
+3. 支持批量用户管理（如果将来需要）
+
+## 备注
+
+- 保留所有旧文件作为.backup备份
+- 迁移脚本需要在生产环境执行前充分测试
+- 考虑在用户较少的时间窗口执行迁移
+- 准备快速回滚方案以防万一
+
+---
+END OF DOCUMENT

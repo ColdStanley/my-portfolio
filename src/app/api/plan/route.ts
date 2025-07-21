@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
-import { getDatabaseConfig } from '@/lib/getUserNotionConfig'
+import { getNotionDatabaseConfig } from '@/lib/getSimplifiedUserConfig'
 
 function extractTextContent(richText: any[]): string {
   if (!richText || !Array.isArray(richText)) return ''
@@ -41,7 +41,7 @@ function calculateHours(startDate: string, endDate: string): number {
 export async function GET(request: NextRequest) {
   try {
     // 获取用户的Plan数据库配置
-    const { config: planConfig, user, error } = await getDatabaseConfig('plan')
+    const { config: planConfig, user, error } = await getNotionDatabaseConfig('plan')
     
     if (error || !planConfig) {
       return NextResponse.json({ 
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 获取Tasks数据库配置（用于计算进度）
-    const { config: tasksConfig } = await getDatabaseConfig('tasks')
+    const { config: tasksConfig } = await getNotionDatabaseConfig('tasks')
     
     const notion = new Client({
       auth: planConfig.notion_api_key,
@@ -160,7 +160,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // 获取用户的Plan数据库配置
-    const { config: planConfig, user, error } = await getDatabaseConfig('plan')
+    const { config: planConfig, user, error } = await getNotionDatabaseConfig('plan')
     
     if (error || !planConfig) {
       return NextResponse.json({ 
@@ -246,7 +246,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     // 获取用户的Plan数据库配置
-    const { config: planConfig, user, error } = await getDatabaseConfig('plan')
+    const { config: planConfig, user, error } = await getNotionDatabaseConfig('plan')
     
     if (error || !planConfig) {
       return NextResponse.json({ 

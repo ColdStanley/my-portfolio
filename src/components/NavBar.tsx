@@ -8,8 +8,8 @@ import { Menu } from 'lucide-react'
 import YouTube from 'react-youtube'
 import clsx from 'clsx'
 import { supabase } from '@/lib/supabaseClient' // ✅ 替换 createClient
-import { useAuthStore } from '@/store/useAuthStore'
-import { logout } from '@/lib/logout' // ✅ 使用统一登出函数
+import { useSimplifiedAuth } from '@/hooks/useSimplifiedAuth'
+// 直接在组件中处理logout
 
 const navItems = [
   { label: 'Home', href: '/' },
@@ -28,8 +28,8 @@ export default function NavBar() {
   const [hasInitiated, setHasInitiated] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
 
-  const user = useAuthStore((s) => s.user)
-  const membershipTier = useAuthStore((s) => s.membershipTier)
+  const { user, profile, isAdmin } = useSimplifiedAuth()
+  const membershipTier = profile?.role || 'guest'
 
   const onPlayerReady = (event: any) => {
     setPlayer(event.target)
@@ -52,7 +52,36 @@ export default function NavBar() {
   }
 
   const handleLogout = async () => {
-    await logout('/')
+    try {
+      console.log('开始logout...')
+      
+      // 清除所有Supabase session
+      const { error } = await supabase.auth.signOut({ scope: 'global' })
+      if (error) {
+        console.error('SignOut error:', error)
+      } else {
+        console.log('Supabase signOut 完成')
+      }
+      
+      // 清除所有本地存储
+      localStorage.clear()
+      sessionStorage.clear()
+      
+      // 清除所有cookies（可选）
+      document.cookie.split(";").forEach(function(c) { 
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+      })
+      
+      console.log('清理完成，准备重定向')
+      
+      // 使用replace而不是href，避免浏览器后退
+      window.location.replace('/')
+      
+    } catch (error) {
+      console.error('Logout错误:', error)
+      // 即使出错也尝试重定向
+      window.location.replace('/')
+    }
   }
 
   return (

@@ -7,7 +7,13 @@ const lifeTabs = [
   { key: 'tbd', label: '🔮', title: 'TBD' },
 ]
 
-export default function LifeSubTabNav({ activeTab, setActiveTab }) {
+interface LifeSubTabNavProps {
+  activeTab: string
+  setActiveTab: (tab: string) => void
+  onConfigClick?: () => void
+}
+
+export default function LifeSubTabNav({ activeTab, setActiveTab, onConfigClick }: LifeSubTabNavProps) {
   return (
     <>
       {/* Desktop navigation - fixed on right */}
@@ -24,6 +30,17 @@ export default function LifeSubTabNav({ activeTab, setActiveTab }) {
             {tab.label}
           </button>
         ))}
+        
+        {/* Notion配置按钮 */}
+        {onConfigClick && (
+          <button
+            onClick={onConfigClick}
+            title="Notion Configuration"
+            className="w-10 h-10 rounded-full shadow bg-yellow-100 text-yellow-600 hover:bg-yellow-200 flex items-center justify-center text-lg transition-all"
+          >
+            ⚙️
+          </button>
+        )}
       </div>
 
       {/* Mobile navigation - 悬浮紧凑设计 */}
@@ -42,6 +59,17 @@ export default function LifeSubTabNav({ activeTab, setActiveTab }) {
             {tab.label}
           </button>
         ))}
+        
+        {/* Mobile配置按钮 */}
+        {onConfigClick && (
+          <button
+            onClick={onConfigClick}
+            title="Notion Configuration"
+            className="w-9 h-9 rounded-full shadow-lg backdrop-blur-sm bg-yellow-100/90 text-yellow-600 hover:bg-yellow-200/90 hover:scale-105 flex items-center justify-center text-sm transition-all"
+          >
+            ⚙️
+          </button>
+        )}
       </div>
     </>
   )

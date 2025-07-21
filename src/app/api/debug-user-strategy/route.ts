@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
-import { getDatabaseConfig } from '@/lib/getUserNotionConfig'
+import { getNotionDatabaseConfig } from '@/lib/getSimplifiedUserConfig'
 
 export async function GET(request: NextRequest) {
   try {
     console.log('=== DEBUG USER STRATEGY ACCESS ===')
     
     // 检查用户的Strategy数据库配置
-    const { config: strategyConfig, user, error } = await getDatabaseConfig('strategy')
+    const { config: strategyConfig, user, error } = await getNotionDatabaseConfig('strategy')
     
     console.log('User:', user?.email)
     console.log('Config result:', {
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
         debug: 'config_error',
         user: user?.email,
         error,
-        isDeveloper: user?.email === 'stanleytonight@hotmail.com'
+        isDeveloper: process.env.DEVELOPER_EMAILS?.split(',').includes(user?.email || '') || user?.email === 'stanleytonight@hotmail.com'
       })
     }
     
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         debug: 'success',
         user: user?.email,
-        isDeveloper: user?.email === 'stanleytonight@hotmail.com',
+        isDeveloper: process.env.DEVELOPER_EMAILS?.split(',').includes(user?.email || '') || user?.email === 'stanleytonight@hotmail.com',
         database: {
           title: databaseInfo.title[0]?.plain_text || 'Untitled',
           id: strategyConfig.database_id,
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         debug: 'notion_error',
         user: user?.email,
-        isDeveloper: user?.email === 'stanleytonight@hotmail.com',
+        isDeveloper: process.env.DEVELOPER_EMAILS?.split(',').includes(user?.email || '') || user?.email === 'stanleytonight@hotmail.com',
         error: {
           code: notionError.code,
           message: notionError.message,
