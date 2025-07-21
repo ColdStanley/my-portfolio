@@ -20,7 +20,8 @@ export interface NotionConfigResult {
  */
 export async function getUserNotionConfig(): Promise<NotionConfigResult> {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
+    const cookieStore = await cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
     
     // 获取当前用户
     const { data: { user }, error: authError } = await supabase.auth.getUser()

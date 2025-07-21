@@ -160,10 +160,20 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('=== STRATEGY POST API START ===')
+    
     // 获取用户的Strategy数据库配置
     const { config: strategyConfig, user, error } = await getDatabaseConfig('strategy')
     
+    console.log('Config result:', { 
+      hasConfig: !!strategyConfig, 
+      user: user?.email, 
+      error,
+      databaseId: strategyConfig?.database_id 
+    })
+    
     if (error || !strategyConfig) {
+      console.error('Config error:', error)
       return NextResponse.json({ 
         error: error || 'Strategy database not configured' 
       }, { status: 400 })
@@ -204,9 +214,9 @@ export async function POST(request: NextRequest) {
     if (key_results !== undefined) properties.key_results = { rich_text: [{ text: { content: key_results } }] }
     if (start_date !== undefined) properties.start_date = { date: { start: start_date } }
     if (due_date !== undefined) properties.due_date = { date: { start: due_date } }
-    if (status !== undefined) properties.status = { select: { name: status } }
-    if (category !== undefined) properties.category = { select: { name: category } }
-    if (priority_quadrant !== undefined) properties.priority_quadrant = { select: { name: priority_quadrant } }
+    if (status !== undefined && status !== '') properties.status = { select: { name: status } }
+    if (category !== undefined && category !== '') properties.category = { select: { name: category } }
+    if (priority_quadrant !== undefined && priority_quadrant !== '') properties.priority_quadrant = { select: { name: priority_quadrant } }
     if (estimate_cost !== undefined) properties.estimate_cost = { rich_text: [{ text: { content: estimate_cost } }] }
     if (typeof order === 'number') properties.order = { number: order }
 
@@ -226,14 +236,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, id: response.id, updated: true })
     } else {
       // Create new strategy
-      console.log('Creating new strategy')
-      response = await notion.pages.create({
-        parent: { database_id: strategyConfig.database_id },
-        properties
-      })
+      console.log('Creating new strategy with database ID:', strategyConfig.database_id)
+      console.log('Properties to create:', JSON.stringify(properties, null, 2))
       
-      console.log('Create response:', response.id)
-      return NextResponse.json({ success: true, id: response.id, created: true })
+      try {
+        response = await notion.pages.create({
+          parent: { database_id: strategyConfig.database_id },
+          properties
+        })
+        
+        console.log('Create success! Response ID:', response.id)
+        return NextResponse.json({ success: true, id: response.id, created: true })
+      } catch (createError: any) {
+        console.error('Notion pages.create failed:', createError)
+        console.error('Error details:', {
+          code: createError.code,
+          message: createError.message,
+          status: createError.status,
+          body: createError.body
+        })
+        throw createError
+      }
     }
 
   } catch (error) {
