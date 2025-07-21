@@ -647,6 +647,56 @@ export default function StrategyPanel() {
   }
 
   if (error) {
+    // 检查是否是Notion配置相关的错误
+    const isConfigError = error.toLowerCase().includes('notion') || 
+                         error.toLowerCase().includes('configured') ||
+                         error.toLowerCase().includes('configuration')
+    
+    if (isConfigError) {
+      return (
+        <div className="w-full py-8">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <span className="text-yellow-500 text-xl">⚙️</span>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-yellow-800">Notion Configuration Required</h3>
+                <p className="mt-2 text-sm text-yellow-700">
+                  To use the strategy management features, you need to configure your Notion integration. 
+                  Click the settings button (⚙️) in the top-right corner to set up your Notion API key and database IDs.
+                </p>
+                <div className="mt-4 flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      // 触发配置模态框打开
+                      const configButton = document.querySelector('[title="Notion Configuration"]') as HTMLButtonElement
+                      if (configButton) {
+                        configButton.click()
+                      }
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700 transition-all duration-200 transform hover:scale-105 active:scale-95"
+                  >
+                    <span>⚙️</span>
+                    <span>Configure Notion</span>
+                  </button>
+                  <button
+                    onClick={fetchStrategies}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition-all duration-200"
+                    title="Retry loading strategies"
+                  >
+                    <span>🔄</span>
+                    <span>Try Again</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    
+    // 其他错误显示通用错误信息
     return (
       <div className="w-full py-8">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6">
