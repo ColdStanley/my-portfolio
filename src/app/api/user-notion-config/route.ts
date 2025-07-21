@@ -97,6 +97,8 @@ export async function POST(request: NextRequest) {
         strategy_db_id: strategy_db_id || null,
         plan_db_id: plan_db_id || null,
         updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
       })
       .select()
       .single()
