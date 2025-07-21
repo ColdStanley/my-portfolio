@@ -45,15 +45,26 @@ function calculateHours(startDate: string, endDate: string): number {
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('Tasks API: Starting request...')
+    
     // 获取用户的Notion配置
     const { config, user, error } = await getDatabaseConfig('tasks')
     
+    console.log('Tasks API: Config result:', { 
+      hasConfig: !!config, 
+      hasUser: !!user, 
+      error,
+      databaseId: config?.database_id ? `${config.database_id.substring(0, 8)}...` : 'none'
+    })
+    
     if (error || !config) {
+      console.log('Tasks API: Configuration error:', error)
       return NextResponse.json({ 
         error: error || 'Tasks database not configured' 
       }, { status: 400 })
     }
 
+    console.log('Tasks API: Creating Notion client...')
     const notion = new Client({
       auth: config.notion_api_key,
     })
@@ -63,32 +74,48 @@ export async function GET(request: NextRequest) {
 
     // If requesting schema information
     if (action === 'schema') {
-      const databaseInfo = await notion.databases.retrieve({
-        database_id: config.database_id
-      })
+      console.log('Tasks API: Requesting schema...')
+      try {
+        const databaseInfo = await notion.databases.retrieve({
+          database_id: config.database_id
+        })
 
-      const properties = databaseInfo.properties as any
-      const statusOptions = properties.status?.select?.options?.map((opt: any) => opt.name) || []
-      const priorityOptions = properties.priority_quadrant?.select?.options?.map((opt: any) => opt.name) || []
+        const properties = databaseInfo.properties as any
+        const statusOptions = properties.status?.select?.options?.map((opt: any) => opt.name) || []
+        const priorityOptions = properties.priority_quadrant?.select?.options?.map((opt: any) => opt.name) || []
 
-      return NextResponse.json({ 
-        schema: {
-          statusOptions,
-          priorityOptions
-        }
-      })
+        console.log('Tasks API: Schema retrieved successfully')
+        return NextResponse.json({ 
+          schema: {
+            statusOptions,
+            priorityOptions
+          }
+        })
+      } catch (schemaError) {
+        console.error('Tasks API: Schema retrieval failed:', schemaError)
+        throw schemaError
+      }
     }
 
-    const response = await notion.databases.query({
-      database_id: config.database_id,
-      page_size: 100,
-      sorts: [
-        {
-          property: 'start_date',
-          direction: 'descending',
-        }
-      ]
-    })
+    console.log('Tasks API: Querying database...')
+    let response
+    try {
+      response = await notion.databases.query({
+        database_id: config.database_id,
+        page_size: 100,
+        sorts: [
+          {
+            property: 'start_date',
+            direction: 'descending',
+          }
+        ]
+      })
+      
+      console.log('Tasks API: Database query successful, results:', response.results.length)
+    } catch (queryError) {
+      console.error('Tasks API: Database query failed:', queryError)
+      throw queryError
+    }
 
     const data = response.results.map((page: any) => {
       const properties = page.properties
@@ -118,16 +145,42 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ data })
 
   } catch (error) {
-    console.error('Error fetching Tasks data:', error)
+    console.error('Tasks API: Error fetching Tasks data:', error)
     
     if (error instanceof Error) {
+      // 检查是否是Notion API相关的错误
+      if (error.message.includes('unauthorized') || error.message.includes('Unauthorized')) {
+        return NextResponse.json({ 
+          error: 'Notion API key is invalid or has expired. Please check your Notion integration settings.' 
+        }, { status: 401 })
+      }
+      
+      if (error.message.includes('not_found') || error.message.includes('Could not find database')) {
+        return NextResponse.json({ 
+          error: 'Tasks database not found. Please verify your database ID in the Notion configuration.' 
+        }, { status: 404 })
+      }
+      
+      if (error.message.includes('restricted_resource')) {
+        return NextResponse.json({ 
+          error: 'Access denied to the tasks database. Please ensure your Notion integration has access to this database.' 
+        }, { status: 403 })
+      }
+      
+      console.error('Tasks API: Detailed error:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      })
+      
       return NextResponse.json({ 
-        error: `Failed to fetch data: ${error.message}` 
+        error: `Failed to fetch tasks: ${error.message}`,
+        details: 'Check server logs for more information'
       }, { status: 500 })
     }
     
     return NextResponse.json({ 
-      error: 'An unknown error occurred' 
+      error: 'An unknown error occurred while fetching tasks' 
     }, { status: 500 })
   }
 }

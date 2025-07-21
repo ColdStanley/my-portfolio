@@ -20,6 +20,8 @@ export default function NotionConfigModal({ isOpen, onClose, onConfigSaved }: No
   const { user } = useCurrentUser()
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [testing, setTesting] = useState(false)
+  const [testResult, setTestResult] = useState<{success: boolean, message: string, details?: any} | null>(null)
   const [config, setConfig] = useState<NotionConfig>({
     notion_api_key: '',
     tasks_db_id: '',
@@ -60,6 +62,50 @@ export default function NotionConfigModal({ isOpen, onClose, onConfigSaved }: No
     
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
+  }
+
+  const handleTest = async () => {
+    if (!config.notion_api_key || !config.tasks_db_id) {
+      setTestResult({
+        success: false,
+        message: 'Please fill in at least Notion API key and Tasks Database ID to test'
+      })
+      return
+    }
+
+    setTesting(true)
+    setTestResult(null)
+    
+    // 先临时保存配置以便测试
+    try {
+      const saveResponse = await fetch('/api/user-notion-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+      })
+      
+      if (!saveResponse.ok) {
+        throw new Error('Failed to save configuration for testing')
+      }
+
+      // 测试配置
+      const testResponse = await fetch('/api/test-notion-config')
+      const result = await testResponse.json()
+      
+      setTestResult({
+        success: result.success,
+        message: result.success ? result.message : result.error,
+        details: result.details
+      })
+      
+    } catch (error) {
+      setTestResult({
+        success: false,
+        message: 'Test failed: ' + (error instanceof Error ? error.message : 'Unknown error')
+      })
+    } finally {
+      setTesting(false)
+    }
   }
 
   const handleSave = async () => {
@@ -206,6 +252,44 @@ export default function NotionConfigModal({ isOpen, onClose, onConfigSaved }: No
                   </p>
                 </div>
 
+                {/* 测试结果显示 */}
+                {testResult && (
+                  <div className={`p-4 rounded-lg border ${
+                    testResult.success 
+                      ? 'bg-green-50 border-green-200' 
+                      : 'bg-red-50 border-red-200'
+                  }`}>
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0">
+                        <span className={`text-lg ${
+                          testResult.success ? 'text-green-500' : 'text-red-500'
+                        }`}>
+                          {testResult.success ? '✅' : '❌'}
+                        </span>
+                      </div>
+                      <div className="ml-3">
+                        <h4 className={`text-sm font-medium ${
+                          testResult.success ? 'text-green-800' : 'text-red-800'
+                        }`}>
+                          {testResult.success ? 'Configuration Test Passed' : 'Configuration Test Failed'}
+                        </h4>
+                        <p className={`mt-1 text-sm ${
+                          testResult.success ? 'text-green-700' : 'text-red-700'
+                        }`}>
+                          {testResult.message}
+                        </p>
+                        {testResult.details && (
+                          <div className="mt-2 text-xs text-gray-600">
+                            <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto max-h-32">
+                              {JSON.stringify(testResult.details, null, 2)}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* 帮助信息 */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <h4 className="text-sm font-medium text-blue-900 mb-2">Setup Instructions:</h4>
@@ -222,24 +306,37 @@ export default function NotionConfigModal({ isOpen, onClose, onConfigSaved }: No
           </div>
 
           {/* 底部按钮 */}
-          <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
+          <div className="p-6 border-t border-gray-200 flex justify-between">
             <button
-              onClick={onClose}
-              disabled={saving}
-              className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
+              onClick={handleTest}
+              disabled={testing || saving || !config.notion_api_key || !config.tasks_db_id}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
             >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving || loading}
-              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-            >
-              {saving && (
+              {testing && (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
               )}
-              {saving ? 'Saving...' : 'Save Configuration'}
+              {testing ? 'Testing...' : 'Test Configuration'}
             </button>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={onClose}
+                disabled={saving}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving || loading}
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {saving && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                )}
+                {saving ? 'Saving...' : 'Save Configuration'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
