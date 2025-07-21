@@ -54,7 +54,7 @@ export async function getUserNotionConfig(): Promise<NotionConfigResult> {
       const fallbackConfig: UserNotionConfig = {
         notion_api_key: process.env.NOTION_API_KEY,
         tasks_db_id: process.env.NOTION_Tasks_DB_ID || '',
-        strategy_db_id: process.env.NOTION_Strategy_DB_ID || '',
+        strategy_db_id: process.env.NOTION_STRATEGY_DB_ID || '',
         plan_db_id: process.env.NOTION_Plan_DB_ID || ''
       }
 
