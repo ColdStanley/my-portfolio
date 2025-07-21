@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       debug: 'developer_plan_debug',
       user: user?.email,
-      isDeveloper: user?.email === 'stanleyhiu.96@gmail.com',
+      isDeveloper: user?.email === 'stanleytonight@hotmail.com',
       baseConfig: baseConfig ? {
         has_api_key: !!baseConfig.notion_api_key,
         plan_db_id: baseConfig.plan_db_id,

@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
         debug: 'config_error',
         user: user?.email,
         error,
-        isDeveloper: user?.email === 'stanleyhiu.96@gmail.com'
+        isDeveloper: user?.email === 'stanleytonight@hotmail.com'
       })
     }
     
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         debug: 'success',
         user: user?.email,
-        isDeveloper: user?.email === 'stanleyhiu.96@gmail.com',
+        isDeveloper: user?.email === 'stanleytonight@hotmail.com',
         database: {
           title: databaseInfo.title[0]?.plain_text || 'Untitled',
           id: strategyConfig.database_id,
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         debug: 'notion_error',
         user: user?.email,
-        isDeveloper: user?.email === 'stanleyhiu.96@gmail.com',
+        isDeveloper: user?.email === 'stanleytonight@hotmail.com',
         error: {
           code: notionError.code,
           message: notionError.message,
