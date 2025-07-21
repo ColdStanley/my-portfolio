@@ -47,26 +47,28 @@ export async function getUserNotionConfig(): Promise<NotionConfigResult> {
       }
     }
 
-    // Fallback: 使用环境变量（保证开发者使用不受影响）
-    const fallbackConfig: UserNotionConfig = {
-      notion_api_key: process.env.NOTION_API_KEY || '',
-      tasks_db_id: process.env.NOTION_Tasks_DB_ID || '',
-      strategy_db_id: process.env.NOTION_Strategy_DB_ID || '',
-      plan_db_id: process.env.NOTION_Plan_DB_ID || ''
-    }
+    // Fallback: 仅对特定开发者用户使用环境变量
+    const isDeveloper = user.email === 'stanleyhiu.96@gmail.com' // 替换为您的邮箱
+    
+    if (isDeveloper && process.env.NOTION_API_KEY) {
+      const fallbackConfig: UserNotionConfig = {
+        notion_api_key: process.env.NOTION_API_KEY,
+        tasks_db_id: process.env.NOTION_Tasks_DB_ID || '',
+        strategy_db_id: process.env.NOTION_Strategy_DB_ID || '',
+        plan_db_id: process.env.NOTION_Plan_DB_ID || ''
+      }
 
-    // 检查fallback配置是否有效
-    if (!fallbackConfig.notion_api_key) {
       return {
-        config: null,
-        user,
-        error: 'No Notion configuration found. Please configure your Notion integration.'
+        config: fallbackConfig,
+        user
       }
     }
 
+    // 对于普通用户，没有配置就返回错误
     return {
-      config: fallbackConfig,
-      user
+      config: null,
+      user,
+      error: 'No Notion configuration found. Please configure your Notion integration.'
     }
 
   } catch (error) {
