@@ -326,6 +326,19 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    // 获取用户的Notion配置
+    const { config, error } = await getDatabaseConfig('tasks')
+    
+    if (error || !config) {
+      return NextResponse.json({ 
+        error: error || 'Tasks database not configured' 
+      }, { status: 400 })
+    }
+
+    const notion = new Client({
+      auth: config.notion_api_key,
+    })
+
     const { searchParams } = new URL(request.url)
     const pageId = searchParams.get('id')
     
