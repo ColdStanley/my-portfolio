@@ -102,18 +102,24 @@ export async function GET(request: NextRequest) {
       const strategyId = page.id
       
       // 计算该Strategy下的Plans进度
-      const relatedPlans = planResponse.results.filter((plan: any) => {
-        const parentGoals = plan.properties.parent_goal?.relation || []
-        return parentGoals.some((goal: any) => goal.id === strategyId)
-      })
+      let totalPlans = 0
+      let completedPlans = 0
+      let calculatedProgress = 0
       
-      const totalPlans = relatedPlans.length
-      const completedPlans = relatedPlans.filter((plan: any) => {
-        const status = plan.properties.status?.select?.name || ''
-        return status === 'Completed'
-      }).length
-      
-      const calculatedProgress = totalPlans > 0 ? Math.round((completedPlans / totalPlans) * 100) : 0
+      if (planResponse) {
+        const relatedPlans = planResponse.results.filter((plan: any) => {
+          const parentGoals = plan.properties.parent_goal?.relation || []
+          return parentGoals.some((goal: any) => goal.id === strategyId)
+        })
+        
+        totalPlans = relatedPlans.length
+        completedPlans = relatedPlans.filter((plan: any) => {
+          const status = plan.properties.status?.select?.name || ''
+          return status === 'Completed'
+        }).length
+        
+        calculatedProgress = totalPlans > 0 ? Math.round((completedPlans / totalPlans) * 100) : 0
+      }
 
       return {
         id: page.id,
