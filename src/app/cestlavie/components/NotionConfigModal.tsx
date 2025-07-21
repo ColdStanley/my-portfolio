@@ -88,15 +88,42 @@ export default function NotionConfigModal({ isOpen, onClose, onConfigSaved }: No
         throw new Error('Failed to save configuration for testing')
       }
 
-      // 测试配置
-      const testResponse = await fetch('/api/test-notion-config')
+      // 测试配置 - 暂时使用tasks API进行测试
+      const testResponse = await fetch('/api/tasks')
+      
+      if (testResponse.status === 404) {
+        setTestResult({
+          success: false,
+          message: 'Test endpoint not found. Using tasks API for testing...'
+        })
+        return
+      }
+      
       const result = await testResponse.json()
       
-      setTestResult({
-        success: result.success,
-        message: result.success ? result.message : result.error,
-        details: result.details
-      })
+      if (testResponse.ok) {
+        setTestResult({
+          success: true,
+          message: 'Configuration test passed! Tasks API is working correctly.',
+          details: `Found ${result.data?.length || 0} tasks in database`
+        })
+      } else {
+        // 分析错误类型
+        let errorMessage = result.error || 'Unknown error'
+        if (testResponse.status === 401) {
+          errorMessage = 'Notion API key is invalid or has expired. Please check your API key.'
+        } else if (testResponse.status === 404) {
+          errorMessage = 'Tasks database not found. Please verify your database ID.'
+        } else if (testResponse.status === 403) {
+          errorMessage = 'Access denied to the tasks database. Please ensure your Notion integration has access to this database.'
+        }
+        
+        setTestResult({
+          success: false,
+          message: errorMessage,
+          details: result
+        })
+      }
       
     } catch (error) {
       setTestResult({
