@@ -1784,7 +1784,7 @@ export default function TaskPanel() {
         </div>
       </div>
 
-      {/* 移动端顶部：今日任务和New Task按钮 */}
+      {/* 移动端顶部：日历、今日任务和New Task按钮 */}
       <div className="md:hidden mb-6">
         {/* New Task按钮 */}
         <div className="flex justify-start mb-4">
@@ -1798,6 +1798,105 @@ export default function TaskPanel() {
             <span>+</span>
             <span className="whitespace-nowrap">New Task</span>
           </button>
+        </div>
+
+        {/* Refresh按钮与筛选框 - 移动端 */}
+        <div className="flex flex-col sm:flex-row justify-start items-stretch sm:items-center gap-3 mb-4">
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 text-sm rounded-md hover:bg-purple-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95"
+          >
+            <div className={`${refreshing ? 'animate-spin' : ''}`}>
+              {refreshing ? '⟳' : '↻'}
+            </div>
+            <span className="whitespace-nowrap">Refresh</span>
+          </button>
+          
+          {/* Plan筛选框 */}
+          <select
+            value={selectedPlanFilter}
+            onChange={(e) => setSelectedPlanFilter(e.target.value)}
+            className="px-3 py-2 bg-white border border-purple-200 rounded-md text-sm text-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:border-purple-300 transition-all duration-200 flex-1 sm:flex-initial"
+          >
+            <option value="all">All Plans</option>
+            <option value="none">No Plan</option>
+            {planOptions.map(plan => (
+              <option key={plan.id} value={plan.id}>
+                {plan.title}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* 移动端紧凑日历 */}
+        <div className="bg-white rounded-lg shadow-sm border border-purple-200 p-3 mb-6">
+          {/* 日历头部 */}
+          <div className="flex items-center justify-between mb-3">
+            <button
+              onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
+              className="p-1.5 hover:bg-purple-100 rounded-full transition-colors"
+            >
+              <span className="text-purple-600 text-lg">‹</span>
+            </button>
+            <h2 className="text-base font-semibold text-purple-900">
+              {currentMonth.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}
+            </h2>
+            <button
+              onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
+              className="p-1.5 hover:bg-purple-100 rounded-full transition-colors"
+            >
+              <span className="text-purple-600 text-lg">›</span>
+            </button>
+          </div>
+
+          {/* 星期标题 */}
+          <div className="grid grid-cols-7 gap-0.5 mb-1">
+            {['日', '一', '二', '三', '四', '五', '六'].map((day, index) => (
+              <div key={index} className="text-center text-xs font-medium text-purple-700 py-1">
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* 日历天数 - 移动端紧凑版 */}
+          <div className="grid grid-cols-7 gap-0.5">
+            {calendarDays.map((day, index) => {
+              const taskCount = getTaskCountForDate(day.dateString)
+              const isSelected = selectedDate === day.dateString
+              const isTodayDate = isToday(day.dateString)
+              
+              return (
+                <button
+                  key={index}
+                  onClick={() => setSelectedDate(day.dateString)}
+                  disabled={!day.inCurrentMonth}
+                  className={`
+                    relative p-1.5 text-xs font-medium transition-all duration-200 rounded
+                    ${!day.inCurrentMonth 
+                      ? 'text-gray-300 cursor-not-allowed' 
+                      : isSelected 
+                        ? 'bg-purple-600 text-white' 
+                        : isTodayDate 
+                          ? 'bg-purple-100 text-purple-800 font-bold border border-purple-300' 
+                          : taskCount > 0 
+                            ? 'bg-purple-50 text-purple-700 hover:bg-purple-100' 
+                            : 'text-gray-700 hover:bg-purple-50'
+                    }
+                  `}
+                >
+                  <span className="block">{day.date.getDate()}</span>
+                  {taskCount > 0 && !isSelected && (
+                    <div className={`absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full text-xs flex items-center justify-center ${
+                      isTodayDate ? 'bg-purple-600 text-white' : 'bg-purple-400 text-white'
+                    }`}>
+                      {taskCount > 9 ? '9+' : taskCount}
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
         </div>
         
         {/* 今日任务 */}
@@ -2080,87 +2179,15 @@ export default function TaskPanel() {
             </div>
           </div>
 
-          {/* 移动端紧凑日历 */}
-          <div className="md:hidden bg-white rounded-lg shadow-sm border border-purple-200 p-3">
-            {/* 日历头部 */}
-            <div className="flex items-center justify-between mb-3">
-              <button
-                onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
-                className="p-1.5 hover:bg-purple-100 rounded-full transition-colors"
-              >
-                <span className="text-purple-600 text-sm">‹</span>
-              </button>
-              <h2 className="text-base font-semibold text-purple-900">
-                {currentMonth.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}
-              </h2>
-              <button
-                onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
-                className="p-1.5 hover:bg-purple-100 rounded-full transition-colors"
-              >
-                <span className="text-purple-600 text-sm">›</span>
-              </button>
-            </div>
-
-            {/* 星期标题 */}
-            <div className="grid grid-cols-7 gap-0.5 mb-2">
-              {['日', '一', '二', '三', '四', '五', '六'].map(day => (
-                <div key={day} className="text-center text-xs font-medium text-gray-500 p-1">
-                  {day}
-                </div>
-              ))}
-            </div>
-
-            {/* 日历天数 - 移动端紧凑版 */}
-            <div className="grid grid-cols-7 gap-0.5">
-              {calendarDays.map((day, index) => {
-                const taskCount = getTaskCountForDate(day.dateString)
-                const isSelected = selectedDate === day.dateString
-                const isTodayDate = isToday(day.dateString)
-                
-                return (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedDate(day.dateString)}
-                    className={`
-                      relative p-1 text-xs rounded-md transition-all duration-200 min-h-[2rem] flex items-center justify-center
-                      ${day.isCurrentMonth 
-                        ? 'text-gray-900 hover:bg-purple-50' 
-                        : 'text-gray-400 hover:bg-gray-50'
-                      }
-                      ${isSelected 
-                        ? 'bg-purple-600 text-white hover:bg-purple-700' 
-                        : ''
-                      }
-                      ${isTodayDate && !isSelected 
-                        ? 'bg-purple-100 text-purple-700 font-semibold' 
-                        : ''
-                      }
-                    `}
-                  >
-                    {day.date.getDate()}
-                    {taskCount > 0 && (
-                      <div className={`
-                        absolute -top-0.5 -left-0.5 w-3 h-3 rounded-full text-xs flex items-center justify-center
-                        ${isSelected ? 'bg-white text-purple-600' : 'bg-purple-600 text-white'}
-                      `}>
-                        {taskCount > 9 ? '•' : taskCount}
-                      </div>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-
-          </div>
           
           {/* Task Analytics - 共享组件 */}
           <div className="bg-white rounded-lg shadow-sm border border-purple-200 p-3 md:p-6 mt-6">
             <p className="text-sm text-gray-600 mb-3">
               Selected: <span className="font-medium text-purple-700">
-                {new Date(selectedDate).toLocaleDateString('en-US', { 
+                {selectedDate ? new Date(selectedDate).toLocaleDateString('en-US', { 
                   month: 'short', 
                   day: 'numeric' 
-                })}
+                }) : 'No date selected'}
               </span>
               <span className="text-xs text-gray-500 ml-2">({selectedDateTasks.length} tasks)</span>
             </p>

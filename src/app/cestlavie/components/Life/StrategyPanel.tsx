@@ -317,6 +317,7 @@ export default function StrategyPanel() {
   const [refreshing, setRefreshing] = useState(false)
   const [plans, setPlans] = useState<PlanRecord[]>([])
   const [tasks, setTasks] = useState<TaskRecord[]>([])
+  const [expandedPlans, setExpandedPlans] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     fetchStrategies()
@@ -619,6 +620,19 @@ export default function StrategyPanel() {
     } catch (error) {
       return 'Invalid dates'
     }
+  }
+
+  // 切换Plan的展开/收起状态
+  const togglePlanExpanded = (planId: string) => {
+    setExpandedPlans(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(planId)) {
+        newSet.delete(planId)
+      } else {
+        newSet.add(planId)
+      }
+      return newSet
+    })
   }
 
   if (loading) {
@@ -945,6 +959,7 @@ export default function StrategyPanel() {
                       <div className="space-y-2">
                         {strategyPlans.map((plan) => {
                           const planTasks = getTasksForPlan(plan.id)
+                          const isExpanded = expandedPlans.has(plan.id)
                           
                           return (
                             <div key={plan.id} className="bg-purple-50 rounded border border-purple-100 p-2">
@@ -960,6 +975,15 @@ export default function StrategyPanel() {
                                         {plan.status}
                                       </span>
                                     )}
+                                    {planTasks.length > 0 && (
+                                      <button
+                                        onClick={() => togglePlanExpanded(plan.id)}
+                                        className="p-1 text-purple-600 hover:bg-purple-200 rounded transition-all duration-200 text-xs"
+                                        title={isExpanded ? 'Hide tasks' : 'Show tasks'}
+                                      >
+                                        {isExpanded ? '▼' : '▶'}
+                                      </button>
+                                    )}
                                   </div>
                                 </div>
                                 
@@ -972,11 +996,16 @@ export default function StrategyPanel() {
                                       {plan.budget_time}h
                                     </span>
                                   )}
+                                  {planTasks.length > 0 && (
+                                    <span className="bg-purple-200 text-purple-700 px-1.5 py-0.5 rounded-full font-medium">
+                                      {planTasks.length} tasks
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                               
                               {/* Plan's Tasks - 移动端简化 */}
-                              {planTasks.length > 0 && (
+                              {planTasks.length > 0 && isExpanded && (
                                 <div className="ml-2 space-y-1">
                                   <div className="flex items-center gap-1 mb-1">
                                     <span className="text-xs font-medium text-purple-600">Tasks</span>
@@ -1041,6 +1070,7 @@ export default function StrategyPanel() {
                     <div className="space-y-3">
                       {strategyPlans.map((plan) => {
                         const planTasks = getTasksForPlan(plan.id)
+                        const isExpanded = expandedPlans.has(plan.id)
                         
                         return (
                           <div key={plan.id} className="bg-purple-50 rounded-lg border border-purple-100 p-3">
@@ -1061,6 +1091,15 @@ export default function StrategyPanel() {
                                       {plan.priority_quadrant}
                                     </span>
                                   )}
+                                  {planTasks.length > 0 && (
+                                    <button
+                                      onClick={() => togglePlanExpanded(plan.id)}
+                                      className="p-1.5 text-purple-600 hover:bg-purple-200 rounded-lg transition-all duration-200 text-sm border border-purple-200 hover:border-purple-300"
+                                      title={isExpanded ? 'Hide tasks' : 'Show tasks'}
+                                    >
+                                      {isExpanded ? '▼' : '▶'}
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                               
@@ -1073,11 +1112,16 @@ export default function StrategyPanel() {
                                     {plan.budget_time}h
                                   </span>
                                 )}
+                                {planTasks.length > 0 && (
+                                  <span className="bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full font-medium">
+                                    {planTasks.length} {planTasks.length === 1 ? 'task' : 'tasks'}
+                                  </span>
+                                )}
                               </div>
                             </div>
                             
                             {/* Plan's Tasks */}
-                            {planTasks.length > 0 && (
+                            {planTasks.length > 0 && isExpanded && (
                               <div className="ml-4 space-y-2">
                                 <div className="flex items-center gap-2 mb-2">
                                   <span className="text-xs font-medium text-purple-600">Tasks</span>

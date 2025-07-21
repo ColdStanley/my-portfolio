@@ -1,15 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
-
-const notion = new Client({
-  auth: process.env.NOTION_API_KEY,
-})
-
-const TASKS_DB_ID = process.env.NOTION_Tasks_DB_ID
-
-if (!TASKS_DB_ID) {
-  console.error('Missing NOTION_Tasks_DB_ID environment variable')
-}
+import { getDatabaseConfig } from '@/lib/getUserNotionConfig'
 
 function extractTextContent(richText: any[]): string {
   if (!richText || !Array.isArray(richText)) return ''
@@ -54,11 +45,18 @@ function calculateHours(startDate: string, endDate: string): number {
 
 export async function GET(request: NextRequest) {
   try {
-    if (!TASKS_DB_ID) {
+    // 获取用户的Notion配置
+    const { config, user, error } = await getDatabaseConfig('tasks')
+    
+    if (error || !config) {
       return NextResponse.json({ 
-        error: 'Tasks database ID not configured' 
-      }, { status: 500 })
+        error: error || 'Tasks database not configured' 
+      }, { status: 400 })
     }
+
+    const notion = new Client({
+      auth: config.notion_api_key,
+    })
 
     const { searchParams } = new URL(request.url)
     const action = searchParams.get('action')
@@ -66,7 +64,7 @@ export async function GET(request: NextRequest) {
     // If requesting schema information
     if (action === 'schema') {
       const databaseInfo = await notion.databases.retrieve({
-        database_id: TASKS_DB_ID
+        database_id: config.database_id
       })
 
       const properties = databaseInfo.properties as any
@@ -82,7 +80,7 @@ export async function GET(request: NextRequest) {
     }
 
     const response = await notion.databases.query({
-      database_id: TASKS_DB_ID,
+      database_id: config.database_id,
       page_size: 100,
       sorts: [
         {
@@ -136,11 +134,18 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    if (!TASKS_DB_ID) {
+    // 获取用户的Notion配置
+    const { config, user, error } = await getDatabaseConfig('tasks')
+    
+    if (error || !config) {
       return NextResponse.json({ 
-        error: 'Tasks database ID not configured' 
-      }, { status: 500 })
+        error: error || 'Tasks database not configured' 
+      }, { status: 400 })
     }
+
+    const notion = new Client({
+      auth: config.notion_api_key,
+    })
 
     const body = await request.json()
     const { 
@@ -244,7 +249,7 @@ export async function POST(request: NextRequest) {
     } else {
       // 创建新任务
       response = await notion.pages.create({
-        parent: { database_id: TASKS_DB_ID },
+        parent: { database_id: config.database_id },
         properties
       })
       
