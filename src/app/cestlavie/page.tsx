@@ -19,7 +19,7 @@ export default function CestLaViePage() {
   useEffect(() => {
     if (!loading && !user) {
       // 未登录，重定向到登录页
-      router.push('/auth/callback?returnTo=/cestlavie')
+      router.push('/auth/login?returnTo=/cestlavie')
     }
   }, [user, loading, router])
 

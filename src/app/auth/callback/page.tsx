@@ -57,10 +57,19 @@ export default function AuthCallback() {
           setTimeout(() => window.close(), 2000)
         }
       } else {
-        // 如果不是弹窗，重定向到主页面
-        setTimeout(() => {
-          window.location.href = '/cestlavie'
-        }, 3000)
+        // 如果不是弹窗，获取returnTo参数并重定向
+        const urlParams = new URLSearchParams(window.location.search)
+        const returnTo = urlParams.get('returnTo') || '/cestlavie'
+        
+        if (urlParams.get('success') === 'true') {
+          // 认证成功，立即重定向
+          window.location.href = returnTo
+        } else {
+          // 等待处理完成后重定向
+          setTimeout(() => {
+            window.location.href = returnTo
+          }, 3000)
+        }
       }
     }
     
