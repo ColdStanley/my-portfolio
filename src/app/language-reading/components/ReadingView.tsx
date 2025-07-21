@@ -1,0 +1,672 @@
+'use client'
+
+import { useState, useRef, useCallback } from 'react'
+import { useLanguageReadingStore } from '../store/useLanguageReadingStore'
+import QueryCards from './QueryCards'
+import ThinkingAnimation from './ThinkingAnimation'
+import AnimatedButton from './AnimatedButton'
+import { Language, getUITexts } from '../config/uiText'
+
+interface ReadingViewProps {
+  language: Language
+  articleId: number
+  content: string
+  title?: string
+  onNewArticle: () => void
+}
+
+export default function ReadingView({ language, articleId, content, title, onNewArticle }: ReadingViewProps) {
+  const { clearAll } = useLanguageReadingStore()
+  const uiTexts = getUITexts(language)
+  const [selectionData, setSelectionData] = useState<{
+    text: string
+    range: { start: number; end: number }
+    position: { x: number; y: number }
+  } | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [activeSelection, setActiveSelection] = useState<{
+    start: number
+    end: number
+  } | null>(null)
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
+  const [longPressStart, setLongPressStart] = useState<{x: number, y: number} | null>(null)
+  
+  const textRef = useRef<HTMLDivElement>(null)
+  const { isHighlighted, addWordQuery, addSentenceQuery, addHighlight, wordQueries, sentenceQueries } = useLanguageReadingStore()
+
+  const findExistingQuery = (start: number, end: number) => {
+    // Find existing word query
+    const wordQuery = wordQueries.find(q => 
+      q.start_offset <= start && q.end_offset >= end
+    )
+    if (wordQuery) {
+      return { type: 'word', id: wordQuery.id }
+    }
+    
+    // Find existing sentence query
+    const sentenceQuery = sentenceQueries.find(q => 
+      q.start_offset <= start && q.end_offset >= end
+    )
+    if (sentenceQuery) {
+      return { type: 'sentence', id: sentenceQuery.id }
+    }
+    
+    return null
+  }
+
+  const handleTextSelection = useCallback(() => {
+    const selection = window.getSelection()
+    if (!selection || selection.rangeCount === 0) return
+
+    const range = selection.getRangeAt(0)
+    const selectedText = selection.toString().trim()
+    
+    if (!selectedText || !textRef.current) {
+      setSelectionData(null)
+      setActiveSelection(null)
+      return
+    }
+
+    // Text selection and offset calculation logic (same as before)
+    const domTextContent = textRef.current.textContent || ''
+    
+    const walker = document.createTreeWalker(
+      textRef.current,
+      NodeFilter.SHOW_TEXT,
+      null
+    )
+
+    let domOffset = 0
+    let node
+    let selectionStartInDOM = -1
+
+    while ((node = walker.nextNode())) {
+      if (node === range.startContainer) {
+        selectionStartInDOM = domOffset + range.startOffset
+        break
+      }
+      domOffset += node.textContent?.length || 0
+    }
+
+    if (selectionStartInDOM === -1) return
+
+    const searchWindowStart = Math.max(0, selectionStartInDOM - 100)
+    const searchWindowEnd = Math.min(content.length, selectionStartInDOM + 100)
+    const searchWindow = content.slice(searchWindowStart, searchWindowEnd)
+    
+    const relativeIndex = searchWindow.indexOf(selectedText)
+    if (relativeIndex === -1) {
+      const globalIndex = content.indexOf(selectedText)
+      if (globalIndex === -1) return
+      
+      const startOffset = globalIndex
+      const endOffset = startOffset + selectedText.length
+      
+      setActiveSelection({ start: startOffset, end: endOffset })
+      setSelectionData({
+        text: selectedText,
+        range: { start: startOffset, end: endOffset },
+        position: {
+          x: range.getBoundingClientRect().left + range.getBoundingClientRect().width / 2,
+          y: range.getBoundingClientRect().top - 10
+        }
+      })
+      return
+    }
+
+    const startOffset = searchWindowStart + relativeIndex
+    const endOffset = startOffset + selectedText.length
+
+    const existingQuery = findExistingQuery(startOffset, endOffset)
+    if (existingQuery) {
+      const cardId = existingQuery.type === 'word' 
+        ? `word-card-${existingQuery.id}` 
+        : `sentence-card-${existingQuery.id}`
+      scrollToCard(cardId)
+      setSelectionData(null)
+      return
+    }
+
+    const rect = range.getBoundingClientRect()
+    setActiveSelection({ start: startOffset, end: endOffset })
+    setSelectionData({
+      text: selectedText,
+      range: { start: startOffset, end: endOffset },
+      position: {
+        x: rect.left + rect.width / 2,
+        y: rect.top - 10
+      }
+    })
+    
+  }, [content, wordQueries, sentenceQueries])
+
+  const handleDoubleClick = useCallback((event: React.MouseEvent) => {
+    event.preventDefault()
+    
+    const selection = window.getSelection()
+    if (!selection || !textRef.current) return
+
+    // Get the clicked position
+    const range = document.caretRangeFromPoint(event.clientX, event.clientY)
+    if (!range) return
+
+    // Find word boundaries
+    const textNode = range.startContainer
+    if (textNode.nodeType !== Node.TEXT_NODE) return
+
+    const text = textNode.textContent || ''
+    const offset = range.startOffset
+
+    // Find word boundaries using regex
+    const wordRegex = /\b\w+\b/g
+    let match
+    let wordStart = 0
+    let wordEnd = 0
+
+    while ((match = wordRegex.exec(text)) !== null) {
+      if (match.index <= offset && offset <= match.index + match[0].length) {
+        wordStart = match.index
+        wordEnd = match.index + match[0].length
+        break
+      }
+    }
+
+    if (wordStart === wordEnd) return
+
+    // Create selection for the word
+    const newRange = document.createRange()
+    newRange.setStart(textNode, wordStart)
+    newRange.setEnd(textNode, wordEnd)
+    
+    selection.removeAllRanges()
+    selection.addRange(newRange)
+
+    // Trigger text selection handler
+    setTimeout(() => {
+      handleTextSelection()
+    }, 10)
+  }, [handleTextSelection])
+
+  const handleMouseDown = useCallback((event: React.MouseEvent) => {
+    // Clear any existing timer
+    if (longPressTimer) {
+      clearTimeout(longPressTimer)
+      setLongPressTimer(null)
+    }
+
+    // Record initial position
+    setLongPressStart({ x: event.clientX, y: event.clientY })
+
+    // Start long press timer (800ms)
+    const timer = setTimeout(() => {
+      handleLongPress(event.clientX, event.clientY)
+    }, 800)
+
+    setLongPressTimer(timer)
+  }, [longPressTimer])
+
+  const handleMouseUp = useCallback(() => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer)
+      setLongPressTimer(null)
+    }
+    setLongPressStart(null)
+  }, [longPressTimer])
+
+  const handleMouseMove = useCallback((event: React.MouseEvent) => {
+    if (longPressStart && longPressTimer) {
+      // If mouse moves too much, cancel long press
+      const deltaX = Math.abs(event.clientX - longPressStart.x)
+      const deltaY = Math.abs(event.clientY - longPressStart.y)
+      
+      if (deltaX > 10 || deltaY > 10) {
+        clearTimeout(longPressTimer)
+        setLongPressTimer(null)
+        setLongPressStart(null)
+      }
+    }
+  }, [longPressStart, longPressTimer])
+
+  const handleLongPress = useCallback((clientX: number, clientY: number) => {
+    const selection = window.getSelection()
+    if (!selection || !textRef.current) return
+
+    // Get the pressed position
+    const range = document.caretRangeFromPoint(clientX, clientY)
+    if (!range) return
+
+    // Find sentence boundaries
+    const textNode = range.startContainer
+    if (textNode.nodeType !== Node.TEXT_NODE) return
+
+    const text = textNode.textContent || ''
+    const offset = range.startOffset
+
+    // Find sentence boundaries (. ! ? followed by space or end)
+    const sentenceRegex = /[.!?]+(?:\s|$)/g
+    let match
+    let sentenceStart = 0
+    let sentenceEnd = text.length
+
+    // Find previous sentence end
+    sentenceRegex.lastIndex = 0
+    while ((match = sentenceRegex.exec(text)) !== null) {
+      if (match.index + match[0].length <= offset) {
+        sentenceStart = match.index + match[0].length
+      } else {
+        sentenceEnd = match.index + match[0].length
+        break
+      }
+    }
+
+    // Trim whitespace
+    while (sentenceStart < text.length && /\s/.test(text[sentenceStart])) {
+      sentenceStart++
+    }
+    while (sentenceEnd > 0 && /\s/.test(text[sentenceEnd - 1])) {
+      sentenceEnd--
+    }
+
+    if (sentenceStart >= sentenceEnd) return
+
+    // Create selection for the sentence
+    const newRange = document.createRange()
+    newRange.setStart(textNode, sentenceStart)
+    newRange.setEnd(textNode, sentenceEnd)
+    
+    selection.removeAllRanges()
+    selection.addRange(newRange)
+
+    // Add haptic feedback (vibration on mobile)
+    if ('vibrate' in navigator) {
+      navigator.vibrate(50)
+    }
+
+    // Trigger text selection handler
+    setTimeout(() => {
+      handleTextSelection()
+    }, 10)
+  }, [handleTextSelection])
+
+  const scrollToCard = (cardId: string) => {
+    setTimeout(() => {
+      const element = document.getElementById(cardId)
+      if (element) {
+        // Add scroll path indicator
+        const scrollIndicator = document.createElement('div')
+        scrollIndicator.className = 'fixed z-50 pointer-events-none'
+        scrollIndicator.style.cssText = `
+          width: 4px;
+          height: 50px;
+          background: linear-gradient(to bottom, rgba(147, 51, 234, 0.8), rgba(147, 51, 234, 0.2));
+          border-radius: 2px;
+          top: 50%;
+          right: 20px;
+          transform: translateY(-50%);
+          animation: scrollPulse 1.5s ease-in-out;
+        `
+        
+        // Add animation keyframes to document
+        if (!document.getElementById('scroll-indicator-styles')) {
+          const style = document.createElement('style')
+          style.id = 'scroll-indicator-styles'
+          style.textContent = `
+            @keyframes scrollPulse {
+              0% { opacity: 0; transform: translateY(-50%) scale(0.8); }
+              50% { opacity: 1; transform: translateY(-50%) scale(1.1); }
+              100% { opacity: 0; transform: translateY(-50%) scale(0.8); }
+            }
+          `
+          document.head.appendChild(style)
+        }
+        
+        document.body.appendChild(scrollIndicator)
+        
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        element.style.boxShadow = '0 0 20px rgba(147, 51, 234, 0.3)'
+        element.style.transform = 'scale(1.02)'
+        element.style.transition = 'all 0.3s ease'
+        
+        setTimeout(() => {
+          element.style.boxShadow = ''
+          element.style.transform = ''
+          scrollIndicator.remove()
+        }, 2000)
+      }
+    }, 100)
+  }
+
+  const handleQuery = async (type: 'word' | 'sentence') => {
+    if (!selectionData || isLoading) return
+
+    setIsLoading(true)
+    try {
+      const endpoint = type === 'word' ? 'query-word' : 'query-sentence'
+      const res = await fetch(`/api/language-reading/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          articleId,
+          [type === 'word' ? 'wordText' : 'sentenceText']: selectionData.text,
+          startOffset: selectionData.range.start,
+          endOffset: selectionData.range.end,
+          queryType: 'ai_query',
+          language: language
+        }),
+      })
+
+      const data = await res.json()
+      if (data.id) {
+        if (type === 'word') {
+          addWordQuery(data)
+        } else {
+          addSentenceQuery(data)
+        }
+        addHighlight(type, selectionData.range.start, selectionData.range.end, data.id)
+        
+        const cardId = type === 'word' ? `word-card-${data.id}` : `sentence-card-${data.id}`
+        scrollToCard(cardId)
+      }
+    } catch (error) {
+      console.error('Query failed:', error)
+    } finally {
+      setIsLoading(false)
+      setSelectionData(null)
+      setActiveSelection(null)
+      window.getSelection()?.removeAllRanges()
+    }
+  }
+
+  const handleMarkOnly = async (type: 'word' | 'sentence') => {
+    if (!selectionData || isLoading) return
+
+    setIsLoading(true)
+    try {
+      const endpoint = type === 'word' ? 'mark-word' : 'mark-sentence'
+      const res = await fetch(`/api/language-reading/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          articleId,
+          [type === 'word' ? 'wordText' : 'sentenceText']: selectionData.text,
+          startOffset: selectionData.range.start,
+          endOffset: selectionData.range.end,
+          queryType: 'manual_mark',
+          language: language
+        }),
+      })
+
+      const data = await res.json()
+      if (data.id) {
+        if (type === 'word') {
+          addWordQuery(data)
+        } else {
+          addSentenceQuery(data)
+        }
+        addHighlight(type, selectionData.range.start, selectionData.range.end, data.id)
+        
+        const cardId = type === 'word' ? `word-card-${data.id}` : `sentence-card-${data.id}`
+        scrollToCard(cardId)
+      }
+    } catch (error) {
+      console.error('Mark failed:', error)
+    } finally {
+      setIsLoading(false)
+      setSelectionData(null)
+      setActiveSelection(null)
+      window.getSelection()?.removeAllRanges()
+    }
+  }
+
+  // Get language-specific speech language code
+  const getSpeechLang = (language: Language) => {
+    return language === 'french' ? 'fr-FR' : 'en-US'
+  }
+
+  const handleSpeak = (text: string, rate: number = 0.8) => {
+    speechSynthesis.cancel()
+    
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.lang = getSpeechLang(language)
+    utterance.rate = rate
+    utterance.pitch = 1
+    utterance.volume = 1
+    
+    speechSynthesis.speak(utterance)
+  }
+
+  const renderHighlightedText = () => {
+    const ranges = useLanguageReadingStore.getState().highlightedRanges
+    
+    // Add active selection to ranges for visual feedback
+    const allRanges = [...ranges]
+    if (activeSelection) {
+      allRanges.push({
+        start: activeSelection.start,
+        end: activeSelection.end,
+        type: 'selection' as any,
+        id: -1
+      })
+    }
+    
+    if (allRanges.length === 0) {
+      return content.split('\n').map((paragraph, index) => (
+        paragraph.trim() ? (
+          <p key={index} className="mb-4 leading-relaxed">
+            {paragraph}
+          </p>
+        ) : (
+          <br key={index} />
+        )
+      ))
+    }
+
+    // Same highlighting logic as before with merged ranges
+    const sortedRanges = [...allRanges].sort((a, b) => a.start - b.start)
+    const mergedRanges: Array<{
+      start: number
+      end: number
+      types: Array<'word' | 'sentence' | 'selection'>
+      ids: number[]
+    }> = []
+
+    sortedRanges.forEach(range => {
+      const lastMerged = mergedRanges[mergedRanges.length - 1]
+      
+      if (lastMerged && range.start <= lastMerged.end && range.end >= lastMerged.start) {
+        lastMerged.start = Math.min(lastMerged.start, range.start)
+        lastMerged.end = Math.max(lastMerged.end, range.end)
+        if (!lastMerged.types.includes(range.type)) {
+          lastMerged.types.push(range.type)
+        }
+        lastMerged.ids.push(range.id)
+      } else {
+        mergedRanges.push({
+          start: range.start,
+          end: range.end,
+          types: [range.type],
+          ids: [range.id]
+        })
+      }
+    })
+    
+    let result = ''
+    let lastIndex = 0
+
+    mergedRanges.forEach((range) => {
+      result += content.slice(lastIndex, range.start)
+      
+      const hasBoth = range.types.includes('word') && range.types.includes('sentence')
+      const hasSentence = range.types.includes('sentence')
+      const hasSelection = range.types.includes('selection')
+      
+      let className = ''
+      if (hasSelection) {
+        className = 'inline-block px-2 py-1 rounded-lg bg-gradient-to-r from-yellow-200/60 to-orange-200/60 text-orange-800 backdrop-blur-xs shadow-lg border-2 border-orange-400 animate-pulse transition-all duration-300 ease-in-out'
+      } else if (hasBoth) {
+        className = 'inline-block px-2 py-1 rounded-lg bg-gradient-to-r from-purple-100/30 to-blue-100/30 text-purple-800 backdrop-blur-xs shadow-sm transition-all duration-200 ease-in-out hover:from-purple-200/40 hover:to-blue-200/40 hover:shadow-md hover:scale-[1.005] cursor-pointer border-l-2 border-purple-400'
+      } else if (hasSentence) {
+        className = 'inline-block px-2 py-1 rounded-lg bg-blue-100/20 text-blue-800 backdrop-blur-xs shadow-sm transition-all duration-200 ease-in-out hover:bg-blue-200/30 hover:shadow-md hover:scale-[1.005] cursor-pointer'
+      } else {
+        className = 'inline-block px-2 py-1 rounded-lg bg-purple-100/20 text-purple-800 backdrop-blur-xs shadow-sm transition-all duration-200 ease-in-out hover:bg-purple-200/30 hover:shadow-md hover:scale-[1.005] cursor-pointer'
+      }
+      
+      result += `<mark class="${className}">${content.slice(range.start, range.end)}</mark>`
+      
+      lastIndex = range.end
+    })
+
+    result += content.slice(lastIndex)
+    
+    const formattedResult = result
+      .split('\n')
+      .map(paragraph => paragraph ? `<p class="mb-4 leading-relaxed">${paragraph}</p>` : '<br/>')
+      .join('')
+    
+    return formattedResult
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-800">{uiTexts.readingSession}</h2>
+          {title && (
+            <p className="text-sm text-purple-600 font-medium mt-1">"{title}"</p>
+          )}
+        </div>
+        <AnimatedButton
+          onClick={() => {
+            clearAll()
+            onNewArticle()
+          }}
+          variant="primary"
+          size="md"
+        >
+          {uiTexts.newArticle}
+        </AnimatedButton>
+      </div>
+      
+      <div className="flex gap-6">
+        {/* Left Panel - Article Content */}
+        <div className="w-1/2">
+          <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
+            <div
+              ref={textRef}
+              className="prose prose-lg max-w-none leading-relaxed select-text cursor-text"
+              onMouseUp={handleTextSelection}
+              onDoubleClick={handleDoubleClick}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseLeave={handleMouseUp}
+            >
+              {typeof renderHighlightedText() === 'string' ? (
+                <div dangerouslySetInnerHTML={{ __html: renderHighlightedText() as string }} />
+              ) : (
+                renderHighlightedText()
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Panel - Query Results */}
+        <div className="w-1/2">
+          <QueryCards language={language} />
+        </div>
+      </div>
+
+      {/* Selection Tooltip */}
+      {selectionData && (
+        <div
+          className="fixed z-50 w-80 bg-white shadow-xl border border-purple-200 rounded-2xl text-gray-700 overflow-hidden"
+          style={{
+            left: Math.max(10, selectionData.position.x - 160),
+            top: selectionData.position.y - 100,
+            pointerEvents: 'auto'
+          }}
+        >
+          {/* Header */}
+          <div className="bg-gradient-to-r from-purple-600 to-purple-700 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-purple-200 rounded-full"></div>
+                <p className="text-white font-medium text-sm">{uiTexts.textAnalysis}</p>
+              </div>
+              <button
+                onClick={() => setSelectionData(null)}
+                className="text-purple-100 hover:text-white text-xl leading-none transition-colors"
+              >
+                ×
+              </button>
+            </div>
+            <p className="text-purple-100 text-xs mt-2 max-w-full truncate">
+              "{selectionData.text}"
+            </p>
+          </div>
+          
+          {/* Content */}
+          <div className="p-4">
+            {isLoading && (
+              <div className="mb-3 relative">
+                <ThinkingAnimation 
+                  message={uiTexts.analyzing}
+                  className="p-3 rounded-lg"
+                />
+              </div>
+            )}
+            
+            {/* AI Query Section */}
+            <div className="mb-4">
+              <p className="text-xs font-semibold text-purple-700 mb-2 uppercase tracking-wide">{uiTexts.aiAnalysis}</p>
+              <div className="flex gap-2">
+                <AnimatedButton
+                  onClick={() => handleQuery('word')}
+                  disabled={isLoading}
+                  variant="primary"
+                  size="sm"
+                  className="flex-1"
+                >
+                  🔍 {uiTexts.queryWord}
+                </AnimatedButton>
+                <AnimatedButton
+                  onClick={() => handleQuery('sentence')}
+                  disabled={isLoading}
+                  variant="primary"
+                  size="sm"
+                  className="flex-1"
+                >
+                  📝 {uiTexts.querySentence}
+                </AnimatedButton>
+              </div>
+            </div>
+            
+            {/* Manual Mark Section */}
+            <div className="border-t border-purple-100 pt-3">
+              <p className="text-xs font-semibold text-purple-700 mb-2 uppercase tracking-wide">{uiTexts.manualNotes}</p>
+              <div className="flex gap-2">
+                <AnimatedButton
+                  onClick={() => handleMarkOnly('word')}
+                  disabled={isLoading}
+                  variant="accent"
+                  size="sm"
+                  className="flex-1"
+                >
+                  ✏️ {uiTexts.markWord}
+                </AnimatedButton>
+                <AnimatedButton
+                  onClick={() => handleMarkOnly('sentence')}
+                  disabled={isLoading}
+                  variant="accent"
+                  size="sm"
+                  className="flex-1"
+                >
+                  📋 {uiTexts.markSentence}
+                </AnimatedButton>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
