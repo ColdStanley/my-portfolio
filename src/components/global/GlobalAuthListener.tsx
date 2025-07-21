@@ -26,7 +26,7 @@ export default function GlobalAuthListener({ projectId }: Props) {
           .select('membership_tier')
           .eq('user_id', user.id)
           .eq('product_id', projectId)
-          .single()
+          .maybeSingle()
 
         if (data?.membership_tier) {
           setMembershipTier(data.membership_tier)
@@ -53,7 +53,7 @@ export default function GlobalAuthListener({ projectId }: Props) {
           .select('membership_tier')
           .eq('user_id', session.user.id)
           .eq('product_id', projectId)
-          .single()
+          .maybeSingle()
           .then(({ data }) => {
             if (data?.membership_tier) {
               setMembershipTier(data.membership_tier)

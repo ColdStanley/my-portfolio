@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 
-const projectId = 'cv-builder'
+const projectId = 'cestlavie'
 
 function RegisterPageInner() {
   const [email, setEmail] = useState('')
