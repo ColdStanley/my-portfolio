@@ -1,19 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
-
-const notion = new Client({
-  auth: process.env.NOTION_API_KEY,
-})
-
-const PLAN_DB_ID = process.env.NOTION_Plan_DB_ID
-const TASKS_DB_ID = process.env.NOTION_Tasks_DB_ID
-
-if (!PLAN_DB_ID) {
-  console.error('Missing NOTION_Plan_DB_ID environment variable')
-}
-if (!TASKS_DB_ID) {
-  console.error('Missing NOTION_Tasks_DB_ID environment variable')
-}
+import { getDatabaseConfig } from '@/lib/getUserNotionConfig'
 
 function extractTextContent(richText: any[]): string {
   if (!richText || !Array.isArray(richText)) return ''
@@ -53,11 +40,21 @@ function calculateHours(startDate: string, endDate: string): number {
 
 export async function GET(request: NextRequest) {
   try {
-    if (!PLAN_DB_ID) {
+    // 获取用户的Plan数据库配置
+    const { config: planConfig, user, error } = await getDatabaseConfig('plan')
+    
+    if (error || !planConfig) {
       return NextResponse.json({ 
-        error: 'Plan database ID not configured' 
-      }, { status: 500 })
+        error: error || 'Plan database not configured' 
+      }, { status: 400 })
     }
+
+    // 获取Tasks数据库配置（用于计算进度）
+    const { config: tasksConfig } = await getDatabaseConfig('tasks')
+    
+    const notion = new Client({
+      auth: planConfig.notion_api_key,
+    })
 
     const { searchParams } = new URL(request.url)
     const action = searchParams.get('action')
@@ -65,7 +62,7 @@ export async function GET(request: NextRequest) {
     // If requesting schema information
     if (action === 'schema') {
       const databaseInfo = await notion.databases.retrieve({
-        database_id: PLAN_DB_ID
+        database_id: planConfig.plan_db_id
       })
 
       const properties = databaseInfo.properties as any
@@ -81,7 +78,7 @@ export async function GET(request: NextRequest) {
     }
 
     const response = await notion.databases.query({
-      database_id: PLAN_DB_ID,
+      database_id: planConfig.plan_db_id,
       page_size: 100,
       sorts: [
         {
@@ -91,28 +88,37 @@ export async function GET(request: NextRequest) {
       ]
     })
 
-    // 获取所有Tasks来计算Progress
-    const taskResponse = await notion.databases.query({
-      database_id: TASKS_DB_ID!
-    })
+    // 获取所有Tasks来计算Progress (如果Tasks数据库已配置)
+    let taskResponse = null
+    if (tasksConfig) {
+      taskResponse = await notion.databases.query({
+        database_id: tasksConfig.tasks_db_id
+      })
+    }
 
     const data = await Promise.all(response.results.map(async (page: any) => {
       const properties = page.properties
       const planId = page.id
       
       // 计算该Plan下的Tasks进度
-      const relatedTasks = taskResponse.results.filter((task: any) => {
-        const planRelations = task.properties.plan?.relation || []
-        return planRelations.some((plan: any) => plan.id === planId)
-      })
+      let totalTasks = 0
+      let completedTasks = 0
+      let calculatedProgress = 0
       
-      const totalTasks = relatedTasks.length
-      const completedTasks = relatedTasks.filter((task: any) => {
-        const status = task.properties.status?.select?.name || ''
-        return status === 'Completed'
-      }).length
-      
-      const calculatedProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+      if (taskResponse) {
+        const relatedTasks = taskResponse.results.filter((task: any) => {
+          const planRelations = task.properties.plan?.relation || []
+          return planRelations.some((plan: any) => plan.id === planId)
+        })
+        
+        totalTasks = relatedTasks.length
+        completedTasks = relatedTasks.filter((task: any) => {
+          const status = task.properties.status?.select?.name || ''
+          return status === 'Completed'
+        }).length
+        
+        calculatedProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+      }
 
       return {
         id: page.id,
@@ -153,11 +159,18 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    if (!PLAN_DB_ID) {
+    // 获取用户的Plan数据库配置
+    const { config: planConfig, user, error } = await getDatabaseConfig('plan')
+    
+    if (error || !planConfig) {
       return NextResponse.json({ 
-        error: 'Plan database ID not configured' 
-      }, { status: 500 })
+        error: error || 'Plan database not configured' 
+      }, { status: 400 })
     }
+
+    const notion = new Client({
+      auth: planConfig.notion_api_key,
+    })
 
     const body = await request.json()
     
@@ -208,7 +221,7 @@ export async function POST(request: NextRequest) {
     } else {
       // Create new plan
       response = await notion.pages.create({
-        parent: { database_id: PLAN_DB_ID },
+        parent: { database_id: planConfig.plan_db_id },
         properties
       })
       
@@ -232,6 +245,19 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    // 获取用户的Plan数据库配置
+    const { config: planConfig, user, error } = await getDatabaseConfig('plan')
+    
+    if (error || !planConfig) {
+      return NextResponse.json({ 
+        error: error || 'Plan database not configured' 
+      }, { status: 400 })
+    }
+
+    const notion = new Client({
+      auth: planConfig.notion_api_key,
+    })
+
     const { searchParams } = new URL(request.url)
     const pageId = searchParams.get('id')
     

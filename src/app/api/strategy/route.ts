@@ -1,19 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
-
-const notion = new Client({
-  auth: process.env.NOTION_API_KEY,
-})
-
-const STRATEGY_DB_ID = process.env.NOTION_STRATEGY_DB_ID
-const PLAN_DB_ID = process.env.NOTION_Plan_DB_ID
-
-if (!STRATEGY_DB_ID) {
-  console.error('Missing NOTION_STRATEGY_DB_ID environment variable')
-}
-if (!PLAN_DB_ID) {
-  console.error('Missing NOTION_Plan_DB_ID environment variable')
-}
+import { getDatabaseConfig } from '@/lib/getUserNotionConfig'
 
 function extractTextContent(richText: any[]): string {
   if (!richText || !Array.isArray(richText)) return ''
@@ -39,11 +26,21 @@ function extractNumberValue(number: any): number {
 
 export async function GET(request: NextRequest) {
   try {
-    if (!STRATEGY_DB_ID) {
+    // 获取用户的Strategy数据库配置
+    const { config: strategyConfig, user, error } = await getDatabaseConfig('strategy')
+    
+    if (error || !strategyConfig) {
       return NextResponse.json({ 
-        error: 'Strategy database ID not configured' 
-      }, { status: 500 })
+        error: error || 'Strategy database not configured' 
+      }, { status: 400 })
     }
+
+    // 获取Plan数据库配置（用于计算进度）
+    const { config: planConfig } = await getDatabaseConfig('plan')
+    
+    const notion = new Client({
+      auth: strategyConfig.notion_api_key,
+    })
 
     const { searchParams } = new URL(request.url)
     const action = searchParams.get('action')
@@ -51,7 +48,7 @@ export async function GET(request: NextRequest) {
     // Test database connection first
     if (action === 'test') {
       const databaseInfo = await notion.databases.retrieve({
-        database_id: STRATEGY_DB_ID
+        database_id: strategyConfig.strategy_db_id
       })
       
       return NextResponse.json({ 
@@ -64,7 +61,7 @@ export async function GET(request: NextRequest) {
     // If requesting schema information
     if (action === 'schema') {
       const databaseInfo = await notion.databases.retrieve({
-        database_id: STRATEGY_DB_ID
+        database_id: strategyConfig.strategy_db_id
       })
 
       const properties = databaseInfo.properties as any
@@ -82,7 +79,7 @@ export async function GET(request: NextRequest) {
     }
 
     const response = await notion.databases.query({
-      database_id: STRATEGY_DB_ID,
+      database_id: strategyConfig.strategy_db_id,
       page_size: 100,
       sorts: [
         {
@@ -92,10 +89,13 @@ export async function GET(request: NextRequest) {
       ]
     })
 
-    // 获取所有Plans来计算Progress
-    const planResponse = await notion.databases.query({
-      database_id: PLAN_DB_ID!
-    })
+    // 获取所有Plans来计算Progress (如果Plan数据库已配置)
+    let planResponse = null
+    if (planConfig) {
+      planResponse = await notion.databases.query({
+        database_id: planConfig.plan_db_id
+      })
+    }
     
     const data = await Promise.all(response.results.map(async (page: any) => {
       const properties = page.properties
@@ -142,25 +142,30 @@ export async function GET(request: NextRequest) {
     if (error instanceof Error) {
       return NextResponse.json({ 
         error: `Failed to fetch data: ${error.message}`,
-        details: error.stack,
-        database_id: STRATEGY_DB_ID
+        details: error.stack
       }, { status: 500 })
     }
     
     return NextResponse.json({ 
-      error: 'An unknown error occurred',
-      database_id: STRATEGY_DB_ID
+      error: 'An unknown error occurred'
     }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    if (!STRATEGY_DB_ID) {
+    // 获取用户的Strategy数据库配置
+    const { config: strategyConfig, user, error } = await getDatabaseConfig('strategy')
+    
+    if (error || !strategyConfig) {
       return NextResponse.json({ 
-        error: 'Strategy database ID not configured' 
-      }, { status: 500 })
+        error: error || 'Strategy database not configured' 
+      }, { status: 400 })
     }
+
+    const notion = new Client({
+      auth: strategyConfig.notion_api_key,
+    })
 
     const body = await request.json()
     console.log('Strategy API received body:', body)
@@ -217,7 +222,7 @@ export async function POST(request: NextRequest) {
       // Create new strategy
       console.log('Creating new strategy')
       response = await notion.pages.create({
-        parent: { database_id: STRATEGY_DB_ID },
+        parent: { database_id: strategyConfig.strategy_db_id },
         properties
       })
       
@@ -249,6 +254,19 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    // 获取用户的Strategy数据库配置
+    const { config: strategyConfig, user, error } = await getDatabaseConfig('strategy')
+    
+    if (error || !strategyConfig) {
+      return NextResponse.json({ 
+        error: error || 'Strategy database not configured' 
+      }, { status: 400 })
+    }
+
+    const notion = new Client({
+      auth: strategyConfig.notion_api_key,
+    })
+
     const { searchParams } = new URL(request.url)
     const pageId = searchParams.get('id')
     

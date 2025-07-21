@@ -1,19 +1,34 @@
 import { NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
 import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints'
-
-const notion = new Client({ auth: process.env.NOTION_API_KEY })
+import { getUserNotionConfig } from '@/lib/getUserNotionConfig'
 
 export async function GET() {
-  const databaseId = process.env.NOTION_JD_Tracker_DB_ID
-
-  if (!databaseId) {
-    return NextResponse.json({ error: 'NOTION_JD_Tracker_DB_ID environment variable is not set' }, { status: 500 })
-  }
-
   try {
+    // Since jd-tracker is not yet in user config system, use fallback for now
+    // TODO: Add jd_tracker_db_id to user_notion_configs table
+    const { config, user, error } = await getUserNotionConfig()
+    
+    if (error || !config) {
+      return NextResponse.json({ 
+        error: error || 'Notion not configured' 
+      }, { status: 400 })
+    }
+
+    const notion = new Client({
+      auth: config.notion_api_key,
+    })
+
+    // Temporary fallback to environment variable until jd_tracker_db_id is added to user config
+    const jdTrackerDbId = process.env.NOTION_JD_Tracker_DB_ID
+    if (!jdTrackerDbId) {
+      return NextResponse.json({ 
+        error: 'JD Tracker database not configured' 
+      }, { status: 400 })
+    }
+
     const response = await notion.databases.query({
-      database_id: databaseId,
+      database_id: jdTrackerDbId,
       sorts: [
         {
           property: 'importance',
