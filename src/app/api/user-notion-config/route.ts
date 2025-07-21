@@ -37,20 +37,55 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('User Notion Config POST: Starting request...')
     const supabase = createRouteHandlerClient({ cookies })
     
     // 获取当前用户
     const { data: { user }, error: authError } = await supabase.auth.getUser()
+    console.log('User Notion Config POST: Auth check:', { 
+      hasUser: !!user, 
+      authError: authError?.message,
+      userId: user?.id 
+    })
+    
     if (authError || !user) {
+      console.log('User Notion Config POST: Authentication failed')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()
     const { notion_api_key, tasks_db_id, strategy_db_id, plan_db_id } = body
+    
+    console.log('User Notion Config POST: Request body:', { 
+      hasApiKey: !!notion_api_key,
+      hasTasksDbId: !!tasks_db_id,
+      hasStrategyDbId: !!strategy_db_id,
+      hasPlanDbId: !!plan_db_id
+    })
 
     if (!notion_api_key) {
       return NextResponse.json({ error: 'Notion API key is required' }, { status: 400 })
     }
+
+    // 先检查表是否存在
+    const { data: tableCheck, error: tableError } = await supabase
+      .from('user_notion_configs')
+      .select('count', { count: 'exact', head: true })
+
+    if (tableError) {
+      console.error('User Notion Config POST: Table check failed:', {
+        code: tableError.code,
+        message: tableError.message,
+        details: tableError.details,
+        hint: tableError.hint
+      })
+      return NextResponse.json({ 
+        error: `Database table error: ${tableError.message}`,
+        details: 'The user_notion_configs table may not exist or have incorrect permissions'
+      }, { status: 500 })
+    }
+
+    console.log('User Notion Config POST: Table exists, proceeding with upsert...')
 
     // 尝试更新或插入配置
     const { data, error } = await supabase
@@ -67,10 +102,31 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('Error saving user notion config:', error)
-      return NextResponse.json({ error: 'Failed to save config' }, { status: 500 })
+      console.error('User Notion Config POST: Upsert failed:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      })
+      
+      let errorMessage = 'Failed to save configuration'
+      if (error.code === '42P01') {
+        errorMessage = 'Database table user_notion_configs does not exist'
+      } else if (error.code === '42501') {
+        errorMessage = 'Insufficient permissions to access user_notion_configs table'
+      } else {
+        errorMessage = `Database error: ${error.message}`
+      }
+      
+      return NextResponse.json({ 
+        error: errorMessage,
+        code: error.code,
+        details: error.details
+      }, { status: 500 })
     }
 
+    console.log('User Notion Config POST: Successfully saved config')
+    
     return NextResponse.json({ 
       success: true, 
       message: 'Notion configuration saved successfully',

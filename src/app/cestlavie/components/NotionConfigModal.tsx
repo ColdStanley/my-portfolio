@@ -85,7 +85,8 @@ export default function NotionConfigModal({ isOpen, onClose, onConfigSaved }: No
       })
       
       if (!saveResponse.ok) {
-        throw new Error('Failed to save configuration for testing')
+        const saveError = await saveResponse.json()
+        throw new Error(`Failed to save configuration: ${saveError.error || 'Unknown error'}`)
       }
 
       // 测试配置 - 暂时使用tasks API进行测试
