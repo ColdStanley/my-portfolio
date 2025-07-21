@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
     }
 
     const response = await notion.databases.query({
-      database_id: strategyConfig.strategy_db_id,
+      database_id: strategyConfig.database_id,
       page_size: 100,
       sorts: [
         {

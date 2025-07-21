@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
     }
 
     const response = await notion.databases.query({
-      database_id: planConfig.plan_db_id,
+      database_id: planConfig.database_id,
       page_size: 100,
       sorts: [
         {
