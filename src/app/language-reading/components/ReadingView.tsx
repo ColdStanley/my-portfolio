@@ -24,12 +24,6 @@ export default function ReadingView({ language, articleId, content, title, onNew
     position: { x: number; y: number }
   } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [activeSelection, setActiveSelection] = useState<{
-    start: number
-    end: number
-  } | null>(null)
-  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
-  const [longPressStart, setLongPressStart] = useState<{x: number, y: number} | null>(null)
   
   const textRef = useRef<HTMLDivElement>(null)
   const { isHighlighted, addWordQuery, addSentenceQuery, addHighlight, wordQueries, sentenceQueries } = useLanguageReadingStore()
@@ -63,7 +57,6 @@ export default function ReadingView({ language, articleId, content, title, onNew
     
     if (!selectedText || !textRef.current) {
       setSelectionData(null)
-      setActiveSelection(null)
       return
     }
 
@@ -102,7 +95,6 @@ export default function ReadingView({ language, articleId, content, title, onNew
       const startOffset = globalIndex
       const endOffset = startOffset + selectedText.length
       
-      setActiveSelection({ start: startOffset, end: endOffset })
       setSelectionData({
         text: selectedText,
         range: { start: startOffset, end: endOffset },
@@ -128,7 +120,6 @@ export default function ReadingView({ language, articleId, content, title, onNew
     }
 
     const rect = range.getBoundingClientRect()
-    setActiveSelection({ start: startOffset, end: endOffset })
     setSelectionData({
       text: selectedText,
       range: { start: startOffset, end: endOffset },
@@ -140,153 +131,7 @@ export default function ReadingView({ language, articleId, content, title, onNew
     
   }, [content, wordQueries, sentenceQueries])
 
-  const handleDoubleClick = useCallback((event: React.MouseEvent) => {
-    event.preventDefault()
-    
-    const selection = window.getSelection()
-    if (!selection || !textRef.current) return
 
-    // Get the clicked position
-    const range = document.caretRangeFromPoint(event.clientX, event.clientY)
-    if (!range) return
-
-    // Find word boundaries
-    const textNode = range.startContainer
-    if (textNode.nodeType !== Node.TEXT_NODE) return
-
-    const text = textNode.textContent || ''
-    const offset = range.startOffset
-
-    // Find word boundaries using regex
-    const wordRegex = /\b\w+\b/g
-    let match
-    let wordStart = 0
-    let wordEnd = 0
-
-    while ((match = wordRegex.exec(text)) !== null) {
-      if (match.index <= offset && offset <= match.index + match[0].length) {
-        wordStart = match.index
-        wordEnd = match.index + match[0].length
-        break
-      }
-    }
-
-    if (wordStart === wordEnd) return
-
-    // Create selection for the word
-    const newRange = document.createRange()
-    newRange.setStart(textNode, wordStart)
-    newRange.setEnd(textNode, wordEnd)
-    
-    selection.removeAllRanges()
-    selection.addRange(newRange)
-
-    // Trigger text selection handler
-    setTimeout(() => {
-      handleTextSelection()
-    }, 10)
-  }, [handleTextSelection])
-
-  const handleMouseDown = useCallback((event: React.MouseEvent) => {
-    // Clear any existing timer
-    if (longPressTimer) {
-      clearTimeout(longPressTimer)
-      setLongPressTimer(null)
-    }
-
-    // Record initial position
-    setLongPressStart({ x: event.clientX, y: event.clientY })
-
-    // Start long press timer (800ms)
-    const timer = setTimeout(() => {
-      handleLongPress(event.clientX, event.clientY)
-    }, 800)
-
-    setLongPressTimer(timer)
-  }, [longPressTimer])
-
-  const handleMouseUp = useCallback(() => {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer)
-      setLongPressTimer(null)
-    }
-    setLongPressStart(null)
-  }, [longPressTimer])
-
-  const handleMouseMove = useCallback((event: React.MouseEvent) => {
-    if (longPressStart && longPressTimer) {
-      // If mouse moves too much, cancel long press
-      const deltaX = Math.abs(event.clientX - longPressStart.x)
-      const deltaY = Math.abs(event.clientY - longPressStart.y)
-      
-      if (deltaX > 10 || deltaY > 10) {
-        clearTimeout(longPressTimer)
-        setLongPressTimer(null)
-        setLongPressStart(null)
-      }
-    }
-  }, [longPressStart, longPressTimer])
-
-  const handleLongPress = useCallback((clientX: number, clientY: number) => {
-    const selection = window.getSelection()
-    if (!selection || !textRef.current) return
-
-    // Get the pressed position
-    const range = document.caretRangeFromPoint(clientX, clientY)
-    if (!range) return
-
-    // Find sentence boundaries
-    const textNode = range.startContainer
-    if (textNode.nodeType !== Node.TEXT_NODE) return
-
-    const text = textNode.textContent || ''
-    const offset = range.startOffset
-
-    // Find sentence boundaries (. ! ? followed by space or end)
-    const sentenceRegex = /[.!?]+(?:\s|$)/g
-    let match
-    let sentenceStart = 0
-    let sentenceEnd = text.length
-
-    // Find previous sentence end
-    sentenceRegex.lastIndex = 0
-    while ((match = sentenceRegex.exec(text)) !== null) {
-      if (match.index + match[0].length <= offset) {
-        sentenceStart = match.index + match[0].length
-      } else {
-        sentenceEnd = match.index + match[0].length
-        break
-      }
-    }
-
-    // Trim whitespace
-    while (sentenceStart < text.length && /\s/.test(text[sentenceStart])) {
-      sentenceStart++
-    }
-    while (sentenceEnd > 0 && /\s/.test(text[sentenceEnd - 1])) {
-      sentenceEnd--
-    }
-
-    if (sentenceStart >= sentenceEnd) return
-
-    // Create selection for the sentence
-    const newRange = document.createRange()
-    newRange.setStart(textNode, sentenceStart)
-    newRange.setEnd(textNode, sentenceEnd)
-    
-    selection.removeAllRanges()
-    selection.addRange(newRange)
-
-    // Add haptic feedback (vibration on mobile)
-    if ('vibrate' in navigator) {
-      navigator.vibrate(50)
-    }
-
-    // Trigger text selection handler
-    setTimeout(() => {
-      handleTextSelection()
-    }, 10)
-  }, [handleTextSelection])
 
   const scrollToCard = (cardId: string) => {
     setTimeout(() => {
@@ -372,7 +217,6 @@ export default function ReadingView({ language, articleId, content, title, onNew
     } finally {
       setIsLoading(false)
       setSelectionData(null)
-      setActiveSelection(null)
       window.getSelection()?.removeAllRanges()
     }
   }
@@ -413,7 +257,6 @@ export default function ReadingView({ language, articleId, content, title, onNew
     } finally {
       setIsLoading(false)
       setSelectionData(null)
-      setActiveSelection(null)
       window.getSelection()?.removeAllRanges()
     }
   }
@@ -438,18 +281,7 @@ export default function ReadingView({ language, articleId, content, title, onNew
   const renderHighlightedText = () => {
     const ranges = useLanguageReadingStore.getState().highlightedRanges
     
-    // Add active selection to ranges for visual feedback
-    const allRanges = [...ranges]
-    if (activeSelection) {
-      allRanges.push({
-        start: activeSelection.start,
-        end: activeSelection.end,
-        type: 'selection' as any,
-        id: -1
-      })
-    }
-    
-    if (allRanges.length === 0) {
+    if (ranges.length === 0) {
       return content.split('\n').map((paragraph, index) => (
         paragraph.trim() ? (
           <p key={index} className="mb-4 leading-relaxed">
@@ -462,11 +294,11 @@ export default function ReadingView({ language, articleId, content, title, onNew
     }
 
     // Same highlighting logic as before with merged ranges
-    const sortedRanges = [...allRanges].sort((a, b) => a.start - b.start)
+    const sortedRanges = [...ranges].sort((a, b) => a.start - b.start)
     const mergedRanges: Array<{
       start: number
       end: number
-      types: Array<'word' | 'sentence' | 'selection'>
+      types: Array<'word' | 'sentence'>
       ids: number[]
     }> = []
 
@@ -498,12 +330,9 @@ export default function ReadingView({ language, articleId, content, title, onNew
       
       const hasBoth = range.types.includes('word') && range.types.includes('sentence')
       const hasSentence = range.types.includes('sentence')
-      const hasSelection = range.types.includes('selection')
       
       let className = ''
-      if (hasSelection) {
-        className = 'inline-block px-2 py-1 rounded-lg bg-gradient-to-r from-yellow-200/60 to-orange-200/60 text-orange-800 backdrop-blur-xs shadow-lg border-2 border-orange-400 animate-pulse transition-all duration-300 ease-in-out'
-      } else if (hasBoth) {
+      if (hasBoth) {
         className = 'inline-block px-2 py-1 rounded-lg bg-gradient-to-r from-purple-100/30 to-blue-100/30 text-purple-800 backdrop-blur-xs shadow-sm transition-all duration-200 ease-in-out hover:from-purple-200/40 hover:to-blue-200/40 hover:shadow-md hover:scale-[1.005] cursor-pointer border-l-2 border-purple-400'
       } else if (hasSentence) {
         className = 'inline-block px-2 py-1 rounded-lg bg-blue-100/20 text-blue-800 backdrop-blur-xs shadow-sm transition-all duration-200 ease-in-out hover:bg-blue-200/30 hover:shadow-md hover:scale-[1.005] cursor-pointer'
@@ -555,10 +384,6 @@ export default function ReadingView({ language, articleId, content, title, onNew
               ref={textRef}
               className="prose prose-lg max-w-none leading-relaxed select-text cursor-text"
               onMouseUp={handleTextSelection}
-              onDoubleClick={handleDoubleClick}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleMouseUp}
             >
               {typeof renderHighlightedText() === 'string' ? (
                 <div dangerouslySetInnerHTML={{ __html: renderHighlightedText() as string }} />
