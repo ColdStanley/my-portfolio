@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
     // If requesting schema information
     if (action === 'schema') {
       const databaseInfo = await notion.databases.retrieve({
-        database_id: planConfig.plan_db_id
+        database_id: planConfig.database_id
       })
 
       const properties = databaseInfo.properties as any
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
     let taskResponse = null
     if (tasksConfig) {
       taskResponse = await notion.databases.query({
-        database_id: tasksConfig.tasks_db_id
+        database_id: tasksConfig.database_id
       })
     }
 
@@ -221,7 +221,7 @@ export async function POST(request: NextRequest) {
     } else {
       // Create new plan
       response = await notion.pages.create({
-        parent: { database_id: planConfig.plan_db_id },
+        parent: { database_id: planConfig.database_id },
         properties
       })
       

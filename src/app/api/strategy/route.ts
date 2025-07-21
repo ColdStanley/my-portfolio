@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     // Test database connection first
     if (action === 'test') {
       const databaseInfo = await notion.databases.retrieve({
-        database_id: strategyConfig.strategy_db_id
+        database_id: strategyConfig.database_id
       })
       
       return NextResponse.json({ 
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     // If requesting schema information
     if (action === 'schema') {
       const databaseInfo = await notion.databases.retrieve({
-        database_id: strategyConfig.strategy_db_id
+        database_id: strategyConfig.database_id
       })
 
       const properties = databaseInfo.properties as any
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
     let planResponse = null
     if (planConfig) {
       planResponse = await notion.databases.query({
-        database_id: planConfig.plan_db_id
+        database_id: planConfig.database_id
       })
     }
     
@@ -222,7 +222,7 @@ export async function POST(request: NextRequest) {
       // Create new strategy
       console.log('Creating new strategy')
       response = await notion.pages.create({
-        parent: { database_id: strategyConfig.strategy_db_id },
+        parent: { database_id: strategyConfig.database_id },
         properties
       })
       
