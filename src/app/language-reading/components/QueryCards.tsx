@@ -20,12 +20,12 @@ function CollapsibleContent({ content, maxLength, className = '', language }: Co
   const uiTexts = getUITexts(language)
   
   if (content.length <= maxLength) {
-    return <div className={className}>{content}</div>
+    return <div className={`${className} whitespace-pre-wrap`}>{content}</div>
   }
 
   return (
     <div className={className}>
-      <div>
+      <div className="whitespace-pre-wrap">
         {isExpanded ? content : `${content.slice(0, maxLength)}...`}
       </div>
       <button
@@ -54,6 +54,7 @@ interface QueryCardsProps {
   articleId: number
   isTestMode: boolean
   onExitTestMode: () => void
+  onAINotesRefresh?: () => void
 }
 
 interface TestQuestion {
@@ -66,7 +67,7 @@ interface TestQuestion {
   questionType: 'word' | 'sentence'
 }
 
-export default function QueryCards({ language, articleId, isTestMode, onExitTestMode }: QueryCardsProps) {
+export default function QueryCards({ language, articleId, isTestMode, onExitTestMode, onAINotesRefresh }: QueryCardsProps) {
   const { wordQueries, sentenceQueries, deleteWordQuery, deleteSentenceQuery, updateWordNotes, updateSentenceNotes, loadStoredData } = useLanguageReadingStore()
   const [editingNotes, setEditingNotes] = useState<{id: number, type: 'word' | 'sentence', notes: string} | null>(null)
   const [testQuestions, setTestQuestions] = useState<TestQuestion[]>([])
@@ -201,6 +202,11 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
   const handleAISaved = async () => {
     // 刷新数据以显示新保存的AI notes
     await loadStoredData(articleId, language)
+    
+    // 刷新AI Notes Cards显示
+    if (onAINotesRefresh) {
+      onAINotesRefresh()
+    }
   }
 
   // Get language-specific speech language code
@@ -374,17 +380,6 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
                   {uiTexts.sentence}
                 </span>
                 <div className="flex-1"></div>
-                {/* AI Notes Indicator */}
-                {query.ai_notes && (
-                  <Tooltip content={query.ai_notes}>
-                    <div className="w-5 h-5 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center cursor-help">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z"/>
-                        <path d="M6 8h8v2H6V8zm0 4h5v2H6v-2z"/>
-                      </svg>
-                    </div>
-                  </Tooltip>
-                )}
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
@@ -478,7 +473,7 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
                       Ask AI
                     </button>
                     {query.ai_notes && (
-                      <Tooltip content={query.ai_notes}>
+                      <Tooltip content={query.ai_notes} position="right">
                         <button className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 text-purple-700 text-sm rounded-lg hover:bg-purple-100 transition-all duration-200 border border-purple-200">
                           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z"/>
@@ -516,17 +511,6 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
                         {query.word_text}
                       </h3>
                       <div className="flex gap-1 items-center">
-                        {/* AI Notes Indicator */}
-                        {query.ai_notes && (
-                          <Tooltip content={query.ai_notes} position="right">
-                            <div className="w-5 h-5 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center cursor-help">
-                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z"/>
-                                <path d="M6 8h8v2H6v-2z"/>
-                              </svg>
-                            </div>
-                          </Tooltip>
-                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
@@ -734,17 +718,6 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
                         {query.word_text}
                       </h3>
                       <div className="flex gap-1 items-center">
-                        {/* AI Notes Indicator */}
-                        {query.ai_notes && (
-                          <Tooltip content={query.ai_notes} position="left">
-                            <div className="w-5 h-5 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center cursor-help">
-                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z"/>
-                                <path d="M6 8h8v2H6v-2z"/>
-                              </svg>
-                            </div>
-                          </Tooltip>
-                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation()

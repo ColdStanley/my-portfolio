@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from 'react'
 import { notFound } from 'next/navigation'
 import ArticleInput from '../components/ArticleInput'
+import MobileArticleInput from '../components/MobileArticleInput'
 import ReadingView from '../components/ReadingView'
 import SkeletonLoader from '../components/SkeletonLoader'
 import { useLanguageReadingStore } from '../store/useLanguageReadingStore'
@@ -31,8 +32,21 @@ export default function LanguageReading({ params }: LanguageReadingProps) {
   const [articleContent, setArticleContent] = useState<string>('')
   const [articleTitle, setArticleTitle] = useState<string>('')
   const [isLoading, setIsLoading] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
   
   const { loadStoredData } = useLanguageReadingStore()
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   useEffect(() => {
     // Load last article from localStorage for this language
@@ -72,6 +86,29 @@ export default function LanguageReading({ params }: LanguageReadingProps) {
     await loadStoredData(id, currentLanguage)
   }
 
+  // Mobile view with simplified flow
+  if (isMobile) {
+    return !articleId ? (
+      <MobileArticleInput 
+        language={currentLanguage}
+        onSelectArticle={handleArticleSubmit} 
+      />
+    ) : (
+      <ReadingView 
+        language={currentLanguage}
+        articleId={articleId} 
+        content={articleContent} 
+        title={articleTitle}
+        onNewArticle={() => { 
+          setArticleId(null)
+          setArticleContent('')
+          setArticleTitle('') 
+        }} 
+      />
+    )
+  }
+
+  // Desktop view (unchanged)
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8">

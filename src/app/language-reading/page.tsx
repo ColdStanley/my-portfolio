@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const languages = [
   {
@@ -38,7 +38,72 @@ const languages = [
 
 export default function LanguageSelectionPage() {
   const [hoveredLanguage, setHoveredLanguage] = useState<string | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
 
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Mobile view with simplified language selection
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white shadow-sm border-b border-gray-200">
+          <div className="px-4 py-6">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                Language Reading
+              </h1>
+              <p className="text-sm text-gray-600">
+                Choose your language to review articles
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Language Selection */}
+        <div className="px-4 py-8">
+          <div className="space-y-4">
+            {languages.map((language) => (
+              <Link
+                key={language.code}
+                href={`/language-reading/${language.code}`}
+                className="block"
+              >
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-12 h-12 bg-gradient-to-r ${language.accent} rounded-lg flex items-center justify-center`}>
+                        {language.icon}
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-semibold text-gray-900">{language.name}</h2>
+                        <p className="text-sm text-gray-500">{language.nativeName}</p>
+                      </div>
+                    </div>
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Desktop view (unchanged)
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}

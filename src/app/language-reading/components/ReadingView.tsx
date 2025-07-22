@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useLanguageReadingStore } from '../store/useLanguageReadingStore'
 import QueryCards from './QueryCards'
+import AINotesCards, { AINotesCardsRef } from './AINotesCards'
+import MobileReadingView from './MobileReadingView'
 import ThinkingAnimation from './ThinkingAnimation'
 import AnimatedButton from './AnimatedButton'
 import { Language, getUITexts } from '../config/uiText'
@@ -26,9 +28,29 @@ export default function ReadingView({ language, articleId, content, title, onNew
   } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isTestMode, setIsTestMode] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   
   const textRef = useRef<HTMLDivElement>(null)
+  const aiNotesRef = useRef<AINotesCardsRef>(null)
   const { isHighlighted, addWordQuery, addSentenceQuery, addHighlight, wordQueries, sentenceQueries } = useLanguageReadingStore()
+
+  const handleAINotesRefresh = useCallback(() => {
+    if (aiNotesRef.current) {
+      aiNotesRef.current.refreshData()
+    }
+  }, [])
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const findExistingQuery = (start: number, end: number) => {
     // Find existing word query
@@ -382,6 +404,19 @@ export default function ReadingView({ language, articleId, content, title, onNew
     return formattedResult
   }
 
+  // Return mobile view if on mobile device
+  if (isMobile) {
+    return (
+      <MobileReadingView
+        language={language}
+        articleId={articleId}
+        content={content}
+        title={title}
+      />
+    )
+  }
+
+  // Desktop view
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -413,8 +448,9 @@ export default function ReadingView({ language, articleId, content, title, onNew
       </div>
       
       <div className="flex gap-6">
-        {/* Left Panel - Article Content */}
-        <div className="w-1/2">
+        {/* Left Panel - Article Content & AI Notes */}
+        <div className="w-1/2 flex flex-col gap-6">
+          {/* Article Content */}
           <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
             <div
               ref={textRef}
@@ -429,6 +465,20 @@ export default function ReadingView({ language, articleId, content, title, onNew
               )}
             </div>
           </div>
+
+          {/* AI Notes Cards Section */}
+          <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-purple-800 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                AI Study Notes
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">Review your saved AI assistant responses</p>
+            </div>
+            <AINotesCards ref={aiNotesRef} language={language} articleId={articleId} />
+          </div>
         </div>
 
         {/* Right Panel - Query Results */}
@@ -438,6 +488,7 @@ export default function ReadingView({ language, articleId, content, title, onNew
             articleId={articleId}
             isTestMode={isTestMode}
             onExitTestMode={() => setIsTestMode(false)}
+            onAINotesRefresh={handleAINotesRefresh}
           />
         </div>
       </div>

@@ -16,9 +16,10 @@ interface Article {
 interface ArticleListProps {
   language: Language
   onSelectArticle: (id: number, content: string, title?: string) => void
+  isMobile?: boolean
 }
 
-export default function ArticleList({ language, onSelectArticle }: ArticleListProps) {
+export default function ArticleList({ language, onSelectArticle, isMobile = false }: ArticleListProps) {
   const [articles, setArticles] = useState<Article[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [displayedCount, setDisplayedCount] = useState(6)
@@ -64,8 +65,8 @@ export default function ArticleList({ language, onSelectArticle }: ArticleListPr
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">{uiTexts.previousArticles}</h2>
+      <div className={isMobile ? "space-y-3" : "bg-white rounded-lg shadow-lg border border-gray-200 p-6"}>
+        {!isMobile && <h2 className="text-xl font-semibold text-gray-800 mb-4">{uiTexts.previousArticles}</h2>}
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="animate-pulse">
@@ -82,13 +83,13 @@ export default function ArticleList({ language, onSelectArticle }: ArticleListPr
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">{uiTexts.previousArticles}</h2>
+    <div className={isMobile ? "" : "bg-white rounded-lg shadow-lg border border-gray-200 p-6"}>
+      {!isMobile && <h2 className="text-xl font-semibold text-gray-800 mb-4">{uiTexts.previousArticles}</h2>}
       
       {articles.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
           <div className="text-2xl mb-2">📚</div>
-          <p>{uiTexts.createFirstArticle}</p>
+          <p>{isMobile ? "No articles available. Use desktop to create articles." : uiTexts.createFirstArticle}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -96,7 +97,7 @@ export default function ArticleList({ language, onSelectArticle }: ArticleListPr
             <div
               key={article.id}
               onClick={() => handleSelectArticle(article)}
-              className="p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 cursor-pointer transition-all duration-200 transform hover:scale-[1.01]"
+              className={`${isMobile ? 'bg-white' : ''} p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 cursor-pointer transition-all duration-200 ${isMobile ? 'shadow-sm' : 'transform hover:scale-[1.01]'}`}
             >
               <div className="flex justify-between items-start mb-2">
                 <h3 className="font-medium text-gray-900 truncate flex-1 pr-2">
@@ -110,6 +111,14 @@ export default function ArticleList({ language, onSelectArticle }: ArticleListPr
               <p className="text-sm text-gray-600 line-clamp-2">
                 {article.content.substring(0, 100)}...
               </p>
+              
+              {isMobile && (
+                <div className="mt-2 flex justify-end">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              )}
             </div>
           ))}
           

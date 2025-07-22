@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Language, getUITexts } from '../config/uiText'
+import { playText } from '../utils/tts'
 
 interface AIDialogProps {
   isOpen: boolean
@@ -13,6 +14,122 @@ interface AIDialogProps {
   language: Language
   initialResponse?: string
   onSaved?: () => void
+}
+
+// French text with TTS component
+function FrenchTextWithTTS({ children }: { children: React.ReactNode }) {
+  const detectFrenchSentences = (text: string) => {
+    // French sentence patterns: contains French accented characters, common French words, proper sentence structure
+    const frenchPatterns = [
+      // Sentences with French accented characters
+      /[^.!?]*[àáâäèéêëìíîïòóôöùúûüÿñç][^.!?]*[.!?]/gi,
+      // Common French sentence starters and words
+      /\b(je|tu|il|elle|nous|vous|ils|elles|le|la|les|un|une|des|ce|cette|ces|dans|sur|avec|pour|par|de|du|d'|qui|que|quoi|où|quand|comment|pourquoi|est|sont|avoir|être)\b[^.!?]*[.!?]/gi
+    ]
+    
+    const sentences: { text: string; start: number; end: number }[] = []
+    frenchPatterns.forEach(pattern => {
+      let match
+      while ((match = pattern.exec(text)) !== null) {
+        const sentence = match[0].trim()
+        if (sentence.length > 5) {
+          sentences.push({
+            text: sentence,
+            start: match.index,
+            end: match.index + match[0].length
+          })
+        }
+      }
+    })
+    
+    // Remove duplicates and sort by position
+    const uniqueSentences = sentences.filter((sentence, index, self) => 
+      index === self.findIndex(s => s.text === sentence.text)
+    ).sort((a, b) => a.start - b.start)
+    
+    return uniqueSentences
+  }
+
+  const handleFrenchTTS = async (text: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    try {
+      await playText(text, 'french', 0.8)
+    } catch (error) {
+      console.error('French TTS failed:', error)
+    }
+  }
+
+  const processTextWithTTS = (text: string) => {
+    const frenchSentences = detectFrenchSentences(text)
+    
+    if (frenchSentences.length === 0) {
+      return [{ type: 'text', content: text }]
+    }
+
+    const result = []
+    let lastIndex = 0
+    
+    frenchSentences.forEach((sentence, index) => {
+      // Add text before this sentence
+      if (sentence.start > lastIndex) {
+        result.push({
+          type: 'text',
+          content: text.slice(lastIndex, sentence.start)
+        })
+      }
+      
+      // Add the sentence with TTS button
+      result.push({
+        type: 'french',
+        content: sentence.text,
+        key: `french-${index}`
+      })
+      
+      lastIndex = sentence.end
+    })
+    
+    // Add remaining text
+    if (lastIndex < text.length) {
+      result.push({
+        type: 'text',
+        content: text.slice(lastIndex)
+      })
+    }
+    
+    return result
+  }
+
+  if (typeof children === 'string') {
+    const processedContent = processTextWithTTS(children)
+    
+    return (
+      <>
+        {processedContent.map((item, index) => {
+          if (item.type === 'french') {
+            return (
+              <span key={item.key || index}>
+                {item.content}
+                <button
+                  onClick={(e) => handleFrenchTTS(item.content, e)}
+                  className="inline-flex items-center ml-1 p-1 text-purple-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-all duration-200"
+                  title="Play French pronunciation"
+                >
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.817L4.343 13.5H2a1 1 0 01-1-1v-5a1 1 0 011-1h2.343l4.04-3.317a1 1 0 01.997-.106zM15.657 6.343a1 1 0 011.414 0A9.972 9.972 0 0119 12a9.972 9.972 0 01-1.929 5.657 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 12a7.971 7.971 0 00-1.343-4.243 1 1 0 010-1.414z" clipRule="evenodd" />
+                    <path fillRule="evenodd" d="M13.243 8.757a1 1 0 011.414 0A5.98 5.98 0 0116 12a5.98 5.98 0 01-1.343 3.243 1 1 0 01-1.414-1.414A3.99 3.99 0 0014 12a3.99 3.99 0 00-.757-2.329 1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </span>
+            )
+          } else {
+            return <span key={index}>{item.content}</span>
+          }
+        })}
+      </>
+    )
+  }
+
+  return <>{children}</>
 }
 
 export default function AIDialog({ 
@@ -281,16 +398,16 @@ export default function AIDialog({
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
-                        h1: ({children}) => <h1 className="text-lg font-bold mt-4 mb-2 text-purple-800">{children}</h1>,
-                        h2: ({children}) => <h2 className="text-base font-bold mt-3 mb-2 text-purple-700">{children}</h2>,
-                        h3: ({children}) => <h3 className="text-sm font-bold mt-2 mb-1 text-purple-600">{children}</h3>,
-                        strong: ({children}) => <strong className="font-semibold text-purple-800">{children}</strong>,
+                        h1: ({children}) => <h1 className="text-lg font-bold mt-4 mb-2 text-purple-800"><FrenchTextWithTTS>{children}</FrenchTextWithTTS></h1>,
+                        h2: ({children}) => <h2 className="text-base font-bold mt-3 mb-2 text-purple-700"><FrenchTextWithTTS>{children}</FrenchTextWithTTS></h2>,
+                        h3: ({children}) => <h3 className="text-sm font-bold mt-2 mb-1 text-purple-600"><FrenchTextWithTTS>{children}</FrenchTextWithTTS></h3>,
+                        strong: ({children}) => <strong className="font-semibold text-purple-800"><FrenchTextWithTTS>{children}</FrenchTextWithTTS></strong>,
                         ul: ({children}) => <ul className="list-disc list-inside my-2 space-y-1">{children}</ul>,
                         ol: ({children}) => <ol className="list-decimal list-inside my-2 space-y-1">{children}</ol>,
-                        li: ({children}) => <li className="text-gray-700">{children}</li>,
-                        p: ({children}) => <p className="mb-2 last:mb-0">{children}</p>,
+                        li: ({children}) => <li className="text-gray-700"><FrenchTextWithTTS>{children}</FrenchTextWithTTS></li>,
+                        p: ({children}) => <p className="mb-2 last:mb-0"><FrenchTextWithTTS>{children}</FrenchTextWithTTS></p>,
                         code: ({children}) => <code className="bg-purple-50 text-purple-800 px-1 py-0.5 rounded text-xs">{children}</code>,
-                        blockquote: ({children}) => <blockquote className="border-l-3 border-purple-300 pl-3 italic text-gray-600">{children}</blockquote>
+                        blockquote: ({children}) => <blockquote className="border-l-3 border-purple-300 pl-3 italic text-gray-600"><FrenchTextWithTTS>{children}</FrenchTextWithTTS></blockquote>
                       }}
                     >
                       {aiResponse}
