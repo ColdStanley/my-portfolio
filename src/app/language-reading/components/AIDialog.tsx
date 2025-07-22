@@ -158,17 +158,17 @@ export default function AIDialog({
 
       if (response.ok) {
         console.log('AI notes saved successfully')
-        setSaveStatus('success')
         
         // 调用回调函数通知父组件刷新数据
         if (onSaved) {
           onSaved()
         }
         
-        // 延迟关闭对话框，让用户看到保存成功状态
+        // 立即关闭对话框并跳转到卡片
+        onClose()
+        
+        // 短暂延迟后滚动到对应的卡片
         setTimeout(() => {
-          onClose()
-          // 滚动到对应的卡片
           const cardId = `${queryType}-card-${queryData.id}`
           const cardElement = document.getElementById(cardId)
           if (cardElement) {
@@ -182,7 +182,7 @@ export default function AIDialog({
               cardElement.style.boxShadow = ''
             }, 2000)
           }
-        }, 1500) // 1.5秒后关闭对话框
+        }, 100) // 短暂延迟确保DOM更新
       } else {
         console.error('Save failed with status:', response.status, result)
         setSaveStatus('error')
@@ -334,8 +334,7 @@ export default function AIDialog({
 
         {/* Footer */}
         <div className="px-6 py-4 bg-purple-50 border-t border-purple-100 rounded-b-xl">
-          <div className="flex justify-between items-center text-xs text-gray-500">
-            <span>Tip: You can have multiple conversations to learn more about this {queryType === 'word' ? 'word' : 'sentence'}</span>
+          <div className="flex justify-end items-center text-xs text-gray-500">
             <div className="flex gap-2 items-center">
               {aiResponse && (
                 <button
