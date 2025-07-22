@@ -6,6 +6,7 @@ import QueryCards from './QueryCards'
 import ThinkingAnimation from './ThinkingAnimation'
 import AnimatedButton from './AnimatedButton'
 import { Language, getUITexts } from '../config/uiText'
+import { playText } from '../utils/tts'
 
 interface ReadingViewProps {
   language: Language
@@ -24,6 +25,7 @@ export default function ReadingView({ language, articleId, content, title, onNew
     position: { x: number; y: number }
   } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isTestMode, setIsTestMode] = useState(false)
   
   const textRef = useRef<HTMLDivElement>(null)
   const { isHighlighted, addWordQuery, addSentenceQuery, addHighlight, wordQueries, sentenceQueries } = useLanguageReadingStore()
@@ -181,6 +183,35 @@ export default function ReadingView({ language, articleId, content, title, onNew
     }, 100)
   }
 
+  const handleHighlightClick = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement
+    
+    // Check if clicked element is a highlighted span
+    if (target.tagName === 'SPAN' && target.dataset.queryIds) {
+      e.stopPropagation()
+      
+      try {
+        const queryIds = JSON.parse(target.dataset.queryIds) as number[]
+        
+        // Scroll to the first query card (or you could show all)
+        if (queryIds.length > 0) {
+          const firstQueryId = queryIds[0]
+          // Find the query type by checking both word and sentence queries
+          const wordQuery = wordQueries.find(q => q.id === firstQueryId)
+          const sentenceQuery = sentenceQueries.find(q => q.id === firstQueryId)
+          
+          if (wordQuery) {
+            scrollToCard(`word-card-${firstQueryId}`)
+          } else if (sentenceQuery) {
+            scrollToCard(`sentence-card-${firstQueryId}`)
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing query IDs:', error)
+      }
+    }
+  }, [wordQueries, sentenceQueries])
+
   const handleQuery = async (type: 'word' | 'sentence') => {
     if (!selectionData || isLoading) return
 
@@ -262,21 +293,14 @@ export default function ReadingView({ language, articleId, content, title, onNew
   }
 
   // Get language-specific speech language code
-  const getSpeechLang = (language: Language) => {
-    return language === 'french' ? 'fr-FR' : 'en-US'
+  const handleSpeak = async (text: string, rate: number = 0.8) => {
+    try {
+      await playText(text, language, rate)
+    } catch (error) {
+      console.error('TTS failed:', error)
+    }
   }
 
-  const handleSpeak = (text: string, rate: number = 0.8) => {
-    speechSynthesis.cancel()
-    
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang = getSpeechLang(language)
-    utterance.rate = rate
-    utterance.pitch = 1
-    utterance.volume = 1
-    
-    speechSynthesis.speak(utterance)
-  }
 
   const renderHighlightedText = () => {
     const ranges = useLanguageReadingStore.getState().highlightedRanges
@@ -293,7 +317,7 @@ export default function ReadingView({ language, articleId, content, title, onNew
       ))
     }
 
-    // Same highlighting logic as before with merged ranges
+    // Restore simple range merging (avoiding complex HTML generation)
     const sortedRanges = [...ranges].sort((a, b) => a.start - b.start)
     const mergedRanges: Array<{
       start: number
@@ -333,14 +357,17 @@ export default function ReadingView({ language, articleId, content, title, onNew
       
       let className = ''
       if (hasBoth) {
-        className = 'inline-block px-2 py-1 rounded-lg bg-gradient-to-r from-purple-100/30 to-blue-100/30 text-purple-800 backdrop-blur-xs shadow-sm transition-all duration-200 ease-in-out hover:from-purple-200/40 hover:to-blue-200/40 hover:shadow-md hover:scale-[1.005] cursor-pointer border-l-2 border-purple-400'
+        className = 'inline-block px-2 py-1 rounded-lg bg-purple-100/20 text-purple-800 backdrop-blur-xs shadow-sm transition-all duration-200 ease-in-out hover:bg-purple-200/30 hover:shadow-md hover:scale-[1.005] cursor-pointer font-bold'
       } else if (hasSentence) {
-        className = 'inline-block px-2 py-1 rounded-lg bg-blue-100/20 text-blue-800 backdrop-blur-xs shadow-sm transition-all duration-200 ease-in-out hover:bg-blue-200/30 hover:shadow-md hover:scale-[1.005] cursor-pointer'
+        className = 'font-bold cursor-pointer transition-all duration-200 ease-in-out hover:text-blue-800'
       } else {
         className = 'inline-block px-2 py-1 rounded-lg bg-purple-100/20 text-purple-800 backdrop-blur-xs shadow-sm transition-all duration-200 ease-in-out hover:bg-purple-200/30 hover:shadow-md hover:scale-[1.005] cursor-pointer'
       }
       
-      result += `<mark class="${className}">${content.slice(range.start, range.end)}</mark>`
+      // Add query IDs for bidirectional mapping
+      const queryIds = JSON.stringify(range.ids)
+      
+      result += `<span class="${className}" data-query-ids='${queryIds}'>${content.slice(range.start, range.end)}</span>`
       
       lastIndex = range.end
     })
@@ -364,16 +391,25 @@ export default function ReadingView({ language, articleId, content, title, onNew
             <p className="text-sm text-purple-600 font-medium mt-1">"{title}"</p>
           )}
         </div>
-        <AnimatedButton
-          onClick={() => {
-            clearAll()
-            onNewArticle()
-          }}
-          variant="primary"
-          size="md"
-        >
-          {uiTexts.newArticle}
-        </AnimatedButton>
+        <div className="flex gap-3">
+          <AnimatedButton
+            onClick={() => setIsTestMode(!isTestMode)}
+            variant="secondary"
+            size="md"
+          >
+            📝 {isTestMode ? uiTexts.exitReview : uiTexts.reviewTest}
+          </AnimatedButton>
+          <AnimatedButton
+            onClick={() => {
+              clearAll()
+              onNewArticle()
+            }}
+            variant="primary"
+            size="md"
+          >
+            {uiTexts.newArticle}
+          </AnimatedButton>
+        </div>
       </div>
       
       <div className="flex gap-6">
@@ -384,6 +420,7 @@ export default function ReadingView({ language, articleId, content, title, onNew
               ref={textRef}
               className="prose prose-lg max-w-none leading-relaxed select-text cursor-text"
               onMouseUp={handleTextSelection}
+              onClick={handleHighlightClick}
             >
               {typeof renderHighlightedText() === 'string' ? (
                 <div dangerouslySetInnerHTML={{ __html: renderHighlightedText() as string }} />
@@ -396,7 +433,12 @@ export default function ReadingView({ language, articleId, content, title, onNew
 
         {/* Right Panel - Query Results */}
         <div className="w-1/2">
-          <QueryCards language={language} />
+          <QueryCards 
+            language={language} 
+            articleId={articleId}
+            isTestMode={isTestMode}
+            onExitTestMode={() => setIsTestMode(false)}
+          />
         </div>
       </div>
 
@@ -440,33 +482,8 @@ export default function ReadingView({ language, articleId, content, title, onNew
               </div>
             )}
             
-            {/* AI Query Section */}
-            <div className="mb-4">
-              <p className="text-xs font-semibold text-purple-700 mb-2 uppercase tracking-wide">{uiTexts.aiAnalysis}</p>
-              <div className="flex gap-2">
-                <AnimatedButton
-                  onClick={() => handleQuery('word')}
-                  disabled={isLoading}
-                  variant="primary"
-                  size="sm"
-                  className="flex-1"
-                >
-                  🔍 {uiTexts.queryWord}
-                </AnimatedButton>
-                <AnimatedButton
-                  onClick={() => handleQuery('sentence')}
-                  disabled={isLoading}
-                  variant="primary"
-                  size="sm"
-                  className="flex-1"
-                >
-                  📝 {uiTexts.querySentence}
-                </AnimatedButton>
-              </div>
-            </div>
-            
             {/* Manual Mark Section */}
-            <div className="border-t border-purple-100 pt-3">
+            <div className="mb-4">
               <p className="text-xs font-semibold text-purple-700 mb-2 uppercase tracking-wide">{uiTexts.manualNotes}</p>
               <div className="flex gap-2">
                 <AnimatedButton
@@ -489,9 +506,35 @@ export default function ReadingView({ language, articleId, content, title, onNew
                 </AnimatedButton>
               </div>
             </div>
+            
+            {/* AI Query Section */}
+            <div className="border-t border-purple-100 pt-3">
+              <p className="text-xs font-semibold text-purple-700 mb-2 uppercase tracking-wide">{uiTexts.aiAnalysis}</p>
+              <div className="flex gap-2">
+                <AnimatedButton
+                  onClick={() => handleQuery('word')}
+                  disabled={isLoading}
+                  variant="primary"
+                  size="sm"
+                  className="flex-1"
+                >
+                  🔍 {uiTexts.queryWord}
+                </AnimatedButton>
+                <AnimatedButton
+                  onClick={() => handleQuery('sentence')}
+                  disabled={isLoading}
+                  variant="primary"
+                  size="sm"
+                  className="flex-1"
+                >
+                  📝 {uiTexts.querySentence}
+                </AnimatedButton>
+              </div>
+            </div>
           </div>
         </div>
       )}
+
     </div>
   )
 }

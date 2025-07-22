@@ -11,29 +11,29 @@ const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || ''
 // Language-specific prompts
 const getWordAnalysisPrompt = (wordText: string, language: string) => {
   if (language === 'french') {
-    return `Analysez le mot/expression français : "${wordText}"
+    return `请分析这个法语单词/短语："${wordText}"
 
-    Veuillez fournir :
-    1. Définition/traduction en chinois
-    2. Partie du discours (nom, verbe, adjectif, etc.)
-    3. Forme de base (si applicable, ex: "mangé" -> "manger")
-    4. Genre (masculin/féminin si applicable)
-    5. UNE phrase d'exemple utilisant ce mot
-    6. Traduction chinoise de la phrase d'exemple
-    7. Informations de conjugaison (pour les verbes)
+    请提供：
+    1. 中文释义/翻译
+    2. 词性（名词、动词、形容词等，用中文说明）
+    3. 原形（如果适用，例如："mangé" -> "manger"）
+    4. 性别（阳性/阴性，如果适用）
+    5. 一个使用该词的法语例句
+    6. 例句的中文翻译
+    7. 动词变位信息（如果是动词，用中文解释；如果不是动词，请留空""）
 
-    Retournez au format JSON :
+    以JSON格式返回：
     {
-      "definition": "définition/traduction chinoise",
-      "partOfSpeech": "partie du discours",
-      "rootForm": "forme de base",
-      "gender": "masculin/féminin/neutre",
-      "example": "Phrase d'exemple française avec ${wordText}",
-      "exampleTranslation": "traduction chinoise de l'exemple",
-      "conjugationInfo": "informations de conjugaison (si verbe)"
+      "definition": "中文释义/翻译",
+      "partOfSpeech": "词性（中文）",
+      "rootForm": "原形",
+      "gender": "阳性/阴性/中性",
+      "example": "包含${wordText}的法语例句",
+      "exampleTranslation": "例句的中文翻译",
+      "conjugationInfo": "动词变位信息（中文解释），非动词留空"
     }
 
-    Important : La phrase d'exemple doit contenir le mot/expression exact "${wordText}".`
+    重要：例句必须包含确切的单词/短语"${wordText}"。`
   } else {
     // English prompt
     return `Analyze the English word/phrase: "${wordText}"

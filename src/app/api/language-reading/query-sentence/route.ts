@@ -11,16 +11,16 @@ const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || ''
 // Language-specific prompts
 const getSentenceAnalysisPrompt = (sentenceText: string, language: string) => {
   if (language === 'french') {
-    return `Analysez la phrase française : "${sentenceText}"
+    return `请分析这个法语句子："${sentenceText}"
 
-    Veuillez fournir :
-    1. Traduction chinoise de la phrase
-    2. Analyse grammaticale et contextuelle
+    请提供：
+    1. 中文翻译
+    2. 语法和语境分析（用中文讲解，需要时可引用法语原文）
 
-    Retournez au format JSON :
+    以JSON格式返回：
     {
-      "translation": "traduction chinoise",
-      "analysis": "analyse grammaticale et contextuelle en français"
+      "translation": "中文翻译",
+      "analysis": "用中文进行的语法和语境分析，必要时引用法语原文"
     }`
   } else {
     // English prompt

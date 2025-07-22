@@ -13,6 +13,7 @@ interface WordQuery {
   end_offset: number
   query_type?: string
   user_notes?: string
+  ai_notes?: string
   language?: string
   // French-specific fields
   gender?: string // masculin/féminin
@@ -28,6 +29,7 @@ interface SentenceQuery {
   end_offset: number
   query_type?: string
   user_notes?: string
+  ai_notes?: string
   language?: string
 }
 

@@ -59,6 +59,39 @@ export interface UITexts {
   // Collapsible content
   expand: string
   collapse: string
+  
+  // Review Test
+  reviewTest: string
+  exitReview: string
+  loadingTest: string
+  noWordsForReview: string
+  testCompleted: string
+  score: string
+  correct: string
+  continueReading: string
+  translateToEnglish: string
+  fillInBlank: string
+  chinese: string
+  english: string
+  typeAnswer: string
+  submit: string
+  nextQuestion: string
+  finishTest: string
+  greatJob: string
+  correctAnswer: string
+  viewQuery: string
+  testAgain: string
+  
+  // AI Assistant
+  askAI: string
+  aiAssistant: string
+  aiThinking: string
+  saveAI: string
+  editAI: string
+  askAgain: string
+  enterQuestion: string
+  askQuestion: string
+  yourQuestion: string
 }
 
 export const UI_TEXTS: Record<Language, UITexts> = {
@@ -104,7 +137,40 @@ export const UI_TEXTS: Record<Language, UITexts> = {
     playExample: 'Play example',
     
     expand: 'Show more',
-    collapse: 'Show less'
+    collapse: 'Show less',
+    
+    // Review Test
+    reviewTest: 'Review Test',
+    exitReview: 'Exit Review',
+    loadingTest: 'Loading test questions...',
+    noWordsForReview: 'No words available for review in this article.',
+    testCompleted: 'Test Completed!',
+    score: 'Score',
+    correct: 'correct',
+    continueReading: 'Continue Reading',
+    translateToEnglish: 'Translate to English:',
+    fillInBlank: 'Fill in the blank:',
+    chinese: 'Chinese:',
+    english: 'English:',
+    typeAnswer: 'Type your answer here...',
+    submit: 'Submit',
+    nextQuestion: 'Next Question',
+    finishTest: 'Finish Test',
+    greatJob: 'Great job!',
+    correctAnswer: 'Correct answer:',
+    viewQuery: 'View Query',
+    testAgain: 'Test Again',
+    
+    // AI Assistant
+    askAI: 'Ask AI',
+    aiAssistant: 'AI Assistant',
+    aiThinking: 'AI is thinking...',
+    saveAI: 'Save AI Notes',
+    editAI: 'Edit',
+    askAgain: 'Ask Again',
+    enterQuestion: 'Enter your question...',
+    askQuestion: 'Ask Question',
+    yourQuestion: 'Your Question:'
   },
   
   french: {
@@ -155,7 +221,40 @@ export const UI_TEXTS: Record<Language, UITexts> = {
     masculin: 'masculin',
     feminin: 'féminin', 
     plural: 'pluriel',
-    conjugation: 'conjugaison'
+    conjugation: 'conjugaison',
+    
+    // Review Test
+    reviewTest: 'Test de Révision',
+    exitReview: 'Quitter Révision',
+    loadingTest: 'Chargement des questions...',
+    noWordsForReview: 'Aucun mot disponible pour révision dans cet article.',
+    testCompleted: 'Test Terminé !',
+    score: 'Score',
+    correct: 'correct',
+    continueReading: 'Continuer la Lecture',
+    translateToEnglish: 'Traduire en français :',
+    fillInBlank: 'Remplir le blanc :',
+    chinese: 'Chinois :',
+    english: 'Français :',
+    typeAnswer: 'Tapez votre réponse ici...',
+    submit: 'Soumettre',
+    nextQuestion: 'Question Suivante',
+    finishTest: 'Terminer le Test',
+    greatJob: 'Excellent travail !',
+    correctAnswer: 'Réponse correcte :',
+    viewQuery: 'Voir Requête',
+    testAgain: 'Tester Encore',
+    
+    // AI Assistant
+    askAI: 'Demander à l\'IA',
+    aiAssistant: 'Assistant IA',
+    aiThinking: 'L\'IA réfléchit...',
+    saveAI: 'Sauvegarder Notes IA',
+    editAI: 'Modifier',
+    askAgain: 'Demander Encore',
+    enterQuestion: 'Saisissez votre question...',
+    askQuestion: 'Poser Question',
+    yourQuestion: 'Votre Question :'
   }
 }
 
