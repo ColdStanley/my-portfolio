@@ -10,7 +10,7 @@ interface Article {
 }
 
 interface ArticleListProps {
-  onSelectArticle: (id: number, content: string) => void
+  onSelectArticle: (id: number, content: string, title?: string) => void
 }
 
 export default function ArticleList({ onSelectArticle }: ArticleListProps) {
@@ -37,7 +37,7 @@ export default function ArticleList({ onSelectArticle }: ArticleListProps) {
 
   const handleSelectArticle = (article: Article) => {
     localStorage.setItem('lastArticleId', article.id.toString())
-    onSelectArticle(article.id, article.content)
+    onSelectArticle(article.id, article.content, article.title)
   }
 
   const formatDate = (dateString: string) => {

@@ -104,6 +104,9 @@ export default function DetailPage() {
               height={180}
               className="w-full h-auto rounded-xl shadow fade-image"
               sizes="(max-width: 768px) 100vw, 300px"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none'
+              }}
             />
           </div>
         )}

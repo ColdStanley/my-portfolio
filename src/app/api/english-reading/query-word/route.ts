@@ -17,13 +17,25 @@ export async function POST(req: NextRequest) {
     }
 
     // Call DeepSeek API
-    const prompt = `Please provide Chinese translation and 2 English example sentences for the English word/phrase: "${wordText}". 
-    
+    const prompt = `Analyze the English word/phrase: "${wordText}"
+
+    Please provide:
+    1. Chinese definition/translation
+    2. Part of speech (noun, verb, adjective, etc.)
+    3. Root form (if applicable, e.g., "ran" -> "run")
+    4. ONE example sentence using this word
+    5. Chinese translation of the example sentence
+
     Return in JSON format:
     {
-      "definition": "Chinese translation here",
-      "examples": ["English example sentence 1", "English example sentence 2"]
-    }`
+      "definition": "中文释义",
+      "partOfSpeech": "词性",
+      "rootForm": "原型",
+      "example": "English example sentence with ${wordText}",
+      "exampleTranslation": "例句的中文翻译"
+    }
+
+    Important: The example sentence must contain the exact word/phrase "${wordText}".`
 
     const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
@@ -35,6 +47,7 @@ export async function POST(req: NextRequest) {
         model: 'deepseek-chat',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.3,
+        response_format: { type: "json_object" }
       }),
     })
 
@@ -48,13 +61,14 @@ export async function POST(req: NextRequest) {
     // Extract JSON from response
     let parsedContent
     try {
-      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/)
-      const jsonText = jsonMatch ? jsonMatch[1] : content.trim()
-      parsedContent = JSON.parse(jsonText)
+      parsedContent = JSON.parse(content)
     } catch {
       parsedContent = {
         definition: `Translation for "${wordText}"`,
-        examples: [`Example with ${wordText}`, `Another example with ${wordText}`]
+        partOfSpeech: "unknown",
+        rootForm: wordText,
+        example: `Example sentence with ${wordText}.`,
+        exampleTranslation: `包含 ${wordText} 的例句翻译`
       }
     }
 
@@ -65,7 +79,10 @@ export async function POST(req: NextRequest) {
         article_id: articleId,
         word_text: wordText,
         definition: parsedContent.definition,
-        examples: parsedContent.examples,
+        part_of_speech: parsedContent.partOfSpeech,
+        root_form: parsedContent.rootForm,
+        examples: [parsedContent.example], // Keep as array for compatibility
+        example_translation: parsedContent.exampleTranslation,
         start_offset: startOffset,
         end_offset: endOffset,
         query_type: queryType || 'ai_query',

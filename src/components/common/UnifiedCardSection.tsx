@@ -61,6 +61,9 @@ export default function UnifiedCardSection({ category, className = '' }: Unified
                     alt={card.title || 'Project image'}
                     fill
                     className="object-cover rounded-xl group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                    }}
                   />
                 </div>
               )}

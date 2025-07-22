@@ -7,10 +7,11 @@ import QueryCards from './QueryCards'
 interface ReadingViewProps {
   articleId: number
   content: string
+  title?: string
   onNewArticle: () => void
 }
 
-export default function ReadingView({ articleId, content, onNewArticle }: ReadingViewProps) {
+export default function ReadingView({ articleId, content, title, onNewArticle }: ReadingViewProps) {
   const { clearAll } = useReadingStore()
   const [selectionData, setSelectionData] = useState<{
     text: string
@@ -269,20 +270,59 @@ export default function ReadingView({ articleId, content, onNewArticle }: Readin
       ))
     }
 
-    // Sort ranges by start position
+    // Sort ranges by start position and merge overlapping ranges to prevent duplication
     const sortedRanges = [...ranges].sort((a, b) => a.start - b.start)
+    const mergedRanges: Array<{
+      start: number
+      end: number
+      types: Array<'word' | 'sentence'>
+      ids: number[]
+    }> = []
+
+    sortedRanges.forEach(range => {
+      // Check if this range overlaps with the last merged range
+      const lastMerged = mergedRanges[mergedRanges.length - 1]
+      
+      if (lastMerged && range.start <= lastMerged.end && range.end >= lastMerged.start) {
+        // Overlapping ranges - merge them
+        lastMerged.start = Math.min(lastMerged.start, range.start)
+        lastMerged.end = Math.max(lastMerged.end, range.end)
+        if (!lastMerged.types.includes(range.type)) {
+          lastMerged.types.push(range.type)
+        }
+        lastMerged.ids.push(range.id)
+      } else {
+        // Non-overlapping range - add as new
+        mergedRanges.push({
+          start: range.start,
+          end: range.end,
+          types: [range.type],
+          ids: [range.id]
+        })
+      }
+    })
     
     let result = ''
     let lastIndex = 0
 
-    sortedRanges.forEach((range) => {
+    mergedRanges.forEach((range) => {
       // Add text before highlight
       result += content.slice(lastIndex, range.start)
       
-      // Add highlighted text with IELTS speaking style + click cursor
-      const className = range.type === 'word' 
-        ? 'inline-block px-2 py-1 rounded-lg bg-purple-100/20 text-purple-800 backdrop-blur-xs shadow-sm transition-all duration-200 ease-in-out hover:bg-purple-200/30 hover:shadow-md hover:scale-[1.005] cursor-pointer'
-        : 'inline-block px-2 py-1 rounded-lg bg-blue-100/20 text-blue-800 backdrop-blur-xs shadow-sm transition-all duration-200 ease-in-out hover:bg-blue-200/30 hover:shadow-md hover:scale-[1.005] cursor-pointer'
+      // Determine style based on types - sentence takes priority if both exist
+      const hasBoth = range.types.includes('word') && range.types.includes('sentence')
+      const hasSentence = range.types.includes('sentence')
+      
+      let className = ''
+      if (hasBoth) {
+        // Both word and sentence - use gradient or special styling
+        className = 'inline-block px-2 py-1 rounded-lg bg-gradient-to-r from-purple-100/30 to-blue-100/30 text-purple-800 backdrop-blur-xs shadow-sm transition-all duration-200 ease-in-out hover:from-purple-200/40 hover:to-blue-200/40 hover:shadow-md hover:scale-[1.005] cursor-pointer border-l-2 border-purple-400'
+      } else if (hasSentence) {
+        className = 'inline-block px-2 py-1 rounded-lg bg-blue-100/20 text-blue-800 backdrop-blur-xs shadow-sm transition-all duration-200 ease-in-out hover:bg-blue-200/30 hover:shadow-md hover:scale-[1.005] cursor-pointer'
+      } else {
+        className = 'inline-block px-2 py-1 rounded-lg bg-purple-100/20 text-purple-800 backdrop-blur-xs shadow-sm transition-all duration-200 ease-in-out hover:bg-purple-200/30 hover:shadow-md hover:scale-[1.005] cursor-pointer'
+      }
+      
       result += `<mark class="${className}">${content.slice(range.start, range.end)}</mark>`
       
       lastIndex = range.end
@@ -303,7 +343,12 @@ export default function ReadingView({ articleId, content, onNewArticle }: Readin
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-800">Reading Session</h2>
+        <div>
+          <h2 className="text-xl font-semibold text-gray-800">Reading Session</h2>
+          {title && (
+            <p className="text-sm text-purple-600 font-medium mt-1">"{title}"</p>
+          )}
+        </div>
         <button
           onClick={() => {
             clearAll()
@@ -343,62 +388,83 @@ export default function ReadingView({ articleId, content, onNewArticle }: Readin
       {/* Selection Tooltip */}
       {selectionData && (
         <div
-          className="fixed z-50 w-72 p-4 text-sm bg-white shadow-md border border-purple-200 rounded-xl text-gray-700"
+          className="fixed z-50 w-80 bg-white shadow-xl border border-purple-200 rounded-2xl text-gray-700 overflow-hidden"
           style={{
-            left: selectionData.position.x - 144, // Center the tooltip (w-72 = 288px / 2)
-            top: selectionData.position.y - 80,
+            left: Math.max(10, selectionData.position.x - 160), // Center the tooltip, ensure it stays within viewport
+            top: selectionData.position.y - 100,
             pointerEvents: 'auto'
           }}
         >
-          <p className="text-purple-700 font-semibold mb-2">Selected: {selectionData.text}</p>
-          {isLoading && (
-            <p className="text-gray-600 text-xs mb-2 italic">Analyzing text, please wait...</p>
-          )}
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              {!selectionData.text.includes('.') && !selectionData.text.includes('!') && !selectionData.text.includes('?') && selectionData.text.split(' ').length <= 8 && (
+          {/* Header */}
+          <div className="bg-gradient-to-r from-purple-600 to-purple-700 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-purple-200 rounded-full"></div>
+                <p className="text-white font-medium text-sm">Text Analysis</p>
+              </div>
+              <button
+                onClick={() => setSelectionData(null)}
+                className="text-purple-100 hover:text-white text-xl leading-none transition-colors"
+              >
+                ×
+              </button>
+            </div>
+            <p className="text-purple-100 text-xs mt-2 max-w-full truncate">
+              "{selectionData.text}"
+            </p>
+          </div>
+          
+          {/* Content */}
+          <div className="p-4">
+            {isLoading && (
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-4 h-4 border-2 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+                <p className="text-purple-600 text-sm font-medium">Analyzing text...</p>
+              </div>
+            )}
+            
+            {/* AI Query Section */}
+            <div className="mb-4">
+              <p className="text-xs font-semibold text-purple-700 mb-2 uppercase tracking-wide">AI Analysis</p>
+              <div className="flex gap-2">
                 <button
                   onClick={() => handleQuery('word')}
                   disabled={isLoading}
-                  className="px-3 py-2 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors font-medium"
+                  className="flex-1 px-3 py-2.5 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors font-medium shadow-sm"
                 >
-                  {isLoading ? 'Analyzing...' : 'Query Word'}
+                  🔍 {isLoading ? 'Analyzing...' : 'Query Word'}
                 </button>
-              )}
-              <button
-                onClick={() => handleQuery('sentence')}
-                disabled={isLoading}
-                className="px-3 py-2 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium"
-              >
-                {isLoading ? 'Analyzing...' : 'Query Sentence'}
-              </button>
+                <button
+                  onClick={() => handleQuery('sentence')}
+                  disabled={isLoading}
+                  className="flex-1 px-3 py-2.5 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors font-medium shadow-sm"
+                >
+                  📝 {isLoading ? 'Analyzing...' : 'Query Sentence'}
+                </button>
+              </div>
             </div>
             
-            <div className="flex gap-2 pt-1 border-t border-gray-200">
-              {!selectionData.text.includes('.') && !selectionData.text.includes('!') && !selectionData.text.includes('?') && selectionData.text.split(' ').length <= 8 && (
+            {/* Manual Mark Section */}
+            <div className="border-t border-purple-100 pt-3">
+              <p className="text-xs font-semibold text-purple-700 mb-2 uppercase tracking-wide">Manual Notes</p>
+              <div className="flex gap-2">
                 <button
                   onClick={() => handleMarkOnly('word')}
                   disabled={isLoading}
-                  className="px-3 py-2 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors font-medium"
+                  className="flex-1 px-3 py-2.5 text-xs bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 disabled:opacity-50 transition-colors font-medium border border-purple-200"
                 >
-                  {isLoading ? 'Marking...' : 'Mark Word'}
+                  ✏️ {isLoading ? 'Marking...' : 'Mark Word'}
                 </button>
-              )}
-              <button
-                onClick={() => handleMarkOnly('sentence')}
-                disabled={isLoading}
-                className="px-3 py-2 text-xs bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors font-medium"
-              >
-                {isLoading ? 'Marking...' : 'Mark Sentence'}
-              </button>
+                <button
+                  onClick={() => handleMarkOnly('sentence')}
+                  disabled={isLoading}
+                  className="flex-1 px-3 py-2.5 text-xs bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 disabled:opacity-50 transition-colors font-medium border border-purple-200"
+                >
+                  📋 {isLoading ? 'Marking...' : 'Mark Sentence'}
+                </button>
+              </div>
             </div>
           </div>
-          <button
-            onClick={() => setSelectionData(null)}
-            className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-lg leading-none"
-          >
-            ×
-          </button>
         </div>
       )}
 

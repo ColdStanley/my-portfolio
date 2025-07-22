@@ -4,7 +4,10 @@ interface WordQuery {
   id: number
   word_text: string
   definition: string
+  part_of_speech?: string
+  root_form?: string
   examples: string[]
+  example_translation?: string
   start_offset: number
   end_offset: number
   query_type?: string

@@ -81,6 +81,9 @@ function CardColumn({ cards, title }: { cards: CardItem[], title: string }) {
                     fill
                     sizes="96px"
                     className="object-contain p-1 transition-transform duration-300 ease-in-out hover:scale-105"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                    }}
                   />
                 </div>
               )}

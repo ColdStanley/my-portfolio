@@ -4,8 +4,8 @@ import { useState } from 'react'
 import ArticleList from './ArticleList'
 
 interface ArticleInputProps {
-  onSubmit: (id: number, content: string) => void
-  onSelectArticle: (id: number, content: string) => void
+  onSubmit: (id: number, content: string, title?: string) => void
+  onSelectArticle: (id: number, content: string, title?: string) => void
 }
 
 export default function ArticleInput({ onSubmit, onSelectArticle }: ArticleInputProps) {
@@ -26,7 +26,7 @@ export default function ArticleInput({ onSubmit, onSelectArticle }: ArticleInput
       
       const data = await res.json()
       if (data.id) {
-        onSubmit(data.id, content.trim())
+        onSubmit(data.id, content.trim(), title.trim() || 'Untitled')
       }
     } catch (error) {
       console.error('Failed to save article:', error)

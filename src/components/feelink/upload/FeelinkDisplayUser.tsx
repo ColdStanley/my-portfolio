@@ -380,7 +380,7 @@ export default function FeelinkDisplayUser({ imageUrl, description, quotes }: { 
   useEffect(() => {
     if (!imageRef.current) return
     const observer = new ResizeObserver(entries => {
-      for (let entry of entries) {
+      for (const entry of entries) {
         if (entry.target === imageRef.current) {
           setImageHeight(entry.contentRect.height)
         }

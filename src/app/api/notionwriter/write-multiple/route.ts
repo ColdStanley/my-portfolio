@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 获取字段 schema
-  let schema: Record<string, string> = {}
+  const schema: Record<string, string> = {}
   try {
     const response = await notion.databases.retrieve({ database_id: databaseId })
     for (const [key, value] of Object.entries(response.properties)) {
