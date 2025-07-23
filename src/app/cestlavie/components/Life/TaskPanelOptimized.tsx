@@ -297,6 +297,43 @@ export default function TaskPanelOptimized() {
     }
   }, [actions])
 
+  const handleRecordTime = useCallback(async (task: any, startTime?: string, endTime?: string) => {
+    try {
+      const updatedTask = { ...task }
+      
+      // Update actual times
+      if (startTime) updatedTask.actual_start = startTime
+      if (endTime) updatedTask.actual_end = endTime
+      
+      // Auto-adjust status based on recorded times
+      if (endTime) {
+        updatedTask.status = 'Completed'
+      } else if (startTime && !task.actual_end) {
+        updatedTask.status = 'In Progress'
+      }
+      
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTask)
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to record time')
+      }
+      
+      actions.updateTask(updatedTask)
+      setToast({ message: 'Time recorded successfully', type: 'success' })
+      
+    } catch (error) {
+      console.error('Error recording time:', error)
+      setToast({ 
+        message: error instanceof Error ? error.message : 'Failed to record time', 
+        type: 'error' 
+      })
+    }
+  }, [actions])
+
   // Task CRUD operations
   const handleSaveTask = useCallback(async (formData: TaskFormData) => {
     try {
@@ -544,6 +581,7 @@ export default function TaskPanelOptimized() {
               onTaskComplete={(task) => actions.openCompletionModal(task)}
               onTaskStart={handleTaskStart}
               onTaskEnd={handleTaskEnd}
+              onRecordTime={handleRecordTime}
               onCreateTask={(date) => {
                 actions.setSelectedDate(date)
                 actions.openFormPanel()

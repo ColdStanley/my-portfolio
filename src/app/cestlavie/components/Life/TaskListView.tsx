@@ -1,8 +1,10 @@
 'use client'
 
-import { useMemo, useCallback, useState } from 'react'
+import { useMemo, useCallback, useState, useRef } from 'react'
 import TaskExtensionModal from './TaskExtensionModal'
 import SimpleTaskTimer from './SimpleTaskTimer'
+import TimeRecordTooltip from './TimeRecordTooltip'
+import TimeComparisonTooltip from './TimeComparisonTooltip'
 import { extractTimeOnly, extractDateOnly } from '../../utils/timezone'
 
 interface TaskRecord {
@@ -33,6 +35,7 @@ interface TaskListViewProps {
   onTaskComplete?: (task: TaskRecord) => void
   onTaskStart?: (task: TaskRecord) => void
   onTaskEnd?: (task: TaskRecord) => void
+  onRecordTime?: (task: TaskRecord, startTime?: string, endTime?: string) => void
   formatTimeRange?: (startDate: string, endDate?: string) => string
   getPriorityColor?: (priority: string) => string
   hasTimeConflicts?: (task: TaskRecord) => boolean
@@ -47,6 +50,7 @@ export default function TaskListView({
   onTaskComplete,
   onTaskStart,
   onTaskEnd,
+  onRecordTime,
   formatTimeRange,
   getPriorityColor,
   hasTimeConflicts
@@ -56,7 +60,15 @@ export default function TaskListView({
     task: TaskRecord | null
   }>({ isOpen: false, task: null })
   
-  const [extendedTasks, setExtendedTasks] = useState<{[taskId: string]: string}>({}) // taskId -> new end time
+  const [extendedTasks, setExtendedTasks] = useState<{[taskId: string]: string}>({})
+  
+  const [timeRecordTooltip, setTimeRecordTooltip] = useState<{
+    isOpen: boolean
+    task: TaskRecord | null
+    triggerElement: HTMLElement | null
+  }>({ isOpen: false, task: null, triggerElement: null })
+  
+  const timeRecordButtonRefs = useRef<{[taskId: string]: HTMLButtonElement}>({}) // taskId -> new end time
 
   // Get tasks for selected date
   const selectedDateTasks = useMemo(() => {
@@ -158,6 +170,23 @@ export default function TaskListView({
     }
     setExtensionModal({ isOpen: false, task: null })
   }, [extensionModal.task, onTaskEnd])
+
+  const handleRecordTimeClick = useCallback((task: TaskRecord, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const button = e.currentTarget as HTMLButtonElement
+    setTimeRecordTooltip({
+      isOpen: true,
+      task,
+      triggerElement: button
+    })
+  }, [])
+
+  const handleRecordTimeSave = useCallback((startTime?: string, endTime?: string) => {
+    if (timeRecordTooltip.task && onRecordTime) {
+      onRecordTime(timeRecordTooltip.task, startTime, endTime)
+    }
+    setTimeRecordTooltip({ isOpen: false, task: null, triggerElement: null })
+  }, [timeRecordTooltip.task, onRecordTime])
 
   if (!selectedDate) {
     return (
@@ -278,9 +307,11 @@ export default function TaskListView({
                       {/* Time */}
                       {(task.start_date || task.end_date) && (
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-sm font-medium text-purple-700">
-                            {formatTimeOnly(task.start_date, task.end_date)}
-                          </span>
+                          <TimeComparisonTooltip task={task}>
+                            <span className="text-sm font-medium text-purple-700 cursor-help">
+                              {formatTimeOnly(task.start_date, task.end_date)}
+                            </span>
+                          </TimeComparisonTooltip>
                           {task.budget_time > 0 && (
                             <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
                               {task.budget_time}h budgeted
@@ -355,6 +386,22 @@ export default function TaskListView({
                         </>
                       )}
 
+                      {/* Record Time Button */}
+                      <button
+                        ref={(el) => {
+                          if (el) timeRecordButtonRefs.current[task.id] = el
+                        }}
+                        onClick={(e) => handleRecordTimeClick(task, e)}
+                        className="p-2 text-purple-600 hover:text-white hover:bg-purple-600 
+                                 rounded-md border border-purple-200 hover:border-purple-600
+                                 transition-all duration-200"
+                        title="Record actual time"
+                      >
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+
                       <button
                         onClick={(e) => handleOutlookClick(task, e)}
                         className="p-2 text-purple-600 hover:text-white hover:bg-purple-600 
@@ -414,6 +461,15 @@ export default function TaskListView({
         onExtend={handleExtend}
         onComplete={handleCompleteFromModal}
         taskTitle={extensionModal.task?.title || ''}
+      />
+
+      {/* Time Record Tooltip */}
+      <TimeRecordTooltip
+        isOpen={timeRecordTooltip.isOpen}
+        onClose={() => setTimeRecordTooltip({ isOpen: false, task: null, triggerElement: null })}
+        onSave={handleRecordTimeSave}
+        task={timeRecordTooltip.task}
+        triggerElement={timeRecordTooltip.triggerElement}
       />
     </div>
   )
