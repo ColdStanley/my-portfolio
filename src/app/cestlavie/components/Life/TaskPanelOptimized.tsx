@@ -267,12 +267,20 @@ export default function TaskPanelOptimized() {
     }
   }, [actions])
 
-  const handleTaskEnd = useCallback(async (task: any) => {
+  const handleTaskEnd = useCallback(async (task: any, surveyData?: {
+    quality_rating?: number
+    is_plan_critical?: boolean
+    next?: string
+  }) => {
     try {
       const updatedTask = {
         ...task,
         actual_end: getCurrentTorontoTime(),
-        status: 'Completed'
+        status: 'Completed',
+        // Include survey data
+        ...(surveyData?.quality_rating && { quality_rating: surveyData.quality_rating }),
+        is_plan_critical: surveyData?.is_plan_critical || false,
+        ...(surveyData?.next && { next: surveyData.next })
       }
       
       const response = await fetch('/api/tasks', {
@@ -297,7 +305,11 @@ export default function TaskPanelOptimized() {
     }
   }, [actions])
 
-  const handleRecordTime = useCallback(async (task: any, startTime?: string, endTime?: string) => {
+  const handleRecordTime = useCallback(async (task: any, startTime?: string, endTime?: string, surveyData?: {
+    quality_rating?: number
+    is_plan_critical?: boolean
+    next?: string
+  }) => {
     try {
       const updatedTask = { ...task }
       
@@ -308,6 +320,10 @@ export default function TaskPanelOptimized() {
       // Auto-adjust status based on recorded times
       if (endTime) {
         updatedTask.status = 'Completed'
+        // Include survey data when completing early
+        if (surveyData?.quality_rating) updatedTask.quality_rating = surveyData.quality_rating
+        updatedTask.is_plan_critical = surveyData?.is_plan_critical || false
+        if (surveyData?.next) updatedTask.next = surveyData.next
       } else if (startTime && !task.actual_end) {
         updatedTask.status = 'In Progress'
       }
@@ -323,7 +339,7 @@ export default function TaskPanelOptimized() {
       }
       
       actions.updateTask(updatedTask)
-      setToast({ message: 'Time recorded successfully', type: 'success' })
+      setToast({ message: endTime ? 'Task completed successfully' : 'Time recorded successfully', type: 'success' })
       
     } catch (error) {
       console.error('Error recording time:', error)

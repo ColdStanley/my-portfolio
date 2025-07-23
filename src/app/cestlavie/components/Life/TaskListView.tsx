@@ -5,6 +5,8 @@ import TaskExtensionModal from './TaskExtensionModal'
 import SimpleTaskTimer from './SimpleTaskTimer'
 import TimeRecordTooltip from './TimeRecordTooltip'
 import TimeComparisonTooltip from './TimeComparisonTooltip'
+import StartEndConfirmTooltip from './StartEndConfirmTooltip'
+import DeleteConfirmTooltip from './DeleteConfirmTooltip'
 import { extractTimeOnly, extractDateOnly } from '../../utils/timezone'
 
 interface TaskRecord {
@@ -34,8 +36,16 @@ interface TaskListViewProps {
   onCreateTask?: (date: string) => void
   onTaskComplete?: (task: TaskRecord) => void
   onTaskStart?: (task: TaskRecord) => void
-  onTaskEnd?: (task: TaskRecord) => void
-  onRecordTime?: (task: TaskRecord, startTime?: string, endTime?: string) => void
+  onTaskEnd?: (task: TaskRecord, surveyData?: {
+    quality_rating?: number
+    is_plan_critical?: boolean
+    next?: string
+  }) => void
+  onRecordTime?: (task: TaskRecord, startTime?: string, endTime?: string, surveyData?: {
+    quality_rating?: number
+    is_plan_critical?: boolean
+    next?: string
+  }) => void
   formatTimeRange?: (startDate: string, endDate?: string) => string
   getPriorityColor?: (priority: string) => string
   hasTimeConflicts?: (task: TaskRecord) => boolean
@@ -67,8 +77,23 @@ export default function TaskListView({
     task: TaskRecord | null
     triggerElement: HTMLElement | null
   }>({ isOpen: false, task: null, triggerElement: null })
+
+  const [startEndTooltip, setStartEndTooltip] = useState<{
+    isOpen: boolean
+    task: TaskRecord | null
+    action: 'start' | 'end'
+    triggerElement: HTMLElement | null
+  }>({ isOpen: false, task: null, action: 'start', triggerElement: null })
+
+  const [deleteTooltip, setDeleteTooltip] = useState<{
+    isOpen: boolean
+    task: TaskRecord | null
+    triggerElement: HTMLElement | null
+  }>({ isOpen: false, task: null, triggerElement: null })
   
-  const timeRecordButtonRefs = useRef<{[taskId: string]: HTMLButtonElement}>({}) // taskId -> new end time
+  const timeRecordButtonRefs = useRef<{[taskId: string]: HTMLButtonElement}>({})
+  const startEndButtonRefs = useRef<{[taskId: string]: HTMLButtonElement}>({})
+  const deleteButtonRefs = useRef<{[taskId: string]: HTMLButtonElement}>({}) // taskId -> new end time
 
   // Get tasks for selected date
   const selectedDateTasks = useMemo(() => {
@@ -181,12 +206,63 @@ export default function TaskListView({
     })
   }, [])
 
-  const handleRecordTimeSave = useCallback((startTime?: string, endTime?: string) => {
+  const handleRecordTimeSave = useCallback((startTime?: string, endTime?: string, surveyData?: {
+    quality_rating?: number
+    is_plan_critical?: boolean
+    next?: string
+  }) => {
     if (timeRecordTooltip.task && onRecordTime) {
-      onRecordTime(timeRecordTooltip.task, startTime, endTime)
+      onRecordTime(timeRecordTooltip.task, startTime, endTime, surveyData)
     }
     setTimeRecordTooltip({ isOpen: false, task: null, triggerElement: null })
   }, [timeRecordTooltip.task, onRecordTime])
+
+  const handleStartEndClick = useCallback((task: TaskRecord, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const button = e.currentTarget as HTMLButtonElement
+    
+    const action: 'start' | 'end' = !task.actual_start ? 'start' : 'end'
+
+    setStartEndTooltip({
+      isOpen: true,
+      task,
+      action,
+      triggerElement: button
+    })
+  }, [])
+
+  const handleStartEndConfirm = useCallback((surveyData?: {
+    quality_rating?: number
+    is_plan_critical?: boolean
+    next?: string
+  }) => {
+    if (startEndTooltip.task) {
+      const task = startEndTooltip.task
+      if (startEndTooltip.action === 'start') {
+        onTaskStart && onTaskStart(task)
+      } else if (startEndTooltip.action === 'end') {
+        onTaskEnd && onTaskEnd(task, surveyData)
+      }
+    }
+    setStartEndTooltip({ isOpen: false, task: null, action: 'start', triggerElement: null })
+  }, [startEndTooltip.task, startEndTooltip.action, onTaskStart, onTaskEnd])
+
+  const handleDeleteClick = useCallback((task: TaskRecord, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const button = e.currentTarget as HTMLButtonElement
+    setDeleteTooltip({
+      isOpen: true,
+      task,
+      triggerElement: button
+    })
+  }, [])
+
+  const handleDeleteConfirm = useCallback(() => {
+    if (deleteTooltip.task && onTaskDelete) {
+      onTaskDelete(deleteTooltip.task.id)
+    }
+    setDeleteTooltip({ isOpen: false, task: null, triggerElement: null })
+  }, [deleteTooltip.task, onTaskDelete])
 
   if (!selectedDate) {
     return (
@@ -254,173 +330,154 @@ export default function TaskListView({
               return (
                 <div
                   key={task.id}
-                  className={`relative p-4 rounded-lg border-2 transition-all duration-200
+                  className={`p-4 rounded-lg border-2 transition-all duration-200
                     ${isCompleted 
                       ? 'border-purple-300 bg-purple-100 opacity-75' 
-                      : isConflicted
-                      ? 'border-purple-400 bg-purple-100'
                       : 'border-purple-200 bg-purple-50'
                     }`}
                 >
-                  {/* Status indicator */}
-                  <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${
-                    isCompleted ? 'bg-purple-600' : 
-                    task.status === 'In Progress' ? 'bg-purple-500' :
-                    task.status === 'On Hold' ? 'bg-purple-400' :
-                    'bg-purple-300'
-                  }`} />
-                  
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0 pl-3 pr-4">
-                      {/* Title and Status */}
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 
-                          className={`text-lg font-semibold ${
-                            isCompleted ? 'text-purple-700 line-through' : 'text-purple-900'
-                          } truncate cursor-pointer hover:underline hover:text-purple-700 transition-colors`}
-                          onClick={(e) => handleNotionClick(task, e)}
-                          title="Click to edit in Notion"
-                        >
-                          {task.title}
-                        </h3>
-                        
-                        <span className={`px-3 py-1 text-xs font-medium rounded-full border ${
-                          isCompleted ? 'bg-purple-200 text-purple-800 border-purple-300' :
-                          task.status === 'In Progress' ? 'bg-purple-100 text-purple-700 border-purple-200' :
-                          task.status === 'On Hold' ? 'bg-purple-50 text-purple-600 border-purple-200' :
-                          'bg-purple-50 text-purple-700 border-purple-200'
+                  {/* Three column layout */}
+                  <div className="flex items-start justify-between mb-3">
+                    {/* Left Column - Time Info */}
+                    <div className="flex flex-col gap-1 min-w-[100px]">
+                      {(task.start_date || task.end_date) && (
+                        <TimeComparisonTooltip task={task}>
+                          <span className="text-sm font-semibold text-purple-700 cursor-help">
+                            {formatTimeOnly(task.start_date, task.end_date)}
+                          </span>
+                        </TimeComparisonTooltip>
+                      )}
+                      {/* Show countdown for started tasks */}
+                      {task.actual_start && !task.actual_end && (
+                        <SimpleTaskTimer
+                          task={task}
+                          extendedEndTime={extendedTasks[task.id]}
+                          onTimeExpired={handleTimeExpired}
+                          onTaskStart={onTaskStart || (() => {})}
+                          onTaskEnd={onTaskEnd || (() => {})}
+                          displayOnly={true}
+                        />
+                      )}
+                    </div>
+
+                    {/* Middle Column - Task Main Content */}
+                    <div className="flex-1 min-w-0 px-4">
+                      {/* Task Title */}
+                      <h3 
+                        className={`text-lg font-semibold mb-2 ${
+                          isCompleted ? 'text-purple-700 line-through' : 'text-purple-900'
+                        } cursor-pointer hover:underline hover:text-purple-700 transition-colors`}
+                        onClick={(e) => handleNotionClick(task, e)}
+                        title="Click to edit in Notion"
+                      >
+                        {task.title}
+                      </h3>
+
+                      {/* Status and Priority Labels */}
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                          isCompleted ? 'bg-green-100 text-green-800' :
+                          task.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                          task.status === 'On Hold' ? 'bg-yellow-100 text-yellow-800' :
+                          task.status === 'Not Started' ? 'bg-gray-100 text-gray-800' :
+                          'bg-purple-100 text-purple-800'
                         }`}>
                           {task.status}
                         </span>
 
-                        {task.priority_quadrant && getPriorityColor && (
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(task.priority_quadrant)}`}>
-                            {task.priority_quadrant.includes('&') 
-                              ? task.priority_quadrant.split(' & ').map(part => part.charAt(0)).join('')
-                              : task.priority_quadrant.charAt(0)
-                            }
+                        {task.priority_quadrant && (
+                          <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                            task.priority_quadrant.includes('Important & Urgent') ? 'bg-red-100 text-red-800' :
+                            task.priority_quadrant.includes('Important & Not Urgent') ? 'bg-orange-100 text-orange-800' :
+                            task.priority_quadrant.includes('Not Important & Urgent') ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {task.priority_quadrant}
                           </span>
                         )}
                       </div>
-
-                      {/* Time */}
-                      {(task.start_date || task.end_date) && (
-                        <div className="flex items-center gap-2 mb-2">
-                          <TimeComparisonTooltip task={task}>
-                            <span className="text-sm font-medium text-purple-700 cursor-help">
-                              {formatTimeOnly(task.start_date, task.end_date)}
-                            </span>
-                          </TimeComparisonTooltip>
-                          {task.budget_time > 0 && (
-                            <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
-                              {task.budget_time}h budgeted
-                            </span>
-                          )}
-                          {/* Show countdown for started tasks */}
-                          {task.actual_start && !task.actual_end && (
-                            <SimpleTaskTimer
-                              task={task}
-                              extendedEndTime={extendedTasks[task.id]}
-                              onTimeExpired={handleTimeExpired}
-                              onTaskStart={onTaskStart || (() => {})}
-                              onTaskEnd={onTaskEnd || (() => {})}
-                              displayOnly={true}
-                            />
-                          )}
-                        </div>
-                      )}
-
-                      {/* Note */}
-                      {task.note && (
-                        <p className="text-sm text-gray-700 mb-2 line-clamp-2">
-                          {task.note}
-                        </p>
-                      )}
-
-                      {/* Conflict warning */}
-                      {isConflicted && (
-                        <div className="flex items-center gap-2 text-xs text-purple-800 bg-purple-100 px-2 py-1 rounded-md border border-purple-200">
-                          <span className="font-medium">Time Conflict</span>
-                          <span>This task overlaps with other scheduled tasks</span>
-                        </div>
-                      )}
                     </div>
 
-                    {/* Action buttons - Always visible vertical layout */}
-                    <div className="flex flex-col gap-1 min-w-[80px] flex-shrink-0">
-                      {/* Task execution buttons */}
-                      {!isCompleted && (
-                        <>
-                          {!task.actual_start ? (
-                            <>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  onTaskStart && onTaskStart(task)
-                                }}
-                                className="px-3 py-1 text-xs text-purple-600 bg-white border border-purple-200 
-                                         rounded hover:bg-purple-600 hover:text-white hover:border-purple-600
-                                         transition-all duration-200 font-medium"
-                              >
-                                Start Task
-                              </button>
-                              <button
-                                ref={(el) => {
-                                  if (el) timeRecordButtonRefs.current[task.id] = el
-                                }}
-                                onClick={(e) => handleRecordTimeClick(task, e)}
-                                className="px-3 py-1 text-xs text-purple-600 bg-white border border-purple-200 
-                                         rounded hover:bg-purple-600 hover:text-white hover:border-purple-600
-                                         transition-all duration-200 font-medium"
-                              >
-                                Complete
-                              </button>
-                            </>
-                          ) : (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                onTaskEnd && onTaskEnd(task)
-                              }}
-                              className="px-3 py-1 text-xs text-purple-600 bg-white border border-purple-200 
-                                       rounded hover:bg-purple-600 hover:text-white hover:border-purple-600
-                                       transition-all duration-200 font-medium"
-                            >
-                              End Task
-                            </button>
-                          )}
-                        </>
-                      )}
-                      
-                      {/* Common action buttons */}
+                    {/* Action buttons - Fixed 5 buttons always visible */}
+                    <div className="flex flex-col gap-1 min-w-[100px] flex-shrink-0">
+                      {/* 1. Add to Outlook */}
+                      <button
+                        onClick={(e) => handleOutlookClick(task, e)}
+                        className="px-3 py-1.5 text-xs text-purple-700 bg-gradient-to-r from-purple-50 to-purple-100 
+                                 border-2 border-purple-200 rounded-lg hover:from-purple-600 hover:to-purple-700 
+                                 hover:text-white hover:border-purple-600 transition-all duration-300 font-semibold
+                                 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95"
+                      >
+                        Add to Outlook
+                      </button>
+
+                      {/* 2. Complete Early */}
+                      <button
+                        ref={(el) => {
+                          if (el) timeRecordButtonRefs.current[task.id] = el
+                        }}
+                        onClick={(e) => handleRecordTimeClick(task, e)}
+                        className="px-3 py-1.5 text-xs text-purple-700 bg-gradient-to-r from-purple-50 to-purple-100 
+                                 border-2 border-purple-200 rounded-lg hover:from-purple-600 hover:to-purple-700 
+                                 hover:text-white hover:border-purple-600 transition-all duration-300 font-semibold
+                                 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95"
+                      >
+                        Complete Early
+                      </button>
+
+                      {/* 3. Start/End Task */}
+                      <button
+                        ref={(el) => {
+                          if (el) startEndButtonRefs.current[task.id] = el
+                        }}
+                        onClick={(e) => handleStartEndClick(task, e)}
+                        className="px-3 py-1.5 text-xs text-purple-700 bg-gradient-to-r from-purple-50 to-purple-100 
+                                 border-2 border-purple-200 rounded-lg hover:from-purple-600 hover:to-purple-700 
+                                 hover:text-white hover:border-purple-600 transition-all duration-300 font-semibold
+                                 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95"
+                      >
+                        {!task.actual_start ? 'Start' : 'End'}
+                      </button>
+
+                      {/* 4. Edit */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
                           onTaskClick && onTaskClick(task)
                         }}
-                        className="px-3 py-1 text-xs text-gray-600 bg-white border border-gray-200 
-                                 rounded hover:bg-gray-100 hover:text-gray-800 hover:border-gray-300
-                                 transition-all duration-200 font-medium"
+                        className="px-3 py-1.5 text-xs text-purple-700 bg-gradient-to-r from-purple-50 to-purple-100 
+                                 border-2 border-purple-200 rounded-lg hover:from-purple-600 hover:to-purple-700 
+                                 hover:text-white hover:border-purple-600 transition-all duration-300 font-semibold
+                                 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95"
                       >
                         Edit
                       </button>
-                      {onTaskDelete && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if (confirm('Are you sure you want to delete this task?')) {
-                              onTaskDelete(task.id)
-                            }
-                          }}
-                          className="px-3 py-1 text-xs text-red-600 bg-white border border-red-200 
-                                   rounded hover:bg-red-600 hover:text-white hover:border-red-600
-                                   transition-all duration-200 font-medium"
-                        >
-                          Delete
-                        </button>
-                      )}
+
+                      {/* 5. Delete */}
+                      <button
+                        ref={(el) => {
+                          if (el) deleteButtonRefs.current[task.id] = el
+                        }}
+                        onClick={(e) => handleDeleteClick(task, e)}
+                        className="px-3 py-1.5 text-xs text-purple-700 bg-gradient-to-r from-purple-50 to-purple-100 
+                                 border-2 border-purple-200 rounded-lg hover:from-purple-600 hover:to-purple-700 
+                                 hover:text-white hover:border-purple-600 transition-all duration-300 font-semibold
+                                 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
+
+                  {/* Full Notes Display - Bottom section spanning full width */}
+                  {task.note && task.note.trim() && (
+                    <div className="mt-4 pt-3 border-t border-purple-200">
+                      <div className="text-sm text-gray-700">
+                        <div className="text-xs font-medium text-purple-700 mb-1">Notes:</div>
+                        <div className="whitespace-pre-wrap">{task.note}</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )
             })}
@@ -443,6 +500,25 @@ export default function TaskListView({
         onSave={handleRecordTimeSave}
         task={timeRecordTooltip.task}
         triggerElement={timeRecordTooltip.triggerElement}
+      />
+
+      {/* Start/End Confirm Tooltip */}
+      <StartEndConfirmTooltip
+        isOpen={startEndTooltip.isOpen}
+        onClose={() => setStartEndTooltip({ isOpen: false, task: null, action: 'start', triggerElement: null })}
+        onConfirm={handleStartEndConfirm}
+        action={startEndTooltip.action}
+        taskTitle={startEndTooltip.task?.title || ''}
+        triggerElement={startEndTooltip.triggerElement}
+      />
+
+      {/* Delete Confirm Tooltip */}
+      <DeleteConfirmTooltip
+        isOpen={deleteTooltip.isOpen}
+        onClose={() => setDeleteTooltip({ isOpen: false, task: null, triggerElement: null })}
+        onConfirm={handleDeleteConfirm}
+        taskTitle={deleteTooltip.task?.title || ''}
+        triggerElement={deleteTooltip.triggerElement}
       />
     </div>
   )

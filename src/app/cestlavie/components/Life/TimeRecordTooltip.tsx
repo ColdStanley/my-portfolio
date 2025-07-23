@@ -6,7 +6,11 @@ import { getCurrentTorontoTime, toDatetimeLocal } from '../../utils/timezone'
 interface TimeRecordTooltipProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (startTime?: string, endTime?: string) => void
+  onSave: (startTime?: string, endTime?: string, surveyData?: {
+    quality_rating?: number
+    is_plan_critical?: boolean
+    next?: string
+  }) => void
   task: any
   triggerElement: HTMLElement | null
 }
@@ -20,6 +24,9 @@ export default function TimeRecordTooltip({
 }: TimeRecordTooltipProps) {
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
+  const [qualityRating, setQualityRating] = useState<number>(0)
+  const [isPlanCritical, setIsPlanCritical] = useState<boolean>(false)
+  const [nextAction, setNextAction] = useState<string>('')
   const tooltipRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -27,6 +34,11 @@ export default function TimeRecordTooltip({
       // Pre-fill with existing actual times if available
       setStartTime(task.actual_start ? toDatetimeLocal(task.actual_start) : '')
       setEndTime(task.actual_end ? toDatetimeLocal(task.actual_end) : '')
+      
+      // Pre-fill survey data
+      setQualityRating(task.quality_rating || 0)
+      setIsPlanCritical(task.is_plan_critical || false)
+      setNextAction(task.next || '')
     }
   }, [isOpen, task])
 
@@ -47,24 +59,41 @@ export default function TimeRecordTooltip({
     const startWithTz = startTime ? `${startTime}:00-04:00` : undefined
     const endWithTz = endTime ? `${endTime}:00-04:00` : undefined
     
-    onSave(startWithTz, endWithTz)
+    // Prepare survey data
+    const surveyData = {
+      quality_rating: qualityRating > 0 ? qualityRating : undefined,
+      is_plan_critical: isPlanCritical,
+      next: nextAction.trim() || undefined
+    }
+    
+    onSave(startWithTz, endWithTz, surveyData)
     onClose()
   }
 
   const getTooltipPosition = () => {
-    if (!triggerElement || !tooltipRef.current) return {}
+    if (!triggerElement) return { position: 'fixed' as const, top: '50px', left: '50px', zIndex: 1000 }
     
     const triggerRect = triggerElement.getBoundingClientRect()
-    const tooltipRect = tooltipRef.current.getBoundingClientRect()
     
-    // Position above the trigger element
-    const top = triggerRect.top - tooltipRect.height - 8
-    const left = triggerRect.left + (triggerRect.width / 2) - (tooltipRect.width / 2)
+    // Use default tooltip dimensions if not yet rendered
+    const tooltipWidth = tooltipRef.current?.getBoundingClientRect().width || 384 // w-96 = 384px
+    const tooltipHeight = tooltipRef.current?.getBoundingClientRect().height || 400 // estimated height for survey form
+    
+    // Check if there's enough space to the right
+    const spaceRight = window.innerWidth - triggerRect.right - 8
+    
+    let top = triggerRect.top + (triggerRect.height / 2) - (tooltipHeight / 2)
+    let left = triggerRect.right + 8
+    
+    // If not enough space on the right, position to the left
+    if (spaceRight < tooltipWidth) {
+      left = triggerRect.left - tooltipWidth - 8
+    }
     
     return {
       position: 'fixed' as const,
-      top: `${Math.max(8, top)}px`,
-      left: `${Math.max(8, Math.min(window.innerWidth - tooltipRect.width - 8, left))}px`,
+      top: `${Math.max(8, Math.min(window.innerHeight - tooltipHeight - 8, top))}px`,
+      left: `${Math.max(8, left)}px`,
       zIndex: 1000
     }
   }
@@ -74,12 +103,12 @@ export default function TimeRecordTooltip({
   return (
     <div
       ref={tooltipRef}
-      className="bg-white border-2 border-purple-200 rounded-lg shadow-lg p-4 w-80"
+      className="bg-white border-2 border-purple-200 rounded-lg shadow-lg p-4 w-96"
       style={getTooltipPosition()}
     >
       <div className="mb-3">
-        <h4 className="text-sm font-semibold text-purple-900 mb-1">Record Actual Time</h4>
-        <p className="text-xs text-gray-600">Enter the actual execution time for this task</p>
+        <h4 className="text-sm font-semibold text-purple-900 mb-1">Complete Task Early</h4>
+        <p className="text-xs text-gray-600">Record execution time and task completion survey</p>
       </div>
 
       <div className="space-y-3">
@@ -110,6 +139,73 @@ export default function TimeRecordTooltip({
             step="60"
           />
         </div>
+
+        {/* Task Completion Survey */}
+        <div className="border-t border-purple-200 pt-3 mt-4">
+          <h5 className="text-xs font-semibold text-purple-900 mb-3">Task Completion Survey</h5>
+          
+          {/* Quality Rating */}
+          <div className="mb-3">
+            <label className="block text-xs font-medium text-purple-700 mb-2">
+              Quality Rating (1-5 stars)
+            </label>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((rating) => (
+                <button
+                  key={rating}
+                  type="button"
+                  onClick={() => setQualityRating(rating)}
+                  className={`w-6 h-6 text-sm ${
+                    rating <= qualityRating 
+                      ? 'text-yellow-500' 
+                      : 'text-gray-300'
+                  } hover:text-yellow-400 transition-colors`}
+                >
+                  ⭐
+                </button>
+              ))}
+              {qualityRating > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setQualityRating(0)}
+                  className="ml-2 text-xs text-gray-500 underline hover:text-gray-700"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Critical Task Checkbox */}
+          <div className="mb-3">
+            <label className="flex items-center gap-2 text-xs">
+              <input
+                type="checkbox"
+                checked={isPlanCritical}
+                onChange={(e) => setIsPlanCritical(e.target.checked)}
+                className="w-4 h-4 text-purple-600 border-purple-200 rounded 
+                         focus:ring-2 focus:ring-purple-500"
+              />
+              <span className="text-purple-700 font-medium">This is a critical task</span>
+            </label>
+          </div>
+
+          {/* Next Action */}
+          <div className="mb-3">
+            <label className="block text-xs font-medium text-purple-700 mb-1">
+              Next Action (optional)
+            </label>
+            <textarea
+              value={nextAction}
+              onChange={(e) => setNextAction(e.target.value)}
+              placeholder="What's the next step or follow-up action?"
+              className="w-full px-3 py-2 text-sm border border-purple-200 rounded-md 
+                       focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
+                       resize-none"
+              rows={2}
+            />
+          </div>
+        </div>
       </div>
 
       <div className="flex gap-2 mt-4">
@@ -120,7 +216,7 @@ export default function TimeRecordTooltip({
                    hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed
                    transition-colors"
         >
-          Save Time
+          Complete Task
         </button>
         <button
           onClick={onClose}
