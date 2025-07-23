@@ -10,7 +10,7 @@ import JD2CVPanel from './Career/JD2CVPanel'
 import LifeSubTabNav from './Life/LifeSubTabNav'
 import StrategyPanel from './Life/StrategyPanel'
 import PlanPanel from './Life/PlanPanel'
-import TaskPanel from './Life/TaskPanel'
+import TaskPanelOptimized from './Life/TaskPanelOptimized'
 import TBDPanel from './Life/TBDPanel'
 
 interface MainContentProps {
@@ -41,7 +41,7 @@ export default function MainContent({ activeMainTab }: MainContentProps) {
     switch (activeLifeSubTab) {
       case 'strategy': return <StrategyPanel />
       case 'plan': return <PlanPanel />
-      case 'task': return <TaskPanel />
+      case 'task': return <TaskPanelOptimized />
       case 'tbd': return <TBDPanel />
       default: return <div className="text-gray-500 text-sm">This section is under construction.</div>
     }

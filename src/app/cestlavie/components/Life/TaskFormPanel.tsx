@@ -1,0 +1,518 @@
+'use client'
+
+import { useState, useEffect, useCallback, useMemo } from 'react'
+
+interface TaskRecord {
+  id: string
+  title: string
+  status: string
+  start_date: string
+  end_date: string
+  all_day: boolean
+  remind_before: number
+  plan: string[]
+  priority_quadrant: string
+  note: string
+  actual_start?: string
+  actual_end?: string
+  budget_time: number
+  actual_time: number
+  quality_rating?: number
+  next?: string
+  is_plan_critical?: boolean
+  timer_status?: string
+}
+
+interface TaskFormData {
+  title: string
+  status: string
+  start_date: string
+  end_date: string
+  all_day: boolean
+  remind_before: number
+  plan: string[]
+  priority_quadrant: string
+  note: string
+  budget_time: number
+}
+
+interface PlanOption {
+  id: string
+  title: string
+  budget_money?: number
+  budget_time?: number
+}
+
+interface TaskFormPanelProps {
+  isOpen: boolean
+  onClose: () => void
+  task?: TaskRecord | null
+  onSave: (task: TaskFormData) => void
+  statusOptions: string[]
+  priorityOptions: string[]
+  planOptions: PlanOption[]
+  allTasks: TaskRecord[]
+}
+
+// Utility functions
+const convertFromUTCForDisplay = (utcISOString: string): string => {
+  if (!utcISOString) return ''
+  
+  try {
+    const date = new Date(utcISOString)
+    return date.getFullYear() + '-' +
+           String(date.getMonth() + 1).padStart(2, '0') + '-' +
+           String(date.getDate()).padStart(2, '0') + 'T' +
+           String(date.getHours()).padStart(2, '0') + ':' +
+           String(date.getMinutes()).padStart(2, '0')
+  } catch (error) {
+    console.error('Error converting from UTC:', error)
+    return utcISOString
+  }
+}
+
+const getDefaultDateTime = (): string => {
+  const now = new Date()
+  return now.getFullYear() + '-' +
+         String(now.getMonth() + 1).padStart(2, '0') + '-' +
+         String(now.getDate()).padStart(2, '0') + 'T' +
+         String(now.getHours()).padStart(2, '0') + ':' +
+         String(now.getMinutes()).padStart(2, '0')
+}
+
+// Time conflict detection
+const isTimeOverlapping = (start1: string, end1: string, start2: string, end2: string): boolean => {
+  const startTime1 = new Date(start1).getTime()
+  const endTime1 = new Date(end1).getTime()
+  const startTime2 = new Date(start2).getTime()
+  const endTime2 = new Date(end2).getTime()
+  
+  return startTime1 < endTime2 && startTime2 < endTime1
+}
+
+const detectTimeConflicts = (
+  taskDate: string, 
+  startTime: string, 
+  endTime: string, 
+  allTasks: TaskRecord[], 
+  excludeTaskId?: string
+): TaskRecord[] => {
+  if (!taskDate || !startTime || !endTime) return []
+  
+  const newTaskLocalDate = new Date(taskDate)
+  const newTaskDateStr = newTaskLocalDate.toLocaleDateString('en-CA')
+  
+  return allTasks.filter(task => {
+    if (task.id === excludeTaskId) return false
+    if (!task.start_date || !task.end_date) return false
+    
+    const taskLocalDate = new Date(task.start_date)
+    const taskDateStr = taskLocalDate.toLocaleDateString('en-CA')
+    if (taskDateStr !== newTaskDateStr) return false
+    
+    return isTimeOverlapping(startTime, endTime, task.start_date, task.end_date)
+  })
+}
+
+export default function TaskFormPanel({ 
+  isOpen, 
+  onClose, 
+  task, 
+  onSave, 
+  statusOptions, 
+  priorityOptions, 
+  planOptions, 
+  allTasks 
+}: TaskFormPanelProps) {
+  const [formData, setFormData] = useState<TaskFormData>({
+    title: '',
+    status: '',
+    start_date: '',
+    end_date: '',
+    all_day: false,
+    remind_before: 15,
+    plan: [],
+    priority_quadrant: '',
+    note: '',
+    budget_time: 0
+  })
+  
+  const [selectedPlanBudget, setSelectedPlanBudget] = useState<{money: number, time: number} | null>(null)
+  const [remainingTime, setRemainingTime] = useState<number | null>(null)
+  const [conflictingTasks, setConflictingTasks] = useState<TaskRecord[]>([])
+
+  // Memoized calculation function for remaining time
+  const calculateRemainingTime = useCallback((planId: string, planBudgetTime: number, currentTaskBudgetTime: number = 0) => {
+    if (!planId || !allTasks) return null
+    
+    const planTasks = allTasks.filter(t => 
+      t.plan && t.plan.includes(planId) && t.id !== task?.id
+    )
+    
+    const allocatedTime = planTasks.reduce((total, t) => {
+      if (t.status === 'Completed') {
+        return total + (t.actual_time || 0)
+      } else {
+        return total + (t.budget_time || 0)
+      }
+    }, 0)
+    
+    return planBudgetTime - allocatedTime - currentTaskBudgetTime
+  }, [allTasks, task?.id])
+
+  // Initialize form data when task changes
+  useEffect(() => {
+    if (task) {
+      setFormData({
+        title: task.title || '',
+        status: task.status || '',
+        start_date: convertFromUTCForDisplay(task.start_date || ''),
+        end_date: convertFromUTCForDisplay(task.end_date || ''),
+        all_day: task.all_day || false,
+        remind_before: task.remind_before || 15,
+        plan: task.plan || [],
+        priority_quadrant: task.priority_quadrant || '',
+        note: task.note || '',
+        budget_time: task.budget_time || 0
+      })
+    } else {
+      const defaultStart = getDefaultDateTime()
+      const defaultEnd = new Date(Date.now() + 60 * 60 * 1000)
+      const defaultEndStr = defaultEnd.getFullYear() + '-' +
+                            String(defaultEnd.getMonth() + 1).padStart(2, '0') + '-' +
+                            String(defaultEnd.getDate()).padStart(2, '0') + 'T' +
+                            String(defaultEnd.getHours()).padStart(2, '0') + ':' +
+                            String(defaultEnd.getMinutes()).padStart(2, '0')
+      
+      setFormData({
+        title: '',
+        status: '',
+        start_date: defaultStart,
+        end_date: defaultEndStr,
+        all_day: false,
+        remind_before: 15,
+        plan: [],
+        priority_quadrant: '',
+        note: '',
+        budget_time: 0
+      })
+    }
+  }, [task, isOpen])
+
+  // Update budget information when plan changes
+  useEffect(() => {
+    if (formData.plan.length > 0 && planOptions.length > 0) {
+      const selectedPlan = planOptions.find(p => p.id === formData.plan[0])
+      if (selectedPlan) {
+        const budget = {
+          money: selectedPlan.budget_money || 0,
+          time: selectedPlan.budget_time || 0
+        }
+        setSelectedPlanBudget(budget)
+        
+        const remaining = calculateRemainingTime(selectedPlan.id, budget.time, formData.budget_time)
+        setRemainingTime(remaining)
+      }
+    } else {
+      setSelectedPlanBudget(null)
+      setRemainingTime(null)
+    }
+  }, [formData.plan, formData.budget_time, planOptions, calculateRemainingTime])
+
+  // Detect time conflicts
+  useEffect(() => {
+    if (formData.start_date && formData.end_date && allTasks.length > 0) {
+      const conflicts = detectTimeConflicts(
+        formData.start_date,
+        formData.start_date,
+        formData.end_date,
+        allTasks,
+        task?.id
+      )
+      setConflictingTasks(conflicts)
+    } else {
+      setConflictingTasks([])
+    }
+  }, [formData.start_date, formData.end_date, allTasks, task?.id])
+
+  const handleSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault()
+    onSave(formData)
+  }, [formData, onSave])
+
+  const handlePlanChange = useCallback((planId: string) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      plan: planId ? [planId] : [] 
+    }))
+    
+    if (planId) {
+      const selectedPlan = planOptions.find(p => p.id === planId)
+      if (selectedPlan) {
+        const budget = {
+          money: selectedPlan.budget_money || 0,
+          time: selectedPlan.budget_time || 0
+        }
+        setSelectedPlanBudget(budget)
+        
+        const remaining = calculateRemainingTime(planId, budget.time, formData.budget_time)
+        setRemainingTime(remaining)
+      } else {
+        setSelectedPlanBudget(null)
+        setRemainingTime(null)
+      }
+    } else {
+      setSelectedPlanBudget(null)
+      setRemainingTime(null)
+    }
+  }, [planOptions, formData.budget_time, calculateRemainingTime])
+
+  if (!isOpen) return null
+
+  return (
+    <>
+      {/* Transparent click area, click to close */}
+      <div 
+        className="fixed top-0 left-0 h-full z-40 md:block hidden"
+        style={{ width: 'calc(100vw - 384px)' }}
+        onClick={onClose}
+      ></div>
+      
+      {/* Mobile full screen overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+        onClick={onClose}
+      ></div>
+      
+      {/* Form panel */}
+      <div className="fixed top-0 right-0 h-full w-full md:w-96 bg-white shadow-2xl z-50 md:border-l border-purple-200 flex flex-col">
+        <div className="p-4 border-b border-purple-200 flex items-center justify-between">
+          <h4 className="text-lg font-semibold text-purple-900">
+            {task ? 'Edit Task' : 'New Task'}
+          </h4>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors text-xl"
+          >
+            ×
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-4 md:p-6 overflow-y-auto flex-1 space-y-4">
+          {/* Plan Selection */}
+          <div>
+            <label className="block text-sm font-medium text-purple-700 mb-1">Related Plan *</label>
+            <select
+              value={formData.plan[0] || ''}
+              onChange={(e) => handlePlanChange(e.target.value)}
+              className="w-full px-4 py-3 border-2 border-purple-200 rounded-lg 
+                        focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
+                        bg-white text-gray-900 font-medium
+                        hover:border-purple-300 transition-all duration-200"
+              required
+            >
+              <option value="">Select a Plan First</option>
+              {planOptions.map(plan => (
+                <option key={plan.id} value={plan.id}>
+                  {plan.title || 'Untitled Plan'}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 mt-1">Each task must belong to a plan</p>
+            
+            {/* Budget Information Display */}
+            {selectedPlanBudget && (selectedPlanBudget.money > 0 || selectedPlanBudget.time > 0) && (
+              <div className="mt-2 p-2 bg-purple-50 rounded border border-purple-200">
+                <div className="text-xs text-purple-700 font-medium mb-1">Plan Budget Reference:</div>
+                <div className="flex items-center gap-4 text-sm">
+                  {selectedPlanBudget.money > 0 && (
+                    <span className="text-green-600">💰 ¥{selectedPlanBudget.money}</span>
+                  )}
+                  {selectedPlanBudget.time > 0 && (
+                    <span className="text-blue-600">⏱️ {selectedPlanBudget.time}h</span>
+                  )}
+                  {remainingTime !== null && (
+                    <span className={`text-sm ${remainingTime >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      Remaining: {remainingTime.toFixed(1)}h
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Task Title */}
+          <div>
+            <label className="block text-sm font-medium text-purple-700 mb-1">Task Title *</label>
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              className="w-full px-4 py-3 border-2 border-purple-200 rounded-lg 
+                        focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
+                        bg-white text-gray-900 font-medium
+                        hover:border-purple-300 transition-all duration-200"
+              required
+              placeholder="Enter task title..."
+            />
+          </div>
+
+          {/* Status */}
+          <div>
+            <label className="block text-sm font-medium text-purple-700 mb-1">Status *</label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+              className="w-full px-4 py-3 border-2 border-purple-200 rounded-lg 
+                        focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
+                        bg-white text-gray-900 font-medium
+                        hover:border-purple-300 transition-all duration-200"
+              required
+            >
+              <option value="">Select Status</option>
+              {statusOptions.map(status => (
+                <option key={status} value={status}>{status}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Priority Quadrant */}
+          <div>
+            <label className="block text-sm font-medium text-purple-700 mb-1">Priority Quadrant *</label>
+            <select
+              value={formData.priority_quadrant}
+              onChange={(e) => setFormData(prev => ({ ...prev, priority_quadrant: e.target.value }))}
+              className="w-full px-4 py-3 border-2 border-purple-200 rounded-lg 
+                        focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
+                        bg-white text-gray-900 font-medium
+                        hover:border-purple-300 transition-all duration-200"
+              required
+            >
+              <option value="">Select Priority</option>
+              {priorityOptions.map(priority => (
+                <option key={priority} value={priority}>{priority}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Time Range - 2 Row Layout */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-purple-700 mb-2">
+                Start Time *
+                <span className="text-xs text-gray-500 ml-2">(Set precise time for daily tasks)</span>
+              </label>
+              <input
+                type="datetime-local"
+                value={formData.start_date}
+                onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
+                className="w-full px-4 py-3 border-2 border-purple-200 rounded-lg 
+                          focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
+                          bg-white text-gray-900 font-medium
+                          hover:border-purple-300 transition-all duration-200
+                          [&::-webkit-calendar-picker-indicator]:bg-purple-100 
+                          [&::-webkit-calendar-picker-indicator]:rounded-md
+                          [&::-webkit-calendar-picker-indicator]:p-1
+                          [&::-webkit-calendar-picker-indicator]:cursor-pointer
+                          [&::-webkit-calendar-picker-indicator]:hover:bg-purple-200"
+                required
+                step="60"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-purple-700 mb-2">
+                End Time *
+                <span className="text-xs text-gray-500 ml-2">(Set precise end time)</span>
+              </label>
+              <input
+                type="datetime-local"
+                value={formData.end_date}
+                onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
+                className="w-full px-4 py-3 border-2 border-purple-200 rounded-lg 
+                          focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
+                          bg-white text-gray-900 font-medium
+                          hover:border-purple-300 transition-all duration-200
+                          [&::-webkit-calendar-picker-indicator]:bg-purple-100 
+                          [&::-webkit-calendar-picker-indicator]:rounded-md
+                          [&::-webkit-calendar-picker-indicator]:p-1
+                          [&::-webkit-calendar-picker-indicator]:cursor-pointer
+                          [&::-webkit-calendar-picker-indicator]:hover:bg-purple-200"
+                required
+                step="60"
+              />
+            </div>
+          </div>
+
+          {/* Time Conflicts Warning */}
+          {conflictingTasks.length > 0 && (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+              <div className="text-sm font-medium text-yellow-800 mb-1">
+                ⚠️ Time Conflict Detected
+              </div>
+              <div className="text-xs text-yellow-700">
+                This task overlaps with {conflictingTasks.length} other task(s):
+              </div>
+              <ul className="text-xs text-yellow-700 mt-1 space-y-1">
+                {conflictingTasks.slice(0, 3).map(conflictTask => (
+                  <li key={conflictTask.id} className="truncate">
+                    • {conflictTask.title}
+                  </li>
+                ))}
+                {conflictingTasks.length > 3 && (
+                  <li className="text-yellow-600">... and {conflictingTasks.length - 3} more</li>
+                )}
+              </ul>
+            </div>
+          )}
+
+          {/* Budget Time */}
+          <div>
+            <label className="block text-sm font-medium text-purple-700 mb-1">Budget Time (hours)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              value={formData.budget_time}
+              onChange={(e) => setFormData(prev => ({ ...prev, budget_time: parseFloat(e.target.value) || 0 }))}
+              className="w-full px-4 py-3 border-2 border-purple-200 rounded-lg 
+                        focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
+                        bg-white text-gray-900 font-medium
+                        hover:border-purple-300 transition-all duration-200"
+              placeholder="0.0"
+            />
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="block text-sm font-medium text-purple-700 mb-1">Notes</label>
+            <textarea
+              value={formData.note}
+              onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
+              rows={3}
+              className="w-full px-4 py-3 border-2 border-purple-200 rounded-lg 
+                        focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
+                        bg-white text-gray-900 font-medium
+                        hover:border-purple-300 transition-all duration-200 resize-none"
+              placeholder="Add task notes or description..."
+            />
+          </div>
+
+          {/* Submit Button */}
+          <div className="pt-6">
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-4 px-6 
+                        rounded-lg hover:from-purple-700 hover:to-purple-800 
+                        focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2
+                        transition-all duration-200 font-semibold text-sm
+                        transform hover:scale-[1.02] active:scale-[0.98]
+                        shadow-lg hover:shadow-xl"
+            >
+              {task ? '✏️ Update Task' : '🎯 Create Task'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </>
+  )
+}

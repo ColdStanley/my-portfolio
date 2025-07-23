@@ -12,10 +12,42 @@ export const metadata = {
 // 从服务器端获取Notion数据的函数
 async function getNotionData() {
   try {
-    const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3001'
+    // 构建 baseUrl - 优先使用环境变量，开发环境降级处理
+    let baseUrl = ''
+    
+    if (process.env.NEXTAUTH_URL) {
+      baseUrl = process.env.NEXTAUTH_URL
+    } else if (process.env.VERCEL_URL) {
+      baseUrl = `https://${process.env.VERCEL_URL}`
+    } else {
+      // 开发环境降级：直接使用相对路径或跳过 fetch
+      console.warn('No base URL configured, using fallback data')
+      return {
+        cards: [],
+        highlights: []
+      }
+    }
+    
+    // 添加超时和重试机制
+    const fetchWithTimeout = async (url: string, options: any = {}) => {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5秒超时
+      
+      try {
+        const response = await fetch(url, {
+          ...options,
+          signal: controller.signal
+        })
+        clearTimeout(timeoutId)
+        return response
+      } catch (error) {
+        clearTimeout(timeoutId)
+        throw error
+      }
+    }
     
     // 获取cards数据
-    const cardsResponse = await fetch(`${baseUrl}/api/notion?pageId=cards`, {
+    const cardsResponse = await fetchWithTimeout(`${baseUrl}/api/notion?pageId=cards`, {
       next: { 
         revalidate: 1800, // 30分钟重新验证
         tags: ['homepage-cards'] // 标签用于按需重新验证
@@ -23,14 +55,14 @@ async function getNotionData() {
     })
     
     if (!cardsResponse.ok) {
-      throw new Error('Failed to fetch cards')
+      throw new Error(`Failed to fetch cards: ${cardsResponse.status}`)
     }
     
     const cardsResult = await cardsResponse.json()
     const cards: CardItem[] = cardsResult.data || []
     
     // 获取highlights数据
-    const highlightsResponse = await fetch(`${baseUrl}/api/notion?pageId=home-latest`, {
+    const highlightsResponse = await fetchWithTimeout(`${baseUrl}/api/notion?pageId=home-latest`, {
       next: { 
         revalidate: 1800, // 30分钟重新验证
         tags: ['homepage-highlights'] // 标签用于按需重新验证
@@ -38,7 +70,7 @@ async function getNotionData() {
     })
     
     if (!highlightsResponse.ok) {
-      throw new Error('Failed to fetch highlights')
+      throw new Error(`Failed to fetch highlights: ${highlightsResponse.status}`)
     }
     
     const highlightsResult = await highlightsResponse.json()
@@ -55,6 +87,7 @@ async function getNotionData() {
     }
   } catch (error) {
     console.error('Error fetching Notion data:', error)
+    // 返回空数据而不是抛出错误，确保页面能正常加载
     return {
       cards: [],
       highlights: []
