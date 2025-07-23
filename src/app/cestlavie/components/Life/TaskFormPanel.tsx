@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { addTorontoTimezone, toDatetimeLocal, extractDateOnly } from '../../utils/timezone'
 
 interface TaskRecord {
   id: string
@@ -54,22 +55,7 @@ interface TaskFormPanelProps {
   allTasks: TaskRecord[]
 }
 
-// Utility functions
-const convertFromUTCForDisplay = (utcISOString: string): string => {
-  if (!utcISOString) return ''
-  
-  try {
-    const date = new Date(utcISOString)
-    return date.getFullYear() + '-' +
-           String(date.getMonth() + 1).padStart(2, '0') + '-' +
-           String(date.getDate()).padStart(2, '0') + 'T' +
-           String(date.getHours()).padStart(2, '0') + ':' +
-           String(date.getMinutes()).padStart(2, '0')
-  } catch (error) {
-    console.error('Error converting from UTC:', error)
-    return utcISOString
-  }
-}
+// Utility functions - using timezone utility
 
 const getDefaultDateTime = (): string => {
   const now = new Date()
@@ -82,10 +68,11 @@ const getDefaultDateTime = (): string => {
 
 // Time conflict detection
 const isTimeOverlapping = (start1: string, end1: string, start2: string, end2: string): boolean => {
-  const startTime1 = new Date(start1).getTime()
-  const endTime1 = new Date(end1).getTime()
-  const startTime2 = new Date(start2).getTime()
-  const endTime2 = new Date(end2).getTime()
+  // Parse Toronto timezone strings, remove timezone suffix for local parsing
+  const startTime1 = new Date(start1.replace(/-04:00$/, '')).getTime()
+  const endTime1 = new Date(end1.replace(/-04:00$/, '')).getTime()
+  const startTime2 = new Date(start2.replace(/-04:00$/, '')).getTime()
+  const endTime2 = new Date(end2.replace(/-04:00$/, '')).getTime()
   
   return startTime1 < endTime2 && startTime2 < endTime1
 }
@@ -99,15 +86,15 @@ const detectTimeConflicts = (
 ): TaskRecord[] => {
   if (!taskDate || !startTime || !endTime) return []
   
-  const newTaskLocalDate = new Date(taskDate)
-  const newTaskDateStr = newTaskLocalDate.toLocaleDateString('en-CA')
+  // Extract date part from startTime string (format: "2025-07-23T01:20:00-04:00")
+  const newTaskDateStr = extractDateOnly(startTime)
   
   return allTasks.filter(task => {
     if (task.id === excludeTaskId) return false
     if (!task.start_date || !task.end_date) return false
     
-    const taskLocalDate = new Date(task.start_date)
-    const taskDateStr = taskLocalDate.toLocaleDateString('en-CA')
+    // Extract date part from existing task with timezone
+    const taskDateStr = extractDateOnly(task.start_date)
     if (taskDateStr !== newTaskDateStr) return false
     
     return isTimeOverlapping(startTime, endTime, task.start_date, task.end_date)
@@ -166,8 +153,8 @@ export default function TaskFormPanel({
       setFormData({
         title: task.title || '',
         status: task.status || '',
-        start_date: convertFromUTCForDisplay(task.start_date || ''),
-        end_date: convertFromUTCForDisplay(task.end_date || ''),
+        start_date: toDatetimeLocal(task.start_date || ''),
+        end_date: toDatetimeLocal(task.end_date || ''),
         all_day: task.all_day || false,
         remind_before: task.remind_before || 15,
         plan: task.plan || [],
@@ -222,10 +209,14 @@ export default function TaskFormPanel({
   // Detect time conflicts
   useEffect(() => {
     if (formData.start_date && formData.end_date && allTasks.length > 0) {
+      // Convert to Toronto timezone format for conflict detection
+      const startWithTz = addTorontoTimezone(formData.start_date)
+      const endWithTz = addTorontoTimezone(formData.end_date)
+      
       const conflicts = detectTimeConflicts(
         formData.start_date,
-        formData.start_date,
-        formData.end_date,
+        startWithTz,
+        endWithTz,
         allTasks,
         task?.id
       )
@@ -237,7 +228,15 @@ export default function TaskFormPanel({
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault()
-    onSave(formData)
+    
+    // Add Toronto timezone to datetime fields before saving
+    const processedFormData = {
+      ...formData,
+      start_date: addTorontoTimezone(formData.start_date),
+      end_date: addTorontoTimezone(formData.end_date)
+    }
+    
+    onSave(processedFormData)
   }, [formData, onSave])
 
   const handlePlanChange = useCallback((planId: string) => {

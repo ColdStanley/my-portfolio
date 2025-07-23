@@ -396,3 +396,120 @@ if (queryIds.includes(query.id)) {
 5. **Note Management** → Inline editing with formatting preservation
 
 The English Reading module now represents a mature, production-ready language learning platform combining sophisticated text processing, intelligent AI assistance, and intuitive user interactions. The 2025.07 updates establish a robust foundation for advanced reading comprehension tools with seamless multilingual support and professional-grade user experience design.
+
+## 2025.07.23 Updates - Task Execution Time Tracking System
+
+### Task Time Management Implementation
+
+#### **Core Features Added**
+- **Start/End Task Buttons**: Integrated into task action buttons with consistent purple theming
+- **Real-time Countdown Display**: Shows remaining time in `HH:MM:SS` format during task execution
+- **Task Extension System**: Non-intrusive modal allows users to extend tasks when time expires
+- **Toronto Timezone Support**: All timestamps use `-04:00` timezone format for Notion compatibility
+- **Automatic Status Management**: Task status automatically changes to "In Progress" on start, "Completed" on end
+
+#### **Technical Architecture**
+
+**New Components:**
+- `SimpleTaskTimer.tsx` - Handles countdown display and task state management
+- `TaskExtensionModal.tsx` - Modal dialog for extending task time with clean UI
+- `useCountdown.ts` - Custom hook for countdown logic with timezone awareness
+- `timezone.ts` - Utility functions for Toronto timezone handling
+
+**Time Tracking Flow:**
+1. **Task Start**: Records `actual_start` with Toronto timezone (`2025-07-23T01:20:30-04:00`)
+2. **Countdown Display**: Real-time countdown based on `end_date` vs current time
+3. **Time Expiration**: Automatic modal popup with extension options
+4. **Task Extension**: Users can add minutes (default 15) to continue working
+5. **Task Completion**: Records `actual_end` with accurate Toronto timezone timestamp
+
+#### **Timezone Solution Implementation**
+
+**Problem Solved:**
+- **User Input**: 1:20 - 2:20 (Toronto time)
+- **Previous Notion Display**: 9:20 - 10:20 (8-hour timezone offset error)
+- **Fixed Notion Display**: 1:20 - 2:20 ✅ (correct Toronto time)
+
+**Technical Solution:**
+```typescript
+// Time format sent to Notion API
+const torontoTime = `${datetimeLocal}:00-04:00`
+// Example: "2025-07-23T01:20:00-04:00"
+```
+
+**Utility Functions Created:**
+- `getCurrentTorontoTime()` - Get current time with Toronto timezone
+- `addTorontoTimezone()` - Convert local input to Toronto format
+- `toDatetimeLocal()` - Convert Toronto format back to form display
+- `extractTimeOnly()` - Parse time part from timezone string
+- `extractDateOnly()` - Parse date part from timezone string
+
+#### **UI Integration & Design**
+
+**Button Layout Optimization:**
+- **Start/End buttons** integrated into existing action button group
+- **Consistent styling** with purple theme (`text-purple-600 hover:bg-purple-600`)
+- **Icon design**: Play icon for start, clock icon for end tasks
+- **Button visibility**: Only shows for non-completed tasks
+
+**Countdown Display:**
+- **Position**: Inline with time information, non-intrusive placement
+- **Format**: `02:30:15` countdown with purple background (`bg-purple-100`)
+- **Display logic**: Only visible for started tasks (`displayOnly` mode)
+
+**Extension Modal Design:**
+- **Clean interface**: Purple-themed with simple minute input
+- **Two options**: "Extend" button and "Complete Task" button
+- **User experience**: Modal auto-closes after selection
+- **Default extension**: 15 minutes with customizable input
+
+#### **Database & API Integration**
+
+**Fields Utilized:**
+- `actual_start` - Task execution start timestamp with timezone
+- `actual_end` - Task completion timestamp with timezone  
+- `actual_time` - Auto-calculated duration (handled by existing API logic)
+
+**API Endpoint Integration:**
+- **Existing `/api/tasks` endpoint** handles new timezone format
+- **No API changes required** - existing logic supports timezone-aware timestamps
+- **Automatic calculation** of `actual_time` using existing time difference logic
+
+#### **Time Conflict Detection Enhancement**
+
+**Updated Logic:**
+- **Timezone-aware parsing**: Removes `-04:00` suffix for local time comparison
+- **Date extraction**: Uses `extractDateOnly()` for accurate same-day filtering
+- **Conflict display**: Purple-themed notification matching site design
+- **Non-blocking**: Users can save tasks despite conflicts (as per requirements)
+
+#### **Performance & UX Optimizations**
+
+**State Management:**
+- **Local extension tracking**: `extendedTasks` state manages temporary time extensions
+- **Real-time updates**: 1-second interval countdown with proper cleanup
+- **Memory management**: Automatic interval clearing on component unmount
+
+**User Experience Features:**
+- **English-only text**: All UI text uses concise English without emojis
+- **Purple theme consistency**: All new UI elements match site color scheme
+- **Non-intrusive design**: Extension reminders don't block user workflow
+- **Accurate time recording**: `actual_end` always records true completion time (not calculated from extensions)
+
+#### **Extension Mechanism Logic**
+
+**Multi-extension Support:**
+- Users can extend tasks multiple times
+- Each extension creates new countdown from current time
+- Final `actual_end` records actual completion moment
+- Extensions don't affect planned schedule times
+
+**Example Flow:**
+1. **Task scheduled**: 1:20 - 2:20 PM
+2. **User starts**: 1:25 PM → countdown shows 55 minutes
+3. **Time expires**: 2:20 PM → extension modal appears
+4. **User extends**: +15 minutes → new countdown starts
+5. **Second expiration**: 2:35 PM → modal appears again
+6. **User completes**: 2:38 PM → `actual_end = 2:38 PM` (real completion time)
+
+The task execution time tracking system provides comprehensive time management capabilities while maintaining the clean, professional UI design of the existing task management system. All timestamps are properly timezone-aware for accurate Notion display and cross-system compatibility.

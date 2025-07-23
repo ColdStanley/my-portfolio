@@ -9,6 +9,7 @@ import TaskCalendarView from './TaskCalendarView'
 import TaskListView from './TaskListView'
 import TaskCompletionModal from './TaskCompletionModal'
 import RenderBlock from '@/components/notion/RenderBlock'
+import { getCurrentTorontoTime, extractTimeOnly, extractDateOnly } from '../../utils/timezone'
 
 interface TaskFormData {
   title: string
@@ -28,22 +29,22 @@ interface TaskFormData {
 const hasTimeConflicts = (task: any, allTasks: any[]): boolean => {
   if (!task.start_date || !task.end_date) return false
   
-  const newTaskLocalDate = new Date(task.start_date)
-  const newTaskDateStr = newTaskLocalDate.toLocaleDateString('en-CA')
+  // Extract date part from task date string with timezone
+  const newTaskDateStr = extractDateOnly(task.start_date)
   
   const conflicts = allTasks.filter(t => {
     if (t.id === task.id) return false
     if (!t.start_date || !t.end_date) return false
     
-    const taskLocalDate = new Date(t.start_date)
-    const taskDateStr = taskLocalDate.toLocaleDateString('en-CA')
+    // Extract date part from existing task with timezone
+    const taskDateStr = extractDateOnly(t.start_date)
     if (taskDateStr !== newTaskDateStr) return false
     
-    // Check time overlap
-    const startTime1 = new Date(task.start_date).getTime()
-    const endTime1 = new Date(task.end_date).getTime()
-    const startTime2 = new Date(t.start_date).getTime()
-    const endTime2 = new Date(t.end_date).getTime()
+    // Check time overlap using Toronto timezone parsing
+    const startTime1 = new Date(task.start_date.replace(/-04:00$/, '')).getTime()
+    const endTime1 = new Date(task.end_date.replace(/-04:00$/, '')).getTime()
+    const startTime2 = new Date(t.start_date.replace(/-04:00$/, '')).getTime()
+    const endTime2 = new Date(t.end_date.replace(/-04:00$/, '')).getTime()
     
     return startTime1 < endTime2 && startTime2 < endTime1
   })
@@ -94,13 +95,13 @@ export default function TaskPanelOptimized() {
     
     return filteredTasks.filter(task => {
       if (!task.start_date) return false
-      const taskLocalDate = new Date(task.start_date)
-      const taskDateOnly = new Date(taskLocalDate.getFullYear(), taskLocalDate.getMonth(), taskLocalDate.getDate())
+      // Parse date from Toronto timezone string 
+      const datePart = extractDateOnly(task.start_date)
+      const [year, month, day] = datePart.split('-').map(Number)
+      const taskDateOnly = new Date(year, month - 1, day)
       return taskDateOnly >= monday && taskDateOnly <= sunday
     }).sort((a, b) => {
-      const dateA = new Date(a.start_date)
-      const dateB = new Date(b.start_date)
-      return dateA.getTime() - dateB.getTime()
+      return a.start_date.localeCompare(b.start_date)
     })
   }, [filteredTasks])
 
@@ -114,13 +115,13 @@ export default function TaskPanelOptimized() {
     
     return filteredTasks.filter(task => {
       if (!task.start_date) return false
-      const taskLocalDate = new Date(task.start_date)
-      const taskDateOnly = new Date(taskLocalDate.getFullYear(), taskLocalDate.getMonth(), taskLocalDate.getDate())
+      // Parse date from Toronto timezone string
+      const datePart = extractDateOnly(task.start_date)
+      const [year, month, day] = datePart.split('-').map(Number)
+      const taskDateOnly = new Date(year, month - 1, day)
       return taskDateOnly >= firstDayOfMonth && taskDateOnly <= lastDayOfMonth
     }).sort((a, b) => {
-      const dateA = new Date(a.start_date)
-      const dateB = new Date(b.start_date)
-      return dateA.getTime() - dateB.getTime()
+      return a.start_date.localeCompare(b.start_date)
     })
   }, [filteredTasks])
 
@@ -240,7 +241,7 @@ export default function TaskPanelOptimized() {
     try {
       const updatedTask = {
         ...task,
-        actual_start: new Date().toISOString(),
+        actual_start: getCurrentTorontoTime(),
         status: 'In Progress'
       }
       
@@ -270,7 +271,7 @@ export default function TaskPanelOptimized() {
     try {
       const updatedTask = {
         ...task,
-        actual_end: new Date().toISOString(),
+        actual_end: getCurrentTorontoTime(),
         status: 'Completed'
       }
       
@@ -425,44 +426,26 @@ export default function TaskPanelOptimized() {
   const formatTimeRange = useCallback((startDate: string, endDate?: string) => {
     if (!startDate) return ''
     
-    const start = new Date(startDate)
+    // Extract date and time from Toronto timezone string
+    const datePart = extractDateOnly(startDate)
+    const startTime = extractTimeOnly(startDate)
+    
+    // Parse date for weekday (this is safe as it's just date, no time)
+    const [year, month, day] = datePart.split('-').map(Number)
+    const dateObj = new Date(year, month - 1, day) // Local date object
     const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-    const weekday = weekdays[start.getDay()]
+    const weekday = weekdays[dateObj.getDay()]
     
-    const dateStr = start.toLocaleDateString('en-US', { 
-      month: 'numeric', 
-      day: 'numeric' 
-    })
-    
-    const startTime = start.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: false
-    })
+    const dateStr = `${month}/${day}`
     
     if (!endDate) {
       return `${dateStr} ${weekday} ${startTime}`
     }
     
-    const end = new Date(endDate)
-    const endTime = end.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: false
-    })
+    const endTime = extractTimeOnly(endDate)
     
-    const isSameDay = start.toDateString() === end.toDateString()
-    
-    if (isSameDay) {
-      return `${dateStr} ${weekday} ${startTime} - ${endTime}`
-    } else {
-      const endDateStr = end.toLocaleDateString('en-US', { 
-        month: 'numeric', 
-        day: 'numeric' 
-      })
-      const endWeekday = weekdays[end.getDay()]
-      return `${dateStr} ${weekday} ${startTime} - ${endDateStr} ${endWeekday} ${endTime}`
-    }
+    // Since we don't support cross-day tasks, always same day
+    return `${dateStr} ${weekday} ${startTime} - ${endTime}`
   }, [])
 
   // Loading state
@@ -604,8 +587,8 @@ export default function TaskPanelOptimized() {
                   <span className="font-semibold text-purple-900">
                     {filteredTasks.filter(task => {
                       if (!task.start_date) return false
-                      const taskDate = new Date(task.start_date).toLocaleDateString('en-CA')
-                      const today = new Date().toLocaleDateString('en-CA')
+                      const taskDate = extractDateOnly(task.start_date)
+                      const today = new Date().toISOString().split('T')[0]
                       return taskDate === today
                     }).length}
                   </span>

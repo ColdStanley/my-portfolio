@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useCallback } from 'react'
+import { extractTimeOnly, extractDateOnly } from '../../utils/timezone'
 
 interface TaskRecord {
   id: string
@@ -117,8 +118,8 @@ export default function TaskCalendarView({
       const taskDate = task.start_date || task.end_date
       if (!taskDate) return false
       
-      const taskLocalDate = new Date(taskDate)
-      const taskDateString = taskLocalDate.toLocaleDateString('en-CA')
+      // Extract date part from task date string with timezone
+      const taskDateString = extractDateOnly(taskDate)
       return taskDateString === dateString
     }).sort((a, b) => {
       // Sort by status: completed tasks last
@@ -157,23 +158,13 @@ export default function TaskCalendarView({
   const formatTimeOnly = useCallback((startDate: string, endDate?: string) => {
     if (!startDate) return ''
     
-    const start = new Date(startDate)
-    const startTime = start.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: false
-    })
+    const startTime = extractTimeOnly(startDate)
     
     if (!endDate) {
       return startTime
     }
     
-    const end = new Date(endDate)
-    const endTime = end.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: false
-    })
+    const endTime = extractTimeOnly(endDate)
     
     // Display as time range
     return `${startTime} - ${endTime}`

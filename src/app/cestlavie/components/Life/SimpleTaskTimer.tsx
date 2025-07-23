@@ -46,9 +46,20 @@ export default function SimpleTaskTimer({
   }, [])
 
   const calculateTimeLeft = useCallback((endTime: string): number => {
-    const now = new Date().getTime()
-    const end = new Date(endTime).getTime()
-    return Math.floor((end - now) / 1000)
+    // Parse current time as local time string
+    const now = new Date()
+    const nowStr = now.getFullYear() + '-' +
+                   String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                   String(now.getDate()).padStart(2, '0') + 'T' +
+                   String(now.getHours()).padStart(2, '0') + ':' +
+                   String(now.getMinutes()).padStart(2, '0') + ':' +
+                   String(now.getSeconds()).padStart(2, '0')
+    
+    // Parse both times as local time (no timezone conversion)
+    const nowTime = new Date(nowStr).getTime()
+    const endTimeObj = new Date(endTime.replace('Z', '')).getTime()
+    
+    return Math.floor((endTimeObj - nowTime) / 1000)
   }, [])
 
   // Update countdown
