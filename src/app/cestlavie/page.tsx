@@ -84,7 +84,7 @@ export default function CestLaViePage() {
         {/* 主内容区域 */}
         <div className="flex-1 overflow-hidden md:overflow-auto">
           <div className="h-full overflow-y-auto md:overflow-visible">
-            <MainContent activeMainTab={activeTab} />
+            <MainContent activeMainTab={activeTab} onConfigClick={() => setShowConfigModal(true)} />
           </div>
         </div>
       </div>

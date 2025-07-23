@@ -2,18 +2,35 @@
 
 import { useState, useEffect } from 'react'
 
+interface TaskRecord {
+  id: string
+  title: string
+  status: string
+  start_date: string
+  end_date: string
+  all_day: boolean
+  plan: string[]
+  priority_quadrant: string
+  note: string
+  actual_start?: string
+  actual_end?: string
+  budget_time: number
+  actual_time: number
+  quality_rating?: number
+  next?: string
+  is_plan_critical?: boolean
+}
+
 interface TaskCompletionModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (qualityRating: number, nextStep: string, isPlanCritical: boolean) => void
-  taskTitle: string
+  task: TaskRecord | null
 }
 
 export default function TaskCompletionModal({ 
   isOpen, 
   onClose, 
-  onSubmit, 
-  taskTitle 
+  task 
 }: TaskCompletionModalProps) {
   const [qualityRating, setQualityRating] = useState<number>(5)
   const [nextStep, setNextStep] = useState<string>('')
@@ -31,7 +48,18 @@ export default function TaskCompletionModal({
     }
   }, [isOpen])
 
+  // 初始化表单数据
+  useEffect(() => {
+    if (task && isOpen) {
+      setQualityRating(task.quality_rating || 5)
+      setNextStep(task.next || '')
+      setIsPlanCritical(task.is_plan_critical || false)
+    }
+  }, [task, isOpen])
+
   const handleSubmit = async () => {
+    if (!task) return
+    
     if (!qualityRating || qualityRating < 1 || qualityRating > 5) {
       alert('Please provide a rating between 1 and 5')
       return
@@ -39,12 +67,34 @@ export default function TaskCompletionModal({
 
     setIsSubmitting(true)
     try {
-      await onSubmit(qualityRating, nextStep, isPlanCritical)
+      // 更新任务状态为已完成，并保存评分信息
+      const updatedTask = {
+        ...task,
+        status: 'Completed',
+        quality_rating: qualityRating,
+        next: nextStep,
+        is_plan_critical: isPlanCritical,
+        actual_end: new Date().toISOString()
+      }
+
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTask)
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update task')
+      }
+
       // Reset form
       setQualityRating(5)
       setNextStep('')
       setIsPlanCritical(false)
       onClose()
+      
+      // 刷新页面以显示更新
+      window.location.reload()
     } catch (error) {
       console.error('Failed to submit task completion:', error)
       alert('Failed to submit. Please try again.')
@@ -101,7 +151,7 @@ export default function TaskCompletionModal({
           {/* Task Title */}
           <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 via-purple-25 to-purple-50 rounded-xl border border-purple-100">
             <p className="text-sm text-purple-600 font-medium mb-1">Task:</p>
-            <p className="text-gray-900 font-semibold">{taskTitle}</p>
+            <p className="text-gray-900 font-semibold">{task?.title || 'No task selected'}</p>
           </div>
 
           {/* Question 1: Quality Rating */}

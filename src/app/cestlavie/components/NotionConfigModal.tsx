@@ -21,7 +21,9 @@ export default function NotionConfigModal({ isOpen, onClose, onConfigSaved }: No
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)
+  const [syncing, setSyncing] = useState(false)
   const [testResult, setTestResult] = useState<{success: boolean, message: string, details?: any} | null>(null)
+  const [syncResult, setSyncResult] = useState<{success: boolean, message: string, results?: any[]} | null>(null)
   const [config, setConfig] = useState<NotionConfig>({
     notion_api_key: '',
     tasks_db_id: '',
@@ -146,6 +148,68 @@ export default function NotionConfigModal({ isOpen, onClose, onConfigSaved }: No
     }
   }
 
+  const handleSync = async () => {
+    if (!config.notion_api_key || !config.tasks_db_id || !config.plan_db_id || !config.strategy_db_id) {
+      setSyncResult({
+        success: false,
+        message: 'Please fill in all database IDs and API key before syncing'
+      })
+      return
+    }
+
+    setSyncing(true)
+    setSyncResult(null)
+    
+    try {
+      // 先保存配置
+      const saveResponse = await fetch('/api/user-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          notion_api_key: config.notion_api_key,
+          notion_tasks_db_id: config.tasks_db_id,
+          notion_strategy_db_id: config.strategy_db_id,
+          notion_plan_db_id: config.plan_db_id
+        })
+      })
+      
+      if (!saveResponse.ok) {
+        const saveError = await saveResponse.json()
+        throw new Error(`Configuration save failed: ${saveError.error || 'Unknown error'}`)
+      }
+
+      // 执行数据库schema同步
+      const syncResponse = await fetch('/api/sync-notion-schema', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      
+      const syncData = await syncResponse.json()
+      
+      if (syncResponse.ok) {
+        setSyncResult({
+          success: syncData.success,
+          message: syncData.message,
+          results: syncData.results
+        })
+      } else {
+        setSyncResult({
+          success: false,
+          message: syncData.error || 'Schema sync failed',
+          results: syncData.results || []
+        })
+      }
+      
+    } catch (error) {
+      setSyncResult({
+        success: false,
+        message: 'Sync failed: ' + (error instanceof Error ? error.message : 'Unknown error')
+      })
+    } finally {
+      setSyncing(false)
+    }
+  }
+
   const handleSave = async () => {
     if (!validateForm()) return
 
@@ -198,186 +262,200 @@ export default function NotionConfigModal({ isOpen, onClose, onConfigSaved }: No
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
           {/* 头部 */}
-          <div className="p-6 border-b border-gray-200">
+          <div className="p-8 border-b border-purple-100">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">Notion Configuration</h2>
+              <h2 className="text-2xl font-bold text-purple-900">Configuration</h2>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors text-2xl"
+                className="text-purple-400 hover:text-purple-600 transition-colors text-2xl font-light"
               >
                 ×
               </button>
             </div>
-            <p className="mt-2 text-sm text-gray-600">
-              Configure your Notion integration to connect your databases with CestLaVie.
+            <p className="mt-3 text-purple-600/80 font-medium">
+              Sync your workspace with our golden template
             </p>
           </div>
 
           {/* 内容 */}
-          <div className="p-6 space-y-6">
+          <div className="p-8 space-y-6">
             {loading ? (
-              <div className="text-center py-8">
-                <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
-                <p className="mt-2 text-gray-600">Loading configuration...</p>
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+                <p className="mt-4 text-purple-600">Loading...</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {/* Notion API Key */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Notion API Key *
+                  <label className="block text-base font-semibold text-purple-900 mb-3">
+                    API Key
                   </label>
                   <input
                     type="password"
                     value={config.notion_api_key}
                     onChange={(e) => handleInputChange('notion_api_key', e.target.value)}
                     placeholder="secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 ${
-                      errors.notion_api_key ? 'border-red-300' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-0 transition-all duration-200 ${
+                      errors.notion_api_key 
+                        ? 'border-red-300 focus:border-red-400' 
+                        : 'border-purple-200 focus:border-purple-400 hover:border-purple-300'
+                    } bg-purple-50/30 focus:bg-white`}
                   />
                   {errors.notion_api_key && (
-                    <p className="mt-1 text-sm text-red-600">{errors.notion_api_key}</p>
+                    <p className="mt-2 text-sm text-red-500">{errors.notion_api_key}</p>
                   )}
-                  <p className="mt-1 text-xs text-gray-500">
-                    Get your API key from <a href="https://www.notion.so/my-integrations" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">Notion Integrations</a>
-                  </p>
                 </div>
 
-                {/* Tasks Database ID */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tasks Database ID
-                  </label>
-                  <input
-                    type="text"
-                    value={config.tasks_db_id}
-                    onChange={(e) => handleInputChange('tasks_db_id', e.target.value)}
-                    placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Database ID for your Tasks (from Notion database URL)
-                  </p>
+                {/* Database IDs */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Tasks */}
+                  <div>
+                    <label className="block text-sm font-semibold text-purple-800 mb-2">
+                      Tasks DB
+                    </label>
+                    <input
+                      type="text"
+                      value={config.tasks_db_id}
+                      onChange={(e) => handleInputChange('tasks_db_id', e.target.value)}
+                      placeholder="Database ID"
+                      className="w-full px-3 py-2.5 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-400 hover:border-purple-300 transition-all duration-200 bg-purple-50/30 focus:bg-white text-sm"
+                    />
+                  </div>
+
+                  {/* Plan */}
+                  <div>
+                    <label className="block text-sm font-semibold text-purple-800 mb-2">
+                      Plan DB
+                    </label>
+                    <input
+                      type="text"
+                      value={config.plan_db_id}
+                      onChange={(e) => handleInputChange('plan_db_id', e.target.value)}
+                      placeholder="Database ID"
+                      className="w-full px-3 py-2.5 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-400 hover:border-purple-300 transition-all duration-200 bg-purple-50/30 focus:bg-white text-sm"
+                    />
+                  </div>
+
+                  {/* Strategy */}
+                  <div>
+                    <label className="block text-sm font-semibold text-purple-800 mb-2">
+                      Strategy DB
+                    </label>
+                    <input
+                      type="text"
+                      value={config.strategy_db_id}
+                      onChange={(e) => handleInputChange('strategy_db_id', e.target.value)}
+                      placeholder="Database ID"
+                      className="w-full px-3 py-2.5 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-400 hover:border-purple-300 transition-all duration-200 bg-purple-50/30 focus:bg-white text-sm"
+                    />
+                  </div>
                 </div>
 
-                {/* Strategy Database ID */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Strategy Database ID
-                  </label>
-                  <input
-                    type="text"
-                    value={config.strategy_db_id}
-                    onChange={(e) => handleInputChange('strategy_db_id', e.target.value)}
-                    placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Database ID for your Strategy (from Notion database URL)
-                  </p>
-                </div>
-
-                {/* Plan Database ID */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Plan Database ID
-                  </label>
-                  <input
-                    type="text"
-                    value={config.plan_db_id}
-                    onChange={(e) => handleInputChange('plan_db_id', e.target.value)}
-                    placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Database ID for your Plan (from Notion database URL)
-                  </p>
-                </div>
-
-                {/* 测试结果显示 */}
+                {/* 结果显示 */}
                 {testResult && (
-                  <div className={`p-4 rounded-lg border ${
+                  <div className={`p-4 rounded-xl border-2 ${
                     testResult.success 
-                      ? 'bg-green-50 border-green-200' 
-                      : 'bg-red-50 border-red-200'
+                      ? 'bg-green-50/50 border-green-200' 
+                      : 'bg-red-50/50 border-red-200'
                   }`}>
-                    <div className="flex items-start">
-                      <div className="flex-shrink-0">
-                        <span className={`text-lg ${
-                          testResult.success ? 'text-green-500' : 'text-red-500'
-                        }`}>
-                          {testResult.success ? '✅' : '❌'}
-                        </span>
-                      </div>
-                      <div className="ml-3">
-                        <h4 className={`text-sm font-medium ${
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">
+                        {testResult.success ? '✅' : '❌'}
+                      </span>
+                      <div>
+                        <p className={`font-semibold ${
                           testResult.success ? 'text-green-800' : 'text-red-800'
                         }`}>
-                          {testResult.success ? 'Configuration Test Passed' : 'Configuration Test Failed'}
-                        </h4>
-                        <p className={`mt-1 text-sm ${
-                          testResult.success ? 'text-green-700' : 'text-red-700'
+                          {testResult.success ? 'Connection verified' : 'Connection failed'}
+                        </p>
+                        <p className={`text-sm ${
+                          testResult.success ? 'text-green-600' : 'text-red-600'
                         }`}>
                           {testResult.message}
                         </p>
-                        {testResult.details && (
-                          <div className="mt-2 text-xs text-gray-600">
-                            <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto max-h-32">
-                              {JSON.stringify(testResult.details, null, 2)}
-                            </pre>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 同步结果显示 */}
+                {syncResult && (
+                  <div className={`p-4 rounded-xl border-2 ${
+                    syncResult.success 
+                      ? 'bg-purple-50/50 border-purple-200' 
+                      : 'bg-red-50/50 border-red-200'
+                  }`}>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">
+                        {syncResult.success ? '🎉' : '❌'}
+                      </span>
+                      <div className="flex-1">
+                        <p className={`font-semibold ${
+                          syncResult.success ? 'text-purple-900' : 'text-red-800'
+                        }`}>
+                          {syncResult.success ? 'Sync completed' : 'Sync failed'}
+                        </p>
+                        <p className={`text-sm ${
+                          syncResult.success ? 'text-purple-700' : 'text-red-600'
+                        }`}>
+                          {syncResult.message}
+                        </p>
+                        {syncResult.results && syncResult.results.length > 0 && (
+                          <div className="mt-2 flex gap-2">
+                            {syncResult.results.map((result: any, index: number) => (
+                              <div key={index} className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                result.success 
+                                  ? 'bg-purple-100 text-purple-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {result.database}
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
                     </div>
                   </div>
                 )}
-
-                {/* 帮助信息 */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-blue-900 mb-2">Setup Instructions:</h4>
-                  <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-                    <li>Create a new Notion integration at <a href="https://www.notion.so/my-integrations" target="_blank" rel="noopener noreferrer" className="underline">notion.so/my-integrations</a></li>
-                    <li>Copy the API key and paste it above</li>
-                    <li>Create your databases in Notion (Tasks, Strategy, Plan)</li>
-                    <li>Share each database with your integration</li>
-                    <li>Copy the database IDs from the URLs and paste them above</li>
-                  </ol>
-                </div>
               </div>
             )}
           </div>
 
           {/* 底部按钮 */}
-          <div className="p-6 border-t border-gray-200 flex justify-between">
-            <button
-              onClick={handleTest}
-              disabled={testing || saving || !config.notion_api_key || !config.tasks_db_id}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-            >
-              {testing && (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              )}
-              {testing ? 'Testing...' : 'Test Configuration'}
-            </button>
-            
-            <div className="flex gap-3">
+          <div className="p-8 border-t border-purple-100 bg-purple-50/30">
+            <div className="flex justify-center gap-4">
               <button
-                onClick={onClose}
-                disabled={saving}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
+                onClick={handleTest}
+                disabled={testing || saving || syncing || !config.notion_api_key || !config.tasks_db_id}
+                className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none"
               >
-                Cancel
+                {testing && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                )}
+                {testing ? 'Testing...' : 'Test Connection'}
               </button>
+              
+              <button
+                onClick={handleSync}
+                disabled={testing || saving || syncing || !config.notion_api_key || !config.tasks_db_id || !config.plan_db_id || !config.strategy_db_id}
+                className="px-6 py-3 bg-purple-700 text-white rounded-xl hover:bg-purple-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none"
+              >
+                {syncing && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                )}
+                {syncing ? 'Syncing...' : 'Sync Workspace'}
+              </button>
+              
               <button
                 onClick={handleSave}
-                disabled={saving || loading}
-                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                disabled={saving || loading || syncing}
+                className="px-6 py-3 bg-purple-500 text-white rounded-xl hover:bg-purple-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none"
               >
                 {saving && (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                 )}
-                {saving ? 'Saving...' : 'Save Configuration'}
+                {saving ? 'Saving...' : 'Save'}
               </button>
             </div>
           </div>

@@ -1,6 +1,8 @@
 'use client'
 
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useState } from 'react'
+import TaskExtensionModal from './TaskExtensionModal'
+import SimpleTaskTimer from './SimpleTaskTimer'
 
 interface TaskRecord {
   id: string
@@ -9,7 +11,6 @@ interface TaskRecord {
   start_date: string
   end_date: string
   all_day: boolean
-  remind_before: number
   plan: string[]
   priority_quadrant: string
   note: string
@@ -20,7 +21,6 @@ interface TaskRecord {
   quality_rating?: number
   next?: string
   is_plan_critical?: boolean
-  timer_status?: string
 }
 
 interface TaskListViewProps {
@@ -29,6 +29,9 @@ interface TaskListViewProps {
   onTaskClick?: (task: TaskRecord) => void
   onTaskDelete?: (taskId: string) => void
   onCreateTask?: (date: string) => void
+  onTaskComplete?: (task: TaskRecord) => void
+  onTaskStart?: (task: TaskRecord) => void
+  onTaskEnd?: (task: TaskRecord) => void
   formatTimeRange?: (startDate: string, endDate?: string) => string
   getPriorityColor?: (priority: string) => string
   hasTimeConflicts?: (task: TaskRecord) => boolean
@@ -40,10 +43,19 @@ export default function TaskListView({
   onTaskClick,
   onTaskDelete,
   onCreateTask,
+  onTaskComplete,
+  onTaskStart,
+  onTaskEnd,
   formatTimeRange,
   getPriorityColor,
   hasTimeConflicts
 }: TaskListViewProps) {
+  const [extensionModal, setExtensionModal] = useState<{
+    isOpen: boolean
+    task: TaskRecord | null
+  }>({ isOpen: false, task: null })
+  
+  const [extendedTasks, setExtendedTasks] = useState<{[taskId: string]: string}>({}) // taskId -> new end time
 
   // Get tasks for selected date
   const selectedDateTasks = useMemo(() => {
@@ -78,7 +90,7 @@ export default function TaskListView({
     if (!startDate) return ''
     
     const start = new Date(startDate)
-    const startTime = start.toLocaleTimeString('zh-CN', { 
+    const startTime = start.toLocaleTimeString('en-US', { 
       hour: '2-digit', 
       minute: '2-digit',
       hour12: false
@@ -89,25 +101,14 @@ export default function TaskListView({
     }
     
     const end = new Date(endDate)
-    const endTime = end.toLocaleTimeString('zh-CN', { 
+    const endTime = end.toLocaleTimeString('en-US', { 
       hour: '2-digit', 
       minute: '2-digit',
       hour12: false
     })
     
-    const isSameDay = start.toDateString() === end.toDateString()
-    
-    if (isSameDay) {
-      return `${startTime} - ${endTime}`
-    } else {
-      // For cross-day tasks, show full date info
-      const weekdays = ['日', '一', '二', '三', '四', '五', '六']
-      const startWeekday = weekdays[start.getDay()]
-      const endWeekday = weekdays[end.getDay()]
-      const startDateStr = start.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })
-      const endDateStr = end.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })
-      return `${startDateStr} 周${startWeekday} ${startTime} - ${endDateStr} 周${endWeekday} ${endTime}`
-    }
+    // Display as simple time range
+    return `${startTime} - ${endTime}`
   }, [])
 
   const handleNotionClick = useCallback((task: TaskRecord, e: React.MouseEvent) => {
@@ -145,6 +146,28 @@ export default function TaskListView({
     window.open(outlookUrl, '_blank')
   }, [])
 
+  const handleTimeExpired = useCallback((task: TaskRecord) => {
+    setExtensionModal({ isOpen: true, task })
+  }, [])
+
+  const handleExtend = useCallback((minutes: number) => {
+    if (extensionModal.task) {
+      const newEndTime = new Date(Date.now() + minutes * 60 * 1000).toISOString()
+      setExtendedTasks(prev => ({
+        ...prev,
+        [extensionModal.task!.id]: newEndTime
+      }))
+    }
+    setExtensionModal({ isOpen: false, task: null })
+  }, [extensionModal.task])
+
+  const handleCompleteFromModal = useCallback(() => {
+    if (extensionModal.task && onTaskEnd) {
+      onTaskEnd(extensionModal.task)
+    }
+    setExtensionModal({ isOpen: false, task: null })
+  }, [extensionModal.task, onTaskEnd])
+
   if (!selectedDate) {
     return (
       <div className="bg-white rounded-lg border border-purple-200 p-8">
@@ -158,7 +181,7 @@ export default function TaskListView({
   }
 
   const selectedDateObj = new Date(selectedDate + 'T00:00:00')
-  const dateDisplayName = selectedDateObj.toLocaleDateString('zh-CN', { 
+  const dateDisplayName = selectedDateObj.toLocaleDateString('en-US', { 
     month: 'long', 
     day: 'numeric',
     weekday: 'long'
@@ -170,7 +193,7 @@ export default function TaskListView({
       <div className="p-6 border-b border-purple-200">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-purple-900">{dateDisplayName} 的任务</h2>
+            <h2 className="text-xl font-bold text-purple-900">Tasks for {dateDisplayName}</h2>
             <p className="text-sm text-purple-600 mt-1">
               {selectedDateTasks.length} task{selectedDateTasks.length !== 1 ? 's' : ''} scheduled
             </p>
@@ -213,19 +236,19 @@ export default function TaskListView({
                   key={task.id}
                   className={`group relative p-4 rounded-lg border-2 transition-all duration-200
                     ${isCompleted 
-                      ? 'border-green-200 bg-green-50 hover:bg-green-100' 
+                      ? 'border-purple-300 bg-purple-100 hover:bg-purple-150 opacity-75' 
                       : isConflicted
-                      ? 'border-yellow-300 bg-yellow-50 hover:bg-yellow-100'
+                      ? 'border-purple-400 bg-purple-100 hover:bg-purple-150'
                       : 'border-purple-200 bg-purple-50 hover:bg-purple-100 hover:border-purple-300'
                     }
                     hover:shadow-md`}
                 >
                   {/* Status indicator */}
                   <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${
-                    isCompleted ? 'bg-green-500' : 
-                    task.status === 'In Progress' ? 'bg-blue-500' :
-                    task.status === 'On Hold' ? 'bg-yellow-500' :
-                    'bg-gray-400'
+                    isCompleted ? 'bg-purple-600' : 
+                    task.status === 'In Progress' ? 'bg-purple-500' :
+                    task.status === 'On Hold' ? 'bg-purple-400' :
+                    'bg-purple-300'
                   }`} />
                   
                   <div className="flex items-start justify-between">
@@ -234,7 +257,7 @@ export default function TaskListView({
                       <div className="flex items-center gap-3 mb-2">
                         <h3 
                           className={`text-lg font-semibold ${
-                            isCompleted ? 'text-green-800 line-through' : 'text-purple-900'
+                            isCompleted ? 'text-purple-700 line-through' : 'text-purple-900'
                           } truncate cursor-pointer hover:underline hover:text-purple-700 transition-colors`}
                           onClick={(e) => handleNotionClick(task, e)}
                           title="Click to edit in Notion"
@@ -243,10 +266,10 @@ export default function TaskListView({
                         </h3>
                         
                         <span className={`px-3 py-1 text-xs font-medium rounded-full border ${
-                          isCompleted ? 'bg-green-100 text-green-800 border-green-200' :
-                          task.status === 'In Progress' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                          task.status === 'On Hold' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
-                          'bg-gray-100 text-gray-800 border-gray-200'
+                          isCompleted ? 'bg-purple-200 text-purple-800 border-purple-300' :
+                          task.status === 'In Progress' ? 'bg-purple-100 text-purple-700 border-purple-200' :
+                          task.status === 'On Hold' ? 'bg-purple-50 text-purple-600 border-purple-200' :
+                          'bg-purple-50 text-purple-700 border-purple-200'
                         }`}>
                           {task.status}
                         </span>
@@ -272,6 +295,17 @@ export default function TaskListView({
                               {task.budget_time}h budgeted
                             </span>
                           )}
+                          {/* Show countdown for started tasks */}
+                          {task.actual_start && !task.actual_end && (
+                            <SimpleTaskTimer
+                              task={task}
+                              extendedEndTime={extendedTasks[task.id]}
+                              onTimeExpired={handleTimeExpired}
+                              onTaskStart={onTaskStart || (() => {})}
+                              onTaskEnd={onTaskEnd || (() => {})}
+                              displayOnly={true}
+                            />
+                          )}
                         </div>
                       )}
 
@@ -284,7 +318,7 @@ export default function TaskListView({
 
                       {/* Conflict warning */}
                       {isConflicted && (
-                        <div className="flex items-center gap-2 text-xs text-yellow-700 bg-yellow-100 px-2 py-1 rounded-md">
+                        <div className="flex items-center gap-2 text-xs text-purple-800 bg-purple-100 px-2 py-1 rounded-md border border-purple-200">
                           <span className="font-medium">Time Conflict</span>
                           <span>This task overlaps with other scheduled tasks</span>
                         </div>
@@ -293,10 +327,47 @@ export default function TaskListView({
 
                     {/* Action buttons */}
                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity ml-4">
+                      {/* Start/End Task Button */}
+                      {!isCompleted && (
+                        <>
+                          {!task.actual_start ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onTaskStart && onTaskStart(task)
+                              }}
+                              className="p-2 text-purple-600 hover:text-white hover:bg-purple-600 
+                                       rounded-md border border-purple-200 hover:border-purple-600
+                                       transition-all duration-200"
+                              title="Start task"
+                            >
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                              </svg>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onTaskEnd && onTaskEnd(task)
+                              }}
+                              className="p-2 text-purple-600 hover:text-white hover:bg-purple-600 
+                                       rounded-md border border-purple-200 hover:border-purple-600
+                                       transition-all duration-200"
+                              title="End task"
+                            >
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 012 0v4l2.5 1.5a1 1 0 11-1 1.732L8 12V7z" clipRule="evenodd" />
+                              </svg>
+                            </button>
+                          )}
+                        </>
+                      )}
+
                       <button
                         onClick={(e) => handleOutlookClick(task, e)}
-                        className="p-2 text-blue-600 hover:text-white hover:bg-blue-600 
-                                 rounded-md border border-blue-200 hover:border-blue-600
+                        className="p-2 text-purple-600 hover:text-white hover:bg-purple-600 
+                                 rounded-md border border-purple-200 hover:border-purple-600
                                  transition-all duration-200"
                         title="Add to Outlook Calendar"
                       >
@@ -304,6 +375,7 @@ export default function TaskListView({
                           <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
                         </svg>
                       </button>
+                      
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
@@ -326,8 +398,8 @@ export default function TaskListView({
                               onTaskDelete(task.id)
                             }
                           }}
-                          className="p-2 text-red-600 hover:text-white hover:bg-red-600 
-                                   rounded-md border border-red-200 hover:border-red-600
+                          className="p-2 text-purple-600 hover:text-white hover:bg-purple-600 
+                                   rounded-md border border-purple-200 hover:border-purple-600
                                    transition-all duration-200"
                           title="Delete task"
                         >
@@ -344,6 +416,14 @@ export default function TaskListView({
           </div>
         )}
       </div>
+
+      {/* Task Extension Modal */}
+      <TaskExtensionModal
+        isOpen={extensionModal.isOpen}
+        onExtend={handleExtend}
+        onComplete={handleCompleteFromModal}
+        taskTitle={extensionModal.task?.title || ''}
+      />
     </div>
   )
 }

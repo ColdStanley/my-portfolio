@@ -15,6 +15,7 @@ import TBDPanel from './Life/TBDPanel'
 
 interface MainContentProps {
   activeMainTab: string
+  onConfigClick?: () => void
 }
 
 const careerSubTabs = ['user-matcher', 'notion', 'cv-modules', 'figma-builder', 'jd2cv'] as const
@@ -22,7 +23,7 @@ const lifeSubTabs = ['strategy', 'plan', 'task', 'tbd'] as const
 type CareerSubTabKey = typeof careerSubTabs[number]
 type LifeSubTabKey = typeof lifeSubTabs[number]
 
-export default function MainContent({ activeMainTab }: MainContentProps) {
+export default function MainContent({ activeMainTab, onConfigClick }: MainContentProps) {
   const [activeCareerSubTab, setActiveCareerSubTab] = useState<CareerSubTabKey>('jd2cv')
   const [activeLifeSubTab, setActiveLifeSubTab] = useState<LifeSubTabKey>('task')
 
@@ -52,7 +53,7 @@ export default function MainContent({ activeMainTab }: MainContentProps) {
       case 'life':
         return (
           <>
-            <LifeSubTabNav activeTab={activeLifeSubTab} setActiveTab={setActiveLifeSubTab} />
+            <LifeSubTabNav activeTab={activeLifeSubTab} setActiveTab={setActiveLifeSubTab} onConfigClick={onConfigClick} />
             <div className="flex-1 overflow-y-auto p-6">{renderLifeContent()}</div>
           </>
         )

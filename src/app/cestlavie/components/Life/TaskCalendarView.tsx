@@ -9,7 +9,6 @@ interface TaskRecord {
   start_date: string
   end_date: string
   all_day: boolean
-  remind_before: number
   plan: string[]
   priority_quadrant: string
   note: string
@@ -20,7 +19,6 @@ interface TaskRecord {
   quality_rating?: number
   next?: string
   is_plan_critical?: boolean
-  timer_status?: string
 }
 
 interface TaskCalendarViewProps {
@@ -33,7 +31,6 @@ interface TaskCalendarViewProps {
   onTaskClick?: (task: TaskRecord) => void
   onTaskDelete?: (taskId: string) => void
   formatTimeRange?: (startDate: string, endDate?: string) => string
-  getStatusIcon?: (status: string) => string
   getPriorityColor?: (priority: string) => string
   hasTimeConflicts?: (task: TaskRecord) => boolean
   compact?: boolean  // New prop for compact mode
@@ -49,7 +46,6 @@ export default function TaskCalendarView({
   onTaskClick,
   onTaskDelete,
   formatTimeRange,
-  getStatusIcon,
   getPriorityColor,
   hasTimeConflicts,
   compact = false
@@ -162,7 +158,7 @@ export default function TaskCalendarView({
     if (!startDate) return ''
     
     const start = new Date(startDate)
-    const startTime = start.toLocaleTimeString('zh-CN', { 
+    const startTime = start.toLocaleTimeString('en-US', { 
       hour: '2-digit', 
       minute: '2-digit',
       hour12: false
@@ -173,25 +169,14 @@ export default function TaskCalendarView({
     }
     
     const end = new Date(endDate)
-    const endTime = end.toLocaleTimeString('zh-CN', { 
+    const endTime = end.toLocaleTimeString('en-US', { 
       hour: '2-digit', 
       minute: '2-digit',
       hour12: false
     })
     
-    const isSameDay = start.toDateString() === end.toDateString()
-    
-    if (isSameDay) {
-      return `${startTime} - ${endTime}`
-    } else {
-      // For cross-day tasks, show full date info
-      const weekdays = ['日', '一', '二', '三', '四', '五', '六']
-      const startWeekday = weekdays[start.getDay()]
-      const endWeekday = weekdays[end.getDay()]
-      const startDateStr = start.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })
-      const endDateStr = end.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })
-      return `${startDateStr} 周${startWeekday} ${startTime} - ${endDateStr} 周${endWeekday} ${endTime}`
-    }
+    // Display as time range
+    return `${startTime} - ${endTime}`
   }, [])
 
 
@@ -206,7 +191,7 @@ export default function TaskCalendarView({
           ←
         </button>
         <h3 className="text-lg font-semibold text-purple-900">
-          {currentMonth.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}
+          {currentMonth.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
         </h3>
         <button
           onClick={handleNextMonth}
@@ -219,7 +204,7 @@ export default function TaskCalendarView({
       {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-px bg-gray-200">
         {/* Weekday Headers */}
-        {['日', '一', '二', '三', '四', '五', '六'].map(day => (
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
           <div key={day} className="bg-purple-50 p-2 text-center text-sm font-medium text-purple-700">
             {day}
           </div>
@@ -263,11 +248,11 @@ export default function TaskCalendarView({
                         key={task.id}
                         className={`text-xs p-1.5 rounded truncate cursor-pointer transition-colors ${
                           task.status === 'Completed' 
-                            ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                            ? 'bg-purple-200 text-purple-800 hover:bg-purple-300 opacity-75' 
                             : task.status === 'In Progress'
-                            ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-                            : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                        } ${isConflicted ? 'border border-yellow-400' : ''}`}
+                            ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                            : 'bg-purple-50 text-purple-700 hover:bg-purple-100'
+                        } ${isConflicted ? 'border border-purple-400' : ''}`}
                         onClick={(e) => {
                           e.stopPropagation()
                           onTaskClick && onTaskClick(task)
@@ -280,15 +265,15 @@ export default function TaskCalendarView({
                           </span>
                           {task.priority_quadrant && getPriorityColor && (
                             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                              task.priority_quadrant.includes('Important & Urgent') ? 'bg-red-500' :
-                              task.priority_quadrant.includes('Important & Not Urgent') ? 'bg-orange-500' :
-                              task.priority_quadrant.includes('Not Important & Urgent') ? 'bg-yellow-500' :
-                              'bg-gray-500'
+                              task.priority_quadrant.includes('Important & Urgent') ? 'bg-purple-700' :
+                              task.priority_quadrant.includes('Important & Not Urgent') ? 'bg-purple-600' :
+                              task.priority_quadrant.includes('Not Important & Urgent') ? 'bg-purple-500' :
+                              'bg-purple-400'
                             }`} />
                           )}
                         </div>
-                        {formatTimeRange && (task.start_date || task.end_date) && (
-                          <div className="text-xs text-gray-600 opacity-75">
+                        {(task.start_date || task.end_date) && (
+                          <div className="text-xs text-purple-600 opacity-75">
                             {formatTimeOnly(task.start_date, task.end_date)}
                           </div>
                         )}
@@ -296,7 +281,7 @@ export default function TaskCalendarView({
                     )
                   })}
                   {dayTasks.length > 4 && (
-                    <div className="text-xs text-gray-500 text-center">
+                    <div className="text-xs text-purple-500 text-center">
                       +{dayTasks.length - 4} more
                     </div>
                   )}

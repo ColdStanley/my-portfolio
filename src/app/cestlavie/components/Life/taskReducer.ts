@@ -7,7 +7,6 @@ interface TaskRecord {
   start_date: string
   end_date: string
   all_day: boolean
-  remind_before: number
   plan: string[]
   priority_quadrant: string
   note: string
@@ -18,7 +17,6 @@ interface TaskRecord {
   quality_rating?: number
   next?: string
   is_plan_critical?: boolean
-  timer_status?: string
 }
 
 interface PlanOption {

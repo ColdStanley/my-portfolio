@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { useOutlookAuth } from '@/hooks/useOutlookAuth'
 import { useTaskReducer } from './taskReducer'
 import { TaskErrorBoundary, TaskLoadingSpinner, TaskErrorDisplay, ToastNotification } from './ErrorBoundary'
 import TaskCharts from './TaskCharts'
@@ -17,7 +16,6 @@ interface TaskFormData {
   start_date: string
   end_date: string
   all_day: boolean
-  remind_before: number
   plan: string[]
   priority_quadrant: string
   note: string
@@ -25,30 +23,7 @@ interface TaskFormData {
 }
 
 // Utility functions - moved outside component to prevent recreation
-const convertToUTCForNotion = (localDateTimeString: string): string => {
-  if (!localDateTimeString) return ''
-  
-  try {
-    const localDate = new Date(localDateTimeString)
-    return localDate.toISOString()
-  } catch (error) {
-    console.error('Error converting to UTC:', error)
-    return localDateTimeString
-  }
-}
 
-const calculateTotalElapsedTime = (task: any): number => {
-  let totalTime = task.actual_time || 0
-  
-  if (task.timer_status === 'running' && task.actual_start) {
-    const startTime = new Date(task.actual_start).getTime()
-    const currentTime = Date.now()
-    const runningTimeHours = (currentTime - startTime) / (1000 * 60 * 60)
-    totalTime += runningTimeHours
-  }
-  
-  return totalTime
-}
 
 const hasTimeConflicts = (task: any, allTasks: any[]): boolean => {
   if (!task.start_date || !task.end_date) return false
@@ -78,7 +53,6 @@ const hasTimeConflicts = (task: any, allTasks: any[]): boolean => {
 
 export default function TaskPanelOptimized() {
   const [state, actions] = useTaskReducer()
-  const { isAuthenticated, authenticate, addToCalendar } = useOutlookAuth()
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null)
   
   // Memoized filtered data to prevent unnecessary recalculations
@@ -261,13 +235,72 @@ export default function TaskPanelOptimized() {
     fetchData()
   }, [])
 
+  // Task execution operations
+  const handleTaskStart = useCallback(async (task: any) => {
+    try {
+      const updatedTask = {
+        ...task,
+        actual_start: new Date().toISOString(),
+        status: 'In Progress'
+      }
+      
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTask)
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to start task')
+      }
+      
+      actions.updateTask(updatedTask)
+      setToast({ message: 'Task started successfully', type: 'success' })
+      
+    } catch (error) {
+      console.error('Error starting task:', error)
+      setToast({ 
+        message: error instanceof Error ? error.message : 'Failed to start task', 
+        type: 'error' 
+      })
+    }
+  }, [actions])
+
+  const handleTaskEnd = useCallback(async (task: any) => {
+    try {
+      const updatedTask = {
+        ...task,
+        actual_end: new Date().toISOString(),
+        status: 'Completed'
+      }
+      
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTask)
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to end task')
+      }
+      
+      actions.updateTask(updatedTask)
+      setToast({ message: 'Task completed successfully', type: 'success' })
+      
+    } catch (error) {
+      console.error('Error ending task:', error)
+      setToast({ 
+        message: error instanceof Error ? error.message : 'Failed to end task', 
+        type: 'error' 
+      })
+    }
+  }, [actions])
+
   // Task CRUD operations
   const handleSaveTask = useCallback(async (formData: TaskFormData) => {
     try {
       const taskData = {
-        ...formData,
-        start_date: convertToUTCForNotion(formData.start_date),
-        end_date: convertToUTCForNotion(formData.end_date)
+        ...formData
       }
       
       const isEditing = !!state.editingTask
@@ -374,16 +407,6 @@ export default function TaskPanelOptimized() {
   }, [actions])
 
   // Format helper functions
-  const getStatusIcon = useCallback((status: string) => {
-    switch (status) {
-      case 'Not Started': return '⭕'
-      case 'In Progress': return '🔄'
-      case 'Completed': return '✅'
-      case 'On Hold': return '⏸️'
-      case 'Cancelled': return '❌'
-      default: return '📋'
-    }
-  }, [])
 
   const getPriorityColor = useCallback((priority: string) => {
     switch (priority) {
@@ -403,26 +426,26 @@ export default function TaskPanelOptimized() {
     if (!startDate) return ''
     
     const start = new Date(startDate)
-    const weekdays = ['日', '一', '二', '三', '四', '五', '六']
+    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     const weekday = weekdays[start.getDay()]
     
-    const dateStr = start.toLocaleDateString('zh-CN', { 
+    const dateStr = start.toLocaleDateString('en-US', { 
       month: 'numeric', 
       day: 'numeric' 
     })
     
-    const startTime = start.toLocaleTimeString('zh-CN', { 
+    const startTime = start.toLocaleTimeString('en-US', { 
       hour: '2-digit', 
       minute: '2-digit',
       hour12: false
     })
     
     if (!endDate) {
-      return `${dateStr} 周${weekday} ${startTime}`
+      return `${dateStr} ${weekday} ${startTime}`
     }
     
     const end = new Date(endDate)
-    const endTime = end.toLocaleTimeString('zh-CN', { 
+    const endTime = end.toLocaleTimeString('en-US', { 
       hour: '2-digit', 
       minute: '2-digit',
       hour12: false
@@ -431,14 +454,14 @@ export default function TaskPanelOptimized() {
     const isSameDay = start.toDateString() === end.toDateString()
     
     if (isSameDay) {
-      return `${dateStr} 周${weekday} ${startTime} - ${endTime}`
+      return `${dateStr} ${weekday} ${startTime} - ${endTime}`
     } else {
-      const endDateStr = end.toLocaleDateString('zh-CN', { 
+      const endDateStr = end.toLocaleDateString('en-US', { 
         month: 'numeric', 
         day: 'numeric' 
       })
       const endWeekday = weekdays[end.getDay()]
-      return `${dateStr} 周${weekday} ${startTime} - ${endDateStr} 周${endWeekday} ${endTime}`
+      return `${dateStr} ${weekday} ${startTime} - ${endDateStr} ${endWeekday} ${endTime}`
     }
   }, [])
 
@@ -535,6 +558,9 @@ export default function TaskPanelOptimized() {
               selectedDate={state.selectedDate}
               onTaskClick={(task) => actions.openFormPanel(task)}
               onTaskDelete={handleDeleteTask}
+              onTaskComplete={(task) => actions.openCompletionModal(task)}
+              onTaskStart={handleTaskStart}
+              onTaskEnd={handleTaskEnd}
               onCreateTask={(date) => {
                 actions.setSelectedDate(date)
                 actions.openFormPanel()
@@ -563,7 +589,6 @@ export default function TaskPanelOptimized() {
                 onTaskClick={(task) => actions.openFormPanel(task)}
                 onTaskDelete={handleDeleteTask}
                 formatTimeRange={formatTimeRange}
-                getStatusIcon={getStatusIcon}
                 getPriorityColor={getPriorityColor}
                 hasTimeConflicts={(task) => hasTimeConflicts(task, state.tasks)}
                 compact={true}
@@ -595,7 +620,7 @@ export default function TaskPanelOptimized() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Completed</span>
-                  <span className="font-semibold text-green-600">
+                  <span className="font-semibold text-purple-600">
                     {filteredTasks.filter(task => task.status === 'Completed').length}
                   </span>
                 </div>
