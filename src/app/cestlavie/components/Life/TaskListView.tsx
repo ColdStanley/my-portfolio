@@ -254,14 +254,13 @@ export default function TaskListView({
               return (
                 <div
                   key={task.id}
-                  className={`group relative p-4 rounded-lg border-2 transition-all duration-200
+                  className={`relative p-4 rounded-lg border-2 transition-all duration-200
                     ${isCompleted 
-                      ? 'border-purple-300 bg-purple-100 hover:bg-purple-150 opacity-75' 
+                      ? 'border-purple-300 bg-purple-100 opacity-75' 
                       : isConflicted
-                      ? 'border-purple-400 bg-purple-100 hover:bg-purple-150'
-                      : 'border-purple-200 bg-purple-50 hover:bg-purple-100 hover:border-purple-300'
-                    }
-                    hover:shadow-md`}
+                      ? 'border-purple-400 bg-purple-100'
+                      : 'border-purple-200 bg-purple-50'
+                    }`}
                 >
                   {/* Status indicator */}
                   <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${
@@ -272,7 +271,7 @@ export default function TaskListView({
                   }`} />
                   
                   <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0 pl-3">
+                    <div className="flex-1 min-w-0 pl-3 pr-4">
                       {/* Title and Status */}
                       <div className="flex items-center gap-3 mb-2">
                         <h3 
@@ -347,86 +346,63 @@ export default function TaskListView({
                       )}
                     </div>
 
-                    {/* Action buttons */}
-                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity ml-4">
-                      {/* Start/End Task Button */}
+                    {/* Action buttons - Always visible vertical layout */}
+                    <div className="flex flex-col gap-1 min-w-[80px] flex-shrink-0">
+                      {/* Task execution buttons */}
                       {!isCompleted && (
                         <>
                           {!task.actual_start ? (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                onTaskStart && onTaskStart(task)
-                              }}
-                              className="p-2 text-purple-600 hover:text-white hover:bg-purple-600 
-                                       rounded-md border border-purple-200 hover:border-purple-600
-                                       transition-all duration-200"
-                              title="Start task"
-                            >
-                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                              </svg>
-                            </button>
+                            <>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onTaskStart && onTaskStart(task)
+                                }}
+                                className="px-3 py-1 text-xs text-purple-600 bg-white border border-purple-200 
+                                         rounded hover:bg-purple-600 hover:text-white hover:border-purple-600
+                                         transition-all duration-200 font-medium"
+                              >
+                                Start Task
+                              </button>
+                              <button
+                                ref={(el) => {
+                                  if (el) timeRecordButtonRefs.current[task.id] = el
+                                }}
+                                onClick={(e) => handleRecordTimeClick(task, e)}
+                                className="px-3 py-1 text-xs text-purple-600 bg-white border border-purple-200 
+                                         rounded hover:bg-purple-600 hover:text-white hover:border-purple-600
+                                         transition-all duration-200 font-medium"
+                              >
+                                Complete
+                              </button>
+                            </>
                           ) : (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
                                 onTaskEnd && onTaskEnd(task)
                               }}
-                              className="p-2 text-purple-600 hover:text-white hover:bg-purple-600 
-                                       rounded-md border border-purple-200 hover:border-purple-600
-                                       transition-all duration-200"
-                              title="End task"
+                              className="px-3 py-1 text-xs text-purple-600 bg-white border border-purple-200 
+                                       rounded hover:bg-purple-600 hover:text-white hover:border-purple-600
+                                       transition-all duration-200 font-medium"
                             >
-                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 012 0v4l2.5 1.5a1 1 0 11-1 1.732L8 12V7z" clipRule="evenodd" />
-                              </svg>
+                              End Task
                             </button>
                           )}
                         </>
                       )}
-
-                      {/* Record Time Button */}
-                      <button
-                        ref={(el) => {
-                          if (el) timeRecordButtonRefs.current[task.id] = el
-                        }}
-                        onClick={(e) => handleRecordTimeClick(task, e)}
-                        className="p-2 text-purple-600 hover:text-white hover:bg-purple-600 
-                                 rounded-md border border-purple-200 hover:border-purple-600
-                                 transition-all duration-200"
-                        title="Record actual time"
-                      >
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                        </svg>
-                      </button>
-
-                      <button
-                        onClick={(e) => handleOutlookClick(task, e)}
-                        className="p-2 text-purple-600 hover:text-white hover:bg-purple-600 
-                                 rounded-md border border-purple-200 hover:border-purple-600
-                                 transition-all duration-200"
-                        title="Add to Outlook Calendar"
-                      >
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                        </svg>
-                      </button>
                       
+                      {/* Common action buttons */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
                           onTaskClick && onTaskClick(task)
                         }}
-                        className="p-2 text-purple-600 hover:text-white hover:bg-purple-600 
-                                 rounded-md border border-purple-200 hover:border-purple-600
-                                 transition-all duration-200"
-                        title="Edit task"
+                        className="px-3 py-1 text-xs text-gray-600 bg-white border border-gray-200 
+                                 rounded hover:bg-gray-100 hover:text-gray-800 hover:border-gray-300
+                                 transition-all duration-200 font-medium"
                       >
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                        </svg>
+                        Edit
                       </button>
                       {onTaskDelete && (
                         <button
@@ -436,14 +412,11 @@ export default function TaskListView({
                               onTaskDelete(task.id)
                             }
                           }}
-                          className="p-2 text-purple-600 hover:text-white hover:bg-purple-600 
-                                   rounded-md border border-purple-200 hover:border-purple-600
-                                   transition-all duration-200"
-                          title="Delete task"
+                          className="px-3 py-1 text-xs text-red-600 bg-white border border-red-200 
+                                   rounded hover:bg-red-600 hover:text-white hover:border-red-600
+                                   transition-all duration-200 font-medium"
                         >
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                          </svg>
+                          Delete
                         </button>
                       )}
                     </div>
