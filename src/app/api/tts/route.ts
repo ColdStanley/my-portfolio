@@ -79,9 +79,12 @@ export async function POST(request: NextRequest) {
     // Get access token
     const accessToken = await getAccessToken()
 
-    // Map language codes
+    // Map language codes and set language-specific speaking rates
     const languageCode = language === 'french' ? 'fr-FR' : 'en-US'
     const voiceName = language === 'french' ? 'fr-FR-Neural2-A' : 'en-US-Neural2-F'
+    
+    // Language-specific speaking rates
+    const speakingRate = language === 'french' ? 0.8 : 1.1
 
     // Call Google Cloud Text-to-Speech API
     const response = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize', {
@@ -98,7 +101,7 @@ export async function POST(request: NextRequest) {
         },
         audioConfig: {
           audioEncoding: 'MP3',
-          speakingRate: 1.0,
+          speakingRate: speakingRate,
           pitch: 0.0,
         },
       }),
