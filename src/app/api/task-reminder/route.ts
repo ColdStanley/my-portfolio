@@ -4,7 +4,7 @@ import EmailService from '@/utils/emailService'
 
 // Initialize Notion client
 const notion = new Client({
-  auth: process.env.NOTION_TOKEN
+  auth: process.env.NOTION_API_KEY
 })
 
 interface NotionTask {
@@ -26,14 +26,14 @@ interface TaskData {
 }
 
 async function getTodaysTasks(): Promise<TaskData[]> {
-  try {
-    // Get today's date in Toronto timezone (YYYY-MM-DD format)
-    const today = new Date()
-    const torontoDate = new Date(today.getTime() - (4 * 60 * 60 * 1000)) // Subtract 4 hours for Toronto timezone
-    const todayString = torontoDate.toISOString().split('T')[0] // "2025-07-24"
+  // Get today's date in Toronto timezone (YYYY-MM-DD format)
+  const today = new Date()
+  const torontoDate = new Date(today.getTime() - (4 * 60 * 60 * 1000)) // Subtract 4 hours for Toronto timezone
+  const todayString = torontoDate.toISOString().split('T')[0] // "2025-07-24"
 
+  try {
     const response = await notion.databases.query({
-      database_id: process.env.NOTION_TASK_DB_ID!,
+      database_id: process.env.NOTION_Tasks_DB_ID!,
       filter: {
         and: [
           {
@@ -70,7 +70,9 @@ async function getTodaysTasks(): Promise<TaskData[]> {
     return tasks
   } catch (error) {
     console.error('Error fetching tasks from Notion:', error)
-    throw new Error('Failed to fetch tasks from Notion')
+    console.error('Database ID used:', process.env.NOTION_Tasks_DB_ID)
+    console.error('Today string:', todayString)
+    throw new Error(`Failed to fetch tasks from Notion: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 
