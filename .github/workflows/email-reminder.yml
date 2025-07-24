@@ -20,7 +20,7 @@ jobs:
       - name: Send Task Reminder Email
         run: |
           # Get your Vercel deployment URL - Update this to your actual domain
-          VERCEL_URL="https://www.stanleyhi.com"
+          VERCEL_URL="https://stanleyhi.com"
           
           # Call the task reminder API
           response=$(curl -s -w "%{http_code}" "$VERCEL_URL/api/task-reminder")
