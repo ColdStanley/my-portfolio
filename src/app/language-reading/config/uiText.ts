@@ -80,6 +80,7 @@ export interface UITexts {
   greatJob: string
   correctAnswer: string
   viewQuery: string
+  backToQuiz: string
   testAgain: string
   
   // AI Assistant
@@ -159,6 +160,7 @@ export const UI_TEXTS: Record<Language, UITexts> = {
     greatJob: 'Great job!',
     correctAnswer: 'Correct answer:',
     viewQuery: 'View Query',
+    backToQuiz: 'Back to Quiz',
     testAgain: 'Test Again',
     
     // AI Assistant
@@ -243,6 +245,7 @@ export const UI_TEXTS: Record<Language, UITexts> = {
     greatJob: 'Excellent travail !',
     correctAnswer: 'Réponse correcte :',
     viewQuery: 'Voir Requête',
+    backToQuiz: 'Retour au Quiz',
     testAgain: 'Tester Encore',
     
     // AI Assistant

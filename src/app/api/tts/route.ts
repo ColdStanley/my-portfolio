@@ -80,8 +80,8 @@ export async function POST(request: NextRequest) {
     const accessToken = await getAccessToken()
 
     // Map language codes and set language-specific speaking rates
-    const languageCode = language === 'french' ? 'fr-FR' : 'en-US'
-    const voiceName = language === 'french' ? 'fr-FR-Neural2-A' : 'en-US-Neural2-F'
+    const languageCode = language === 'french' ? 'fr-FR' : 'en-GB'
+    const voiceName = language === 'french' ? 'fr-FR-Neural2-A' : 'en-GB-Neural2-C'
     
     // Language-specific speaking rates
     const speakingRate = language === 'french' ? 0.8 : 1.1

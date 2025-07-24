@@ -16,6 +16,7 @@ interface AIDialogProps {
   onSaved?: () => void
 }
 
+
 // French text with TTS component
 function FrenchTextWithTTS({ children }: { children: React.ReactNode }) {
   const detectFrenchSentences = (text: string) => {
@@ -143,7 +144,9 @@ export default function AIDialog({
 }: AIDialogProps) {
   const [userPrompt, setUserPrompt] = useState('')
   const [aiResponse, setAiResponse] = useState(initialResponse || '')
+  const [streamingResponse, setStreamingResponse] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isStreaming, setIsStreaming] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [conversationHistory, setConversationHistory] = useState<Array<{question: string, answer: string}>>([])
@@ -163,7 +166,9 @@ export default function AIDialog({
       if (!initialResponse) {
         setAiResponse('')
       }
+      setStreamingResponse('')
       setIsLoading(false)
+      setIsStreaming(false)
       setConversationHistory([])
     }
   }, [isOpen, initialResponse])
@@ -204,6 +209,8 @@ export default function AIDialog({
     if (!userPrompt.trim()) return
 
     setIsLoading(true)
+    setIsStreaming(true)
+    setStreamingResponse('')
     const currentQuestion = userPrompt.trim()
 
     try {
@@ -220,23 +227,65 @@ export default function AIDialog({
       })
 
       if (response.ok) {
-        const data = await response.json()
-        setAiResponse(data.response)
+        const reader = response.body?.getReader()
+        const decoder = new TextDecoder()
         
-        // Add to conversation history
-        setConversationHistory(prev => [...prev, {
-          question: currentQuestion,
-          answer: data.response
-        }])
+        if (!reader) {
+          throw new Error('No response body')
+        }
+
+        let accumulatedResponse = ''
         
-        // Clear input for next question
-        setUserPrompt('')
+        while (true) {
+          const { done, value } = await reader.read()
+          
+          if (done) break
+          
+          const chunk = decoder.decode(value)
+          const lines = chunk.split('\n')
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6).trim()
+              
+              if (data === '[DONE]') {
+                // Stream complete
+                setIsStreaming(false)
+                setAiResponse(accumulatedResponse)
+                
+                // Add to conversation history
+                setConversationHistory(prev => [...prev, {
+                  question: currentQuestion,
+                  answer: accumulatedResponse
+                }])
+                
+                // Clear input for next question
+                setUserPrompt('')
+                return
+              }
+              
+              try {
+                const parsed = JSON.parse(data)
+                if (parsed.content) {
+                  accumulatedResponse += parsed.content
+                  setStreamingResponse(accumulatedResponse)
+                }
+              } catch (e) {
+                // Skip invalid JSON
+                continue
+              }
+            }
+          }
+        }
       } else {
         throw new Error('AI request failed')
       }
     } catch (error) {
       console.error('Ask AI error:', error)
-      setAiResponse('AI服务暂时不可用，请稍后重试。')
+      const errorMessage = 'AI服务暂时不可用，请稍后重试。'
+      setAiResponse(errorMessage)
+      setStreamingResponse(errorMessage)
+      setIsStreaming(false)
     } finally {
       setIsLoading(false)
     }
@@ -387,10 +436,16 @@ export default function AIDialog({
 
           {/* Right side - AI Response (70%) */}
           <div className="w-[70%] p-6 flex flex-col">
-            {aiResponse ? (
+            {(aiResponse || streamingResponse) ? (
               <div className="flex-1 flex flex-col">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-medium text-gray-700">AI Response</h3>
+                  {isStreaming && (
+                    <div className="flex items-center gap-2 text-xs text-purple-600">
+                      <div className="animate-spin w-3 h-3 border-2 border-purple-600 border-t-transparent rounded-full"></div>
+                      <span>AI is responding...</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex-1 max-h-[50vh] overflow-y-auto pb-4 scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-gray-100">
@@ -405,13 +460,21 @@ export default function AIDialog({
                         ul: ({children}) => <ul className="list-disc list-inside my-2 space-y-1">{children}</ul>,
                         ol: ({children}) => <ol className="list-decimal list-inside my-2 space-y-1">{children}</ol>,
                         li: ({children}) => <li className="text-gray-700"><FrenchTextWithTTS>{children}</FrenchTextWithTTS></li>,
-                        p: ({children}) => <p className="mb-2 last:mb-0"><FrenchTextWithTTS>{children}</FrenchTextWithTTS></p>,
+                        p: ({children}) => (
+                          <p className="mb-2 last:mb-0">
+                            <FrenchTextWithTTS>{children}</FrenchTextWithTTS>
+                          </p>
+                        ),
                         code: ({children}) => <code className="bg-purple-50 text-purple-800 px-1 py-0.5 rounded text-xs">{children}</code>,
                         blockquote: ({children}) => <blockquote className="border-l-3 border-purple-300 pl-3 italic text-gray-600"><FrenchTextWithTTS>{children}</FrenchTextWithTTS></blockquote>
                       }}
                     >
-                      {aiResponse}
+                      {isStreaming ? streamingResponse : aiResponse}
                     </ReactMarkdown>
+                    {/* Add cursor at the end for non-paragraph content during streaming */}
+                    {isStreaming && (
+                      <span className="animate-pulse">|</span>
+                    )}
                   </div>
                 </div>
 
@@ -453,17 +516,17 @@ export default function AIDialog({
         <div className="px-6 py-4 bg-purple-50 border-t border-purple-100 rounded-b-xl">
           <div className="flex justify-end items-center text-xs text-gray-500">
             <div className="flex gap-2 items-center">
-              {aiResponse && (
+              {aiResponse && !isStreaming && (
                 <button
                   onClick={handleSaveAI}
-                  disabled={isSaving}
+                  disabled={isSaving || isStreaming}
                   className={`px-4 py-2 text-white text-sm rounded-md transition-colors flex items-center gap-2 ${
                     saveStatus === 'success' 
                       ? 'bg-purple-600 hover:bg-purple-700' 
                       : saveStatus === 'error'
                       ? 'bg-red-600 hover:bg-red-700'
                       : 'bg-purple-600 hover:bg-purple-700'
-                  } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  } ${(isSaving || isStreaming) ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {isSaving ? (
                     <>

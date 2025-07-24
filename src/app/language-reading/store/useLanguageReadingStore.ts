@@ -42,6 +42,11 @@ interface LanguageReadingState {
     end: number
     id: number
   }>
+  pendingWordQueries: Array<{
+    start: number
+    end: number
+    text: string
+  }>
   
   addWordQuery: (query: WordQuery) => void
   addSentenceQuery: (query: SentenceQuery) => void
@@ -53,12 +58,16 @@ interface LanguageReadingState {
   clearAll: () => void
   updateWordNotes: (id: number, notes: string) => void
   updateSentenceNotes: (id: number, notes: string) => void
+  addPendingWordQuery: (start: number, end: number, text: string) => void
+  removePendingWordQuery: (start: number, end: number) => void
+  triggerWordBounce: (start: number, end: number) => void
 }
 
 export const useLanguageReadingStore = create<LanguageReadingState>((set, get) => ({
   wordQueries: [],
   sentenceQueries: [],
   highlightedRanges: [],
+  pendingWordQueries: [],
   
   addWordQuery: (query) => set((state) => ({
     wordQueries: [...state.wordQueries, query]
@@ -164,7 +173,8 @@ export const useLanguageReadingStore = create<LanguageReadingState>((set, get) =
   clearAll: () => set({
     wordQueries: [],
     sentenceQueries: [],
-    highlightedRanges: []
+    highlightedRanges: [],
+    pendingWordQueries: []
   }),
   
   updateWordNotes: (id: number, notes: string) => set((state) => ({
@@ -177,5 +187,26 @@ export const useLanguageReadingStore = create<LanguageReadingState>((set, get) =
     sentenceQueries: state.sentenceQueries.map(q => 
       q.id === id ? { ...q, user_notes: notes } : q
     )
-  }))
+  })),
+
+  addPendingWordQuery: (start: number, end: number, text: string) => set((state) => ({
+    pendingWordQueries: [...state.pendingWordQueries, { start, end, text }]
+  })),
+
+  removePendingWordQuery: (start: number, end: number) => set((state) => ({
+    pendingWordQueries: state.pendingWordQueries.filter(q => 
+      !(q.start === start && q.end === end)
+    )
+  })),
+
+  triggerWordBounce: (start: number, end: number) => {
+    // Trigger bounce animation for word at given position
+    const element = document.querySelector(`[data-word-range="${start}-${end}"]`) as HTMLElement
+    if (element) {
+      element.classList.add('word-bounce')
+      setTimeout(() => {
+        element.classList.remove('word-bounce')
+      }, 500)
+    }
+  }
 }))

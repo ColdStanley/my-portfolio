@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
 请用中文回答，便于中文学习者理解。`
 
-    // Call DeepSeek API
+    // Call DeepSeek API with stream support
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -49,7 +49,8 @@ export async function POST(req: NextRequest) {
         model: 'deepseek-chat',
         messages: [{ role: 'user', content: fullPrompt }],
         temperature: 0.7,
-        max_tokens: 1000
+        max_tokens: 1000,
+        stream: true
       }),
     })
 
@@ -57,12 +58,72 @@ export async function POST(req: NextRequest) {
       throw new Error('DeepSeek API error')
     }
 
-    const result = await response.json()
-    const aiResponse = result.choices?.[0]?.message?.content || 'AI回复获取失败，请重试。'
+    // Create a ReadableStream for SSE
+    const encoder = new TextEncoder()
+    const readableStream = new ReadableStream({
+      async start(controller) {
+        try {
+          const reader = response.body?.getReader()
+          if (!reader) {
+            controller.close()
+            return
+          }
 
-    return NextResponse.json({ 
-      response: aiResponse,
-      success: true 
+          let buffer = ''
+          
+          while (true) {
+            const { done, value } = await reader.read()
+            
+            if (done) {
+              // Send final message to indicate completion
+              controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+              controller.close()
+              break
+            }
+
+            buffer += new TextDecoder().decode(value)
+            const lines = buffer.split('\n')
+            buffer = lines.pop() || ''
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6).trim()
+                
+                if (data === '[DONE]') {
+                  controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+                  controller.close()
+                  return
+                }
+
+                try {
+                  const parsed = JSON.parse(data)
+                  const content = parsed.choices?.[0]?.delta?.content
+                  
+                  if (content) {
+                    // Send the content chunk
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`))
+                  }
+                } catch (e) {
+                  // Skip invalid JSON lines
+                  continue
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Stream processing error:', error)
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: 'Stream processing failed' })}\n\n`))
+          controller.close()
+        }
+      }
+    })
+
+    return new Response(readableStream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
     })
 
   } catch (error) {

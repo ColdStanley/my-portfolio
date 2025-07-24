@@ -84,6 +84,7 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
     queryType: 'word' | 'sentence'
     initialResponse?: string
   }>({ isOpen: false, queryData: null, queryType: 'word' })
+  const [fromQuizQueryId, setFromQuizQueryId] = useState<string | null>(null)
   const uiTexts = getUITexts(language)
 
   // 获取测试题目
@@ -169,9 +170,17 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
   const scrollToQueryCard = (questionId: string | number) => {
     // 移除前缀获取真实的查询ID
     const realId = questionId.toString().replace('sent_', '')
-    const cardElement = document.getElementById(`word-card-${realId}`)
+    
+    // 尝试查找word card或sentence card
+    let cardElement = document.getElementById(`word-card-${realId}`)
+    if (!cardElement) {
+      cardElement = document.getElementById(`sentence-card-${realId}`)
+    }
     
     if (cardElement) {
+      // 记录这是从quiz来的查询
+      setFromQuizQueryId(realId)
+      
       cardElement.scrollIntoView({ 
         behavior: 'smooth', 
         block: 'center' 
@@ -182,6 +191,19 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
       setTimeout(() => {
         cardElement.style.boxShadow = ''
       }, 2000)
+    }
+  }
+
+  // 返回到quiz的函数
+  const scrollBackToQuiz = () => {
+    setFromQuizQueryId(null)
+    // 找到test card并滚动到那里
+    const testCard = document.querySelector('.bg-purple-50.rounded-xl.shadow-lg.border.border-purple-200')
+    if (testCard) {
+      testCard.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+      })
     }
   }
 
@@ -465,23 +487,38 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
                 
                 {/* AI Assistant Section for Sentences */}
                 <div className="mt-4 pt-3 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleAskAI(query, 'sentence')}
-                      className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-sm rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow-md"
-                    >
-                      Ask AI
-                    </button>
-                    {query.ai_notes && (
-                      <Tooltip content={query.ai_notes} position="right">
-                        <button className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 text-purple-700 text-sm rounded-lg hover:bg-purple-100 transition-all duration-200 border border-purple-200">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z"/>
-                            <path d="M6 8h8v2H6V8zm0 4h5v2H6v-2z"/>
-                          </svg>
-                          Notes
-                        </button>
-                      </Tooltip>
+                  <div className="flex gap-2 justify-between items-center">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleAskAI(query, 'sentence')}
+                        className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-sm rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                      >
+                        Ask AI
+                      </button>
+                      {query.ai_notes && (
+                        <Tooltip content={query.ai_notes} position="right">
+                          <button className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 text-purple-700 text-sm rounded-lg hover:bg-purple-100 transition-all duration-200 border border-purple-200">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z"/>
+                              <path d="M6 8h8v2H6V8zm0 4h5v2H6v-2z"/>
+                            </svg>
+                            Notes
+                          </button>
+                        </Tooltip>
+                      )}
+                    </div>
+                    {/* Back to Quiz button - only show if this card was accessed from quiz */}
+                    {isTestMode && fromQuizQueryId === query.id.toString() && (
+                      <button
+                        onClick={scrollBackToQuiz}
+                        className="text-xs text-gray-500 hover:text-purple-600 hover:bg-gray-50 px-2 py-1 rounded transition-all duration-200 flex items-center gap-1"
+                        title="Return to quiz"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        {uiTexts.backToQuiz}
+                      </button>
                     )}
                   </div>
                 </div>
@@ -674,23 +711,38 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
                       
                       {/* AI Assistant Section for Words - Left Column */}
                       <div className="mt-4 pt-3 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleAskAI(query, 'word')}
-                            className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-sm rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow-md"
-                          >
-                            Ask AI
-                          </button>
-                          {query.ai_notes && (
-                            <Tooltip content={query.ai_notes} position="right">
-                              <button className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 text-purple-700 text-sm rounded-lg hover:bg-purple-100 transition-all duration-200 border border-purple-200">
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                  <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z"/>
-                                  <path d="M6 8h8v2H6V8zm0 4h5v2H6v-2z"/>
-                                </svg>
-                                Notes
-                              </button>
-                            </Tooltip>
+                        <div className="flex gap-2 justify-between items-center">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleAskAI(query, 'word')}
+                              className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-sm rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                            >
+                              Ask AI
+                            </button>
+                            {query.ai_notes && (
+                              <Tooltip content={query.ai_notes} position="right">
+                                <button className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 text-purple-700 text-sm rounded-lg hover:bg-purple-100 transition-all duration-200 border border-purple-200">
+                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z"/>
+                                    <path d="M6 8h8v2H6V8zm0 4h5v2H6v-2z"/>
+                                  </svg>
+                                  Notes
+                                </button>
+                              </Tooltip>
+                            )}
+                          </div>
+                          {/* Back to Quiz button - only show if this card was accessed from quiz */}
+                          {isTestMode && fromQuizQueryId === query.id.toString() && (
+                            <button
+                              onClick={scrollBackToQuiz}
+                              className="text-xs text-gray-500 hover:text-purple-600 hover:bg-gray-50 px-2 py-1 rounded transition-all duration-200 flex items-center gap-1"
+                              title="Return to quiz"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                              </svg>
+                              {uiTexts.backToQuiz}
+                            </button>
                           )}
                         </div>
                       </div>
@@ -881,23 +933,38 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
                       
                       {/* AI Assistant Section for Words - Right Column */}
                       <div className="mt-4 pt-3 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleAskAI(query, 'word')}
-                            className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-sm rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow-md"
-                          >
-                            Ask AI
-                          </button>
-                          {query.ai_notes && (
-                            <Tooltip content={query.ai_notes} position="left">
-                              <button className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 text-purple-700 text-sm rounded-lg hover:bg-purple-100 transition-all duration-200 border border-purple-200">
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                  <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z"/>
-                                  <path d="M6 8h8v2H6V8zm0 4h5v2H6v-2z"/>
-                                </svg>
-                                Notes
-                              </button>
-                            </Tooltip>
+                        <div className="flex gap-2 justify-between items-center">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleAskAI(query, 'word')}
+                              className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-sm rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                            >
+                              Ask AI
+                            </button>
+                            {query.ai_notes && (
+                              <Tooltip content={query.ai_notes} position="left">
+                                <button className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 text-purple-700 text-sm rounded-lg hover:bg-purple-100 transition-all duration-200 border border-purple-200">
+                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z"/>
+                                    <path d="M6 8h8v2H6V8zm0 4h5v2H6v-2z"/>
+                                  </svg>
+                                  Notes
+                                </button>
+                              </Tooltip>
+                            )}
+                          </div>
+                          {/* Back to Quiz button - only show if this card was accessed from quiz */}
+                          {isTestMode && fromQuizQueryId === query.id.toString() && (
+                            <button
+                              onClick={scrollBackToQuiz}
+                              className="text-xs text-gray-500 hover:text-purple-600 hover:bg-gray-50 px-2 py-1 rounded transition-all duration-200 flex items-center gap-1"
+                              title="Return to quiz"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                              </svg>
+                              {uiTexts.backToQuiz}
+                            </button>
                           )}
                         </div>
                       </div>

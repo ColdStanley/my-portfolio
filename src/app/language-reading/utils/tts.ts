@@ -39,7 +39,7 @@ const playWithBrowserTTS = (text: string, language: Language, rate: number = 0.8
       speechSynthesis.cancel()
       
       const utterance = new SpeechSynthesisUtterance(text)
-      utterance.lang = language === 'french' ? 'fr-FR' : 'en-US'
+      utterance.lang = language === 'french' ? 'fr-FR' : 'en-GB'
       utterance.rate = rate
       utterance.pitch = 1
       utterance.volume = 1
@@ -58,6 +58,6 @@ const playWithBrowserTTS = (text: string, language: Language, rate: number = 0.8
 // Check if voices are available for the language
 export const checkVoiceAvailability = (language: Language): boolean => {
   const voices = speechSynthesis.getVoices()
-  const langCode = language === 'french' ? 'fr' : 'en'
-  return voices.some(voice => voice.lang.startsWith(langCode))
+  const langCode = language === 'french' ? 'fr' : 'en-GB'
+  return voices.some(voice => voice.lang.startsWith(langCode.split('-')[0]))
 }

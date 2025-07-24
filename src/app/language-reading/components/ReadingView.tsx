@@ -32,7 +32,18 @@ export default function ReadingView({ language, articleId, content, title, onNew
   
   const textRef = useRef<HTMLDivElement>(null)
   const aiNotesRef = useRef<AINotesCardsRef>(null)
-  const { isHighlighted, addWordQuery, addSentenceQuery, addHighlight, wordQueries, sentenceQueries } = useLanguageReadingStore()
+  const { 
+    isHighlighted, 
+    addWordQuery, 
+    addSentenceQuery, 
+    addHighlight, 
+    wordQueries, 
+    sentenceQueries, 
+    pendingWordQueries,
+    addPendingWordQuery,
+    removePendingWordQuery,
+    triggerWordBounce
+  } = useLanguageReadingStore()
 
   const handleAINotesRefresh = useCallback(() => {
     if (aiNotesRef.current) {
@@ -176,14 +187,24 @@ export default function ReadingView({ language, articleId, content, title, onNew
         `
         
         // Add animation keyframes to document
-        if (!document.getElementById('scroll-indicator-styles')) {
+        if (!document.getElementById('reading-view-styles')) {
           const style = document.createElement('style')
-          style.id = 'scroll-indicator-styles'
+          style.id = 'reading-view-styles'
           style.textContent = `
             @keyframes scrollPulse {
               0% { opacity: 0; transform: translateY(-50%) scale(0.8); }
               50% { opacity: 1; transform: translateY(-50%) scale(1.1); }
               100% { opacity: 0; transform: translateY(-50%) scale(0.8); }
+            }
+            @keyframes wordBounce {
+              0% { transform: scale(1); }
+              25% { transform: scale(1.05); background-color: rgba(34, 197, 94, 0.2); }
+              50% { transform: scale(1.1); background-color: rgba(34, 197, 94, 0.3); }
+              75% { transform: scale(1.05); background-color: rgba(34, 197, 94, 0.2); }
+              100% { transform: scale(1); background-color: initial; }
+            }
+            .word-bounce {
+              animation: wordBounce 0.5s ease-in-out;
             }
           `
           document.head.appendChild(style)
@@ -237,6 +258,17 @@ export default function ReadingView({ language, articleId, content, title, onNew
   const handleQuery = async (type: 'word' | 'sentence') => {
     if (!selectionData || isLoading) return
 
+    // Save selection data before potentially clearing it
+    const savedSelectionData = { ...selectionData }
+
+    // For word queries, add pending state, remove auto-scroll, and immediately hide tooltip
+    if (type === 'word') {
+      addPendingWordQuery(savedSelectionData.range.start, savedSelectionData.range.end, savedSelectionData.text)
+      // Immediately hide tooltip to allow continued reading
+      setSelectionData(null)
+      window.getSelection()?.removeAllRanges()
+    }
+
     setIsLoading(true)
     try {
       const endpoint = type === 'word' ? 'query-word' : 'query-sentence'
@@ -245,9 +277,9 @@ export default function ReadingView({ language, articleId, content, title, onNew
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           articleId,
-          [type === 'word' ? 'wordText' : 'sentenceText']: selectionData.text,
-          startOffset: selectionData.range.start,
-          endOffset: selectionData.range.end,
+          [type === 'word' ? 'wordText' : 'sentenceText']: savedSelectionData.text,
+          startOffset: savedSelectionData.range.start,
+          endOffset: savedSelectionData.range.end,
           queryType: 'ai_query',
           language: language
         }),
@@ -257,20 +289,33 @@ export default function ReadingView({ language, articleId, content, title, onNew
       if (data.id) {
         if (type === 'word') {
           addWordQuery(data)
+          // Remove pending state and trigger bounce
+          removePendingWordQuery(savedSelectionData.range.start, savedSelectionData.range.end)
+          // Trigger bounce after a short delay to ensure DOM is updated
+          setTimeout(() => {
+            triggerWordBounce(savedSelectionData.range.start, savedSelectionData.range.end)
+          }, 100)
         } else {
           addSentenceQuery(data)
+          // Keep auto-scroll for sentences
+          const cardId = `sentence-card-${data.id}`
+          scrollToCard(cardId)
         }
-        addHighlight(type, selectionData.range.start, selectionData.range.end, data.id)
-        
-        const cardId = type === 'word' ? `word-card-${data.id}` : `sentence-card-${data.id}`
-        scrollToCard(cardId)
+        addHighlight(type, savedSelectionData.range.start, savedSelectionData.range.end, data.id)
       }
     } catch (error) {
       console.error('Query failed:', error)
+      // Remove pending state on error
+      if (type === 'word') {
+        removePendingWordQuery(savedSelectionData.range.start, savedSelectionData.range.end)
+      }
     } finally {
       setIsLoading(false)
-      setSelectionData(null)
-      window.getSelection()?.removeAllRanges()
+      // Only clear selection data for sentence queries (word queries already cleared)
+      if (type === 'sentence') {
+        setSelectionData(null)
+        window.getSelection()?.removeAllRanges()
+      }
     }
   }
 
@@ -326,8 +371,9 @@ export default function ReadingView({ language, articleId, content, title, onNew
 
   const renderHighlightedText = () => {
     const ranges = useLanguageReadingStore.getState().highlightedRanges
+    const pendingQueries = useLanguageReadingStore.getState().pendingWordQueries
     
-    if (ranges.length === 0) {
+    if (ranges.length === 0 && pendingQueries.length === 0) {
       return content.split('\n').map((paragraph, index) => (
         paragraph.trim() ? (
           <p key={index} className="mb-4 leading-relaxed">
@@ -339,13 +385,26 @@ export default function ReadingView({ language, articleId, content, title, onNew
       ))
     }
 
+    // Add pending queries to the ranges for rendering
+    const allRanges = [...ranges]
+    pendingQueries.forEach(pending => {
+      allRanges.push({
+        type: 'word' as const,
+        start: pending.start,
+        end: pending.end,
+        id: -1, // Special ID for pending queries
+        isPending: true
+      })
+    })
+
     // Restore simple range merging (avoiding complex HTML generation)
-    const sortedRanges = [...ranges].sort((a, b) => a.start - b.start)
+    const sortedRanges = [...allRanges].sort((a, b) => a.start - b.start)
     const mergedRanges: Array<{
       start: number
       end: number
       types: Array<'word' | 'sentence'>
       ids: number[]
+      isPending?: boolean
     }> = []
 
     sortedRanges.forEach(range => {
@@ -357,13 +416,19 @@ export default function ReadingView({ language, articleId, content, title, onNew
         if (!lastMerged.types.includes(range.type)) {
           lastMerged.types.push(range.type)
         }
-        lastMerged.ids.push(range.id)
+        if (range.id !== -1) {
+          lastMerged.ids.push(range.id)
+        }
+        if ((range as any).isPending) {
+          lastMerged.isPending = true
+        }
       } else {
         mergedRanges.push({
           start: range.start,
           end: range.end,
           types: [range.type],
-          ids: [range.id]
+          ids: range.id !== -1 ? [range.id] : [],
+          isPending: (range as any).isPending
         })
       }
     })
@@ -376,20 +441,30 @@ export default function ReadingView({ language, articleId, content, title, onNew
       
       const hasBoth = range.types.includes('word') && range.types.includes('sentence')
       const hasSentence = range.types.includes('sentence')
+      const hasWord = range.types.includes('word')
       
       let className = ''
-      if (hasBoth) {
+      let extraAttributes = ''
+      
+      if (range.isPending && hasWord) {
+        // Pending word query - add pulsing animation with purple theme
+        className = 'inline-block px-2 py-1 rounded-lg bg-purple-100/30 text-purple-800 backdrop-blur-xs shadow-sm cursor-pointer animate-pulse border-2 border-purple-300/50'
+        extraAttributes = ` data-word-range="${range.start}-${range.end}"`
+      } else if (hasBoth) {
         className = 'inline-block px-2 py-1 rounded-lg bg-purple-100/20 text-purple-800 backdrop-blur-xs shadow-sm transition-all duration-200 ease-in-out hover:bg-purple-200/30 hover:shadow-md hover:scale-[1.005] cursor-pointer font-bold'
+        extraAttributes = ` data-word-range="${range.start}-${range.end}"`
       } else if (hasSentence) {
         className = 'font-bold cursor-pointer transition-all duration-200 ease-in-out hover:text-blue-800'
-      } else {
+      } else if (hasWord) {
         className = 'inline-block px-2 py-1 rounded-lg bg-purple-100/20 text-purple-800 backdrop-blur-xs shadow-sm transition-all duration-200 ease-in-out hover:bg-purple-200/30 hover:shadow-md hover:scale-[1.005] cursor-pointer'
+        extraAttributes = ` data-word-range="${range.start}-${range.end}"`
       }
       
-      // Add query IDs for bidirectional mapping
-      const queryIds = JSON.stringify(range.ids)
+      // Add query IDs for bidirectional mapping (only for non-pending queries)
+      const queryIds = range.ids.length > 0 ? JSON.stringify(range.ids) : '[]'
+      const queryIdsAttr = range.ids.length > 0 ? ` data-query-ids='${queryIds}'` : ''
       
-      result += `<span class="${className}" data-query-ids='${queryIds}'>${content.slice(range.start, range.end)}</span>`
+      result += `<span class="${className}"${queryIdsAttr}${extraAttributes}>${content.slice(range.start, range.end)}</span>`
       
       lastIndex = range.end
     })
