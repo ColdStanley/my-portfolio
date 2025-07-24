@@ -2,15 +2,7 @@
   "crons": [
     {
       "path": "/api/task-reminder",
-      "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/task-reminder",
-      "schedule": "0 13 * * *"
-    },
-    {
-      "path": "/api/task-reminder",
-      "schedule": "0 18 * * *"
+      "schedule": "0 8,13,18 * * *"
     }
   ]
 }
