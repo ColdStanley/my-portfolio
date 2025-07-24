@@ -369,24 +369,47 @@ export default function TaskPanelOptimized() {
   }, [actions])
 
   const handleTaskCopy = useCallback((task: any) => {
-    // Calculate next day at the same time
-    const originalStartDate = new Date(task.start_date)
-    const originalEndDate = new Date(task.end_date)
+    // Parse the original Toronto timezone dates
+    // Format: "2025-07-24T09:00:00-04:00"
+    const parseTorontoDate = (dateStr: string) => {
+      if (!dateStr) return null
+      // Extract date and time parts, ignoring timezone
+      const [datePart, timePart] = dateStr.split('T')
+      const [year, month, day] = datePart.split('-').map(Number)
+      const [hour, minute] = timePart.split(':').map(Number)
+      
+      return new Date(year, month - 1, day, hour, minute)
+    }
     
-    // Add one day
-    const nextDayStart = new Date(originalStartDate)
+    const originalStart = parseTorontoDate(task.start_date)
+    const originalEnd = parseTorontoDate(task.end_date)
+    
+    if (!originalStart || !originalEnd) return
+    
+    // Add one day while keeping the same time
+    const nextDayStart = new Date(originalStart)
     nextDayStart.setDate(nextDayStart.getDate() + 1)
     
-    const nextDayEnd = new Date(originalEndDate)
+    const nextDayEnd = new Date(originalEnd)
     nextDayEnd.setDate(nextDayEnd.getDate() + 1)
+    
+    // Format back to Toronto timezone format
+    const formatTorontoDate = (date: Date) => {
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const hour = String(date.getHours()).padStart(2, '0')
+      const minute = String(date.getMinutes()).padStart(2, '0')
+      return `${year}-${month}-${day}T${hour}:${minute}:00-04:00`
+    }
     
     // Create a copy of the task with new dates and reset status
     const copiedTask = {
       ...task,
       id: undefined, // Remove id so it creates a new task
       title: `${task.title} (Copy)`,
-      start_date: nextDayStart.toISOString(),
-      end_date: nextDayEnd.toISOString(),
+      start_date: formatTorontoDate(nextDayStart),
+      end_date: formatTorontoDate(nextDayEnd),
       status: 'Not Started',
       actual_start: undefined,
       actual_end: undefined,
