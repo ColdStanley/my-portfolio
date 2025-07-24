@@ -24,6 +24,12 @@ interface PlanOption {
   title: string
   budget_money?: number
   budget_time?: number
+  parent_goal?: string[]
+}
+
+interface StrategyOption {
+  id: string
+  objective: string
 }
 
 // State interface
@@ -33,6 +39,7 @@ export interface TaskState {
   statusOptions: string[]
   priorityOptions: string[]
   planOptions: PlanOption[]
+  strategyOptions: StrategyOption[]
   
   // UI State
   loading: boolean
@@ -78,6 +85,7 @@ export type TaskAction =
   | { type: 'SET_STATUS_OPTIONS'; payload: string[] }
   | { type: 'SET_PRIORITY_OPTIONS'; payload: string[] }
   | { type: 'SET_PLAN_OPTIONS'; payload: PlanOption[] }
+  | { type: 'SET_STRATEGY_OPTIONS'; payload: StrategyOption[] }
   | { type: 'OPEN_FORM_PANEL'; payload?: TaskRecord }
   | { type: 'CLOSE_FORM_PANEL' }
   | { type: 'SET_SELECTED_STATUS'; payload: string }
@@ -98,6 +106,7 @@ const createInitialState = (): TaskState => ({
   statusOptions: [],
   priorityOptions: [],
   planOptions: [],
+  strategyOptions: [],
   loading: true,
   error: null,
   refreshing: false,
@@ -157,6 +166,9 @@ export const taskReducer = (state: TaskState, action: TaskAction): TaskState => 
     
     case 'SET_PLAN_OPTIONS':
       return { ...state, planOptions: action.payload }
+    
+    case 'SET_STRATEGY_OPTIONS':
+      return { ...state, strategyOptions: action.payload }
     
     case 'OPEN_FORM_PANEL':
       return {
@@ -257,6 +269,9 @@ export const useTaskReducer = () => {
     
     setPlanOptions: useCallback((options: PlanOption[]) => 
       dispatch({ type: 'SET_PLAN_OPTIONS', payload: options }), []),
+    
+    setStrategyOptions: useCallback((options: StrategyOption[]) => 
+      dispatch({ type: 'SET_STRATEGY_OPTIONS', payload: options }), []),
     
     openFormPanel: useCallback((task?: TaskRecord) => 
       dispatch({ type: 'OPEN_FORM_PANEL', payload: task }), []),

@@ -28,6 +28,17 @@ interface TaskRecord {
   is_plan_critical?: boolean
 }
 
+interface PlanOption {
+  id: string
+  title: string
+  parent_goal?: string[]
+}
+
+interface StrategyOption {
+  id: string
+  objective: string
+}
+
 interface TaskListViewProps {
   tasks: TaskRecord[]
   selectedDate: string
@@ -49,6 +60,8 @@ interface TaskListViewProps {
   formatTimeRange?: (startDate: string, endDate?: string) => string
   getPriorityColor?: (priority: string) => string
   hasTimeConflicts?: (task: TaskRecord) => boolean
+  planOptions?: PlanOption[]
+  strategyOptions?: StrategyOption[]
 }
 
 export default function TaskListView({ 
@@ -63,7 +76,9 @@ export default function TaskListView({
   onRecordTime,
   formatTimeRange,
   getPriorityColor,
-  hasTimeConflicts
+  hasTimeConflicts,
+  planOptions = [],
+  strategyOptions = []
 }: TaskListViewProps) {
   const [extensionModal, setExtensionModal] = useState<{
     isOpen: boolean
@@ -400,26 +415,67 @@ export default function TaskListView({
 
                       {/* Status and Priority Labels */}
                       <div className="flex items-center gap-2">
-                        <span className={`px-3 py-1.5 text-xs rounded-full font-medium transition-all duration-200 hover:scale-105 hover:shadow-sm ${
-                          isCompleted ? 'bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-700 shadow-emerald-100/50' :
-                          task.status === 'In Progress' ? 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-700 shadow-blue-100/50' :
-                          task.status === 'On Hold' ? 'bg-gradient-to-r from-amber-100 to-amber-200 text-amber-700 shadow-amber-100/50' :
-                          task.status === 'Not Started' ? 'bg-gradient-to-r from-purple-100 to-purple-200 text-purple-700 shadow-purple-100/50' :
-                          'bg-gradient-to-r from-purple-100 to-purple-200 text-purple-700 shadow-purple-100/50'
-                        }`}>
+                        <span className="px-3 py-1.5 text-xs rounded-full font-medium transition-all duration-200 hover:scale-105 hover:shadow-sm bg-gradient-to-r from-purple-100 to-purple-200 text-purple-700 shadow-purple-100/50">
                           {task.status}
                         </span>
 
                         {task.priority_quadrant && (
-                          <span className={`px-3 py-1.5 text-xs rounded-full font-medium transition-all duration-200 hover:scale-105 hover:shadow-sm ${
-                            task.priority_quadrant.includes('Important & Urgent') ? 'bg-gradient-to-r from-rose-100 to-rose-200 text-rose-700 shadow-rose-100/50' :
-                            task.priority_quadrant.includes('Important & Not Urgent') ? 'bg-gradient-to-r from-orange-100 to-orange-200 text-orange-700 shadow-orange-100/50' :
-                            task.priority_quadrant.includes('Not Important & Urgent') ? 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-700 shadow-yellow-100/50' :
-                            'bg-gradient-to-r from-slate-100 to-slate-200 text-slate-700 shadow-slate-100/50'
-                          }`}>
+                          <span className="px-3 py-1.5 text-xs rounded-full font-medium transition-all duration-200 hover:scale-105 hover:shadow-sm bg-gradient-to-r from-purple-100 to-purple-200 text-purple-700 shadow-purple-100/50">
                             {task.priority_quadrant}
                           </span>
                         )}
+                      </div>
+
+                      {/* Strategy and Plan Labels - Separate Row */}
+                      <div className="flex items-center gap-2 mt-2">
+                        {/* Strategy Label - First */}
+                        {task.plan && task.plan[0] && (() => {
+                          const plan = planOptions.find(p => p.id === task.plan[0])
+                          if (plan && plan.parent_goal && plan.parent_goal[0]) {
+                            const strategy = strategyOptions.find(s => s.id === plan.parent_goal[0])
+                            if (strategy) {
+                              return (
+                                <>
+                                  <span 
+                                    className="px-3 py-1.5 text-xs rounded-full font-medium transition-all duration-200 hover:scale-105 hover:shadow-sm bg-gradient-to-r from-violet-100 to-violet-200 text-violet-700 shadow-violet-100/50 cursor-pointer hover:underline"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      const notionPageUrl = `https://www.notion.so/${strategy.id.replace(/-/g, '')}`
+                                      window.open(notionPageUrl, '_blank')
+                                    }}
+                                    title="Click to edit in Notion"
+                                  >
+                                    {strategy.objective}
+                                  </span>
+                                  {/* Arrow connector */}
+                                  <span className="text-violet-400 text-xs">→</span>
+                                </>
+                              )
+                            }
+                          }
+                          return null
+                        })()}
+
+                        {/* Plan Label - Second */}
+                        {task.plan && task.plan[0] && (() => {
+                          const plan = planOptions.find(p => p.id === task.plan[0])
+                          if (plan) {
+                            return (
+                              <span 
+                                className="px-3 py-1.5 text-xs rounded-full font-medium transition-all duration-200 hover:scale-105 hover:shadow-sm bg-gradient-to-r from-violet-100 to-violet-200 text-violet-700 shadow-violet-100/50 cursor-pointer hover:underline"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const notionPageUrl = `https://www.notion.so/${plan.id.replace(/-/g, '')}`
+                                  window.open(notionPageUrl, '_blank')
+                                }}
+                                title="Click to edit in Notion"
+                              >
+                                {plan.title}
+                              </span>
+                            )
+                          }
+                          return null
+                        })()}
                       </div>
                     </div>
 

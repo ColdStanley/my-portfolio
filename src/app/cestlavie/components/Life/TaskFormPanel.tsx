@@ -39,6 +39,12 @@ interface PlanOption {
   id: string
   title: string
   budget_money?: number
+  parent_goal?: string[]
+}
+
+interface StrategyOption {
+  id: string
+  objective: string
 }
 
 interface TaskFormPanelProps {
@@ -49,6 +55,7 @@ interface TaskFormPanelProps {
   statusOptions: string[]
   priorityOptions: string[]
   planOptions: PlanOption[]
+  strategyOptions: StrategyOption[]
   allTasks: TaskRecord[]
 }
 
@@ -106,6 +113,7 @@ export default function TaskFormPanel({
   statusOptions, 
   priorityOptions, 
   planOptions, 
+  strategyOptions,
   allTasks 
 }: TaskFormPanelProps) {
   const [formData, setFormData] = useState<TaskFormData>({
@@ -253,6 +261,24 @@ export default function TaskFormPanel({
               ))}
             </select>
             <p className="text-xs text-gray-500 mt-1">Each task must belong to a plan</p>
+            
+            {/* Show related Strategy when Plan is selected */}
+            {formData.plan[0] && (() => {
+              const selectedPlan = planOptions.find(plan => plan.id === formData.plan[0])
+              if (selectedPlan && selectedPlan.parent_goal && selectedPlan.parent_goal.length > 0) {
+                const strategyId = selectedPlan.parent_goal[0]
+                const strategy = strategyOptions.find(s => s.id === strategyId)
+                if (strategy) {
+                  return (
+                    <div className="mt-2 p-2 bg-purple-50 rounded-lg border border-purple-200">
+                      <div className="text-xs font-medium text-purple-700 mb-1">Related Strategy:</div>
+                      <div className="text-sm text-purple-600">{strategy.objective}</div>
+                    </div>
+                  )
+                }
+              }
+              return null
+            })()}
             
           </div>
 

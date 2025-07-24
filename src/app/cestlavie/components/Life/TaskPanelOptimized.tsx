@@ -143,10 +143,11 @@ export default function TaskPanelOptimized() {
         }
         
         // Fetch data with error handling and fallbacks
-        const [tasksRes, schemaRes, planRes] = await Promise.allSettled([
+        const [tasksRes, schemaRes, planRes, strategyRes] = await Promise.allSettled([
           fetchWithTimeout('/api/tasks'),
           fetchWithTimeout('/api/tasks?action=schema'),
-          fetchWithTimeout('/api/plan')
+          fetchWithTimeout('/api/plan'),
+          fetchWithTimeout('/api/strategy')
         ])
         
         // Handle tasks data
@@ -189,12 +190,13 @@ export default function TaskPanelOptimized() {
           try {
             const planResult = await planRes.value.json()
             const rawPlans = planResult.data || []
-            // Map plan data to ensure consistent field naming
+            // Map plan data to ensure consistent field naming and include parent_goal
             planOptions = rawPlans.map((plan: any) => ({
               id: plan.id,
               title: plan.objective || 'Untitled Plan',
               budget_money: plan.budget_money || 0,
-              budget_time: plan.budget_time || 0
+              budget_time: plan.budget_time || 0,
+              parent_goal: plan.parent_goal || []
             }))
           } catch (err) {
             console.warn('Failed to parse plans data:', err)
@@ -202,15 +204,34 @@ export default function TaskPanelOptimized() {
         } else {
           console.warn('Failed to fetch plans:', planRes.status === 'rejected' ? planRes.reason : 'Request failed')
         }
+
+        // Handle strategies data
+        let strategyOptions: any[] = []
+        if (strategyRes.status === 'fulfilled' && strategyRes.value.ok) {
+          try {
+            const strategyResult = await strategyRes.value.json()
+            const rawStrategies = strategyResult.data || []
+            // Map strategy data
+            strategyOptions = rawStrategies.map((strategy: any) => ({
+              id: strategy.id,
+              objective: strategy.objective || 'Untitled Strategy'
+            }))
+          } catch (err) {
+            console.warn('Failed to parse strategies data:', err)
+          }
+        } else {
+          console.warn('Failed to fetch strategies:', strategyRes.status === 'rejected' ? strategyRes.reason : 'Request failed')
+        }
         
         // Set data even if some requests failed
         actions.setTasks(tasks)
         actions.setStatusOptions(statusOptions)
         actions.setPriorityOptions(priorityOptions)
         actions.setPlanOptions(planOptions)
+        actions.setStrategyOptions(strategyOptions)
         
         // Show warning if some data is missing but don't block the UI
-        const failedRequests = [tasksRes, schemaRes, planRes].filter(res => res.status === 'rejected').length
+        const failedRequests = [tasksRes, schemaRes, planRes, strategyRes].filter(res => res.status === 'rejected').length
         if (failedRequests > 0) {
           setToast({ 
             message: `${failedRequests} data source(s) failed to load. Some features may be limited.`, 
@@ -654,6 +675,8 @@ export default function TaskPanelOptimized() {
               formatTimeRange={formatTimeRange}
               getPriorityColor={getPriorityColor}
               hasTimeConflicts={(task) => hasTimeConflicts(task, state.tasks)}
+              planOptions={state.planOptions}
+              strategyOptions={state.strategyOptions}
             />
           </div>
         </div>
@@ -667,6 +690,7 @@ export default function TaskPanelOptimized() {
           statusOptions={state.statusOptions}
           priorityOptions={state.priorityOptions}
           planOptions={state.planOptions}
+          strategyOptions={state.strategyOptions}
           allTasks={state.tasks}
         />
 
