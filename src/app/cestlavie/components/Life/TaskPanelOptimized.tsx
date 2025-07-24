@@ -256,7 +256,6 @@ export default function TaskPanelOptimized() {
       }
       
       actions.updateTask(updatedTask)
-      setToast({ message: 'Task started successfully', type: 'success' })
       
     } catch (error) {
       console.error('Error starting task:', error)
@@ -294,7 +293,6 @@ export default function TaskPanelOptimized() {
       }
       
       actions.updateTask(updatedTask)
-      setToast({ message: 'Task completed successfully', type: 'success' })
       
     } catch (error) {
       console.error('Error ending task:', error)
@@ -339,7 +337,6 @@ export default function TaskPanelOptimized() {
       }
       
       actions.updateTask(updatedTask)
-      setToast({ message: endTime ? 'Task completed successfully' : 'Time recorded successfully', type: 'success' })
       
     } catch (error) {
       console.error('Error recording time:', error)
@@ -382,12 +379,10 @@ export default function TaskPanelOptimized() {
         // For updates, we need to refresh the task data or construct it
         const updatedTask = { ...state.editingTask, ...taskData, id: state.editingTask!.id }
         actions.updateTask(updatedTask)
-        setToast({ message: 'Task updated successfully', type: 'success' })
       } else {
         // For new tasks, construct the task object with the returned ID
         const newTask = { ...taskData, id: result.id }
         actions.addTask(newTask)
-        setToast({ message: 'Task created successfully', type: 'success' })
       }
       
       actions.closeFormPanel()
@@ -423,7 +418,6 @@ export default function TaskPanelOptimized() {
       }
       
       actions.deleteTask(taskId)
-      setToast({ message: 'Task deleted successfully', type: 'success' })
       
     } catch (error) {
       console.error('Error deleting task:', error)
@@ -447,7 +441,6 @@ export default function TaskPanelOptimized() {
       const result = await response.json()
       const tasks = result.data || []
       actions.setTasks(tasks)
-      setToast({ message: 'Tasks refreshed successfully', type: 'success' })
       
     } catch (error) {
       console.error('Error refreshing tasks:', error)
@@ -587,36 +580,13 @@ export default function TaskPanelOptimized() {
 
         {/* Main Content Layout - Task-Centric Design */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Task List (Main Hero) */}
-          <div className="lg:col-span-2">
-            <TaskListView
-              tasks={filteredTasks}
-              selectedDate={state.selectedDate}
-              onTaskClick={(task) => actions.openFormPanel(task)}
-              onTaskDelete={handleDeleteTask}
-              onTaskComplete={(task) => actions.openCompletionModal(task)}
-              onTaskStart={handleTaskStart}
-              onTaskEnd={handleTaskEnd}
-              onRecordTime={handleRecordTime}
-              onCreateTask={(date) => {
-                actions.setSelectedDate(date)
-                actions.openFormPanel()
-              }}
-              formatTimeRange={formatTimeRange}
-              getPriorityColor={getPriorityColor}
-              hasTimeConflicts={(task) => hasTimeConflicts(task, state.tasks)}
-            />
-          </div>
-
-          {/* Right Column - Calendar & Stats */}
+          {/* Left Column - Calendar & Stats */}
           <div className="space-y-6">
             {/* Compact Calendar */}
-            <div className="bg-white rounded-lg border border-purple-200">
-              <div className="p-4 border-b border-purple-200">
-                <h3 className="text-lg font-semibold text-purple-900">Calendar Overview</h3>
-                <p className="text-sm text-purple-600">Select date to view tasks</p>
-              </div>
-              <TaskCalendarView
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-purple-500">Calendar Overview</h3>
+              <div className="bg-white rounded-lg border border-purple-200">
+                <TaskCalendarView
                 tasks={filteredTasks}
                 currentMonth={state.currentMonth}
                 selectedDate={state.selectedDate}
@@ -630,11 +600,12 @@ export default function TaskPanelOptimized() {
                 hasTimeConflicts={(task) => hasTimeConflicts(task, state.tasks)}
                 compact={true}
               />
+              </div>
             </div>
 
             {/* Quick Stats */}
             <div className="bg-white rounded-lg border border-purple-200 p-4">
-              <h3 className="text-lg font-semibold text-purple-900 mb-4">Quick Stats</h3>
+              <h3 className="text-lg font-semibold text-purple-500 mb-4">Quick Stats</h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Today's Tasks</span>
@@ -663,6 +634,27 @@ export default function TaskPanelOptimized() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Right Column - Task List (Main Hero) */}
+          <div className="lg:col-span-2">
+            <TaskListView
+              tasks={filteredTasks}
+              selectedDate={state.selectedDate}
+              onTaskClick={(task) => actions.openFormPanel(task)}
+              onTaskDelete={handleDeleteTask}
+              onTaskComplete={(task) => actions.openCompletionModal(task)}
+              onTaskStart={handleTaskStart}
+              onTaskEnd={handleTaskEnd}
+              onRecordTime={handleRecordTime}
+              onCreateTask={(date) => {
+                actions.setSelectedDate(date)
+                actions.openFormPanel()
+              }}
+              formatTimeRange={formatTimeRange}
+              getPriorityColor={getPriorityColor}
+              hasTimeConflicts={(task) => hasTimeConflicts(task, state.tasks)}
+            />
           </div>
         </div>
 

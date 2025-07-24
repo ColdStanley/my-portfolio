@@ -193,10 +193,10 @@ export default function TaskCalendarView({
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-px bg-gray-200">
+      <div className="grid grid-cols-7 gap-1">
         {/* Weekday Headers */}
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-          <div key={day} className="bg-purple-50 p-2 text-center text-sm font-medium text-purple-700">
+          <div key={day} className="text-center text-sm font-medium text-purple-500 py-2">
             {day}
           </div>
         ))}
@@ -205,77 +205,44 @@ export default function TaskCalendarView({
         {calendarDays.map(({ date, isCurrentMonth, dateString }) => {
           const dayTasks = getTasksForDate(dateString)
           const isSelected = selectedDate === dateString
-          const todayClass = isToday(dateString) ? 'bg-purple-100 font-semibold' : ''
-          const selectedClass = isSelected ? 'ring-2 ring-purple-500' : ''
-          const monthClass = isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
+          const isCurrentDay = isToday(dateString)
           
           return (
             <div
               key={dateString}
-              className={`bg-white p-2 ${compact ? 'min-h-[60px]' : 'min-h-[120px]'} cursor-pointer hover:bg-purple-50 transition-colors ${todayClass} ${selectedClass} flex flex-col`}
+              className={`
+                relative h-12 cursor-pointer transition-colors duration-200 rounded-lg
+                ${isSelected 
+                  ? 'bg-purple-500 text-white' 
+                  : isCurrentDay 
+                  ? 'bg-purple-100 text-purple-700'
+                  : 'hover:bg-gray-50'
+                }
+              `}
               onClick={() => onDateSelect(dateString)}
             >
-              <div className={`text-sm ${monthClass} mb-1`}>
-                {date.getDate()}
+              {/* 日期数字 - 居中 */}
+              <div className="flex items-center justify-center h-full">
+                <span className={`text-sm ${
+                  isCurrentMonth ? '' : 'text-gray-400'
+                }`}>
+                  {date.getDate()}
+                </span>
               </div>
               
-              {/* Task indicators - different rendering for compact mode */}
-              {compact ? (
-                // Compact mode: only show task count
-                <div className="flex-1 flex items-center justify-center">
-                  {dayTasks.length > 0 && (
-                    <div className="bg-purple-100 text-purple-800 text-xs font-medium px-2 py-1 rounded-full">
-                      {dayTasks.length}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                // Full mode: show task details
-                <div className="flex-1 space-y-0.5">
-                  {dayTasks.slice(0, 4).map(task => {
-                    const isConflicted = hasTimeConflicts && hasTimeConflicts(task)
-                    return (
-                      <div
-                        key={task.id}
-                        className={`text-xs p-1.5 rounded truncate cursor-pointer transition-colors ${
-                          task.status === 'Completed' 
-                            ? 'bg-purple-200 text-purple-800 hover:bg-purple-300 opacity-75' 
-                            : task.status === 'In Progress'
-                            ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                            : 'bg-purple-50 text-purple-700 hover:bg-purple-100'
-                        } ${isConflicted ? 'border border-purple-400' : ''}`}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onTaskClick && onTaskClick(task)
-                        }}
-                        title={`${task.title} - ${task.status}`}
-                      >
-                        <div className="flex items-center gap-1 mb-0.5">
-                          <span className="truncate text-xs font-medium">
-                            {task.title}
-                          </span>
-                          {task.priority_quadrant && getPriorityColor && (
-                            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                              task.priority_quadrant.includes('Important & Urgent') ? 'bg-purple-700' :
-                              task.priority_quadrant.includes('Important & Not Urgent') ? 'bg-purple-600' :
-                              task.priority_quadrant.includes('Not Important & Urgent') ? 'bg-purple-500' :
-                              'bg-purple-400'
-                            }`} />
-                          )}
-                        </div>
-                        {(task.start_date || task.end_date) && (
-                          <div className="text-xs text-purple-600 opacity-75">
-                            {formatTimeOnly(task.start_date, task.end_date)}
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                  {dayTasks.length > 4 && (
-                    <div className="text-xs text-purple-500 text-center">
-                      +{dayTasks.length - 4} more
-                    </div>
-                  )}
+              {/* 任务数 - 左上角小标识 */}
+              {dayTasks.length > 0 && (
+                <div className="absolute top-1 left-1">
+                  <div className={`
+                    w-4 h-4 rounded-full text-xs font-medium
+                    flex items-center justify-center
+                    ${isSelected 
+                      ? 'bg-white text-purple-500' 
+                      : 'bg-purple-500 text-white'
+                    }
+                  `}>
+                    {dayTasks.length}
+                  </div>
                 </div>
               )}
             </div>

@@ -152,8 +152,35 @@ export default function TaskListView({
     // Format start and end dates for Outlook
     const formatDateForOutlook = (dateStr: string) => {
       if (!dateStr) return ''
-      const date = new Date(dateStr)
-      return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+      
+      // Manual parsing of Toronto time format: "2024-07-24T09:00:00-04:00"
+      // Extract date and time parts
+      const [datePart, timePart] = dateStr.split('T')
+      const [year, month, day] = datePart.split('-')
+      const [hour, minute, second] = timePart.replace('-04:00', '').replace('.000', '').split(':')
+      
+      // Convert Toronto time to UTC (add 4 hours)
+      const torontoDate = new Date(
+        parseInt(year), 
+        parseInt(month) - 1, // month is 0-indexed
+        parseInt(day), 
+        parseInt(hour), 
+        parseInt(minute), 
+        parseInt(second)
+      )
+      
+      // Add 4 hours to convert Toronto (-04:00) to UTC
+      const utcDate = new Date(torontoDate.getTime() + (4 * 60 * 60 * 1000))
+      
+      // Format as Outlook expects: YYYYMMDDTHHMMSSZ
+      const utcYear = utcDate.getFullYear()
+      const utcMonth = String(utcDate.getMonth() + 1).padStart(2, '0')
+      const utcDay = String(utcDate.getDate()).padStart(2, '0')
+      const utcHour = String(utcDate.getHours()).padStart(2, '0')
+      const utcMinute = String(utcDate.getMinutes()).padStart(2, '0')
+      const utcSecond = String(utcDate.getSeconds()).padStart(2, '0')
+      
+      return `${utcYear}${utcMonth}${utcDay}T${utcHour}${utcMinute}${utcSecond}Z`
     }
     
     const startDate = formatDateForOutlook(task.start_date)
@@ -284,29 +311,27 @@ export default function TaskListView({
   })
 
   return (
-    <div className="bg-white rounded-lg border border-purple-200">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="p-6 border-b border-purple-200">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-purple-900">Tasks for {dateDisplayName}</h2>
-            <p className="text-sm text-purple-600 mt-1">
-              {selectedDateTasks.length} task{selectedDateTasks.length !== 1 ? 's' : ''} scheduled
-            </p>
-          </div>
-          <button
-            onClick={() => onCreateTask && onCreateTask(selectedDate)}
-            className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 
-                     transition-all duration-200 font-medium shadow-sm hover:shadow-md
-                     transform hover:scale-105 active:scale-95"
-          >
-            New Task
-          </button>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-purple-500">Tasks for {dateDisplayName}</h2>
+          <p className="text-sm text-purple-400 mt-1">
+            {selectedDateTasks.length} task{selectedDateTasks.length !== 1 ? 's' : ''} scheduled
+          </p>
         </div>
+        <button
+          onClick={() => onCreateTask && onCreateTask(selectedDate)}
+          className="px-4 py-2 bg-purple-500 text-white text-sm rounded-lg hover:bg-purple-600 
+                   transition-all duration-200 font-medium shadow-sm hover:shadow-md
+                   transform hover:scale-105 active:scale-95"
+        >
+          New Task
+        </button>
       </div>
 
       {/* Task List */}
-      <div className="p-6">
+      <div>
         {selectedDateTasks.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-gray-400 text-5xl mb-4">📋</div>
@@ -314,7 +339,7 @@ export default function TaskListView({
             <p className="text-gray-600 mb-6">This day is free. Would you like to add a task?</p>
             <button
               onClick={() => onCreateTask && onCreateTask(selectedDate)}
-              className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 
+              className="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 
                        transition-all duration-200 font-medium shadow-sm hover:shadow-md
                        transform hover:scale-105 active:scale-95"
             >
@@ -330,19 +355,19 @@ export default function TaskListView({
               return (
                 <div
                   key={task.id}
-                  className={`p-4 rounded-lg border-2 transition-all duration-200
+                  className={`p-4 rounded-xl shadow-sm transition-all duration-300 hover:shadow-md
                     ${isCompleted 
-                      ? 'border-purple-300 bg-purple-100 opacity-75' 
-                      : 'border-purple-200 bg-purple-50'
+                      ? 'bg-gradient-to-r from-purple-50 to-purple-100 opacity-75' 
+                      : 'bg-white hover:bg-gradient-to-r hover:from-purple-25 hover:to-purple-50'
                     }`}
                 >
-                  {/* Three column layout */}
-                  <div className="flex items-start justify-between mb-3">
-                    {/* Left Column - Time Info */}
-                    <div className="flex flex-col gap-1 min-w-[100px]">
+                  {/* Desktop: Three column layout, Mobile: Vertical layout */}
+                  <div className="lg:flex lg:items-start lg:justify-between lg:mb-3">
+                    {/* Desktop Left Column / Mobile Top Row - Time Info */}
+                    <div className="flex flex-col gap-1 lg:min-w-[100px] mb-3 lg:mb-0">
                       {(task.start_date || task.end_date) && (
                         <TimeComparisonTooltip task={task}>
-                          <span className="text-sm font-semibold text-purple-700 cursor-help">
+                          <span className="text-sm font-semibold text-purple-500 cursor-help">
                             {formatTimeOnly(task.start_date, task.end_date)}
                           </span>
                         </TimeComparisonTooltip>
@@ -360,13 +385,13 @@ export default function TaskListView({
                       )}
                     </div>
 
-                    {/* Middle Column - Task Main Content */}
-                    <div className="flex-1 min-w-0 px-4">
+                    {/* Desktop Middle Column / Mobile Middle Row - Task Main Content */}
+                    <div className="flex-1 min-w-0 lg:px-4 mb-3 lg:mb-0">
                       {/* Task Title */}
                       <h3 
                         className={`text-lg font-semibold mb-2 ${
-                          isCompleted ? 'text-purple-700 line-through' : 'text-purple-900'
-                        } cursor-pointer hover:underline hover:text-purple-700 transition-colors`}
+                          isCompleted ? 'text-purple-500 line-through' : 'text-purple-600'
+                        } cursor-pointer hover:underline hover:text-purple-500 transition-colors`}
                         onClick={(e) => handleNotionClick(task, e)}
                         title="Click to edit in Notion"
                       >
@@ -375,22 +400,22 @@ export default function TaskListView({
 
                       {/* Status and Priority Labels */}
                       <div className="flex items-center gap-2">
-                        <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                          isCompleted ? 'bg-green-100 text-green-800' :
-                          task.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                          task.status === 'On Hold' ? 'bg-yellow-100 text-yellow-800' :
-                          task.status === 'Not Started' ? 'bg-gray-100 text-gray-800' :
-                          'bg-purple-100 text-purple-800'
+                        <span className={`px-3 py-1.5 text-xs rounded-full font-medium transition-all duration-200 hover:scale-105 hover:shadow-sm ${
+                          isCompleted ? 'bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-700 shadow-emerald-100/50' :
+                          task.status === 'In Progress' ? 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-700 shadow-blue-100/50' :
+                          task.status === 'On Hold' ? 'bg-gradient-to-r from-amber-100 to-amber-200 text-amber-700 shadow-amber-100/50' :
+                          task.status === 'Not Started' ? 'bg-gradient-to-r from-purple-100 to-purple-200 text-purple-700 shadow-purple-100/50' :
+                          'bg-gradient-to-r from-purple-100 to-purple-200 text-purple-700 shadow-purple-100/50'
                         }`}>
                           {task.status}
                         </span>
 
                         {task.priority_quadrant && (
-                          <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                            task.priority_quadrant.includes('Important & Urgent') ? 'bg-red-100 text-red-800' :
-                            task.priority_quadrant.includes('Important & Not Urgent') ? 'bg-orange-100 text-orange-800' :
-                            task.priority_quadrant.includes('Not Important & Urgent') ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100 text-gray-800'
+                          <span className={`px-3 py-1.5 text-xs rounded-full font-medium transition-all duration-200 hover:scale-105 hover:shadow-sm ${
+                            task.priority_quadrant.includes('Important & Urgent') ? 'bg-gradient-to-r from-rose-100 to-rose-200 text-rose-700 shadow-rose-100/50' :
+                            task.priority_quadrant.includes('Important & Not Urgent') ? 'bg-gradient-to-r from-orange-100 to-orange-200 text-orange-700 shadow-orange-100/50' :
+                            task.priority_quadrant.includes('Not Important & Urgent') ? 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-700 shadow-yellow-100/50' :
+                            'bg-gradient-to-r from-slate-100 to-slate-200 text-slate-700 shadow-slate-100/50'
                           }`}>
                             {task.priority_quadrant}
                           </span>
@@ -398,82 +423,128 @@ export default function TaskListView({
                       </div>
                     </div>
 
-                    {/* Action buttons - Fixed 5 buttons always visible */}
-                    <div className="flex flex-col gap-1 min-w-[100px] flex-shrink-0">
+                    {/* Desktop: Right Column with Vertical Icons, Mobile: Bottom Row with Horizontal Icons */}
+                    <div className="flex lg:flex-col gap-2 lg:min-w-[32px] flex-shrink-0 justify-center">
                       {/* 1. Add to Outlook */}
-                      <button
-                        onClick={(e) => handleOutlookClick(task, e)}
-                        className="px-3 py-1.5 text-xs text-purple-700 bg-gradient-to-r from-purple-50 to-purple-100 
-                                 border-2 border-purple-200 rounded-lg hover:from-purple-600 hover:to-purple-700 
-                                 hover:text-white hover:border-purple-600 transition-all duration-300 font-semibold
-                                 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95"
-                      >
-                        Add to Outlook
-                      </button>
+                      <div className="relative group">
+                        <button
+                          onClick={(e) => handleOutlookClick(task, e)}
+                          className="w-8 h-8 rounded-full bg-gray-100 hover:bg-purple-500 flex items-center justify-center 
+                                   transition-all duration-100 hover:scale-110 group"
+                        >
+                          <svg className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors duration-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                        <div className="absolute lg:right-10 bottom-10 lg:bottom-auto lg:top-1/2 lg:transform lg:-translate-y-1/2 
+                                      left-1/2 lg:left-auto transform -translate-x-1/2 lg:translate-x-0
+                                      bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap 
+                                      opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-10">
+                          Add to Outlook
+                        </div>
+                      </div>
 
                       {/* 2. Complete Early */}
-                      <button
-                        ref={(el) => {
-                          if (el) timeRecordButtonRefs.current[task.id] = el
-                        }}
-                        onClick={(e) => handleRecordTimeClick(task, e)}
-                        className="px-3 py-1.5 text-xs text-purple-700 bg-gradient-to-r from-purple-50 to-purple-100 
-                                 border-2 border-purple-200 rounded-lg hover:from-purple-600 hover:to-purple-700 
-                                 hover:text-white hover:border-purple-600 transition-all duration-300 font-semibold
-                                 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95"
-                      >
-                        Complete Early
-                      </button>
+                      <div className="relative group">
+                        <button
+                          ref={(el) => {
+                            if (el) timeRecordButtonRefs.current[task.id] = el
+                          }}
+                          onClick={(e) => handleRecordTimeClick(task, e)}
+                          className="w-8 h-8 rounded-full bg-gray-100 hover:bg-purple-500 flex items-center justify-center 
+                                   transition-all duration-100 hover:scale-110 group"
+                        >
+                          <svg className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors duration-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </button>
+                        <div className="absolute lg:right-10 bottom-10 lg:bottom-auto lg:top-1/2 lg:transform lg:-translate-y-1/2 
+                                      left-1/2 lg:left-auto transform -translate-x-1/2 lg:translate-x-0
+                                      bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap 
+                                      opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-10">
+                          Complete Early
+                        </div>
+                      </div>
 
                       {/* 3. Start/End Task */}
-                      <button
-                        ref={(el) => {
-                          if (el) startEndButtonRefs.current[task.id] = el
-                        }}
-                        onClick={(e) => handleStartEndClick(task, e)}
-                        className="px-3 py-1.5 text-xs text-purple-700 bg-gradient-to-r from-purple-50 to-purple-100 
-                                 border-2 border-purple-200 rounded-lg hover:from-purple-600 hover:to-purple-700 
-                                 hover:text-white hover:border-purple-600 transition-all duration-300 font-semibold
-                                 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95"
-                      >
-                        {!task.actual_start ? 'Start' : 'End'}
-                      </button>
+                      <div className="relative group">
+                        <button
+                          ref={(el) => {
+                            if (el) startEndButtonRefs.current[task.id] = el
+                          }}
+                          onClick={(e) => handleStartEndClick(task, e)}
+                          className="w-8 h-8 rounded-full bg-gray-100 hover:bg-purple-500 flex items-center justify-center 
+                                   transition-all duration-100 hover:scale-110 group"
+                        >
+                          {!task.actual_start ? (
+                            <svg className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors duration-100" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors duration-100" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M6 6h12v12H6z"/>
+                            </svg>
+                          )}
+                        </button>
+                        <div className="absolute lg:right-10 bottom-10 lg:bottom-auto lg:top-1/2 lg:transform lg:-translate-y-1/2 
+                                      left-1/2 lg:left-auto transform -translate-x-1/2 lg:translate-x-0
+                                      bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap 
+                                      opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-10">
+                          {!task.actual_start ? 'Start Task' : 'End Task'}
+                        </div>
+                      </div>
 
                       {/* 4. Edit */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onTaskClick && onTaskClick(task)
-                        }}
-                        className="px-3 py-1.5 text-xs text-purple-700 bg-gradient-to-r from-purple-50 to-purple-100 
-                                 border-2 border-purple-200 rounded-lg hover:from-purple-600 hover:to-purple-700 
-                                 hover:text-white hover:border-purple-600 transition-all duration-300 font-semibold
-                                 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95"
-                      >
-                        Edit
-                      </button>
+                      <div className="relative group">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onTaskClick && onTaskClick(task)
+                          }}
+                          className="w-8 h-8 rounded-full bg-gray-100 hover:bg-purple-500 flex items-center justify-center 
+                                   transition-all duration-100 hover:scale-110 group"
+                        >
+                          <svg className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors duration-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <div className="absolute lg:right-10 bottom-10 lg:bottom-auto lg:top-1/2 lg:transform lg:-translate-y-1/2 
+                                      left-1/2 lg:left-auto transform -translate-x-1/2 lg:translate-x-0
+                                      bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap 
+                                      opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-10">
+                          Edit Task
+                        </div>
+                      </div>
 
                       {/* 5. Delete */}
-                      <button
-                        ref={(el) => {
-                          if (el) deleteButtonRefs.current[task.id] = el
-                        }}
-                        onClick={(e) => handleDeleteClick(task, e)}
-                        className="px-3 py-1.5 text-xs text-purple-700 bg-gradient-to-r from-purple-50 to-purple-100 
-                                 border-2 border-purple-200 rounded-lg hover:from-purple-600 hover:to-purple-700 
-                                 hover:text-white hover:border-purple-600 transition-all duration-300 font-semibold
-                                 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95"
-                      >
-                        Delete
-                      </button>
+                      <div className="relative group">
+                        <button
+                          ref={(el) => {
+                            if (el) deleteButtonRefs.current[task.id] = el
+                          }}
+                          onClick={(e) => handleDeleteClick(task, e)}
+                          className="w-8 h-8 rounded-full bg-gray-100 hover:bg-purple-500 flex items-center justify-center 
+                                   transition-all duration-100 hover:scale-110 group"
+                        >
+                          <svg className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors duration-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                        <div className="absolute lg:right-10 bottom-10 lg:bottom-auto lg:top-1/2 lg:transform lg:-translate-y-1/2 
+                                      left-1/2 lg:left-auto transform -translate-x-1/2 lg:translate-x-0
+                                      bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap 
+                                      opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-10">
+                          Delete Task
+                        </div>
+                      </div>
                     </div>
                   </div>
 
                   {/* Full Notes Display - Bottom section spanning full width */}
                   {task.note && task.note.trim() && (
-                    <div className="mt-4 pt-3 border-t border-purple-200">
+                    <div className="mt-4 pt-3 border-t border-purple-100">
                       <div className="text-sm text-gray-700">
-                        <div className="text-xs font-medium text-purple-700 mb-1">Notes:</div>
+                        <div className="text-xs font-medium text-purple-500 mb-1">Notes:</div>
                         <div className="whitespace-pre-wrap">{task.note}</div>
                       </div>
                     </div>

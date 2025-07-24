@@ -84,14 +84,14 @@ export default function DeleteConfirmTooltip({
         <div className="flex gap-2">
           <button
             onClick={handleConfirm}
-            className="flex-1 px-3 py-2 bg-purple-600 text-white text-sm rounded-md 
+            className="flex-1 px-2 py-1 bg-purple-600 text-white text-xs rounded-md 
                      hover:bg-purple-700 transition-colors font-medium"
           >
             Delete Task
           </button>
           <button
             onClick={onClose}
-            className="px-3 py-2 text-purple-600 text-sm rounded-md border border-purple-200 
+            className="px-2 py-1 text-purple-600 text-xs rounded-md border border-purple-200 
                      hover:bg-purple-50 transition-colors"
           >
             Cancel

@@ -16,7 +16,6 @@ interface TaskRecord {
   note: string
   actual_start?: string
   actual_end?: string
-  budget_time: number
   actual_time: number
   quality_rating?: number
   next?: string
@@ -34,14 +33,12 @@ interface TaskFormData {
   plan: string[]
   priority_quadrant: string
   note: string
-  budget_time: number
 }
 
 interface PlanOption {
   id: string
   title: string
   budget_money?: number
-  budget_time?: number
 }
 
 interface TaskFormPanelProps {
@@ -120,32 +117,11 @@ export default function TaskFormPanel({
     remind_before: 15,
     plan: [],
     priority_quadrant: '',
-    note: '',
-    budget_time: 0
+    note: ''
   })
   
-  const [selectedPlanBudget, setSelectedPlanBudget] = useState<{money: number, time: number} | null>(null)
-  const [remainingTime, setRemainingTime] = useState<number | null>(null)
   const [conflictingTasks, setConflictingTasks] = useState<TaskRecord[]>([])
 
-  // Memoized calculation function for remaining time
-  const calculateRemainingTime = useCallback((planId: string, planBudgetTime: number, currentTaskBudgetTime: number = 0) => {
-    if (!planId || !allTasks) return null
-    
-    const planTasks = allTasks.filter(t => 
-      t.plan && t.plan.includes(planId) && t.id !== task?.id
-    )
-    
-    const allocatedTime = planTasks.reduce((total, t) => {
-      if (t.status === 'Completed') {
-        return total + (t.actual_time || 0)
-      } else {
-        return total + (t.budget_time || 0)
-      }
-    }, 0)
-    
-    return planBudgetTime - allocatedTime - currentTaskBudgetTime
-  }, [allTasks, task?.id])
 
   // Initialize form data when task changes
   useEffect(() => {
@@ -159,8 +135,7 @@ export default function TaskFormPanel({
         remind_before: task.remind_before || 15,
         plan: task.plan || [],
         priority_quadrant: task.priority_quadrant || '',
-        note: task.note || '',
-        budget_time: task.budget_time || 0
+        note: task.note || ''
       })
     } else {
       const defaultStart = getDefaultDateTime()
@@ -180,31 +155,11 @@ export default function TaskFormPanel({
         remind_before: 15,
         plan: [],
         priority_quadrant: '',
-        note: '',
-        budget_time: 0
+        note: ''
       })
     }
   }, [task, isOpen])
 
-  // Update budget information when plan changes
-  useEffect(() => {
-    if (formData.plan.length > 0 && planOptions.length > 0) {
-      const selectedPlan = planOptions.find(p => p.id === formData.plan[0])
-      if (selectedPlan) {
-        const budget = {
-          money: selectedPlan.budget_money || 0,
-          time: selectedPlan.budget_time || 0
-        }
-        setSelectedPlanBudget(budget)
-        
-        const remaining = calculateRemainingTime(selectedPlan.id, budget.time, formData.budget_time)
-        setRemainingTime(remaining)
-      }
-    } else {
-      setSelectedPlanBudget(null)
-      setRemainingTime(null)
-    }
-  }, [formData.plan, formData.budget_time, planOptions, calculateRemainingTime])
 
   // Detect time conflicts
   useEffect(() => {
@@ -244,27 +199,7 @@ export default function TaskFormPanel({
       ...prev, 
       plan: planId ? [planId] : [] 
     }))
-    
-    if (planId) {
-      const selectedPlan = planOptions.find(p => p.id === planId)
-      if (selectedPlan) {
-        const budget = {
-          money: selectedPlan.budget_money || 0,
-          time: selectedPlan.budget_time || 0
-        }
-        setSelectedPlanBudget(budget)
-        
-        const remaining = calculateRemainingTime(planId, budget.time, formData.budget_time)
-        setRemainingTime(remaining)
-      } else {
-        setSelectedPlanBudget(null)
-        setRemainingTime(null)
-      }
-    } else {
-      setSelectedPlanBudget(null)
-      setRemainingTime(null)
-    }
-  }, [planOptions, formData.budget_time, calculateRemainingTime])
+  }, [])
 
   if (!isOpen) return null
 
@@ -319,25 +254,6 @@ export default function TaskFormPanel({
             </select>
             <p className="text-xs text-gray-500 mt-1">Each task must belong to a plan</p>
             
-            {/* Budget Information Display */}
-            {selectedPlanBudget && (selectedPlanBudget.money > 0 || selectedPlanBudget.time > 0) && (
-              <div className="mt-2 p-2 bg-purple-50 rounded border border-purple-200">
-                <div className="text-xs text-purple-700 font-medium mb-1">Plan Budget Reference:</div>
-                <div className="flex items-center gap-4 text-sm">
-                  {selectedPlanBudget.money > 0 && (
-                    <span className="text-green-600">💰 ¥{selectedPlanBudget.money}</span>
-                  )}
-                  {selectedPlanBudget.time > 0 && (
-                    <span className="text-blue-600">⏱️ {selectedPlanBudget.time}h</span>
-                  )}
-                  {remainingTime !== null && (
-                    <span className={`text-sm ${remainingTime >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      Remaining: {remainingTime.toFixed(1)}h
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Task Title */}
@@ -452,22 +368,6 @@ export default function TaskFormPanel({
             </div>
           )}
 
-          {/* Budget Time */}
-          <div>
-            <label className="block text-sm font-medium text-purple-700 mb-1">Budget Time (hours)</label>
-            <input
-              type="number"
-              min="0"
-              step="0.5"
-              value={formData.budget_time}
-              onChange={(e) => setFormData(prev => ({ ...prev, budget_time: parseFloat(e.target.value) || 0 }))}
-              className="w-full px-4 py-3 border-2 border-purple-200 rounded-lg 
-                        focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-900 font-medium
-                        hover:border-purple-300 transition-all duration-200"
-              placeholder="0.0"
-            />
-          </div>
 
           {/* Notes */}
           <div>
