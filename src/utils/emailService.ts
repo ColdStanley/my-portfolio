@@ -291,7 +291,6 @@ class EmailService {
   private generateSingleTaskEmail(task: TaskData): EmailContent {
     const timeRange = this.formatTimeRange(task.start_date, task.end_date)
     const priorityEmoji = this.getPriorityEmoji(task.priority_quadrant)
-    const priorityColor = this.getPriorityColor(task.priority_quadrant)
     
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
