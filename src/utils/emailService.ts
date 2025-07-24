@@ -287,29 +287,151 @@ class EmailService {
     }
   }
 
-  // Test email functionality
-  async sendTestEmail(): Promise<void> {
-    const testTasks: TaskData[] = [
-      {
-        id: '1',
-        title: 'Review project documentation',
-        status: 'Not Started',
-        start_date: '2025-07-24T09:00:00-04:00',
-        end_date: '2025-07-24T10:00:00-04:00',
-        priority_quadrant: 'Important & Urgent',
-        note: 'Focus on API documentation updates'
-      },
-      {
-        id: '2',
-        title: 'Team meeting',
-        status: 'In Progress',
-        start_date: '2025-07-24T14:00:00-04:00',
-        end_date: '2025-07-24T15:00:00-04:00',
-        priority_quadrant: 'Important & Not Urgent'
-      }
-    ]
+  // Generate mobile-optimized single task reminder email
+  private generateSingleTaskEmail(task: TaskData): EmailContent {
+    const timeRange = this.formatTimeRange(task.start_date, task.end_date)
+    const priorityEmoji = this.getPriorityEmoji(task.priority_quadrant)
+    const priorityColor = this.getPriorityColor(task.priority_quadrant)
+    
+    const html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+                  max-width: 600px; margin: 0 auto; padding: 16px; 
+                  background-color: #f8fafc; min-height: 100vh;">
+        
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h1 style="font-size: 24px; font-weight: 600; color: #1e293b; margin: 0;">
+            ⏰ Starting Soon
+          </h1>
+          <p style="font-size: 16px; color: #64748b; margin: 8px 0 0 0;">
+            Your task begins in 5 minutes
+          </p>
+        </div>
 
-    await this.sendTaskReminder(testTasks, 'morning')
+        <!-- Task Card -->
+        <div style="background: white; border-radius: 12px; padding: 24px; 
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+                    margin-bottom: 24px;">
+          
+          <!-- Task Title -->
+          <h2 style="font-size: 20px; font-weight: 600; color: #1e293b; 
+                     margin: 0 0 16px 0; line-height: 1.3;">
+            ${task.title}
+          </h2>
+
+          <!-- Time and Duration -->
+          <div style="display: flex; align-items: center; margin-bottom: 16px;">
+            <div style="background: #e0e7ff; color: #3730a3; padding: 8px 12px; 
+                       border-radius: 8px; font-size: 16px; font-weight: 500;">
+              ${timeRange}
+            </div>
+          </div>
+
+          <!-- Priority -->
+          ${task.priority_quadrant ? `
+            <div style="display: flex; align-items: center; margin-bottom: 16px;">
+              <span style="font-size: 18px; margin-right: 8px;">${priorityEmoji}</span>
+              <span style="background: ${this.getPriorityBgColor(task.priority_quadrant)}; 
+                          color: ${this.getPriorityTextColor(task.priority_quadrant)}; 
+                          padding: 6px 12px; border-radius: 6px; 
+                          font-size: 14px; font-weight: 500;">
+                ${task.priority_quadrant}
+              </span>
+            </div>
+          ` : ''}
+
+          <!-- Notes -->
+          ${task.note ? `
+            <div style="background: #f1f5f9; padding: 16px; border-radius: 8px; 
+                       margin-bottom: 16px; border-left: 4px solid #7c3aed;">
+              <p style="font-size: 14px; color: #475569; margin: 0; line-height: 1.5;">
+                <strong style="color: #334155;">Notes:</strong><br>
+                ${task.note}
+              </p>
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="text-align: center; margin-bottom: 32px;">
+          <a href="https://stanleyhi.com/cestlavie" 
+             style="display: inline-block; background: #7c3aed; color: white; 
+                    padding: 16px 32px; border-radius: 8px; text-decoration: none; 
+                    font-size: 16px; font-weight: 600; margin-bottom: 12px;
+                    min-width: 200px; text-align: center;">
+            🚀 Open Task Manager
+          </a>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; padding: 16px; color: #94a3b8; font-size: 14px;">
+          <p style="margin: 0;">
+            💪 Stay focused! You've got this.
+          </p>
+        </div>
+      </div>
+    `
+
+    return {
+      subject: `⏰ ${task.title} starts in 5 min`,
+      html
+    }
+  }
+
+  // Helper methods for priority styling
+  private getPriorityBgColor(priority: string): string {
+    switch (priority) {
+      case 'Important & Urgent': return '#fef2f2'
+      case 'Important & Not Urgent': return '#fef3c7' 
+      case 'Not Important & Urgent': return '#fed7c7'
+      case 'Not Important & Not Urgent': return '#f3f4f6'
+      default: return '#f8fafc'
+    }
+  }
+
+  private getPriorityTextColor(priority: string): string {
+    switch (priority) {
+      case 'Important & Urgent': return '#dc2626'
+      case 'Important & Not Urgent': return '#d97706'
+      case 'Not Important & Urgent': return '#ea580c'  
+      case 'Not Important & Not Urgent': return '#6b7280'
+      default: return '#7c3aed'
+    }
+  }
+
+  // Send single task reminder
+  async sendSingleTaskReminder(task: TaskData): Promise<void> {
+    const emailContent = this.generateSingleTaskEmail(task)
+
+    const mailOptions = {
+      from: this.config.from,
+      to: this.config.to,
+      subject: emailContent.subject,
+      html: emailContent.html
+    }
+
+    try {
+      const info = await this.transporter.sendMail(mailOptions)
+      console.log('Single task reminder sent successfully:', info.messageId)
+    } catch (error) {
+      console.error('Error sending single task reminder:', error)
+      throw error
+    }
+  }
+
+  // Test email functionality  
+  async sendTestEmail(): Promise<void> {
+    const testTask: TaskData = {
+      id: '1',
+      title: 'Review project documentation',
+      status: 'Not Started', 
+      start_date: '2025-07-24T09:00:00-04:00',
+      end_date: '2025-07-24T10:00:00-04:00',
+      priority_quadrant: 'Important & Urgent',
+      note: 'Focus on API documentation updates and prepare feedback for the team meeting'
+    }
+
+    await this.sendSingleTaskReminder(testTask)
   }
 }
 

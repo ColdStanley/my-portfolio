@@ -25,13 +25,19 @@ interface TaskData {
   note?: string
 }
 
-async function getTodaysTasks(): Promise<TaskData[]> {
-  // Get today's date in Toronto timezone (YYYY-MM-DD format)
-  const today = new Date()
-  const torontoDate = new Date(today.getTime() - (4 * 60 * 60 * 1000)) // Subtract 4 hours for Toronto timezone
-  const todayString = torontoDate.toISOString().split('T')[0] // "2025-07-24"
+async function getUpcomingTasks(): Promise<TaskData[]> {
+  // Get current Toronto time
+  const now = new Date()
+  const torontoNow = new Date(now.getTime() - (4 * 60 * 60 * 1000)) // Subtract 4 hours for Toronto timezone
+  
+  // Calculate time window: 5 minutes from now
+  const reminderTime = new Date(torontoNow.getTime() + (5 * 60 * 1000))
+  
+  // Get today's date for filtering
+  const todayString = torontoNow.toISOString().split('T')[0] // "2025-07-24"
 
   try {
+    // Get all today's tasks first
     const response = await notion.databases.query({
       database_id: process.env.NOTION_Tasks_DB_ID!,
       filter: {
@@ -40,6 +46,12 @@ async function getTodaysTasks(): Promise<TaskData[]> {
             property: 'start_date',
             date: {
               equals: todayString
+            }
+          },
+          {
+            property: 'status',
+            select: {
+              does_not_equal: 'Completed'
             }
           }
         ]
@@ -52,7 +64,7 @@ async function getTodaysTasks(): Promise<TaskData[]> {
       ]
     })
 
-    const tasks: TaskData[] = response.results.map((page: any) => {
+    const allTasks: TaskData[] = response.results.map((page: any) => {
       const properties = page.properties
       
       return {
@@ -67,7 +79,23 @@ async function getTodaysTasks(): Promise<TaskData[]> {
       }
     })
 
-    return tasks
+    // Filter tasks that should be reminded (start time is within 5 minutes)
+    const upcomingTasks = allTasks.filter(task => {
+      if (!task.start_date) return false
+      
+      // Parse Toronto timezone task start time
+      const taskStartTime = new Date(task.start_date.replace(/-04:00$/, ''))
+      
+      // Check if task starts in approximately 5 minutes (±2 minutes window)
+      const timeDiff = taskStartTime.getTime() - torontoNow.getTime()
+      const fiveMinutes = 5 * 60 * 1000 // 5 minutes in milliseconds
+      const twoMinutes = 2 * 60 * 1000 // 2 minutes tolerance
+      
+      // Remind if task starts between 3-7 minutes from now
+      return timeDiff >= (fiveMinutes - twoMinutes) && timeDiff <= (fiveMinutes + twoMinutes)
+    })
+
+    return upcomingTasks
   } catch (error) {
     console.error('Error fetching tasks from Notion:', error)
     console.error('Database ID used:', process.env.NOTION_Tasks_DB_ID)
@@ -98,10 +126,9 @@ export async function GET(request: NextRequest) {
     // Check if this is a test request
     const { searchParams } = new URL(request.url)
     const isTest = searchParams.get('test') === 'true'
-    const forceTimeOfDay = searchParams.get('time') as 'morning' | 'afternoon' | 'evening' | null
 
     if (isTest) {
-      // Send test email
+      // Send test email with current logic
       const emailService = new EmailService()
       await emailService.sendTestEmail()
       
@@ -112,23 +139,38 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Get today's tasks from Notion
-    const tasks = await getTodaysTasks()
-    console.log(`Found ${tasks.length} tasks for today`)
+    // Get upcoming tasks that need reminders (within 5 minutes)
+    const upcomingTasks = await getUpcomingTasks()
+    console.log(`Found ${upcomingTasks.length} upcoming tasks needing reminders`)
 
-    // Determine time of day (or use forced value for testing)
-    const timeOfDay = forceTimeOfDay || determineTimeOfDay()
-    console.log(`Sending ${timeOfDay} reminder email`)
+    if (upcomingTasks.length === 0) {
+      return NextResponse.json({ 
+        success: true, 
+        message: 'No upcoming tasks need reminders at this time',
+        tasksCount: 0,
+        timestamp: new Date().toISOString()
+      })
+    }
 
-    // Send reminder email
+    // Send individual reminder for each upcoming task
     const emailService = new EmailService()
-    await emailService.sendTaskReminder(tasks, timeOfDay)
+    let sentCount = 0
+
+    for (const task of upcomingTasks) {
+      try {
+        await emailService.sendSingleTaskReminder(task)
+        sentCount++
+        console.log(`Sent reminder for task: ${task.title}`)
+      } catch (error) {
+        console.error(`Failed to send reminder for task ${task.title}:`, error)
+      }
+    }
 
     return NextResponse.json({ 
       success: true, 
-      message: `${timeOfDay} reminder email sent successfully`,
-      tasksCount: tasks.length,
-      timeOfDay,
+      message: `Sent ${sentCount} individual task reminders`,
+      tasksCount: upcomingTasks.length,
+      sentCount,
       timestamp: new Date().toISOString()
     })
 
