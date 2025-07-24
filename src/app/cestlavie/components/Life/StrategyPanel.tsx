@@ -50,7 +50,6 @@ interface StrategyFormData {
   status: string
   category: string
   priority_quadrant: string
-  estimate_cost: string
 }
 
 interface StrategyFormPanelProps {
@@ -72,8 +71,7 @@ function StrategyFormPanel({ isOpen, onClose, strategy, onSave, statusOptions, c
     due_date: '',
     status: '',
     category: '',
-    priority_quadrant: '',
-    estimate_cost: ''
+    priority_quadrant: ''
   })
 
   useEffect(() => {
@@ -87,8 +85,7 @@ function StrategyFormPanel({ isOpen, onClose, strategy, onSave, statusOptions, c
         due_date: strategy.due_date || '',
         status: strategy.status || '',
         category: strategy.category || '',
-        priority_quadrant: strategy.priority_quadrant || '',
-        estimate_cost: strategy.estimate_cost || ''
+        priority_quadrant: strategy.priority_quadrant || ''
       })
     } else {
       // 新建模式：使用默认时间
@@ -106,8 +103,7 @@ function StrategyFormPanel({ isOpen, onClose, strategy, onSave, statusOptions, c
         due_date: nextYearStr,
         status: '',
         category: '',
-        priority_quadrant: '',
-        estimate_cost: ''
+        priority_quadrant: ''
       })
     }
   }, [strategy, isOpen])
@@ -117,17 +113,30 @@ function StrategyFormPanel({ isOpen, onClose, strategy, onSave, statusOptions, c
     onSave(formData)
   }
 
-  if (!isOpen) return null
-
   return (
     <>
-      {/* 移动端全屏覆盖 */}
+      {/* Transparent click area, click to close */}
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+        className={`fixed top-0 left-0 h-full z-40 md:block hidden transition-opacity duration-300 ${
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        style={{ width: 'calc(100vw - 384px)' }}
         onClick={onClose}
       ></div>
       
-      <div className="fixed top-0 right-0 h-full w-full md:w-96 bg-white shadow-2xl z-50 md:border-l border-purple-200 flex flex-col">
+      {/* Mobile full screen overlay */}
+      <div 
+        className={`fixed inset-0 bg-black z-40 md:hidden transition-opacity duration-300 ${
+          isOpen ? 'bg-opacity-50 opacity-100' : 'bg-opacity-0 opacity-0 pointer-events-none'
+        }`}
+        onClick={onClose}
+      ></div>
+      
+      {/* Form panel */}
+      <div className={`fixed top-0 right-0 h-full w-full md:w-96 bg-white shadow-2xl z-50 md:border-l border-purple-200 flex flex-col
+        transition-transform duration-300 ease-out ${
+          isOpen ? 'transform translate-x-0' : 'transform translate-x-full'
+        }`}>
       <div className="p-4 border-b border-purple-200 flex items-center justify-between">
         <h4 className="text-lg font-semibold text-purple-900">
           {strategy ? 'Edit Strategy' : 'New Strategy'}
@@ -243,16 +252,6 @@ function StrategyFormPanel({ isOpen, onClose, strategy, onSave, statusOptions, c
         </div>
 
 
-        <div>
-          <label className="block text-sm font-medium text-purple-700 mb-1">Estimate Cost</label>
-          <textarea
-            rows={2}
-            value={formData.estimate_cost}
-            onChange={(e) => setFormData(prev => ({ ...prev, estimate_cost: e.target.value }))}
-            placeholder="Estimated investment of time, money, energy and other resources"
-            className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-        </div>
 
         <div className="flex justify-end gap-3 pt-4">
           <button
@@ -1223,7 +1222,7 @@ export default function StrategyPanel() {
               })()}
 
               {/* 可展开的详细信息 */}
-              {(strategy.key_results || strategy.description || strategy.estimate_cost) && (
+              {(strategy.key_results || strategy.description) && (
                 <div className="mt-4 pt-4 border-t border-purple-100">
                   <details className="group">
                     <summary className="cursor-pointer text-sm text-purple-600 hover:text-purple-700 font-medium">
@@ -1243,14 +1242,6 @@ export default function StrategyPanel() {
                           <h4 className="text-sm font-semibold text-purple-700 mb-1">Description:</h4>
                           <p className="text-sm text-gray-600">
                             {strategy.description}
-                          </p>
-                        </div>
-                      )}
-                      {strategy.estimate_cost && (
-                        <div>
-                          <h4 className="text-sm font-semibold text-purple-700 mb-1">Estimate Cost:</h4>
-                          <p className="text-sm text-gray-600">
-                            {strategy.estimate_cost}
                           </p>
                         </div>
                       )}

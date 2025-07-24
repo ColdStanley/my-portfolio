@@ -368,6 +368,38 @@ export default function TaskPanelOptimized() {
     }
   }, [actions])
 
+  const handleTaskCopy = useCallback((task: any) => {
+    // Calculate next day at the same time
+    const originalStartDate = new Date(task.start_date)
+    const originalEndDate = new Date(task.end_date)
+    
+    // Add one day
+    const nextDayStart = new Date(originalStartDate)
+    nextDayStart.setDate(nextDayStart.getDate() + 1)
+    
+    const nextDayEnd = new Date(originalEndDate)
+    nextDayEnd.setDate(nextDayEnd.getDate() + 1)
+    
+    // Create a copy of the task with new dates and reset status
+    const copiedTask = {
+      ...task,
+      id: undefined, // Remove id so it creates a new task
+      title: `${task.title} (Copy)`,
+      start_date: nextDayStart.toISOString(),
+      end_date: nextDayEnd.toISOString(),
+      status: 'Not Started',
+      actual_start: undefined,
+      actual_end: undefined,
+      actual_time: 0,
+      quality_rating: undefined,
+      next: undefined,
+      is_plan_critical: false
+    }
+    
+    // Open form panel with the copied task data
+    actions.openFormPanel(copiedTask)
+  }, [actions])
+
   // Task CRUD operations
   const handleSaveTask = useCallback(async (formData: TaskFormData) => {
     try {
@@ -668,6 +700,7 @@ export default function TaskPanelOptimized() {
               onTaskStart={handleTaskStart}
               onTaskEnd={handleTaskEnd}
               onRecordTime={handleRecordTime}
+              onTaskCopy={handleTaskCopy}
               onCreateTask={(date) => {
                 actions.setSelectedDate(date)
                 actions.openFormPanel()

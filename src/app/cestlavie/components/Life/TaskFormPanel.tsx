@@ -209,25 +209,30 @@ export default function TaskFormPanel({
     }))
   }, [])
 
-  if (!isOpen) return null
-
   return (
     <>
       {/* Transparent click area, click to close */}
       <div 
-        className="fixed top-0 left-0 h-full z-40 md:block hidden"
+        className={`fixed top-0 left-0 h-full z-40 md:block hidden transition-opacity duration-300 ${
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
         style={{ width: 'calc(100vw - 384px)' }}
         onClick={onClose}
       ></div>
       
       {/* Mobile full screen overlay */}
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+        className={`fixed inset-0 bg-black z-40 md:hidden transition-opacity duration-300 ${
+          isOpen ? 'bg-opacity-50 opacity-100' : 'bg-opacity-0 opacity-0 pointer-events-none'
+        }`}
         onClick={onClose}
       ></div>
       
       {/* Form panel */}
-      <div className="fixed top-0 right-0 h-full w-full md:w-96 bg-white shadow-2xl z-50 md:border-l border-purple-200 flex flex-col">
+      <div className={`fixed top-0 right-0 h-full w-full md:w-96 bg-white shadow-2xl z-50 md:border-l border-purple-200 flex flex-col
+        transition-transform duration-300 ease-out ${
+          isOpen ? 'transform translate-x-0' : 'transform translate-x-full'
+        }`}>
         <div className="p-4 border-b border-purple-200 flex items-center justify-between">
           <h4 className="text-lg font-semibold text-purple-900">
             {task ? 'Edit Task' : 'New Task'}
@@ -346,7 +351,15 @@ export default function TaskFormPanel({
               <input
                 type="datetime-local"
                 value={formData.start_date}
-                onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
+                onChange={(e) => {
+                  const newStartDate = e.target.value
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    start_date: newStartDate,
+                    // Auto-set end_date to same value when start_date changes
+                    end_date: newStartDate
+                  }))
+                }}
                 className="w-full px-4 py-3 border-2 border-purple-200 rounded-lg 
                           focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
                           bg-white text-gray-900 font-medium

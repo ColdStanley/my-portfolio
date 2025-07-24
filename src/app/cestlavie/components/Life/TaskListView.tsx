@@ -57,6 +57,7 @@ interface TaskListViewProps {
     is_plan_critical?: boolean
     next?: string
   }) => void
+  onTaskCopy?: (task: TaskRecord) => void
   formatTimeRange?: (startDate: string, endDate?: string) => string
   getPriorityColor?: (priority: string) => string
   hasTimeConflicts?: (task: TaskRecord) => boolean
@@ -74,6 +75,7 @@ export default function TaskListView({
   onTaskStart,
   onTaskEnd,
   onRecordTime,
+  onTaskCopy,
   formatTimeRange,
   getPriorityColor,
   hasTimeConflicts,
@@ -479,9 +481,9 @@ export default function TaskListView({
                       </div>
                     </div>
 
-                    {/* Desktop: Right Column with Vertical Icons, Mobile: Bottom Row with Horizontal Icons */}
-                    <div className="flex lg:flex-col gap-2 lg:min-w-[32px] flex-shrink-0 justify-center">
-                      {/* 1. Add to Outlook */}
+                    {/* Desktop: Right Column with Two-Column Grid, Mobile: Bottom Row with Horizontal Icons */}
+                    <div className="flex lg:grid lg:grid-cols-2 gap-1 lg:gap-2 flex-shrink-0 justify-center">
+                      {/* Row 1, Col 1: Add to Outlook */}
                       <div className="relative group">
                         <button
                           onClick={(e) => handleOutlookClick(task, e)}
@@ -492,15 +494,14 @@ export default function TaskListView({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
                         </button>
-                        <div className="absolute lg:right-10 bottom-10 lg:bottom-auto lg:top-1/2 lg:transform lg:-translate-y-1/2 
-                                      left-1/2 lg:left-auto transform -translate-x-1/2 lg:translate-x-0
+                        <div className="absolute right-10 top-1/2 transform -translate-y-1/2 
                                       bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap 
-                                      opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-10">
+                                      opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none z-10">
                           Add to Outlook
                         </div>
                       </div>
 
-                      {/* 2. Complete Early */}
+                      {/* Row 1, Col 2: Complete Early */}
                       <div className="relative group">
                         <button
                           ref={(el) => {
@@ -514,15 +515,14 @@ export default function TaskListView({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
                         </button>
-                        <div className="absolute lg:right-10 bottom-10 lg:bottom-auto lg:top-1/2 lg:transform lg:-translate-y-1/2 
-                                      left-1/2 lg:left-auto transform -translate-x-1/2 lg:translate-x-0
+                        <div className="absolute right-10 top-1/2 transform -translate-y-1/2 
                                       bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap 
-                                      opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-10">
+                                      opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none z-10">
                           Complete Early
                         </div>
                       </div>
 
-                      {/* 3. Start/End Task */}
+                      {/* Row 2, Col 1: Start/End Task */}
                       <div className="relative group">
                         <button
                           ref={(el) => {
@@ -542,15 +542,35 @@ export default function TaskListView({
                             </svg>
                           )}
                         </button>
-                        <div className="absolute lg:right-10 bottom-10 lg:bottom-auto lg:top-1/2 lg:transform lg:-translate-y-1/2 
-                                      left-1/2 lg:left-auto transform -translate-x-1/2 lg:translate-x-0
+                        <div className="absolute right-10 top-1/2 transform -translate-y-1/2 
                                       bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap 
-                                      opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-10">
+                                      opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none z-10">
                           {!task.actual_start ? 'Start Task' : 'End Task'}
                         </div>
                       </div>
 
-                      {/* 4. Edit */}
+                      {/* Row 2, Col 2: Copy Task */}
+                      <div className="relative group">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onTaskCopy && onTaskCopy(task)
+                          }}
+                          className="w-8 h-8 rounded-full bg-gray-100 hover:bg-purple-500 flex items-center justify-center 
+                                   transition-all duration-100 hover:scale-110 group"
+                        >
+                          <svg className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors duration-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                        <div className="absolute right-10 top-1/2 transform -translate-y-1/2 
+                                      bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap 
+                                      opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none z-10">
+                          Copy Task
+                        </div>
+                      </div>
+
+                      {/* Row 3, Col 1: Edit */}
                       <div className="relative group">
                         <button
                           onClick={(e) => {
@@ -564,15 +584,14 @@ export default function TaskListView({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
                         </button>
-                        <div className="absolute lg:right-10 bottom-10 lg:bottom-auto lg:top-1/2 lg:transform lg:-translate-y-1/2 
-                                      left-1/2 lg:left-auto transform -translate-x-1/2 lg:translate-x-0
+                        <div className="absolute right-10 top-1/2 transform -translate-y-1/2 
                                       bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap 
-                                      opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-10">
+                                      opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none z-10">
                           Edit Task
                         </div>
                       </div>
 
-                      {/* 5. Delete */}
+                      {/* Row 3, Col 2: Delete */}
                       <div className="relative group">
                         <button
                           ref={(el) => {
@@ -586,10 +605,9 @@ export default function TaskListView({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
                         </button>
-                        <div className="absolute lg:right-10 bottom-10 lg:bottom-auto lg:top-1/2 lg:transform lg:-translate-y-1/2 
-                                      left-1/2 lg:left-auto transform -translate-x-1/2 lg:translate-x-0
+                        <div className="absolute right-10 top-1/2 transform -translate-y-1/2 
                                       bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap 
-                                      opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-10">
+                                      opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none z-10">
                           Delete Task
                         </div>
                       </div>

@@ -30,8 +30,6 @@ interface PlanFormData {
   status: string
   priority_quadrant: string
   estimate_resources: string
-  budget_money: number
-  budget_time: number
 }
 
 interface StrategyOption {
@@ -78,9 +76,7 @@ function PlanFormPanel({
     due_date: '',
     status: '',
     priority_quadrant: '',
-    estimate_resources: '',
-    budget_money: 0,
-    budget_time: 0
+    estimate_resources: ''
   })
 
   useEffect(() => {
@@ -93,9 +89,7 @@ function PlanFormPanel({
         due_date: plan.due_date || '',
         status: plan.status || '',
         priority_quadrant: plan.priority_quadrant || '',
-        estimate_resources: plan.estimate_resources || '',
-        budget_money: plan.budget_money || 0,
-        budget_time: plan.budget_time || 0
+        estimate_resources: plan.estimate_resources || ''
       })
     } else {
       // 创建新计划时，使用当前日期作为默认值
@@ -112,9 +106,7 @@ function PlanFormPanel({
         due_date: defaultDue,
         status: '',
         priority_quadrant: '',
-        estimate_resources: '',
-        budget_money: 0,
-        budget_time: 0
+        estimate_resources: ''
       })
     }
   }, [plan, isOpen])
@@ -124,12 +116,30 @@ function PlanFormPanel({
     onSave(formData)
   }
 
-  if (!isOpen) return null
-
   return (
     <>
+      {/* Transparent click area, click to close */}
+      <div 
+        className={`fixed top-0 left-0 h-full z-40 md:block hidden transition-opacity duration-300 ${
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        style={{ width: 'calc(100vw - 384px)' }}
+        onClick={onClose}
+      ></div>
+      
+      {/* Mobile full screen overlay */}
+      <div 
+        className={`fixed inset-0 bg-black z-40 md:hidden transition-opacity duration-300 ${
+          isOpen ? 'bg-opacity-50 opacity-100' : 'bg-opacity-0 opacity-0 pointer-events-none'
+        }`}
+        onClick={onClose}
+      ></div>
+      
       {/* 桌面端侧边栏表单 */}
-      <div className="hidden md:flex fixed top-0 right-0 h-full w-96 bg-white shadow-2xl z-50 border-l border-purple-200 flex-col">
+      <div className={`hidden md:flex fixed top-0 right-0 h-full w-96 bg-white shadow-2xl z-50 border-l border-purple-200 flex-col
+        transition-transform duration-300 ease-out ${
+          isOpen ? 'transform translate-x-0' : 'transform translate-x-full'
+        }`}>
         <div className="p-4 border-b border-purple-200 flex items-center justify-between">
           <h4 className="text-lg font-semibold text-purple-900">
             {plan ? 'Edit Plan' : 'New Plan'}
@@ -233,32 +243,6 @@ function PlanFormPanel({
         </div>
 
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-purple-700 mb-1">Budget Money (预算金额)</label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={formData.budget_money}
-              onChange={(e) => setFormData(prev => ({ ...prev, budget_money: parseFloat(e.target.value) || 0 }))}
-              placeholder="项目预算金额"
-              className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-purple-700 mb-1">Budget Time (预算时间)</label>
-            <input
-              type="number"
-              min="0"
-              step="0.5"
-              value={formData.budget_time}
-              onChange={(e) => setFormData(prev => ({ ...prev, budget_time: parseFloat(e.target.value) || 0 }))}
-              placeholder="预计工时(小时)"
-              className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
-        </div>
 
 
         <div>
@@ -293,7 +277,10 @@ function PlanFormPanel({
       </div>
 
       {/* 移动端全屏表单 */}
-      <div className="md:hidden fixed inset-0 bg-white z-50 flex flex-col">
+      <div className={`md:hidden fixed inset-0 bg-white z-50 flex flex-col
+        transition-transform duration-300 ease-out ${
+          isOpen ? 'transform translate-x-0' : 'transform translate-x-full'
+        }`}>
         {/* 移动端标题栏 */}
         <div className="p-4 border-b border-purple-200 flex items-center justify-between bg-white shadow-sm">
           <h4 className="text-lg font-semibold text-purple-900">
@@ -406,30 +393,6 @@ function PlanFormPanel({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-purple-700 mb-1">Budget ($)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.budget_money}
-                    onChange={(e) => setFormData(prev => ({ ...prev, budget_money: parseFloat(e.target.value) || 0 }))}
-                    className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-purple-700 mb-1">Time (h)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.5"
-                    value={formData.budget_time}
-                    onChange={(e) => setFormData(prev => ({ ...prev, budget_time: parseFloat(e.target.value) || 0 }))}
-                    className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-              </div>
 
               <div>
                 <label className="block text-sm font-medium text-purple-700 mb-1">Resources</label>

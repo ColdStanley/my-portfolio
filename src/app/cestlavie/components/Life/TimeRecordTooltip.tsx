@@ -31,12 +31,24 @@ export default function TimeRecordTooltip({
 
   useEffect(() => {
     if (isOpen && task) {
-      // Pre-fill with existing actual times if available
-      setStartTime(task.actual_start ? toDatetimeLocal(task.actual_start) : '')
-      setEndTime(task.actual_end ? toDatetimeLocal(task.actual_end) : '')
+      // Pre-fill with existing actual times if available, otherwise use scheduled times as defaults
+      setStartTime(
+        task.actual_start 
+          ? toDatetimeLocal(task.actual_start) 
+          : task.start_date 
+            ? toDatetimeLocal(task.start_date) 
+            : ''
+      )
+      setEndTime(
+        task.actual_end 
+          ? toDatetimeLocal(task.actual_end) 
+          : task.end_date 
+            ? toDatetimeLocal(task.end_date) 
+            : ''
+      )
       
-      // Pre-fill survey data
-      setQualityRating(task.quality_rating || 0)
+      // Pre-fill survey data - always start fresh for Complete Early action
+      setQualityRating(0) // Always start with 0 stars (gray) for new evaluation
       setIsPlanCritical(task.is_plan_critical || false)
       setNextAction(task.next || '')
     }
@@ -115,6 +127,7 @@ export default function TimeRecordTooltip({
         <div>
           <label className="block text-xs font-medium text-purple-700 mb-1">
             Actual Start Time
+            <span className="text-xs text-gray-500 ml-1">(defaults to scheduled time)</span>
           </label>
           <input
             type="datetime-local"
@@ -129,6 +142,7 @@ export default function TimeRecordTooltip({
         <div>
           <label className="block text-xs font-medium text-purple-700 mb-1">
             Actual End Time
+            <span className="text-xs text-gray-500 ml-1">(defaults to scheduled time)</span>
           </label>
           <input
             type="datetime-local"
@@ -149,17 +163,17 @@ export default function TimeRecordTooltip({
             <label className="block text-xs font-medium text-purple-700 mb-2">
               Quality Rating (1-5 stars)
             </label>
-            <div className="flex gap-1">
+            <div className="flex items-center gap-1">
               {[1, 2, 3, 4, 5].map((rating) => (
                 <button
                   key={rating}
                   type="button"
                   onClick={() => setQualityRating(rating)}
-                  className={`w-6 h-6 text-sm ${
+                  className={`w-6 h-6 text-lg transition-colors duration-150 ${
                     rating <= qualityRating 
                       ? 'text-yellow-500' 
-                      : 'text-gray-300'
-                  } hover:text-yellow-400 transition-colors`}
+                      : 'text-gray-300 hover:text-yellow-400'
+                  }`}
                 >
                   ⭐
                 </button>
@@ -168,7 +182,7 @@ export default function TimeRecordTooltip({
                 <button
                   type="button"
                   onClick={() => setQualityRating(0)}
-                  className="ml-2 text-xs text-gray-500 underline hover:text-gray-700"
+                  className="ml-2 text-xs text-gray-500 underline hover:text-gray-700 transition-colors"
                 >
                   Clear
                 </button>
