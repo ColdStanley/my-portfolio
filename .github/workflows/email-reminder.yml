@@ -1,0 +1,40 @@
+name: Daily Task Email Reminders
+
+on:
+  schedule:
+    # Morning reminder at 8:00 AM UTC (12:00 PM Toronto time in summer)
+    - cron: '0 12 * * *'
+    # Afternoon reminder at 1:00 PM UTC (5:00 PM Toronto time in summer)  
+    - cron: '0 17 * * *'
+    # Evening reminder at 6:00 PM UTC (10:00 PM Toronto time in summer)
+    - cron: '0 22 * * *'
+  
+  # Allow manual triggering for testing
+  workflow_dispatch:
+
+jobs:
+  send-email-reminder:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Send Task Reminder Email
+        run: |
+          # Get your Vercel deployment URL
+          VERCEL_URL="https://my-portfolio-coldstanley.vercel.app"
+          
+          # Call the task reminder API
+          response=$(curl -s -w "%{http_code}" "$VERCEL_URL/api/task-reminder")
+          http_code="${response: -3}"
+          response_body="${response%???}"
+          
+          echo "HTTP Status: $http_code"
+          echo "Response: $response_body"
+          
+          # Check if the request was successful
+          if [ "$http_code" -eq 200 ]; then
+            echo "✅ Email reminder sent successfully"
+          else
+            echo "❌ Failed to send email reminder"
+            echo "Response: $response_body"
+            exit 1
+          fi
