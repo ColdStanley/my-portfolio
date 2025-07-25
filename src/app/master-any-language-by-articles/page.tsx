@@ -131,7 +131,7 @@ export default function MasterAnyLanguagePage() {
 
   // Language selector component
   const LanguageSelector = () => (
-    <div className="flex items-center gap-4">
+    <div className={`${isMobile ? 'flex flex-col gap-3' : 'flex items-center gap-4'}`}>
       {/* Native Language */}
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium text-gray-700">Native:</span>
@@ -185,7 +185,7 @@ export default function MasterAnyLanguagePage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="px-4 py-6">
-          <div className="mb-6">
+          <div className="mb-6 pt-4">
             <h1 className="text-xl font-bold text-purple-700 mb-4">Master Any Language</h1>
             <LanguageSelector />
           </div>
