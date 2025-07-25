@@ -28,6 +28,36 @@ export async function POST(request: NextRequest) {
 
     console.log('Using database ID:', process.env.NOTION_JD2CV_DB_ID)
 
+    // Check if we need to create additional fields for long content
+    if (full_job_description.length > 2000) {
+      try {
+        // Get current database schema
+        const database = await notion.databases.retrieve({ database_id: process.env.NOTION_JD2CV_DB_ID })
+        const currentProperties = database.properties
+
+        // Check if additional fields exist
+        const needsUpdate = !currentProperties.full_job_description_part_2
+
+        if (needsUpdate) {
+          console.log('Creating additional fields for long JD content...')
+          await notion.databases.update({
+            database_id: process.env.NOTION_JD2CV_DB_ID,
+            properties: {
+              ...currentProperties,
+              full_job_description_part_2: { rich_text: {} },
+              full_job_description_part_3: { rich_text: {} },
+              full_job_description_part_4: { rich_text: {} },
+              full_job_description_part_5: { rich_text: {} }
+            }
+          })
+          console.log('Successfully created additional fields')
+        }
+      } catch (error) {
+        console.error('Error creating additional fields:', error)
+        // Continue with original logic if field creation fails
+      }
+    }
+
     // Check if record with same title and company already exists
     const existingRecords = await notion.databases.query({
       database_id: process.env.NOTION_JD2CV_DB_ID,
@@ -60,19 +90,51 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Split job description into chunks if needed
+    const jdPart1 = full_job_description.substring(0, 2000)
+    const jdPart2 = full_job_description.substring(2000, 4000)
+    const jdPart3 = full_job_description.substring(4000, 6000)
+    const jdPart4 = full_job_description.substring(6000, 8000)
+    const jdPart5 = full_job_description.substring(8000, 10000)
+
+    // Create the page with all parts
+    const properties: any = {
+      title: {
+        title: [{ text: { content: title } }]
+      },
+      company: {
+        rich_text: [{ text: { content: company } }]
+      },
+      full_job_description: {
+        rich_text: [{ text: { content: jdPart1 } }]
+      },
+    }
+
+    // Add additional parts if they exist
+    if (jdPart2) {
+      properties.full_job_description_part_2 = {
+        rich_text: [{ text: { content: jdPart2 } }]
+      }
+    }
+    if (jdPart3) {
+      properties.full_job_description_part_3 = {
+        rich_text: [{ text: { content: jdPart3 } }]
+      }
+    }
+    if (jdPart4) {
+      properties.full_job_description_part_4 = {
+        rich_text: [{ text: { content: jdPart4 } }]
+      }
+    }
+    if (jdPart5) {
+      properties.full_job_description_part_5 = {
+        rich_text: [{ text: { content: jdPart5 } }]
+      }
+    }
+
     const response = await notion.pages.create({
       parent: { database_id: process.env.NOTION_JD2CV_DB_ID },
-      properties: {
-        title: {
-          title: [{ text: { content: title } }]
-        },
-        company: {
-          rich_text: [{ text: { content: company } }]
-        },
-        full_job_description: {
-          rich_text: [{ text: { content: full_job_description.substring(0, 2000) } }]
-        },
-      },
+      properties
     })
 
     console.log('Successfully created page:', response.id)

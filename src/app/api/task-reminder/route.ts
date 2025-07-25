@@ -26,17 +26,20 @@ interface TaskData {
 }
 
 async function getUpcomingTasks(): Promise<TaskData[]> {
-  // Get current Toronto time
+  // Get current Toronto time using proper timezone handling
   const now = new Date()
-  const torontoNow = new Date(now.getTime() - (4 * 60 * 60 * 1000)) // Subtract 4 hours for Toronto timezone
   
-  // Calculate time window: 5 minutes from now
-  const reminderTime = new Date(torontoNow.getTime() + (5 * 60 * 1000))
+  // Get current Toronto time - simplified approach
+  const torontoTime = new Date().toLocaleString("en-US", {timeZone: "America/Toronto"})
+  const torontoNow = new Date(torontoTime)
   
-  // Get today's date for filtering
-  const todayString = torontoNow.toISOString().split('T')[0] // "2025-07-24"
+  // Get today's date for filtering - use Toronto timezone
+  const todayString = new Date().toLocaleDateString("en-CA", {timeZone: "America/Toronto"})
 
   try {
+    console.log(`Filtering tasks for date: ${todayString}`)
+    console.log(`Toronto now: ${torontoNow.toISOString()}`)
+    
     // Get all today's tasks first
     const response = await notion.databases.query({
       database_id: process.env.NOTION_Tasks_DB_ID!,
@@ -64,10 +67,12 @@ async function getUpcomingTasks(): Promise<TaskData[]> {
       ]
     })
 
+    console.log(`Found ${response.results.length} tasks for today`)
+    
     const allTasks: TaskData[] = response.results.map((page: any) => {
       const properties = page.properties
       
-      return {
+      const task = {
         id: page.id,
         title: properties.title?.title?.[0]?.plain_text || 'Untitled Task',
         status: properties.status?.select?.name || 'Not Started',
@@ -77,6 +82,9 @@ async function getUpcomingTasks(): Promise<TaskData[]> {
         plan: properties.plan?.relation?.map((rel: any) => rel.id) || [],
         note: properties.note?.rich_text?.[0]?.plain_text || undefined
       }
+      
+      console.log(`Task found: ${task.title}, Status: ${task.status}, Start: ${task.start_date}`)
+      return task
     })
 
     // Filter tasks that should be reminded (start time is within 5 minutes)
@@ -91,6 +99,14 @@ async function getUpcomingTasks(): Promise<TaskData[]> {
       const fiveMinutes = 5 * 60 * 1000 // 5 minutes in milliseconds
       const twoMinutes = 2 * 60 * 1000 // 2 minutes tolerance
       
+      // Debug logging
+      console.log(`Task: ${task.title}`)
+      console.log(`Task start time: ${taskStartTime.toISOString()}`)
+      console.log(`Toronto now: ${torontoNow.toISOString()}`)
+      console.log(`Time diff (minutes): ${timeDiff / 60000}`)
+      console.log(`Should remind: ${timeDiff >= (fiveMinutes - twoMinutes) && timeDiff <= (fiveMinutes + twoMinutes)}`)
+      console.log('---')
+      
       // Remind if task starts between 3-7 minutes from now
       return timeDiff >= (fiveMinutes - twoMinutes) && timeDiff <= (fiveMinutes + twoMinutes)
     })
@@ -100,14 +116,15 @@ async function getUpcomingTasks(): Promise<TaskData[]> {
     console.error('Error fetching tasks from Notion:', error)
     console.error('Database ID used:', process.env.NOTION_Tasks_DB_ID)
     console.error('Today string:', todayString)
+    console.error('Full error:', JSON.stringify(error, null, 2))
     throw new Error(`Failed to fetch tasks from Notion: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 
 function determineTimeOfDay(): 'morning' | 'afternoon' | 'evening' {
-  // Get current Toronto time
+  // Get current Toronto time using proper timezone handling
   const now = new Date()
-  const torontoTime = new Date(now.getTime() - (4 * 60 * 60 * 1000))
+  const torontoTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Toronto"}))
   const hour = torontoTime.getHours()
 
   if (hour >= 6 && hour < 12) {
