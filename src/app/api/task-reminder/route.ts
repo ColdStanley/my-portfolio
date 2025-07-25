@@ -108,16 +108,11 @@ async function getUpcomingTasks(): Promise<TaskData[]> {
       
       // Check if task starts in approximately 5 minutes (±2 minutes window)
       const timeDiff = taskStartTime.getTime() - torontoNow.getTime()
-      const fiveMinutes = 5 * 60 * 1000 // 5 minutes in milliseconds
-      const twoMinutes = 2 * 60 * 1000 // 2 minutes tolerance
       
-      // Debug logging
-      console.log(`Task: ${task.title}`)
-      console.log(`Task start time: ${taskStartTime.toISOString()}`)
-      console.log(`Toronto now: ${torontoNow.toISOString()}`)
-      console.log(`Time diff (minutes): ${timeDiff / 60000}`)
-      console.log(`Should remind: ${timeDiff >= (fiveMinutes - twoMinutes) && timeDiff <= (fiveMinutes + twoMinutes)}`)
-      console.log('---')
+      // Always return true for "111" task for testing
+      if (task.title === "111") {
+        return true
+      }
       
       // Remind if task starts between 0-10 minutes from now (expanded window for testing)
       return timeDiff >= 0 && timeDiff <= (10 * 60 * 1000)
