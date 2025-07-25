@@ -161,10 +161,13 @@ export async function GET(request: NextRequest) {
     console.log(`Found ${upcomingTasks.length} upcoming tasks needing reminders`)
 
     if (upcomingTasks.length === 0) {
+      // Add debug info to response for troubleshooting
+      const debugInfo = await getDebugInfo()
       return NextResponse.json({ 
         success: true, 
         message: 'No upcoming tasks need reminders at this time',
         tasksCount: 0,
+        debug: debugInfo,
         timestamp: new Date().toISOString()
       })
     }
@@ -208,4 +211,48 @@ export async function GET(request: NextRequest) {
 // Support POST for manual testing
 export async function POST(request: NextRequest) {
   return GET(request)
+}
+
+async function getDebugInfo() {
+  try {
+    const now = new Date()
+    const torontoTime = new Date().toLocaleString("en-US", {timeZone: "America/Toronto"})
+    const torontoNow = new Date(torontoTime)
+    const todayString = new Date().toLocaleDateString("en-CA", {timeZone: "America/Toronto"})
+    
+    const response = await notion.databases.query({
+      database_id: process.env.NOTION_Tasks_DB_ID!,
+      filter: {
+        and: [
+          {
+            property: 'start_date',
+            date: {
+              equals: todayString
+            }
+          },
+          {
+            property: 'status',
+            select: {
+              does_not_equal: 'Completed'
+            }
+          }
+        ]
+      }
+    })
+    
+    const allTasks = response.results.map((page: any) => ({
+      title: page.properties.title?.title?.[0]?.plain_text || 'Untitled',
+      status: page.properties.status?.select?.name || 'Unknown',
+      start_date: page.properties.start_date?.date?.start || 'No date'
+    }))
+    
+    return {
+      filtering_date: todayString,
+      toronto_now: torontoNow.toISOString(),
+      tasks_found: response.results.length,
+      tasks: allTasks
+    }
+  } catch (error) {
+    return { error: 'Debug failed', message: error instanceof Error ? error.message : 'Unknown' }
+  }
 }
