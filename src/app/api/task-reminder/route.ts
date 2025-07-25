@@ -67,9 +67,20 @@ async function getUpcomingTasks(): Promise<TaskData[]> {
       ]
     })
 
-    console.log(`Found ${response.results.length} tasks for today`)
+    console.log(`Found ${response.results.length} total tasks`)
+    console.log(`Found ${allResults.length} tasks for today after filtering`)
     
-    const allTasks: TaskData[] = response.results.map((page: any) => {
+    // Filter today's tasks in code instead of Notion query
+    const allResults = response.results.filter((page: any) => {
+      const startDate = page.properties.start_date?.date?.start
+      if (!startDate) return false
+      
+      // Extract date part from the start_date
+      const taskDate = startDate.split('T')[0] // "2025-07-24"
+      return taskDate === todayString
+    })
+
+    const allTasks: TaskData[] = allResults.map((page: any) => {
       const properties = page.properties
       
       const task = {
@@ -223,20 +234,10 @@ async function getDebugInfo() {
     const response = await notion.databases.query({
       database_id: process.env.NOTION_Tasks_DB_ID!,
       filter: {
-        and: [
-          {
-            property: 'start_date',
-            date: {
-              equals: todayString
-            }
-          },
-          {
-            property: 'status',
-            select: {
-              does_not_equal: 'Completed'
-            }
-          }
-        ]
+        property: 'status',
+        select: {
+          does_not_equal: 'Completed'
+        }
       }
     })
     
