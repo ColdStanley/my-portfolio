@@ -91,8 +91,8 @@ async function getUpcomingTasks(): Promise<TaskData[]> {
     const upcomingTasks = allTasks.filter(task => {
       if (!task.start_date) return false
       
-      // Parse Toronto timezone task start time
-      const taskStartTime = new Date(task.start_date.replace(/-04:00$/, ''))
+      // Parse Toronto timezone task start time - handle -04:00 timezone
+      const taskStartTime = new Date(task.start_date)
       
       // Check if task starts in approximately 5 minutes (±2 minutes window)
       const timeDiff = taskStartTime.getTime() - torontoNow.getTime()
@@ -222,8 +222,22 @@ async function getDebugInfo() {
     
     const response = await notion.databases.query({
       database_id: process.env.NOTION_Tasks_DB_ID!,
-      page_size: 10
-      // Temporarily remove all filters to see all tasks
+      filter: {
+        and: [
+          {
+            property: 'start_date',
+            date: {
+              equals: todayString
+            }
+          },
+          {
+            property: 'status',
+            select: {
+              does_not_equal: 'Completed'
+            }
+          }
+        ]
+      }
     })
     
     const allTasks = response.results.map((page: any) => ({
