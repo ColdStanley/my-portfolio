@@ -534,21 +534,25 @@ export default function ReadingView({ language, articleId, content, title, onNew
       {/* Page Content */}
       <div className="relative z-10 space-y-4">
         {/* Header Section */}
-        <div className="flex justify-between items-center py-4">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-800">{uiTexts.readingSession}</h2>
-            {title && (
-              <p className="text-sm text-purple-600 font-medium mt-1">"{title}"</p>
-            )}
-          </div>
-          
-          {/* Timer in the middle */}
-          <div className="flex-1 flex justify-center">
-            <ReadingTimer />
+        <div className="flex justify-between items-start py-4">
+          <div className="flex-1">
+            <div className="flex justify-between items-start">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800">{uiTexts.readingSession}</h2>
+                {title && (
+                  <p className="text-sm text-purple-600 font-medium mt-1">"{title}"</p>
+                )}
+              </div>
+              
+              {/* Timer aligned with article card right edge */}
+              <div className="w-1/2 flex justify-end">
+                <ReadingTimer />
+              </div>
+            </div>
           </div>
           
           {/* Buttons on the right */}
-          <div className="flex gap-3">
+          <div className="flex gap-3 ml-6">
             <AnimatedButton
               onClick={() => setIsTestMode(!isTestMode)}
               variant="secondary"

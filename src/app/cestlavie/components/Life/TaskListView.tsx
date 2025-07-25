@@ -413,11 +413,9 @@ export default function TaskListView({
                     {/* Desktop Left Column / Mobile Top Row - Time Info */}
                     <div className="flex flex-col gap-1 lg:min-w-[100px] mb-3 lg:mb-0">
                       {(task.start_date || task.end_date) && (
-                        <TimeComparisonTooltip task={task}>
-                          <span className="text-sm font-semibold text-purple-500 cursor-help">
-                            {formatTimeOnly(task.start_date, task.end_date)}
-                          </span>
-                        </TimeComparisonTooltip>
+                        <span className="text-sm font-semibold text-purple-500">
+                          {formatTimeOnly(task.start_date, task.end_date)}
+                        </span>
                       )}
                       {/* Show countdown for started tasks */}
                       {task.actual_start && !task.actual_end && (

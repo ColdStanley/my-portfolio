@@ -97,20 +97,22 @@ export default function ArticleList({ language, onSelectArticle, isMobile = fals
             <div
               key={article.id}
               onClick={() => handleSelectArticle(article)}
-              className={`${isMobile ? 'bg-white' : ''} p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 cursor-pointer transition-all duration-200 ${isMobile ? 'shadow-sm' : 'transform hover:scale-[1.01]'}`}
+              className={`${isMobile ? 'bg-white shadow-sm' : 'bg-white'} p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 cursor-pointer transition-all duration-200 transform hover:scale-[1.01] min-h-[80px] flex flex-col justify-between`}
             >
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-medium text-gray-900 truncate flex-1 pr-2">
-                  {article.title || uiTexts.untitled}
-                </h3>
-                <span className="text-xs text-gray-500 whitespace-nowrap">
-                  {formatDate(article.created_at)}
-                </span>
+              <div className="flex-1">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-medium text-gray-900 flex-1 pr-2 line-clamp-1">
+                    {article.title || uiTexts.untitled}
+                  </h3>
+                  <span className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0">
+                    {formatDate(article.created_at)}
+                  </span>
+                </div>
+                
+                <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
+                  {article.content.substring(0, 120)}...
+                </p>
               </div>
-              
-              <p className="text-sm text-gray-600 line-clamp-2">
-                {article.content.substring(0, 100)}...
-              </p>
               
               {isMobile && (
                 <div className="mt-2 flex justify-end">

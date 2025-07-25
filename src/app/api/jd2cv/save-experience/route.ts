@@ -76,54 +76,58 @@ export async function POST(request: NextRequest) {
       }
       
       // Create new generated experience callout
-      await notion.blocks.children.append({
-        block_id: pageId,
-        children: [
-          {
-            object: 'block',
-            type: 'callout',
-            callout: {
-              rich_text: [],
-              color: 'gray_background',
-              children: [
-                {
-                  object: 'block',
-                  type: 'heading_3',
-                  heading_3: {
-                    rich_text: [
-                      {
-                        type: 'text',
-                        text: {
-                          content: calloutTitle,
+      try {
+        await notion.blocks.children.append({
+          block_id: pageId,
+          children: [
+            {
+              object: 'block',
+              type: 'callout',
+              callout: {
+                rich_text: [],
+                color: 'gray_background',
+                children: [
+                  {
+                    object: 'block',
+                    type: 'heading_3',
+                    heading_3: {
+                      rich_text: [
+                        {
+                          type: 'text',
+                          text: {
+                            content: calloutTitle,
+                          },
+                          annotations: {
+                            bold: true
+                          }
                         },
-                        annotations: {
-                          bold: true
-                        }
-                      },
-                    ],
+                      ],
+                    },
                   },
-                },
-                {
-                  object: 'block',
-                  type: 'paragraph',
-                  paragraph: {
-                    rich_text: [
-                      {
-                        type: 'text',
-                        text: {
-                          content: experienceValue,
+                  {
+                    object: 'block',
+                    type: 'paragraph',
+                    paragraph: {
+                      rich_text: [
+                        {
+                          type: 'text',
+                          text: {
+                            content: experienceValue,
+                          },
                         },
-                      },
-                    ],
+                      ],
+                    },
                   },
-                },
-              ],
+                ],
+              },
             },
-          },
-        ],
-      })
-      
-      console.log(`Created/updated generated experience ${experienceIndex} callout`)
+          ],
+        })
+        console.log(`Successfully created generated experience ${experienceIndex} callout`)
+      } catch (calloutError) {
+        console.error(`Failed to create callout for generated experience ${experienceIndex}:`, calloutError)
+        // Don't throw error here - database update was successful
+      }
     } else {
       // Create new page
       const response = await notion.pages.create({
@@ -145,54 +149,58 @@ export async function POST(request: NextRequest) {
       // Create generated experience callout for new page
       const calloutTitle = `Generated Experience ${experienceIndex}`
       
-      await notion.blocks.children.append({
-        block_id: pageId,
-        children: [
-          {
-            object: 'block',
-            type: 'callout',
-            callout: {
-              rich_text: [],
-              color: 'gray_background',
-              children: [
-                {
-                  object: 'block',
-                  type: 'heading_3',
-                  heading_3: {
-                    rich_text: [
-                      {
-                        type: 'text',
-                        text: {
-                          content: calloutTitle,
+      try {
+        await notion.blocks.children.append({
+          block_id: pageId,
+          children: [
+            {
+              object: 'block',
+              type: 'callout',
+              callout: {
+                rich_text: [],
+                color: 'gray_background',
+                children: [
+                  {
+                    object: 'block',
+                    type: 'heading_3',
+                    heading_3: {
+                      rich_text: [
+                        {
+                          type: 'text',
+                          text: {
+                            content: calloutTitle,
+                          },
+                          annotations: {
+                            bold: true
+                          }
                         },
-                        annotations: {
-                          bold: true
-                        }
-                      },
-                    ],
+                      ],
+                    },
                   },
-                },
-                {
-                  object: 'block',
-                  type: 'paragraph',
-                  paragraph: {
-                    rich_text: [
-                      {
-                        type: 'text',
-                        text: {
-                          content: experienceValue,
+                  {
+                    object: 'block',
+                    type: 'paragraph',
+                    paragraph: {
+                      rich_text: [
+                        {
+                          type: 'text',
+                          text: {
+                            content: experienceValue,
+                          },
                         },
-                      },
-                    ],
+                      ],
+                    },
                   },
-                },
-              ],
+                ],
+              },
             },
-          },
-        ],
-      })
-      
-      console.log(`Created generated experience ${experienceIndex} callout for new page`)
+          ],
+        })
+        console.log(`Successfully created generated experience ${experienceIndex} callout for new page`)
+      } catch (calloutError) {
+        console.error(`Failed to create callout for new page generated experience ${experienceIndex}:`, calloutError)
+        // Don't throw error here - database update was successful
+      }
     }
 
     return NextResponse.json({ success: true, id: pageId })

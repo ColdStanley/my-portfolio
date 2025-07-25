@@ -14,6 +14,31 @@ export default function CestLaViePage() {
   const { user, loading, notionConfig } = useSimplifiedAuth()
   const router = useRouter()
 
+  // Handle tab change with scroll reset
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab)
+    // Reset scroll position to top when switching tabs
+    setTimeout(() => {
+      // Try multiple selectors to find the scrollable container
+      const selectors = [
+        '.h-full.overflow-y-auto',
+        '.overflow-y-auto',
+        '.main-content-scroll'
+      ]
+      
+      for (const selector of selectors) {
+        const element = document.querySelector(selector)
+        if (element) {
+          element.scrollTop = 0
+          break
+        }
+      }
+      
+      // Also scroll window to top as fallback
+      window.scrollTo(0, 0)
+    }, 50) // Slightly longer timeout to ensure DOM is updated
+  }
+
   // 检查用户认证状态
   useEffect(() => {
     if (!loading && !user) {
@@ -75,7 +100,7 @@ export default function CestLaViePage() {
         {/* 侧边栏 */}
         <Sidebar 
           activeTab={activeTab} 
-          setActiveTab={setActiveTab}
+          setActiveTab={handleTabChange}
           mobileMenuOpen={mobileMenuOpen}
           setMobileMenuOpen={setMobileMenuOpen}
           onConfigClick={() => setShowConfigModal(true)}
@@ -83,7 +108,7 @@ export default function CestLaViePage() {
         
         {/* 主内容区域 */}
         <div className="flex-1 overflow-hidden md:overflow-auto">
-          <div className="h-full overflow-y-auto md:overflow-visible">
+          <div className="h-full overflow-y-auto md:overflow-visible main-content-scroll">
             <MainContent activeMainTab={activeTab} onConfigClick={() => setShowConfigModal(true)} />
           </div>
         </div>

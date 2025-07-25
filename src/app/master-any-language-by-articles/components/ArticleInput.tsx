@@ -86,7 +86,20 @@ export default function ArticleInput({ language, onSubmit, onSelectArticle }: Ar
               />
             </div>
             
-            {/* Background Image Upload */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {uiTexts.articleContent}
+              </label>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                rows={12}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                placeholder={uiTexts.contentPlaceholder}
+              />
+            </div>
+            
+            {/* Background Image Upload - moved below textarea */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Background Image (Optional)
@@ -116,19 +129,6 @@ export default function ArticleInput({ language, onSubmit, onSelectArticle }: Ar
               </div>
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {uiTexts.articleContent}
-              </label>
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                rows={12}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-                placeholder={uiTexts.contentPlaceholder}
-              />
-            </div>
-            
             <button
               onClick={handleSubmit}
               disabled={!content.trim() || isLoading || imageUploading}
@@ -141,7 +141,7 @@ export default function ArticleInput({ language, onSubmit, onSelectArticle }: Ar
       </div>
       
       {/* Right Panel - Article List */}
-      <div className="w-1/2">
+      <div className="w-1/2 flex flex-col">
         <ArticleList language={language} onSelectArticle={onSelectArticle} />
       </div>
     </div>

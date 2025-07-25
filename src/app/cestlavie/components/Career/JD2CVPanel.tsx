@@ -49,7 +49,6 @@ function TooltipPrompt({ value, onChange, onSave, placeholder, disabled = false,
 
   const handleApply = () => {
     onChange(tempValue)
-    onSave()
     setIsOpen(false)
   }
 
@@ -90,9 +89,9 @@ function TooltipPrompt({ value, onChange, onSave, placeholder, disabled = false,
       {isOpen && (
         <div
           ref={tooltipRef}
-          className="absolute top-0 left-8 z-50 w-96 bg-white border border-purple-200 rounded-lg shadow-lg p-4"
+          className="absolute top-0 right-8 z-50 w-96 bg-white border border-purple-200 rounded-lg shadow-lg p-4"
         >
-          <div className="absolute top-2 -left-2 w-4 h-4 bg-white border-l border-t border-purple-200 transform rotate-45"></div>
+          <div className="absolute top-2 -right-2 w-4 h-4 bg-white border-r border-t border-purple-200 transform -rotate-45"></div>
           
           <div className="space-y-3">
             <h4 className="text-sm font-medium text-gray-800">Additional Instructions</h4>
@@ -187,6 +186,8 @@ export default function JD2CVPanel() {
   // Individual capability states
   const [capabilitySaveMessages, setCapabilitySaveMessages] = useState<string[]>(['', '', '', '', ''])
   const [capabilityIsSaving, setCapabilityIsSaving] = useState<boolean[]>([false, false, false, false, false])
+  const [experienceSaveMessages, setExperienceSaveMessages] = useState<string[]>(['', '', '', '', ''])
+  const [experienceIsSaving, setExperienceIsSaving] = useState<boolean[]>([false, false, false, false, false])
   const [experienceInputs, setExperienceInputs] = useState<string[]>(['', '', '', '', ''])
   const [experiencePrompts, setExperiencePrompts] = useState<string[]>(['', '', '', '', ''])
   const [experienceGenerating, setExperienceGenerating] = useState<boolean[]>([false, false, false, false, false])
@@ -676,26 +677,31 @@ export default function JD2CVPanel() {
     }
   }
 
+  // Helper function to remove emojis
+  const removeEmojis = (text: string) => {
+    return text.replace(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim()
+  }
+
   const handleSaveExperience = async (index: number) => {
     const experienceKey = `generated_text_${index + 1}` as keyof JDData
     const experienceValue = jdData[experienceKey]
-    const capabilityKey = `capability_${index + 1}` as keyof JDData
-    const capabilityValue = jdData[capabilityKey]
 
-    setExperienceGenerating(prev => {
+    setExperienceIsSaving(prev => {
       const newState = [...prev]
       newState[index] = true
       return newState
     })
 
-    setExperienceMessages(prev => {
+    setExperienceSaveMessages(prev => {
       const newState = [...prev]
       newState[index] = ''
       return newState
     })
 
     try {
-      // First save the experience property
+      // Remove emojis from the experience value before saving
+      const cleanExperienceValue = removeEmojis(experienceValue || '')
+      
       const response = await fetch('/api/jd2cv/save-experience', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -703,7 +709,7 @@ export default function JD2CVPanel() {
           title: jdData.title,
           company: jdData.company,
           experienceIndex: index + 1,
-          experienceValue: experienceValue
+          experienceValue: cleanExperienceValue,
         })
       })
 
@@ -712,40 +718,31 @@ export default function JD2CVPanel() {
         if (data.id && !currentPageId) {
           setCurrentPageId(data.id)
         }
-
-        // Callout update is now handled directly in save-experience API
-
-        setExperienceMessages(prev => {
+        setExperienceSaveMessages(prev => {
           const newState = [...prev]
           newState[index] = 'Saved successfully'
           return newState
         })
       } else {
-        setExperienceMessages(prev => {
+        setExperienceSaveMessages(prev => {
           const newState = [...prev]
           newState[index] = 'Save failed'
           return newState
         })
       }
     } catch (error) {
-      setExperienceMessages(prev => {
+      setExperienceSaveMessages(prev => {
         const newState = [...prev]
         newState[index] = 'Save error'
         return newState
       })
     } finally {
-      setExperienceGenerating(prev => {
+      setExperienceIsSaving(prev => {
         const newState = [...prev]
         newState[index] = false
         return newState
       })
-      setTimeout(() => {
-        setExperienceMessages(prev => {
-          const newState = [...prev]
-          newState[index] = ''
-          return newState
-        })
-      }, 3000)
+      // Keep status message visible and remove height sync to prevent UI jitter
     }
   }
 
@@ -772,6 +769,9 @@ export default function JD2CVPanel() {
     })
 
     try {
+      // Remove emojis from the input experience value before saving
+      const cleanInputExperienceValue = removeEmojis(inputExperienceValue || '')
+      
       const response = await fetch('/api/jd2cv/save-input-experience', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -779,7 +779,8 @@ export default function JD2CVPanel() {
           title: jdData.title,
           company: jdData.company,
           experienceIndex: index + 1,
-          inputExperienceValue: inputExperienceValue
+          inputExperienceValue: cleanInputExperienceValue,
+          overwrite: true // Add overwrite flag
         })
       })
 
@@ -1090,12 +1091,10 @@ export default function JD2CVPanel() {
                           const newInputs = [...experienceInputs]
                           newInputs[index] = e.target.value
                           setExperienceInputs(newInputs)
-                          // Sync heights after content change
-                          setTimeout(() => syncExperienceTextareaHeights(index), 0)
                         }}
                         onInput={() => {
-                          // Sync heights on input
-                          setTimeout(() => syncExperienceTextareaHeights(index), 0)
+                          // Delayed sync to reduce jitter
+                          setTimeout(() => syncExperienceTextareaHeights(index), 100)
                         }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none overflow-hidden"
                         placeholder="Describe your relevant experience..."
@@ -1108,7 +1107,7 @@ export default function JD2CVPanel() {
                         <button
                           onClick={() => handleSaveInputExperience(index)}
                           disabled={inputExperienceSaving[index]}
-                          className="px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 flex-shrink-0 shadow-sm hover:shadow-md transition-shadow"
+                          className="px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 flex-shrink-0 shadow-sm hover:shadow-md transition-shadow w-20 text-center"
                         >
                           {inputExperienceSaving[index] ? 'Saving...' : 'Save'}
                         </button>
@@ -1126,62 +1125,66 @@ export default function JD2CVPanel() {
                             ...prev, 
                             [`generated_text_${num}`]: e.target.value 
                           }))
-                          // Sync heights after content change
-                          setTimeout(() => syncExperienceTextareaHeights(index), 0)
                         }}
                         onInput={() => {
-                          // Sync heights on input
-                          setTimeout(() => syncExperienceTextareaHeights(index), 0)
+                          // Delayed sync to reduce jitter
+                          setTimeout(() => syncExperienceTextareaHeights(index), 100)
                         }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none overflow-hidden"
                         placeholder="Generated experience will appear here..."
                         style={{ minHeight: '120px' }}
                       />
                       
-                      {/* Generate Button - Left aligned with status on right */}
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => handleGenerateExperience(index)}
-                          disabled={experienceGenerating[index]}
-                          className="px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md transition-shadow flex-shrink-0"
-                        >
-                          {experienceGenerating[index] ? 'Generating...' : 'Generate'}
-                        </button>
-                        <p className="text-sm text-gray-400">
-                          {experienceGenerating[index] ? 'AI is generating...' : (experienceMessages[index] && experienceMessages[index].includes('generated') ? 'Generated successfully' : 'Ready to generate')}
-                        </p>
-                      </div>
-                      
-                      {/* Add Custom Instructions - Left aligned under Generate */}
-                      <div className="flex items-center">
-                        <TooltipPrompt
-                          value={experiencePrompts[index]}
-                          onChange={(value) => {
-                            const newPrompts = [...experiencePrompts]
-                            newPrompts[index] = value
-                            setExperiencePrompts(newPrompts)
-                          }}
-                          onSave={() => {
-                            console.log('Experience prompt updated for capability', index + 1)
-                          }}
-                          placeholder="Additional instructions for customization..."
-                          disabled={experienceGenerating[index]}
-                          saving={false}
-                        />
-                      </div>
-                      
-                      {/* Save Button - Right aligned with status on left */}
-                      <div className="flex gap-3 justify-end items-center">
-                        <p className="text-sm text-gray-400 min-w-[120px] text-right">
-                          {experienceMessages[index] && experienceMessages[index].includes('saved') ? 'Saved successfully' : (experienceMessages[index] && experienceMessages[index].includes('failed') ? 'Save failed' : 'Ready to save')}
-                        </p>
-                        <button
-                          onClick={() => handleSaveExperience(index)}
-                          disabled={experienceGenerating[index]}
-                          className="px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md transition-shadow flex-shrink-0"
-                        >
-                          Save
-                        </button>
+                      {/* Buttons - Vertical layout aligned to right */}
+                      <div className="flex flex-col gap-3 items-end">
+                        {/* Generate Button Row */}
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm text-gray-400">
+                            {experienceGenerating[index] ? 'AI is generating...' : (experienceMessages[index] && experienceMessages[index].includes('generated') ? 'Generated successfully' : 'Ready to generate')}
+                          </p>
+                          <TooltipPrompt
+                            value={experiencePrompts[index]}
+                            onChange={(value) => {
+                              const newPrompts = [...experiencePrompts]
+                              newPrompts[index] = value
+                              setExperiencePrompts(newPrompts)
+                            }}
+                            onSave={() => {
+                              console.log('Experience prompt updated for capability', index + 1)
+                            }}
+                            placeholder="Additional instructions for customization..."
+                            disabled={experienceGenerating[index]}
+                            saving={false}
+                          />
+                          <button
+                            onClick={() => handleGenerateExperience(index)}
+                            disabled={experienceGenerating[index]}
+                            className="px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md transition-shadow w-20 text-center flex items-center justify-center gap-2"
+                          >
+                            {experienceGenerating[index] ? (
+                              <>
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                                Gen...
+                              </>
+                            ) : (
+                              'Generate'
+                            )}
+                          </button>
+                        </div>
+                        
+                        {/* Save Button Row */}
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm text-gray-400 min-w-[120px] text-right">
+                            {experienceSaveMessages[index] || 'Ready to save'}
+                          </p>
+                          <button
+                            onClick={() => handleSaveExperience(index)}
+                            disabled={experienceIsSaving[index]}
+                            className="px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md transition-shadow w-20 text-center"
+                          >
+                            {experienceIsSaving[index] ? 'Saving...' : 'Save'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

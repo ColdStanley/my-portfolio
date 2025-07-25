@@ -43,6 +43,8 @@ export async function POST(request: NextRequest) {
     if (database.results.length > 0) {
       // Update existing page
       pageId = database.results[0].id
+      console.log(`Updating page ${pageId} with capability ${capabilityIndex}`)
+      
       await notion.pages.update({
         page_id: pageId,
         properties: {
@@ -51,6 +53,7 @@ export async function POST(request: NextRequest) {
           },
         },
       })
+      console.log(`Successfully updated database property ${propertyName}`)
 
       // Check if capability callout already exists and delete it
       const allBlocks = await notion.blocks.children.list({
@@ -76,54 +79,58 @@ export async function POST(request: NextRequest) {
       }
       
       // Create new capability callout
-      const calloutResponse = await notion.blocks.children.append({
-        block_id: pageId,
-        children: [
-          {
-            object: 'block',
-            type: 'callout',
-            callout: {
-              rich_text: [],
-              color: 'gray_background',
-              children: [
-                {
-                  object: 'block',
-                  type: 'heading_3',
-                  heading_3: {
-                    rich_text: [
-                      {
-                        type: 'text',
-                        text: {
-                          content: calloutTitle,
+      try {
+        const calloutResponse = await notion.blocks.children.append({
+          block_id: pageId,
+          children: [
+            {
+              object: 'block',
+              type: 'callout',
+              callout: {
+                rich_text: [],
+                color: 'gray_background',
+                children: [
+                  {
+                    object: 'block',
+                    type: 'heading_3',
+                    heading_3: {
+                      rich_text: [
+                        {
+                          type: 'text',
+                          text: {
+                            content: calloutTitle,
+                          },
+                          annotations: {
+                            bold: true
+                          }
                         },
-                        annotations: {
-                          bold: true
-                        }
-                      },
-                    ],
+                      ],
+                    },
                   },
-                },
-                {
-                  object: 'block',
-                  type: 'paragraph',
-                  paragraph: {
-                    rich_text: [
-                      {
-                        type: 'text',
-                        text: {
-                          content: capabilityValue,
+                  {
+                    object: 'block',
+                    type: 'paragraph',
+                    paragraph: {
+                      rich_text: [
+                        {
+                          type: 'text',
+                          text: {
+                            content: capabilityValue,
+                          },
                         },
-                      },
-                    ],
+                      ],
+                    },
                   },
-                },
-              ],
+                ],
+              },
             },
-          },
-        ],
-      })
-      
-      console.log(`Created/updated capability ${capabilityIndex} callout`)
+          ],
+        })
+        console.log(`Successfully created capability ${capabilityIndex} callout`)
+      } catch (calloutError) {
+        console.error(`Failed to create callout for capability ${capabilityIndex}:`, calloutError)
+        // Don't throw error here - database update was successful
+      }
     } else {
       // Create new page
       const response = await notion.pages.create({
@@ -145,54 +152,58 @@ export async function POST(request: NextRequest) {
       // Create capability callout for new page
       const calloutTitle = `Capability ${capabilityIndex}`
       
-      const calloutResponse = await notion.blocks.children.append({
-        block_id: pageId,
-        children: [
-          {
-            object: 'block',
-            type: 'callout',
-            callout: {
-              rich_text: [],
-              color: 'gray_background',
-              children: [
-                {
-                  object: 'block',
-                  type: 'heading_3',
-                  heading_3: {
-                    rich_text: [
-                      {
-                        type: 'text',
-                        text: {
-                          content: calloutTitle,
+      try {
+        const calloutResponse = await notion.blocks.children.append({
+          block_id: pageId,
+          children: [
+            {
+              object: 'block',
+              type: 'callout',
+              callout: {
+                rich_text: [],
+                color: 'gray_background',
+                children: [
+                  {
+                    object: 'block',
+                    type: 'heading_3',
+                    heading_3: {
+                      rich_text: [
+                        {
+                          type: 'text',
+                          text: {
+                            content: calloutTitle,
+                          },
+                          annotations: {
+                            bold: true
+                          }
                         },
-                        annotations: {
-                          bold: true
-                        }
-                      },
-                    ],
+                      ],
+                    },
                   },
-                },
-                {
-                  object: 'block',
-                  type: 'paragraph',
-                  paragraph: {
-                    rich_text: [
-                      {
-                        type: 'text',
-                        text: {
-                          content: capabilityValue,
+                  {
+                    object: 'block',
+                    type: 'paragraph',
+                    paragraph: {
+                      rich_text: [
+                        {
+                          type: 'text',
+                          text: {
+                            content: capabilityValue,
+                          },
                         },
-                      },
-                    ],
+                      ],
+                    },
                   },
-                },
-              ],
+                ],
+              },
             },
-          },
-        ],
-      })
-      
-      console.log(`Created capability ${capabilityIndex} callout for new page`)
+          ],
+        })
+        console.log(`Successfully created capability ${capabilityIndex} callout for new page`)
+      } catch (calloutError) {
+        console.error(`Failed to create callout for new page capability ${capabilityIndex}:`, calloutError)
+        // Don't throw error here - database update was successful
+      }
     }
 
     return NextResponse.json({ success: true, id: pageId })
