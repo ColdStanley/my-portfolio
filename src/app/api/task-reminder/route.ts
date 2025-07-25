@@ -68,7 +68,6 @@ async function getUpcomingTasks(): Promise<TaskData[]> {
     })
 
     console.log(`Found ${response.results.length} total tasks`)
-    console.log(`Found ${allResults.length} tasks for today after filtering`)
     
     // Filter today's tasks in code instead of Notion query
     const allResults = response.results.filter((page: any) => {
@@ -79,6 +78,8 @@ async function getUpcomingTasks(): Promise<TaskData[]> {
       const taskDate = startDate.split('T')[0] // "2025-07-24"
       return taskDate === todayString
     })
+    
+    console.log(`Found ${allResults.length} tasks for today after filtering`)
 
     const allTasks: TaskData[] = allResults.map((page: any) => {
       const properties = page.properties
