@@ -119,8 +119,8 @@ async function getUpcomingTasks(): Promise<TaskData[]> {
       console.log(`Should remind: ${timeDiff >= (fiveMinutes - twoMinutes) && timeDiff <= (fiveMinutes + twoMinutes)}`)
       console.log('---')
       
-      // Remind if task starts between 3-7 minutes from now
-      return timeDiff >= (fiveMinutes - twoMinutes) && timeDiff <= (fiveMinutes + twoMinutes)
+      // Remind if task starts between 0-10 minutes from now (expanded window for testing)
+      return timeDiff >= 0 && timeDiff <= (10 * 60 * 1000)
     })
 
     return upcomingTasks
