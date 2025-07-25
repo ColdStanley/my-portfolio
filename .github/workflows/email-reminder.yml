@@ -2,8 +2,14 @@ name: Daily Task Email Reminders
 
 on:
   schedule:
-    # Check for upcoming tasks every 5 minutes
-    - cron: '*/5 * * * *'
+    # Morning overview at 8:00 AM Toronto time (12:00 UTC)
+    - cron: '0 12 * * *'
+    # Midday check at 12:00 PM Toronto time (16:00 UTC)  
+    - cron: '0 16 * * *'
+    # Evening summary at 6:00 PM Toronto time (22:00 UTC)
+    - cron: '0 22 * * *'
+    # Tomorrow preview at 11:00 PM Toronto time (3:00 UTC next day)
+    - cron: '0 3 * * *'
   
   # Allow manual triggering for testing
   workflow_dispatch:

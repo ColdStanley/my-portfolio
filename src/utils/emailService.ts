@@ -418,6 +418,208 @@ class EmailService {
     }
   }
 
+  // New daily email methods for scheduled reminders
+  async sendMorningOverview(tasks: TaskData[], date: string): Promise<void> {
+    const emailContent = this.generateMorningEmail(tasks)
+    
+    const mailOptions = {
+      from: this.config.from,
+      to: this.config.to,
+      subject: emailContent.subject,
+      html: emailContent.html
+    }
+
+    try {
+      const info = await this.transporter.sendMail(mailOptions)
+      console.log('Morning overview email sent successfully:', info.messageId)
+    } catch (error) {
+      console.error('Error sending morning overview email:', error)
+      throw error
+    }
+  }
+
+  async sendMiddayCheck(activeTasks: TaskData[], completedTasks: TaskData[], date: string): Promise<void> {
+    const allTasks = [...activeTasks, ...completedTasks]
+    const emailContent = this.generateMiddayEmail(allTasks, completedTasks)
+    
+    const mailOptions = {
+      from: this.config.from,
+      to: this.config.to,
+      subject: emailContent.subject,
+      html: emailContent.html
+    }
+
+    try {
+      const info = await this.transporter.sendMail(mailOptions)
+      console.log('Midday check email sent successfully:', info.messageId)
+    } catch (error) {
+      console.error('Error sending midday check email:', error)
+      throw error
+    }
+  }
+
+  async sendEveningSummary(allTasks: TaskData[], completedTasks: TaskData[], date: string): Promise<void> {
+    const emailContent = this.generateEveningEmail(allTasks)
+    
+    const mailOptions = {
+      from: this.config.from,
+      to: this.config.to,
+      subject: emailContent.subject,
+      html: emailContent.html
+    }
+
+    try {
+      const info = await this.transporter.sendMail(mailOptions)
+      console.log('Evening summary email sent successfully:', info.messageId)
+    } catch (error) {
+      console.error('Error sending evening summary email:', error)
+      throw error
+    }
+  }
+
+  async sendTomorrowPreview(tomorrowTasks: TaskData[], date: string): Promise<void> {
+    const emailContent = this.generateTomorrowPreviewEmail(tomorrowTasks, date)
+    
+    const mailOptions = {
+      from: this.config.from,
+      to: this.config.to,
+      subject: emailContent.subject,
+      html: emailContent.html
+    }
+
+    try {
+      const info = await this.transporter.sendMail(mailOptions)
+      console.log('Tomorrow preview email sent successfully:', info.messageId)
+    } catch (error) {
+      console.error('Error sending tomorrow preview email:', error)
+      throw error
+    }
+  }
+
+  // Generate midday check email
+  private generateMiddayEmail(allTasks: TaskData[], completedTasks: TaskData[]): EmailContent {
+    const morningCompleted = completedTasks.length
+    const afternoonTasks = allTasks.filter(task => 
+      task.status !== 'Completed' && 
+      task.start_date && 
+      new Date(task.start_date).getHours() >= 12
+    )
+    
+    let html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #7c3aed; margin-bottom: 20px;">☀️ Midday Check-in</h2>
+        <p style="color: #6b7280; margin-bottom: 30px;">How's your day going so far?</p>
+    `
+
+    // Morning progress
+    if (morningCompleted > 0) {
+      html += `
+        <div style="background-color: #ecfdf5; border: 1px solid #10b981; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+          <h3 style="color: #059669; margin: 0 0 8px 0;">✅ Morning Progress</h3>
+          <p style="margin: 0; color: #065f46; font-size: 16px;">Great job! You've completed ${morningCompleted} task${morningCompleted > 1 ? 's' : ''} this morning.</p>
+        </div>
+      `
+    } else {
+      html += `
+        <div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+          <h3 style="color: #d97706; margin: 0 0 8px 0;">⏳ Morning Catch-up</h3>
+          <p style="margin: 0; color: #92400e; font-size: 16px;">No tasks completed yet this morning. There's still time to make progress!</p>
+        </div>
+      `
+    }
+
+    // Afternoon tasks
+    if (afternoonTasks.length > 0) {
+      html += '<h3 style="color: #7c3aed; margin-bottom: 16px;">🌞 Afternoon Tasks</h3>'
+      afternoonTasks.forEach(task => {
+        const timeRange = this.formatTimeRange(task.start_date, task.end_date)
+        const priorityEmoji = this.getPriorityEmoji(task.priority_quadrant)
+        
+        html += `
+          <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; background-color: #f9fafb;">
+            <div style="display: flex; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 20px; margin-right: 8px;">${priorityEmoji}</span>
+              <h4 style="margin: 0; color: #1f2937; font-size: 16px;">${task.title}</h4>
+            </div>
+            <div style="color: #6b7280; font-size: 14px;">
+              ${this.getStatusEmoji(task.status)} ${task.status} ${timeRange ? `• ⏰ ${timeRange}` : ''}
+            </div>
+          </div>
+        `
+      })
+    } else {
+      html += '<p style="color: #10b981; font-size: 16px;">🎉 No afternoon tasks scheduled. Perfect time for a break or getting ahead!</p>'
+    }
+
+    html += `
+        <div style="margin-top: 30px; padding: 16px; background-color: #ede9fe; border-radius: 8px; text-align: center;">
+          <p style="margin: 0; color: #7c3aed; font-weight: bold;">Keep the momentum going! 🚀</p>
+        </div>
+      </div>
+    `
+
+    return {
+      subject: `☀️ Midday Check-in - ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`,
+      html
+    }
+  }
+
+  // Generate tomorrow preview email
+  private generateTomorrowPreviewEmail(tomorrowTasks: TaskData[], date: string): EmailContent {
+    const tomorrowDate = new Date(date).toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      month: 'long', 
+      day: 'numeric' 
+    })
+    
+    let html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #7c3aed; margin-bottom: 20px;">🌟 Tomorrow's Preview</h2>
+        <p style="color: #6b7280; margin-bottom: 30px;">Get ready for ${tomorrowDate}:</p>
+    `
+
+    if (tomorrowTasks.length === 0) {
+      html += `
+        <div style="background-color: #ecfdf5; border: 1px solid #10b981; border-radius: 8px; padding: 20px; text-align: center;">
+          <h3 style="color: #059669; margin: 0 0 8px 0;">🎉 Free Day Ahead!</h3>
+          <p style="margin: 0; color: #065f46; font-size: 16px;">No tasks scheduled for tomorrow. Enjoy your free time or plan something spontaneous!</p>
+        </div>
+      `
+    } else {
+      html += `<h3 style="color: #7c3aed; margin-bottom: 16px;">📋 Tomorrow's Schedule (${tomorrowTasks.length} task${tomorrowTasks.length > 1 ? 's' : ''})</h3>`
+      
+      tomorrowTasks.forEach(task => {
+        const timeRange = this.formatTimeRange(task.start_date, task.end_date)
+        const priorityEmoji = this.getPriorityEmoji(task.priority_quadrant)
+        
+        html += `
+          <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; background-color: #f9fafb;">
+            <div style="display: flex; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 20px; margin-right: 8px;">${priorityEmoji}</span>
+              <h4 style="margin: 0; color: #1f2937; font-size: 16px;">${task.title}</h4>
+            </div>
+            <div style="color: #6b7280; font-size: 14px;">
+              ${timeRange ? `⏰ ${timeRange}` : ''} ${task.priority_quadrant ? `• ${task.priority_quadrant}` : ''}
+            </div>
+            ${task.note ? `<div style="color: #6b7280; font-size: 12px; margin-top: 8px; padding: 8px; background-color: #f3f4f6; border-radius: 4px;">${task.note}</div>` : ''}
+          </div>
+        `
+      })
+    }
+
+    html += `
+        <div style="margin-top: 30px; padding: 16px; background-color: #ede9fe; border-radius: 8px; text-align: center;">
+          <p style="margin: 0; color: #7c3aed; font-weight: bold;">Rest well tonight. Tomorrow awaits! 🌙</p>
+        </div>
+      </div>
+    `
+
+    return {
+      subject: `🌟 Tomorrow's Preview - ${tomorrowDate}`,
+      html
+    }
+  }
+
   // Test email functionality  
   async sendTestEmail(): Promise<void> {
     const testTask: TaskData = {
