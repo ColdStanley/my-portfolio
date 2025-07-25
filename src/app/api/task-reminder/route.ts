@@ -222,22 +222,8 @@ async function getDebugInfo() {
     
     const response = await notion.databases.query({
       database_id: process.env.NOTION_Tasks_DB_ID!,
-      filter: {
-        and: [
-          {
-            property: 'start_date',
-            date: {
-              equals: todayString
-            }
-          },
-          {
-            property: 'status',
-            select: {
-              does_not_equal: 'Completed'
-            }
-          }
-        ]
-      }
+      page_size: 10
+      // Temporarily remove all filters to see all tasks
     })
     
     const allTasks = response.results.map((page: any) => ({
