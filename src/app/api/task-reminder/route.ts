@@ -166,6 +166,9 @@ export async function GET(request: NextRequest) {
     // Get upcoming tasks that need reminders (within 5 minutes)
     const upcomingTasks = await getUpcomingTasks()
     console.log(`Found ${upcomingTasks.length} upcoming tasks needing reminders`)
+    
+    // Add debug info for upcomingTasks
+    console.log('Upcoming tasks:', upcomingTasks.map(t => ({title: t.title, start: t.start_date})))
 
     if (upcomingTasks.length === 0) {
       // Add debug info to response for troubleshooting
@@ -175,6 +178,7 @@ export async function GET(request: NextRequest) {
         message: 'No upcoming tasks need reminders at this time',
         tasksCount: 0,
         debug: debugInfo,
+        upcomingTasks: upcomingTasks,
         timestamp: new Date().toISOString()
       })
     }
