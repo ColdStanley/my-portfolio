@@ -10,12 +10,11 @@ export async function POST(request: NextRequest) {
     const { 
       title, 
       company,
-      prompt_for_jd_keypoints,
-      key_required_capability_1,
-      key_required_capability_2,
-      key_required_capability_3,
-      key_required_capability_4,
-      key_required_capability_5
+      capability_1,
+      capability_2,
+      capability_3,
+      capability_4,
+      capability_5
     } = await request.json()
 
     if (!title || !company) {
@@ -54,56 +53,47 @@ export async function POST(request: NextRequest) {
       await notion.pages.update({
         page_id: pageId,
         properties: {
-          prompt_for_jd_keypoints: {
+          capability_1: {
             rich_text: [
               {
                 text: {
-                  content: prompt_for_jd_keypoints || '',
+                  content: capability_1 || '',
                 },
               },
             ],
           },
-          key_required_capability_1: {
+          capability_2: {
             rich_text: [
               {
                 text: {
-                  content: key_required_capability_1 || '',
+                  content: capability_2 || '',
                 },
               },
             ],
           },
-          key_required_capability_2: {
+          capability_3: {
             rich_text: [
               {
                 text: {
-                  content: key_required_capability_2 || '',
+                  content: capability_3 || '',
                 },
               },
             ],
           },
-          key_required_capability_3: {
+          capability_4: {
             rich_text: [
               {
                 text: {
-                  content: key_required_capability_3 || '',
+                  content: capability_4 || '',
                 },
               },
             ],
           },
-          key_required_capability_4: {
+          capability_5: {
             rich_text: [
               {
                 text: {
-                  content: key_required_capability_4 || '',
-                },
-              },
-            ],
-          },
-          key_required_capability_5: {
-            rich_text: [
-              {
-                text: {
-                  content: key_required_capability_5 || '',
+                  content: capability_5 || '',
                 },
               },
             ],
@@ -133,56 +123,47 @@ export async function POST(request: NextRequest) {
               },
             ],
           },
-          prompt_for_jd_keypoints: {
+          capability_1: {
             rich_text: [
               {
                 text: {
-                  content: prompt_for_jd_keypoints || '',
+                  content: capability_1 || '',
                 },
               },
             ],
           },
-          key_required_capability_1: {
+          capability_2: {
             rich_text: [
               {
                 text: {
-                  content: key_required_capability_1 || '',
+                  content: capability_2 || '',
                 },
               },
             ],
           },
-          key_required_capability_2: {
+          capability_3: {
             rich_text: [
               {
                 text: {
-                  content: key_required_capability_2 || '',
+                  content: capability_3 || '',
                 },
               },
             ],
           },
-          key_required_capability_3: {
+          capability_4: {
             rich_text: [
               {
                 text: {
-                  content: key_required_capability_3 || '',
+                  content: capability_4 || '',
                 },
               },
             ],
           },
-          key_required_capability_4: {
+          capability_5: {
             rich_text: [
               {
                 text: {
-                  content: key_required_capability_4 || '',
-                },
-              },
-            ],
-          },
-          key_required_capability_5: {
-            rich_text: [
-              {
-                text: {
-                  content: key_required_capability_5 || '',
+                  content: capability_5 || '',
                 },
               },
             ],

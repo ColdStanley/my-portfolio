@@ -102,6 +102,7 @@ export default function TaskListView({
     triggerElement: HTMLElement | null
   }>({ isOpen: false, task: null, action: 'start', triggerElement: null })
 
+
   const [deleteTooltip, setDeleteTooltip] = useState<{
     isOpen: boolean
     task: TaskRecord | null
@@ -234,11 +235,40 @@ export default function TaskListView({
   }, [extensionModal.task])
 
   const handleCompleteFromModal = useCallback(() => {
-    if (extensionModal.task && onTaskEnd) {
-      onTaskEnd(extensionModal.task)
+    if (extensionModal.task) {
+      // Close extension modal and open start/end tooltip for completion
+      const task = extensionModal.task
+      setExtensionModal({ isOpen: false, task: null })
+      
+      // Trigger the same flow as clicking "End Task" button
+      // We need to simulate the tooltip trigger but we don't have the actual button element
+      // So we create a virtual one for positioning
+      const virtualButton = document.createElement('div')
+      virtualButton.style.position = 'fixed'
+      virtualButton.style.top = '50%'
+      virtualButton.style.left = '50%'
+      virtualButton.style.transform = 'translate(-50%, -50%)'
+      virtualButton.style.width = '1px'
+      virtualButton.style.height = '1px'
+      virtualButton.style.pointerEvents = 'none'
+      document.body.appendChild(virtualButton)
+      
+      setStartEndTooltip({
+        isOpen: true,
+        task,
+        action: 'end',
+        triggerElement: virtualButton
+      })
+      
+      // Clean up the virtual button after a delay
+      setTimeout(() => {
+        if (document.body.contains(virtualButton)) {
+          document.body.removeChild(virtualButton)
+        }
+      }, 100)
     }
-    setExtensionModal({ isOpen: false, task: null })
-  }, [extensionModal.task, onTaskEnd])
+  }, [extensionModal.task])
+
 
   const handleRecordTimeClick = useCallback((task: TaskRecord, e: React.MouseEvent) => {
     e.stopPropagation()

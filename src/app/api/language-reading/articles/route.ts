@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { content, title, language } = await req.json()
+    const { content, title, language, backgroundImageUrl } = await req.json()
     
     if (!content || !language) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -54,7 +54,8 @@ export async function POST(req: NextRequest) {
       .insert([{
         content: content.trim(),
         title: title?.trim() || 'Untitled',
-        language: language
+        language: language,
+        background_image_url: backgroundImageUrl || null
       }])
       .select('*')
       .single()

@@ -7,6 +7,7 @@ import AINotesCards, { AINotesCardsRef } from './AINotesCards'
 import MobileReadingView from './MobileReadingView'
 import ThinkingAnimation from './ThinkingAnimation'
 import AnimatedButton from './AnimatedButton'
+import ReadingTimer from './ReadingTimer'
 import { Language, getUITexts } from '../config/uiText'
 import { playText } from '../utils/tts'
 
@@ -29,6 +30,7 @@ export default function ReadingView({ language, articleId, content, title, onNew
   const [isLoading, setIsLoading] = useState(false)
   const [isTestMode, setIsTestMode] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [backgroundImageUrl, setBackgroundImageUrl] = useState<string | null>(null)
   
   const textRef = useRef<HTMLDivElement>(null)
   const aiNotesRef = useRef<AINotesCardsRef>(null)
@@ -62,6 +64,26 @@ export default function ReadingView({ language, articleId, content, title, onNew
     
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // Fetch article background image
+  useEffect(() => {
+    const fetchArticleDetails = async () => {
+      try {
+        const res = await fetch(`/api/language-reading/articles?id=${articleId}&language=${language}`)
+        if (res.ok) {
+          const article = await res.json()
+          console.log('Article data:', article) // Debug log
+          console.log('Background image URL:', article.background_image_url) // Debug log
+          setBackgroundImageUrl(article.background_image_url)
+          console.log('Background state set to:', article.background_image_url) // Debug log
+        }
+      } catch (error) {
+        console.error('Failed to fetch article details:', error)
+      }
+    }
+    
+    fetchArticleDetails()
+  }, [articleId, language])
 
   const findExistingQuery = (start: number, end: number) => {
     // Find existing word query
@@ -493,34 +515,59 @@ export default function ReadingView({ language, articleId, content, title, onNew
 
   // Desktop view
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-800">{uiTexts.readingSession}</h2>
-          {title && (
-            <p className="text-sm text-purple-600 font-medium mt-1">"{title}"</p>
-          )}
+    <div className="min-h-screen">
+      {/* Full Screen Background Image */}
+      {backgroundImageUrl && (
+        <div 
+          className="fixed inset-0 z-0"
+          style={{
+            backgroundImage: `url(${backgroundImageUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            backgroundAttachment: 'fixed',
+            opacity: 0.15
+          }}
+        />
+      )}
+      
+      {/* Page Content */}
+      <div className="relative z-10 space-y-4">
+        {/* Header Section */}
+        <div className="flex justify-between items-center py-4">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-800">{uiTexts.readingSession}</h2>
+            {title && (
+              <p className="text-sm text-purple-600 font-medium mt-1">"{title}"</p>
+            )}
+          </div>
+          
+          {/* Timer in the middle */}
+          <div className="flex-1 flex justify-center">
+            <ReadingTimer />
+          </div>
+          
+          {/* Buttons on the right */}
+          <div className="flex gap-3">
+            <AnimatedButton
+              onClick={() => setIsTestMode(!isTestMode)}
+              variant="secondary"
+              size="md"
+            >
+              {isTestMode ? uiTexts.exitReview : uiTexts.reviewTest}
+            </AnimatedButton>
+            <AnimatedButton
+              onClick={() => {
+                clearAll()
+                onNewArticle()
+              }}
+              variant="primary"
+              size="md"
+            >
+              {uiTexts.newArticle}
+            </AnimatedButton>
+          </div>
         </div>
-        <div className="flex gap-3">
-          <AnimatedButton
-            onClick={() => setIsTestMode(!isTestMode)}
-            variant="secondary"
-            size="md"
-          >
-            📝 {isTestMode ? uiTexts.exitReview : uiTexts.reviewTest}
-          </AnimatedButton>
-          <AnimatedButton
-            onClick={() => {
-              clearAll()
-              onNewArticle()
-            }}
-            variant="primary"
-            size="md"
-          >
-            {uiTexts.newArticle}
-          </AnimatedButton>
-        </div>
-      </div>
       
       <div className="flex gap-6">
         {/* Left Panel - Article Content & AI Notes */}
@@ -573,8 +620,8 @@ export default function ReadingView({ language, articleId, content, title, onNew
         <div
           className="fixed z-50 w-80 bg-white shadow-xl border border-purple-200 rounded-2xl text-gray-700 overflow-hidden"
           style={{
-            left: Math.max(10, selectionData.position.x - 160),
-            top: selectionData.position.y - 100,
+            left: Math.min(window.innerWidth - 330, selectionData.position.x + 30),
+            top: Math.max(10, selectionData.position.y - 240),
             pointerEvents: 'auto'
           }}
         >
@@ -583,7 +630,7 @@ export default function ReadingView({ language, articleId, content, title, onNew
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-purple-200 rounded-full"></div>
-                <p className="text-white font-medium text-sm">{uiTexts.textAnalysis}</p>
+                <p className="text-white font-medium text-xs">{uiTexts.textAnalysis}</p>
               </div>
               <button
                 onClick={() => setSelectionData(null)}
@@ -619,7 +666,7 @@ export default function ReadingView({ language, articleId, content, title, onNew
                   size="sm"
                   className="flex-1"
                 >
-                  ✏️ {uiTexts.markWord}
+                  {uiTexts.markWord}
                 </AnimatedButton>
                 <AnimatedButton
                   onClick={() => handleMarkOnly('sentence')}
@@ -628,7 +675,7 @@ export default function ReadingView({ language, articleId, content, title, onNew
                   size="sm"
                   className="flex-1"
                 >
-                  📋 {uiTexts.markSentence}
+                  {uiTexts.markSentence}
                 </AnimatedButton>
               </div>
             </div>
@@ -644,7 +691,7 @@ export default function ReadingView({ language, articleId, content, title, onNew
                   size="sm"
                   className="flex-1"
                 >
-                  🔍 {uiTexts.queryWord}
+                  {uiTexts.queryWord}
                 </AnimatedButton>
                 <AnimatedButton
                   onClick={() => handleQuery('sentence')}
@@ -653,14 +700,14 @@ export default function ReadingView({ language, articleId, content, title, onNew
                   size="sm"
                   className="flex-1"
                 >
-                  📝 {uiTexts.querySentence}
+                  {uiTexts.querySentence}
                 </AnimatedButton>
               </div>
             </div>
           </div>
         </div>
       )}
-
+      </div>
     </div>
   )
 }

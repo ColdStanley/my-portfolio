@@ -14,6 +14,8 @@ export default function ArticleInput({ language, onSubmit, onSelectArticle }: Ar
   const [content, setContent] = useState('')
   const [title, setTitle] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [backgroundImage, setBackgroundImage] = useState<File | null>(null)
+  const [imageUploading, setImageUploading] = useState(false)
   const uiTexts = getUITexts(language)
 
   const handleSubmit = async () => {
@@ -21,13 +23,34 @@ export default function ArticleInput({ language, onSubmit, onSelectArticle }: Ar
     
     setIsLoading(true)
     try {
+      let backgroundImageUrl = null
+      
+      // Upload image if selected
+      if (backgroundImage) {
+        setImageUploading(true)
+        const formData = new FormData()
+        formData.append('image', backgroundImage)
+        
+        const imageRes = await fetch('/api/language-reading/upload-image', {
+          method: 'POST',
+          body: formData
+        })
+        
+        if (imageRes.ok) {
+          const imageData = await imageRes.json()
+          backgroundImageUrl = imageData.imageUrl
+        }
+        setImageUploading(false)
+      }
+      
       const res = await fetch('/api/language-reading/articles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           content: content.trim(), 
           title: title.trim() || uiTexts.untitled,
-          language: language
+          language: language,
+          backgroundImageUrl: backgroundImageUrl
         })
       })
       
@@ -39,6 +62,7 @@ export default function ArticleInput({ language, onSubmit, onSelectArticle }: Ar
       console.error('Failed to save article:', error)
     } finally {
       setIsLoading(false)
+      setImageUploading(false)
     }
   }
 
@@ -62,6 +86,36 @@ export default function ArticleInput({ language, onSubmit, onSelectArticle }: Ar
               />
             </div>
             
+            {/* Background Image Upload */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Background Image (Optional)
+              </label>
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) setBackgroundImage(file)
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+                />
+                {backgroundImage && (
+                  <div className="mt-2 text-sm text-gray-600">
+                    Selected: {backgroundImage.name}
+                    <button
+                      type="button"
+                      onClick={() => setBackgroundImage(null)}
+                      className="ml-2 text-red-500 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {uiTexts.articleContent}
@@ -77,10 +131,10 @@ export default function ArticleInput({ language, onSubmit, onSelectArticle }: Ar
             
             <button
               onClick={handleSubmit}
-              disabled={!content.trim() || isLoading}
+              disabled={!content.trim() || isLoading || imageUploading}
               className="w-full bg-purple-600 text-white py-3 px-4 rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isLoading ? uiTexts.loading : uiTexts.startReading}
+              {imageUploading ? 'Uploading image...' : isLoading ? uiTexts.loading : uiTexts.startReading}
             </button>
           </div>
         </div>

@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    const propertyName = `key_required_capability_${capabilityIndex}`
+    const propertyName = `capability_${capabilityIndex}`
     let pageId: string
 
     if (database.results.length > 0) {
@@ -52,8 +52,31 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // Add capability content to page body
-      await notion.blocks.children.append({
+      // Check if capability callout already exists and delete it
+      const allBlocks = await notion.blocks.children.list({
+        block_id: pageId,
+      })
+      
+      const calloutTitle = `Capability ${capabilityIndex}`
+      
+      // Find and delete existing capability callout
+      for (const block of allBlocks.results) {
+        const blockData = block as any
+        if (blockData.type === 'callout') {
+          const firstChild = blockData.callout?.children?.[0]
+          if (firstChild?.type === 'heading_3') {
+            const headingText = firstChild.heading_3?.rich_text?.[0]?.text?.content || ''
+            if (headingText === calloutTitle) {
+              await notion.blocks.delete({ block_id: blockData.id })
+              console.log(`Deleted existing capability ${capabilityIndex} callout`)
+              break
+            }
+          }
+        }
+      }
+      
+      // Create new capability callout
+      const calloutResponse = await notion.blocks.children.append({
         block_id: pageId,
         children: [
           {
@@ -61,9 +84,6 @@ export async function POST(request: NextRequest) {
             type: 'callout',
             callout: {
               rich_text: [],
-              icon: {
-                emoji: '📋'
-              },
               color: 'gray_background',
               children: [
                 {
@@ -74,7 +94,7 @@ export async function POST(request: NextRequest) {
                       {
                         type: 'text',
                         text: {
-                          content: `Expected Capability from Job Description - ${capabilityIndex}`,
+                          content: calloutTitle,
                         },
                         annotations: {
                           bold: true
@@ -102,6 +122,8 @@ export async function POST(request: NextRequest) {
           },
         ],
       })
+      
+      console.log(`Created/updated capability ${capabilityIndex} callout`)
     } else {
       // Create new page
       const response = await notion.pages.create({
@@ -120,8 +142,10 @@ export async function POST(request: NextRequest) {
       })
       pageId = response.id
 
-      // Add capability content to new page body
-      await notion.blocks.children.append({
+      // Create capability callout for new page
+      const calloutTitle = `Capability ${capabilityIndex}`
+      
+      const calloutResponse = await notion.blocks.children.append({
         block_id: pageId,
         children: [
           {
@@ -129,9 +153,6 @@ export async function POST(request: NextRequest) {
             type: 'callout',
             callout: {
               rich_text: [],
-              icon: {
-                emoji: '📋'
-              },
               color: 'gray_background',
               children: [
                 {
@@ -142,7 +163,7 @@ export async function POST(request: NextRequest) {
                       {
                         type: 'text',
                         text: {
-                          content: `Expected Capability from Job Description - ${capabilityIndex}`,
+                          content: calloutTitle,
                         },
                         annotations: {
                           bold: true
@@ -170,6 +191,8 @@ export async function POST(request: NextRequest) {
           },
         ],
       })
+      
+      console.log(`Created capability ${capabilityIndex} callout for new page`)
     }
 
     return NextResponse.json({ success: true, id: pageId })

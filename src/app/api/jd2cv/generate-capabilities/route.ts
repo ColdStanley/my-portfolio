@@ -7,7 +7,7 @@ const openai = new OpenAI({
 
 export async function POST(request: NextRequest) {
   try {
-    const { title, company, full_job_description, prompt } = await request.json()
+    const { title, company, full_job_description } = await request.json()
 
     if (!title || !company || !full_job_description) {
       return NextResponse.json(
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const systemMessage = `You are an expert career consultant. ${prompt || ''}
+    const systemMessage = `You are an expert career consultant.
 
 Based on the following job description, identify exactly 5 key **required capabilities** that are:
 
@@ -31,9 +31,19 @@ Job Details:
 - Company: ${company}
 - Job Description: ${full_job_description}
 
-Return the 5 key capabilities in a numbered list format, each with:
-- A short capability name (max 8 words)
-- A 1–2 sentence explanation of what this capability entails in the context of this role`
+Return the 5 key capabilities in a structured format with bullet points:
+
+1. Capability Name (max 8 words)
+   • Core technical or functional requirement
+   • Specific tools, technologies, or methodologies needed
+   • Expected proficiency level and practical application
+
+2. Capability Name (max 8 words)
+   • Core technical or functional requirement
+   • Specific tools, technologies, or methodologies needed
+   • Expected proficiency level and practical application
+
+(Continue this format for all 5 capabilities)`
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4',

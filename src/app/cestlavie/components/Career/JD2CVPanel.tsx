@@ -90,9 +90,9 @@ function TooltipPrompt({ value, onChange, onSave, placeholder, disabled = false,
       {isOpen && (
         <div
           ref={tooltipRef}
-          className="absolute top-0 right-8 z-50 w-96 bg-white border border-purple-200 rounded-lg shadow-lg p-4"
+          className="absolute top-0 left-8 z-50 w-96 bg-white border border-purple-200 rounded-lg shadow-lg p-4"
         >
-          <div className="absolute top-2 -right-2 w-4 h-4 bg-white border-r border-b border-purple-200 transform rotate-45"></div>
+          <div className="absolute top-2 -left-2 w-4 h-4 bg-white border-l border-t border-purple-200 transform rotate-45"></div>
           
           <div className="space-y-3">
             <h4 className="text-sm font-medium text-gray-800">Additional Instructions</h4>
@@ -137,22 +137,21 @@ interface JDData {
   title: string
   company: string
   full_job_description: string
-  prompt_for_jd_keypoints: string
-  key_required_capability_1: string
-  key_required_capability_2: string
-  key_required_capability_3: string
-  key_required_capability_4: string
-  key_required_capability_5: string
-  e_p_for_c_1: string
-  e_p_for_c_2: string
-  e_p_for_c_3: string
-  e_p_for_c_4: string
-  e_p_for_c_5: string
-  input_e_p_for_c_1: string
-  input_e_p_for_c_2: string
-  input_e_p_for_c_3: string
-  input_e_p_for_c_4: string
-  input_e_p_for_c_5: string
+  capability_1: string
+  capability_2: string
+  capability_3: string
+  capability_4: string
+  capability_5: string
+  generated_text_1: string
+  generated_text_2: string
+  generated_text_3: string
+  generated_text_4: string
+  generated_text_5: string
+  your_experience_1: string
+  your_experience_2: string
+  your_experience_3: string
+  your_experience_4: string
+  your_experience_5: string
 }
 
 export default function JD2CVPanel() {
@@ -160,22 +159,21 @@ export default function JD2CVPanel() {
     title: '',
     company: '',
     full_job_description: '',
-    prompt_for_jd_keypoints: '',
-    key_required_capability_1: '',
-    key_required_capability_2: '',
-    key_required_capability_3: '',
-    key_required_capability_4: '',
-    key_required_capability_5: '',
-    e_p_for_c_1: '',
-    e_p_for_c_2: '',
-    e_p_for_c_3: '',
-    e_p_for_c_4: '',
-    e_p_for_c_5: '',
-    input_e_p_for_c_1: '',
-    input_e_p_for_c_2: '',
-    input_e_p_for_c_3: '',
-    input_e_p_for_c_4: '',
-    input_e_p_for_c_5: ''
+    capability_1: '',
+    capability_2: '',
+    capability_3: '',
+    capability_4: '',
+    capability_5: '',
+    generated_text_1: '',
+    generated_text_2: '',
+    generated_text_3: '',
+    generated_text_4: '',
+    generated_text_5: '',
+    your_experience_1: '',
+    your_experience_2: '',
+    your_experience_3: '',
+    your_experience_4: '',
+    your_experience_5: ''
   })
   
   const [isGenerating, setIsGenerating] = useState(false)
@@ -184,7 +182,6 @@ export default function JD2CVPanel() {
   const [generatedCapabilities, setGeneratedCapabilities] = useState<string[]>([])
   const [showGenerated, setShowGenerated] = useState(false)
   const [generateError, setGenerateError] = useState(false)
-  const [promptSaveMessage, setPromptSaveMessage] = useState('')
   const [currentPageId, setCurrentPageId] = useState<string>('')
   
   // Individual capability states
@@ -221,10 +218,49 @@ export default function JD2CVPanel() {
     textarea.style.height = textarea.scrollHeight + 'px'
   }
 
+  // Sync heights for experience textareas in the same capability
+  const syncExperienceTextareaHeights = (capabilityIndex: number) => {
+    const yourExpTextarea = document.getElementById(`your-experience-${capabilityIndex}`)
+    const generatedTextarea = document.getElementById(`generated-text-${capabilityIndex}`)
+    
+    if (yourExpTextarea && generatedTextarea) {
+      // Reset heights to auto to get natural heights
+      yourExpTextarea.style.height = 'auto'
+      generatedTextarea.style.height = 'auto'
+      
+      // Get the natural scroll heights
+      const yourExpHeight = yourExpTextarea.scrollHeight
+      const generatedHeight = generatedTextarea.scrollHeight
+      
+      // Set both to the maximum height
+      const maxHeight = Math.max(yourExpHeight, generatedHeight, 120) // minimum 120px
+      yourExpTextarea.style.height = maxHeight + 'px'
+      generatedTextarea.style.height = maxHeight + 'px'
+    }
+  }
+
   // Load available options on component mount
   useEffect(() => {
     loadFilterOptions()
   }, [])
+
+  // Sync textarea heights when data changes
+  useEffect(() => {
+    // Sync heights for all capability pairs after data loads or changes
+    for (let i = 0; i < 5; i++) {
+      setTimeout(() => syncExperienceTextareaHeights(i), 100)
+    }
+  }, [jdData, experienceInputs])
+
+  // Sync heights when experience is generated
+  useEffect(() => {
+    // Sync heights after experience generation completes
+    for (let i = 0; i < 5; i++) {
+      if (!experienceGenerating[i]) {
+        setTimeout(() => syncExperienceTextareaHeights(i), 100)
+      }
+    }
+  }, [experienceGenerating])
 
   const loadFilterOptions = async () => {
     try {
@@ -292,8 +328,7 @@ export default function JD2CVPanel() {
         body: JSON.stringify({
           title: jdData.title,
           company: jdData.company,
-          full_job_description: jdData.full_job_description,
-          prompt: jdData.prompt_for_jd_keypoints
+          full_job_description: jdData.full_job_description
         })
       })
 
@@ -305,11 +340,11 @@ export default function JD2CVPanel() {
         // Update the capability fields
         setJdData(prev => ({
           ...prev,
-          key_required_capability_1: data.capabilities[0] || '',
-          key_required_capability_2: data.capabilities[1] || '',
-          key_required_capability_3: data.capabilities[2] || '',
-          key_required_capability_4: data.capabilities[3] || '',
-          key_required_capability_5: data.capabilities[4] || ''
+          capability_1: data.capabilities[0] || '',
+          capability_2: data.capabilities[1] || '',
+          capability_3: data.capabilities[2] || '',
+          capability_4: data.capabilities[3] || '',
+          capability_5: data.capabilities[4] || ''
         }))
         setCapabilitiesGenerated(true)
         setGenerateError(false)
@@ -332,12 +367,11 @@ export default function JD2CVPanel() {
         body: JSON.stringify({
           title: jdData.title,
           company: jdData.company,
-          prompt_for_jd_keypoints: jdData.prompt_for_jd_keypoints,
-          key_required_capability_1: jdData.key_required_capability_1,
-          key_required_capability_2: jdData.key_required_capability_2,
-          key_required_capability_3: jdData.key_required_capability_3,
-          key_required_capability_4: jdData.key_required_capability_4,
-          key_required_capability_5: jdData.key_required_capability_5
+          capability_1: jdData.capability_1,
+          capability_2: jdData.capability_2,
+          capability_3: jdData.capability_3,
+          capability_4: jdData.capability_4,
+          capability_5: jdData.capability_5
         })
       })
 
@@ -349,46 +383,10 @@ export default function JD2CVPanel() {
     }
   }
 
-  const handleSavePrompt = async () => {
-    if (!jdData.prompt_for_jd_keypoints) {
-      setPromptSaveMessage('Please enter a prompt')
-      setTimeout(() => setPromptSaveMessage(''), 3000)
-      return
-    }
-
-    setIsSaving(true)
-    setPromptSaveMessage('')
-    try {
-      const response = await fetch('/api/jd2cv/save-prompt', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: jdData.title,
-          company: jdData.company,
-          prompt_for_jd_keypoints: jdData.prompt_for_jd_keypoints
-        })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.id && !currentPageId) {
-          setCurrentPageId(data.id)
-        }
-        setPromptSaveMessage('Prompt saved successfully')
-      } else {
-        setPromptSaveMessage('Failed to save prompt')
-      }
-    } catch (error) {
-      setPromptSaveMessage('Error saving prompt')
-    } finally {
-      setIsSaving(false)
-      setTimeout(() => setPromptSaveMessage(''), 3000)
-    }
-  }
 
   // Individual capability functions
   const handleSaveCapability = async (index: number) => {
-    const capabilityKey = `key_required_capability_${index + 1}` as keyof JDData
+    const capabilityKey = `capability_${index + 1}` as keyof JDData
     const capabilityValue = jdData[capabilityKey]
 
     setCapabilityIsSaving(prev => {
@@ -422,20 +420,20 @@ export default function JD2CVPanel() {
         }
         setCapabilitySaveMessages(prev => {
           const newState = [...prev]
-          newState[index] = 'Capability saved successfully'
+          newState[index] = 'Saved successfully'
           return newState
         })
       } else {
         setCapabilitySaveMessages(prev => {
           const newState = [...prev]
-          newState[index] = 'Failed to save capability'
+          newState[index] = 'Save failed'
           return newState
         })
       }
     } catch (error) {
       setCapabilitySaveMessages(prev => {
         const newState = [...prev]
-        newState[index] = 'Error saving capability'
+        newState[index] = 'Save error'
         return newState
       })
     } finally {
@@ -444,20 +442,15 @@ export default function JD2CVPanel() {
         newState[index] = false
         return newState
       })
-      setTimeout(() => {
-        setCapabilitySaveMessages(prev => {
-          const newState = [...prev]
-          newState[index] = ''
-          return newState
-        })
-      }, 3000)
+      // Keep status message visible
+      // setTimeout removed to maintain persistent status display
     }
   }
 
   const handleGenerateExperience = async (index: number) => {
     const experienceInput = experienceInputs[index]
     const experiencePrompt = experiencePrompts[index]
-    const capabilityKey = `key_required_capability_${index + 1}` as keyof JDData
+    const capabilityKey = `capability_${index + 1}` as keyof JDData
     const capability = jdData[capabilityKey]
 
     setExperienceGenerating(prev => {
@@ -487,25 +480,28 @@ export default function JD2CVPanel() {
         const data = await response.json()
         setJdData(prev => ({
           ...prev,
-          [`e_p_for_c_${index + 1}`]: data.customizedExperience
+          [`generated_text_${index + 1}`]: data.customizedExperience
         }))
         setExperienceMessages(prev => {
           const newState = [...prev]
-          newState[index] = 'Experience generated successfully'
+          newState[index] = 'Generated successfully'
           return newState
         })
+        
+        // Sync heights after content is set
+        setTimeout(() => syncExperienceTextareaHeights(index), 100)
         
       } else {
         setExperienceMessages(prev => {
           const newState = [...prev]
-          newState[index] = 'Failed to generate experience'
+          newState[index] = 'Generate failed'
           return newState
         })
       }
     } catch (error) {
       setExperienceMessages(prev => {
         const newState = [...prev]
-        newState[index] = 'Error generating experience'
+        newState[index] = 'Generate error'
         return newState
       })
     } finally {
@@ -560,31 +556,30 @@ export default function JD2CVPanel() {
             title: data.record.title || '',
             company: data.record.company || '',
             full_job_description: data.record.full_job_description || '',
-            prompt_for_jd_keypoints: data.record.prompt_for_jd_keypoints || '',
-            key_required_capability_1: data.record.key_required_capability_1 || '',
-            key_required_capability_2: data.record.key_required_capability_2 || '',
-            key_required_capability_3: data.record.key_required_capability_3 || '',
-            key_required_capability_4: data.record.key_required_capability_4 || '',
-            key_required_capability_5: data.record.key_required_capability_5 || '',
-            e_p_for_c_1: data.record.e_p_for_c_1 || '',
-            e_p_for_c_2: data.record.e_p_for_c_2 || '',
-            e_p_for_c_3: data.record.e_p_for_c_3 || '',
-            e_p_for_c_4: data.record.e_p_for_c_4 || '',
-            e_p_for_c_5: data.record.e_p_for_c_5 || '',
-            input_e_p_for_c_1: data.record.input_e_p_for_c_1 || '',
-            input_e_p_for_c_2: data.record.input_e_p_for_c_2 || '',
-            input_e_p_for_c_3: data.record.input_e_p_for_c_3 || '',
-            input_e_p_for_c_4: data.record.input_e_p_for_c_4 || '',
-            input_e_p_for_c_5: data.record.input_e_p_for_c_5 || ''
+            capability_1: data.record.capability_1 || '',
+            capability_2: data.record.capability_2 || '',
+            capability_3: data.record.capability_3 || '',
+            capability_4: data.record.capability_4 || '',
+            capability_5: data.record.capability_5 || '',
+            generated_text_1: data.record.generated_text_1 || '',
+            generated_text_2: data.record.generated_text_2 || '',
+            generated_text_3: data.record.generated_text_3 || '',
+            generated_text_4: data.record.generated_text_4 || '',
+            generated_text_5: data.record.generated_text_5 || '',
+            your_experience_1: data.record.your_experience_1 || '',
+            your_experience_2: data.record.your_experience_2 || '',
+            your_experience_3: data.record.your_experience_3 || '',
+            your_experience_4: data.record.your_experience_4 || '',
+            your_experience_5: data.record.your_experience_5 || ''
           })
           
           // Update experience inputs array
           setExperienceInputs([
-            data.record.input_e_p_for_c_1 || '',
-            data.record.input_e_p_for_c_2 || '',
-            data.record.input_e_p_for_c_3 || '',
-            data.record.input_e_p_for_c_4 || '',
-            data.record.input_e_p_for_c_5 || ''
+            data.record.your_experience_1 || '',
+            data.record.your_experience_2 || '',
+            data.record.your_experience_3 || '',
+            data.record.your_experience_4 || '',
+            data.record.your_experience_5 || ''
           ])
 
           // Set states to show the data is loaded
@@ -593,6 +588,13 @@ export default function JD2CVPanel() {
           if (data.record.id) {
             setCurrentPageId(data.record.id)
           }
+          
+          // Sync textarea heights after data is loaded
+          setTimeout(() => {
+            for (let i = 0; i < 5; i++) {
+              syncExperienceTextareaHeights(i)
+            }
+          }, 200)
         }
       }
     } catch (error) {
@@ -626,31 +628,30 @@ export default function JD2CVPanel() {
             title: data.record.title || '',
             company: data.record.company || '',
             full_job_description: data.record.full_job_description || '',
-            prompt_for_jd_keypoints: data.record.prompt_for_jd_keypoints || '',
-            key_required_capability_1: data.record.key_required_capability_1 || '',
-            key_required_capability_2: data.record.key_required_capability_2 || '',
-            key_required_capability_3: data.record.key_required_capability_3 || '',
-            key_required_capability_4: data.record.key_required_capability_4 || '',
-            key_required_capability_5: data.record.key_required_capability_5 || '',
-            e_p_for_c_1: data.record.e_p_for_c_1 || '',
-            e_p_for_c_2: data.record.e_p_for_c_2 || '',
-            e_p_for_c_3: data.record.e_p_for_c_3 || '',
-            e_p_for_c_4: data.record.e_p_for_c_4 || '',
-            e_p_for_c_5: data.record.e_p_for_c_5 || '',
-            input_e_p_for_c_1: data.record.input_e_p_for_c_1 || '',
-            input_e_p_for_c_2: data.record.input_e_p_for_c_2 || '',
-            input_e_p_for_c_3: data.record.input_e_p_for_c_3 || '',
-            input_e_p_for_c_4: data.record.input_e_p_for_c_4 || '',
-            input_e_p_for_c_5: data.record.input_e_p_for_c_5 || ''
+            capability_1: data.record.capability_1 || '',
+            capability_2: data.record.capability_2 || '',
+            capability_3: data.record.capability_3 || '',
+            capability_4: data.record.capability_4 || '',
+            capability_5: data.record.capability_5 || '',
+            generated_text_1: data.record.generated_text_1 || '',
+            generated_text_2: data.record.generated_text_2 || '',
+            generated_text_3: data.record.generated_text_3 || '',
+            generated_text_4: data.record.generated_text_4 || '',
+            generated_text_5: data.record.generated_text_5 || '',
+            your_experience_1: data.record.your_experience_1 || '',
+            your_experience_2: data.record.your_experience_2 || '',
+            your_experience_3: data.record.your_experience_3 || '',
+            your_experience_4: data.record.your_experience_4 || '',
+            your_experience_5: data.record.your_experience_5 || ''
           })
           
           // Update experience inputs array
           setExperienceInputs([
-            data.record.input_e_p_for_c_1 || '',
-            data.record.input_e_p_for_c_2 || '',
-            data.record.input_e_p_for_c_3 || '',
-            data.record.input_e_p_for_c_4 || '',
-            data.record.input_e_p_for_c_5 || ''
+            data.record.your_experience_1 || '',
+            data.record.your_experience_2 || '',
+            data.record.your_experience_3 || '',
+            data.record.your_experience_4 || '',
+            data.record.your_experience_5 || ''
           ])
 
           // Set states to show the data is loaded
@@ -659,6 +660,13 @@ export default function JD2CVPanel() {
           if (data.record.id) {
             setCurrentPageId(data.record.id)
           }
+          
+          // Sync textarea heights after data is loaded
+          setTimeout(() => {
+            for (let i = 0; i < 5; i++) {
+              syncExperienceTextareaHeights(i)
+            }
+          }, 200)
         }
       }
     } catch (error) {
@@ -669,9 +677,9 @@ export default function JD2CVPanel() {
   }
 
   const handleSaveExperience = async (index: number) => {
-    const experienceKey = `e_p_for_c_${index + 1}` as keyof JDData
+    const experienceKey = `generated_text_${index + 1}` as keyof JDData
     const experienceValue = jdData[experienceKey]
-    const capabilityKey = `key_required_capability_${index + 1}` as keyof JDData
+    const capabilityKey = `capability_${index + 1}` as keyof JDData
     const capabilityValue = jdData[capabilityKey]
 
     setExperienceGenerating(prev => {
@@ -705,37 +713,24 @@ export default function JD2CVPanel() {
           setCurrentPageId(data.id)
         }
 
-        // Then update the callout with both capability and experience
-        if (capabilityValue) {
-          await fetch('/api/jd2cv/update-capability-callout', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              title: jdData.title,
-              company: jdData.company,
-              capabilityIndex: index + 1,
-              capabilityValue: capabilityValue,
-              experienceValue: experienceValue
-            })
-          })
-        }
+        // Callout update is now handled directly in save-experience API
 
         setExperienceMessages(prev => {
           const newState = [...prev]
-          newState[index] = 'Experience saved successfully'
+          newState[index] = 'Saved successfully'
           return newState
         })
       } else {
         setExperienceMessages(prev => {
           const newState = [...prev]
-          newState[index] = 'Failed to save experience'
+          newState[index] = 'Save failed'
           return newState
         })
       }
     } catch (error) {
       setExperienceMessages(prev => {
         const newState = [...prev]
-        newState[index] = 'Error saving experience'
+        newState[index] = 'Save error'
         return newState
       })
     } finally {
@@ -755,7 +750,7 @@ export default function JD2CVPanel() {
   }
 
   const handleSaveInputExperience = async (index: number) => {
-    const inputExperienceKey = `input_e_p_for_c_${index + 1}` as keyof JDData
+    const inputExperienceKey = `your_experience_${index + 1}` as keyof JDData
     const inputExperienceValue = experienceInputs[index]
 
     // Also update the jdData with the current input
@@ -795,20 +790,20 @@ export default function JD2CVPanel() {
         }
         setInputExperienceMessages(prev => {
           const newState = [...prev]
-          newState[index] = 'Input experience saved successfully'
+          newState[index] = 'Saved successfully'
           return newState
         })
       } else {
         setInputExperienceMessages(prev => {
           const newState = [...prev]
-          newState[index] = 'Failed to save input experience'
+          newState[index] = 'Save failed'
           return newState
         })
       }
     } catch (error) {
       setInputExperienceMessages(prev => {
         const newState = [...prev]
-        newState[index] = 'Error saving input experience'
+        newState[index] = 'Save error'
         return newState
       })
     } finally {
@@ -817,13 +812,8 @@ export default function JD2CVPanel() {
         newState[index] = false
         return newState
       })
-      setTimeout(() => {
-        setInputExperienceMessages(prev => {
-          const newState = [...prev]
-          newState[index] = ''
-          return newState
-        })
-      }, 3000)
+      // Keep status message visible for better user feedback
+      // setTimeout removed to maintain persistent status display
     }
   }
 
@@ -932,7 +922,7 @@ export default function JD2CVPanel() {
               {currentPageId && (
                 <button
                   onClick={() => window.open(`https://www.notion.so/${currentPageId.replace(/-/g, '')}`, '_blank')}
-                  className="text-purple-600 hover:text-purple-700 text-sm font-medium flex items-center gap-1"
+                  className="text-purple-600 hover:text-purple-700 text-sm font-medium flex items-center gap-1 px-2 py-1 rounded-md border border-purple-200 bg-white shadow-sm hover:shadow-md transition-shadow"
                   title="Open in Notion"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1007,37 +997,30 @@ export default function JD2CVPanel() {
         </div>
 
         <div className="space-y-4">
-          <div className="flex justify-end">
+          <div className="flex gap-3 justify-end items-center">
+            <p className="text-sm text-gray-400 min-w-[120px] text-right">
+              {isSaving ? 'Saving...' : jdSaveError ? 'Error occurred' : jdSaved ? 'Saved successfully' : 'Ready to save'}
+            </p>
             <button
               onClick={handleJDSubmit}
               disabled={isSaving}
-              className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200"
+              className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md transition-shadow"
             >
-              {isSaving ? 'Saving...' : jdSaveError ? 'Error - Retry' : jdSaved ? 'Saved ✓' : 'Save JD'}
+              {isSaving ? 'Saving...' : jdSaveError ? 'Retry' : 'Save JD'}
             </button>
           </div>
           
-          <div className="flex justify-end items-center gap-3">
-            <TooltipPrompt
-              value={jdData.prompt_for_jd_keypoints}
-              onChange={(value) => {
-                setJdData(prev => ({ ...prev, prompt_for_jd_keypoints: value }))
-                if (generateError) setGenerateError(false)
-              }}
-              onSave={handleSavePrompt}
-              placeholder="Enter your prompt (e.g., 'Based on Title, Company, and Full Job Description, generate up to 5 Key Required Capabilities')"
-              disabled={isGenerating || isSaving}
-              saving={isSaving}
-            />
-            <div className="space-y-2">
-              <button
-                onClick={handleGenerateCapabilities}
-                disabled={isGenerating}
-                className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200"
-              >
-                {isGenerating ? 'Generating...' : generateError ? 'Error - Retry' : capabilitiesGenerated ? 'Generated ✓' : 'Generate'}
-              </button>
-            </div>
+          <div className="flex gap-3 justify-end items-center">
+            <p className="text-sm text-gray-400 min-w-[120px] text-right">
+              {isGenerating ? 'Generating...' : generateError ? 'Error occurred' : capabilitiesGenerated ? 'Generated successfully' : 'Ready to generate'}
+            </p>
+            <button
+              onClick={handleGenerateCapabilities}
+              disabled={isGenerating}
+              className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md transition-shadow"
+            >
+              {isGenerating ? 'Generating...' : generateError ? 'Retry' : 'Generate'}
+            </button>
           </div>
         </div>
       </div>
@@ -1056,11 +1039,11 @@ export default function JD2CVPanel() {
                 {/* Capability Content */}
                 <div className="space-y-3">
                   <textarea
-                    value={jdData[`key_required_capability_${num}` as keyof JDData]}
+                    value={jdData[`capability_${num}` as keyof JDData]}
                     onChange={(e) => {
                       setJdData(prev => ({ 
                         ...prev, 
-                        [`key_required_capability_${num}`]: e.target.value 
+                        [`capability_${num}`]: e.target.value 
                       }))
                       // Auto-resize on change
                       setTimeout(() => autoResizeTextarea(e.target), 0)
@@ -1078,19 +1061,17 @@ export default function JD2CVPanel() {
                       }
                     }}
                   />
-                  <div className="flex gap-2">
+                  <div className="flex gap-3 justify-end items-center">
+                    <p className="text-sm text-gray-400 min-w-[150px] text-right">
+                      {capabilitySaveMessages[index] || 'Ready to save'}
+                    </p>
                     <button
                       onClick={() => handleSaveCapability(index)}
                       disabled={capabilityIsSaving[index]}
-                      className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200"
+                      className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 flex-shrink-0"
                     >
                       {capabilityIsSaving[index] ? 'Saving...' : 'Save'}
                     </button>
-                    {capabilitySaveMessages[index] && (
-                      <p className={`text-sm self-center ${capabilitySaveMessages[index].includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>
-                        {capabilitySaveMessages[index]}
-                      </p>
-                    )}
                   </div>
                 </div>
 
@@ -1103,86 +1084,108 @@ export default function JD2CVPanel() {
                     <div className="space-y-3">
                       <label className="block text-sm font-medium text-gray-700">Your Experience</label>
                       <textarea
+                        id={`your-experience-${index}`}
                         value={experienceInputs[index]}
                         onChange={(e) => {
                           const newInputs = [...experienceInputs]
                           newInputs[index] = e.target.value
                           setExperienceInputs(newInputs)
+                          // Sync heights after content change
+                          setTimeout(() => syncExperienceTextareaHeights(index), 0)
                         }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 resize-y min-h-[120px]"
+                        onInput={() => {
+                          // Sync heights on input
+                          setTimeout(() => syncExperienceTextareaHeights(index), 0)
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none overflow-hidden"
                         placeholder="Describe your relevant experience..."
+                        style={{ minHeight: '120px' }}
                       />
-                      <button
-                        onClick={() => handleSaveInputExperience(index)}
-                        disabled={inputExperienceSaving[index]}
-                        className="px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200"
-                      >
-                        {inputExperienceSaving[index] ? 'Saving...' : 'Save'}
-                      </button>
-                      {inputExperienceMessages[index] && (
-                        <p className={`text-sm ${inputExperienceMessages[index].includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>
-                          {inputExperienceMessages[index]}
+                      <div className="flex gap-3 justify-end items-center">
+                        <p className="text-sm text-gray-400 min-w-[120px] text-right">
+                          {inputExperienceMessages[index] || 'Ready to save'}
                         </p>
-                      )}
+                        <button
+                          onClick={() => handleSaveInputExperience(index)}
+                          disabled={inputExperienceSaving[index]}
+                          className="px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 flex-shrink-0 shadow-sm hover:shadow-md transition-shadow"
+                        >
+                          {inputExperienceSaving[index] ? 'Saving...' : 'Save'}
+                        </button>
+                      </div>
                     </div>
 
                     {/* Right: Generated Experience */}
                     <div className="space-y-3">
                       <label className="block text-sm font-medium text-gray-700">Generated Text</label>
                       <textarea
-                        value={jdData[`e_p_for_c_${num}` as keyof JDData]}
-                        onChange={(e) => setJdData(prev => ({ 
-                          ...prev, 
-                          [`e_p_for_c_${num}`]: e.target.value 
-                        }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 resize-y min-h-[120px]"
+                        id={`generated-text-${index}`}
+                        value={jdData[`generated_text_${num}` as keyof JDData]}
+                        onChange={(e) => {
+                          setJdData(prev => ({ 
+                            ...prev, 
+                            [`generated_text_${num}`]: e.target.value 
+                          }))
+                          // Sync heights after content change
+                          setTimeout(() => syncExperienceTextareaHeights(index), 0)
+                        }}
+                        onInput={() => {
+                          // Sync heights on input
+                          setTimeout(() => syncExperienceTextareaHeights(index), 0)
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none overflow-hidden"
                         placeholder="Generated experience will appear here..."
+                        style={{ minHeight: '120px' }}
                       />
-                      <div className="flex gap-2">
+                      
+                      {/* Generate Button - Left aligned with status on right */}
+                      <div className="flex items-center gap-3">
                         <button
                           onClick={() => handleGenerateExperience(index)}
                           disabled={experienceGenerating[index]}
-                          className="px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200"
+                          className="px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md transition-shadow flex-shrink-0"
                         >
                           {experienceGenerating[index] ? 'Generating...' : 'Generate'}
                         </button>
+                        <p className="text-sm text-gray-400">
+                          {experienceGenerating[index] ? 'AI is generating...' : (experienceMessages[index] && experienceMessages[index].includes('generated') ? 'Generated successfully' : 'Ready to generate')}
+                        </p>
+                      </div>
+                      
+                      {/* Add Custom Instructions - Left aligned under Generate */}
+                      <div className="flex items-center">
+                        <TooltipPrompt
+                          value={experiencePrompts[index]}
+                          onChange={(value) => {
+                            const newPrompts = [...experiencePrompts]
+                            newPrompts[index] = value
+                            setExperiencePrompts(newPrompts)
+                          }}
+                          onSave={() => {
+                            console.log('Experience prompt updated for capability', index + 1)
+                          }}
+                          placeholder="Additional instructions for customization..."
+                          disabled={experienceGenerating[index]}
+                          saving={false}
+                        />
+                      </div>
+                      
+                      {/* Save Button - Right aligned with status on left */}
+                      <div className="flex gap-3 justify-end items-center">
+                        <p className="text-sm text-gray-400 min-w-[120px] text-right">
+                          {experienceMessages[index] && experienceMessages[index].includes('saved') ? 'Saved successfully' : (experienceMessages[index] && experienceMessages[index].includes('failed') ? 'Save failed' : 'Ready to save')}
+                        </p>
                         <button
                           onClick={() => handleSaveExperience(index)}
                           disabled={experienceGenerating[index]}
-                          className="px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200"
+                          className="px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md transition-shadow flex-shrink-0"
                         >
                           Save
                         </button>
                       </div>
-                      {experienceMessages[index] && (
-                        <p className={`text-sm ${experienceMessages[index].includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>
-                          {experienceMessages[index]}
-                        </p>
-                      )}
                     </div>
                   </div>
 
-                  {/* Optional Customization Prompt */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <label className="block text-sm font-medium text-gray-700">Customization Prompt (Optional)</label>
-                      <TooltipPrompt
-                        value={experiencePrompts[index]}
-                        onChange={(value) => {
-                          const newPrompts = [...experiencePrompts]
-                          newPrompts[index] = value
-                          setExperiencePrompts(newPrompts)
-                        }}
-                        onSave={() => {
-                          // No API call needed - prompts are used in generation, not saved separately
-                          console.log('Experience prompt updated for capability', index + 1)
-                        }}
-                        placeholder="Additional instructions for customization..."
-                        disabled={experienceGenerating[index]}
-                        saving={false}
-                      />
-                    </div>
-                  </div>
                 </div>
               </div>
             )

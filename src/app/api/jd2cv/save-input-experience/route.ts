@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    const propertyName = `input_e_p_for_c_${experienceIndex}`
+    const propertyName = `your_experience_${experienceIndex}`
     let pageId: string
 
     if (database.results.length > 0) {

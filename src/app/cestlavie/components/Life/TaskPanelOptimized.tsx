@@ -590,72 +590,212 @@ export default function TaskPanelOptimized() {
 
   return (
     <TaskErrorBoundary>
-      <div className="p-6 space-y-6">
+      <div className="p-3 md:p-6 space-y-4 md:space-y-6">
         {/* Header Section */}
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-purple-900">Task Management</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-purple-900">Task Management</h2>
           <div className="flex items-center gap-3">
             <button
               onClick={handleRefresh}
               disabled={state.refreshing}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
+              className="px-3 py-2 md:px-4 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50 text-sm"
             >
               {state.refreshing ? 'Refreshing...' : 'Refresh'}
             </button>
           </div>
         </div>
 
-        {/* Charts Section */}
-        <TaskCharts tasks={filteredTasks} planOptions={state.planOptions} />
+        {/* Mobile Priority Layout: Charts -> Calendar -> Tasks -> Other */}
+        <div className="md:hidden space-y-4">
+          {/* 1. Charts Section (Mobile First) */}
+          <div>
+            <h3 className="text-lg font-semibold text-purple-500 mb-3">📊 Analytics</h3>
+            <TaskCharts tasks={filteredTasks} planOptions={state.planOptions} />
+          </div>
 
-        {/* Filters Section */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* 2. Calendar Section (Mobile Second) */}
           <div>
-            <label className="block text-sm font-medium text-purple-700 mb-1">Status Filter</label>
-            <select
-              value={state.selectedStatus}
-              onChange={(e) => actions.setSelectedStatus(e.target.value)}
-              className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-            >
-              <option value="all">All Status</option>
-              {state.statusOptions.map(status => (
-                <option key={status} value={status}>{status}</option>
-              ))}
-            </select>
+            <h3 className="text-lg font-semibold text-purple-500 mb-3">📅 Calendar</h3>
+            <div className="bg-white rounded-lg border border-purple-200">
+              <TaskCalendarView
+                tasks={filteredTasks}
+                currentMonth={state.currentMonth}
+                selectedDate={state.selectedDate}
+                onDateSelect={actions.setSelectedDate}
+                onMonthChange={actions.setCurrentMonth}
+                selectedPlanFilter={state.selectedPlanFilter}
+                onTaskClick={(task) => actions.openFormPanel(task)}
+                onTaskDelete={handleDeleteTask}
+                formatTimeRange={formatTimeRange}
+                getPriorityColor={getPriorityColor}
+                hasTimeConflicts={(task) => hasTimeConflicts(task, state.tasks)}
+                compact={true}
+              />
+            </div>
           </div>
-          
+
+          {/* 3. Tasks Section (Mobile Third) */}
           <div>
-            <label className="block text-sm font-medium text-purple-700 mb-1">Priority Filter</label>
-            <select
-              value={state.selectedQuadrant}
-              onChange={(e) => actions.setSelectedQuadrant(e.target.value)}
-              className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-            >
-              <option value="all">All Priorities</option>
-              {state.priorityOptions.map(priority => (
-                <option key={priority} value={priority}>{priority}</option>
-              ))}
-            </select>
+            <h3 className="text-lg font-semibold text-purple-500 mb-3">✅ Tasks</h3>
+            <TaskListView
+              tasks={filteredTasks}
+              selectedDate={state.selectedDate}
+              onTaskClick={(task) => actions.openFormPanel(task)}
+              onTaskDelete={handleDeleteTask}
+              onTaskComplete={(task) => actions.openCompletionModal(task)}
+              onTaskStart={handleTaskStart}
+              onTaskEnd={handleTaskEnd}
+              onRecordTime={handleRecordTime}
+              onTaskCopy={handleTaskCopy}
+              onCreateTask={(date) => {
+                actions.setSelectedDate(date)
+                actions.openFormPanel()
+              }}
+              formatTimeRange={formatTimeRange}
+              getPriorityColor={getPriorityColor}
+              hasTimeConflicts={(task) => hasTimeConflicts(task, state.tasks)}
+              planOptions={state.planOptions}
+              strategyOptions={state.strategyOptions}
+            />
           </div>
-          
+
+          {/* 4. Additional Controls (Mobile Last) */}
           <div>
-            <label className="block text-sm font-medium text-purple-700 mb-1">Plan Filter</label>
-            <select
-              value={state.selectedPlanFilter}
-              onChange={(e) => actions.setSelectedPlanFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-            >
-              <option value="all">All Plans</option>
-              <option value="none">No Plan</option>
-              {state.planOptions.map(plan => (
-                <option key={plan.id} value={plan.id}>{plan.title}</option>
-              ))}
-            </select>
+            <h3 className="text-lg font-semibold text-purple-500 mb-3">🔧 Filters & Stats</h3>
+            
+            {/* Filters */}
+            <div className="space-y-3 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-purple-700 mb-1">Status Filter</label>
+                <select
+                  value={state.selectedStatus}
+                  onChange={(e) => actions.setSelectedStatus(e.target.value)}
+                  className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="all">All Status</option>
+                  {state.statusOptions.map(status => (
+                    <option key={status} value={status}>{status}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-purple-700 mb-1">Priority Filter</label>
+                <select
+                  value={state.selectedQuadrant}
+                  onChange={(e) => actions.setSelectedQuadrant(e.target.value)}
+                  className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="all">All Priorities</option>
+                  {state.priorityOptions.map(priority => (
+                    <option key={priority} value={priority}>{priority}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-purple-700 mb-1">Plan Filter</label>
+                <select
+                  value={state.selectedPlanFilter}
+                  onChange={(e) => actions.setSelectedPlanFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="all">All Plans</option>
+                  <option value="none">No Plan</option>
+                  {state.planOptions.map(plan => (
+                    <option key={plan.id} value={plan.id}>{plan.title}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="bg-white rounded-lg border border-purple-200 p-4">
+              <h4 className="text-md font-semibold text-purple-500 mb-3">📈 Quick Stats</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="text-center">
+                  <div className="text-lg font-bold text-purple-900">
+                    {filteredTasks.filter(task => {
+                      if (!task.start_date) return false
+                      const taskDate = extractDateOnly(task.start_date)
+                      const today = new Date().toISOString().split('T')[0]
+                      return taskDate === today
+                    }).length}
+                  </div>
+                  <div className="text-xs text-gray-600">Today</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-purple-900">{thisWeekTasks.length}</div>
+                  <div className="text-xs text-gray-600">This Week</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-purple-900">{thisMonthTasks.length}</div>
+                  <div className="text-xs text-gray-600">This Month</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-purple-600">
+                    {filteredTasks.filter(task => task.status === 'Completed').length}
+                  </div>
+                  <div className="text-xs text-gray-600">Completed</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Main Content Layout - Task-Centric Design */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Desktop Layout (unchanged) */}
+        <div className="hidden md:block space-y-6">
+          {/* Charts Section */}
+          <TaskCharts tasks={filteredTasks} planOptions={state.planOptions} />
+
+          {/* Filters Section */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-purple-700 mb-1">Status Filter</label>
+              <select
+                value={state.selectedStatus}
+                onChange={(e) => actions.setSelectedStatus(e.target.value)}
+                className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="all">All Status</option>
+                {state.statusOptions.map(status => (
+                  <option key={status} value={status}>{status}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-purple-700 mb-1">Priority Filter</label>
+              <select
+                value={state.selectedQuadrant}
+                onChange={(e) => actions.setSelectedQuadrant(e.target.value)}
+                className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="all">All Priorities</option>
+                {state.priorityOptions.map(priority => (
+                  <option key={priority} value={priority}>{priority}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-purple-700 mb-1">Plan Filter</label>
+              <select
+                value={state.selectedPlanFilter}
+                onChange={(e) => actions.setSelectedPlanFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="all">All Plans</option>
+                <option value="none">No Plan</option>
+                {state.planOptions.map(plan => (
+                  <option key={plan.id} value={plan.id}>{plan.title}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Main Content Layout - Task-Centric Design */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Calendar & Stats */}
           <div className="space-y-6">
             {/* Compact Calendar */}
@@ -734,6 +874,7 @@ export default function TaskPanelOptimized() {
               planOptions={state.planOptions}
               strategyOptions={state.strategyOptions}
             />
+          </div>
           </div>
         </div>
 
