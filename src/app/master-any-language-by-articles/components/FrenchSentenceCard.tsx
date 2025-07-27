@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import React, { useState, useRef } from 'react'
 import { Language, getUITexts } from '../config/uiText'
 import AnimatedButton from './AnimatedButton'
 import { playText } from '../utils/tts'
@@ -50,8 +50,17 @@ export default function FrenchSentenceCard({
   const [playingText, setPlayingText] = useState<string | null>(null)
   const [phrasesAnalysis, setPhrasesAnalysis] = useState('')
   const [isLoadingPhrases, setIsLoadingPhrases] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const uiTexts = getUITexts(language)
   const abortControllerRef = useRef<AbortController | null>(null)
+
+  // Check if mobile on mount
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // Handle TTS playback
   const handleSpeak = async (text: string) => {
@@ -684,13 +693,13 @@ export default function FrenchSentenceCard({
   return (
     <div
       id={`sentence-card-${query.id}`}
-      className="bg-white rounded-xl shadow-lg border border-gray-200/80 p-4 w-full transition-all duration-300 cursor-pointer hover:shadow-xl hover:border-blue-200"
+      className={`bg-white rounded-xl shadow-lg border border-gray-200/80 ${isMobile ? 'p-2' : 'p-4'} w-full transition-all duration-300 cursor-pointer hover:shadow-xl hover:border-blue-200`}
       onClick={() => onScrollToHighlight(query)}
     >
       <div>
         {/* Header */}
-        <div className="flex items-center gap-2 mb-3">
-          <span className="px-3 py-1.5 text-xs bg-blue-100 text-blue-800 rounded-full font-semibold">
+        <div className={`flex items-center gap-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
+          <span className={`${isMobile ? 'px-2 py-1 text-xs' : 'px-3 py-1.5 text-xs'} bg-blue-100 text-blue-800 rounded-full font-semibold`}>
             {uiTexts.sentence}
           </span>
           <div className="flex-1"></div>
@@ -699,36 +708,36 @@ export default function FrenchSentenceCard({
               e.stopPropagation()
               onDelete(query.id)
             }}
-            className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-full transition-all duration-200"
+            className={`text-red-500 hover:text-red-700 hover:bg-red-50 ${isMobile ? 'p-1' : 'p-1.5'} rounded-full transition-all duration-200`}
             title={uiTexts.delete}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
         
         {/* Sentence Display */}
-        <div className="bg-gray-50/50 p-3 rounded-lg border-l-4 border-blue-300 mb-4">
-          <p className="text-sm text-gray-700 italic leading-relaxed">"{query.sentence_text}"</p>
-          <p className="text-xs text-gray-500 mt-2">{query.translation}</p>
+        <div className={`bg-gray-50/50 ${isMobile ? 'p-2' : 'p-3'} rounded-lg border-l-4 border-blue-300 ${isMobile ? 'mb-2' : 'mb-4'}`}>
+          <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-700 italic leading-relaxed`}>"{query.sentence_text}"</p>
+          <p className={`text-xs text-gray-500 ${isMobile ? 'mt-1' : 'mt-2'}`}>{query.translation}</p>
         </div>
         
         {/* Tab Navigation */}
-        <div className="border-b border-gray-200 mb-4" onClick={(e) => e.stopPropagation()}>
-          <div className="flex space-x-1">
+        <div className={`border-b border-gray-200 ${isMobile ? 'mb-2' : 'mb-4'}`} onClick={(e) => e.stopPropagation()}>
+          <div className={`flex ${isMobile ? 'space-x-0' : 'space-x-1'}`}>
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-3 py-2 text-sm font-medium rounded-t-lg transition-colors duration-200 flex items-center gap-1.5 ${
+                className={`${isMobile ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm'} font-medium rounded-t-lg transition-colors duration-200 flex items-center ${isMobile ? 'gap-1' : 'gap-1.5'} ${
                   activeTab === tab.id
                     ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-500'
                     : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                }`}
+                } ${isMobile ? 'flex-1 justify-center' : ''}`}
               >
                 <span className="text-xs">{tab.icon}</span>
-                {tab.label}
+                {!isMobile && tab.label}
               </button>
             ))}
           </div>
