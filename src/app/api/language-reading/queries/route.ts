@@ -60,6 +60,7 @@ export async function GET(req: NextRequest) {
     }
 
     // If no type specified, return both word and sentence queries (for mobile view)
+    // But exclude word queries from sentence queries to prevent duplicate cards
     const [wordQueriesResult, sentenceQueriesResult] = await Promise.all([
       supabase
         .from('english_reading_word_queries')
@@ -72,6 +73,7 @@ export async function GET(req: NextRequest) {
         .select('*')
         .eq('article_id', articleId)
         .or(`language.eq.${language},language.is.null`)
+        .neq('content_type', 'word_query') // Exclude word queries from main sentence list
         .order('created_at', { ascending: true })
     ])
 

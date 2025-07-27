@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useLanguageReadingStore } from '../store/useLanguageReadingStore'
+import { useFrenchReadingStore } from '../store/useFrenchReadingStore'
 import { Language, getUITexts } from '../config/uiText'
 import { playText } from '../utils/tts'
 import ReactMarkdown from 'react-markdown'
@@ -165,7 +166,11 @@ export default function MobileReadingView({ language, articleId, content, title 
   const [isLoading, setIsLoading] = useState(false)
   const [isCreatingSentence, setIsCreatingSentence] = useState(false)
   
-  const { highlightedRanges, addSentenceQuery, addHighlight } = useLanguageReadingStore()
+  // Use different stores based on language
+  const globalStore = useLanguageReadingStore()
+  const frenchStore = useFrenchReadingStore()
+  
+  const { highlightedRanges, addSentenceQuery, addHighlight } = language === 'french' ? frenchStore : globalStore
   const uiTexts = getUITexts(language)
 
   // Fetch data when component mounts or articleId changes
@@ -176,12 +181,20 @@ export default function MobileReadingView({ language, articleId, content, title 
   const fetchMobileData = async () => {
     setIsLoading(true)
     try {
-      // Fetch queries
-      const queriesResponse = await fetch(`/api/language-reading/queries?articleId=${articleId}&language=${language}`)
-      if (queriesResponse.ok) {
-        const queriesData = await queriesResponse.json()
-        setWordQueries(queriesData.wordQueries || [])
-        setSentenceQueries(queriesData.sentenceQueries || [])
+      // For French, use dedicated store to avoid conflicts
+      if (language === 'french') {
+        await frenchStore.loadStoredData(articleId, language)
+        // Get sentence cards from French store
+        setSentenceQueries(frenchStore.frenchSentenceCards)
+        setWordQueries([]) // French mobile uses sentence cards, not separate word queries
+      } else {
+        // For other languages, use global store
+        const queriesResponse = await fetch(`/api/language-reading/queries?articleId=${articleId}&language=${language}`)
+        if (queriesResponse.ok) {
+          const queriesData = await queriesResponse.json()
+          setWordQueries(queriesData.wordQueries || [])
+          setSentenceQueries(queriesData.sentenceQueries || [])
+        }
       }
 
       // Fetch AI notes
@@ -282,9 +295,14 @@ export default function MobileReadingView({ language, articleId, content, title 
         // Add to local state
         setSentenceQueries(prev => [...prev, data])
         
-        // Add to global store
-        addSentenceQuery(data)
-        addHighlight('sentence', sentence.start, sentence.end, data.id)
+        // Add to appropriate store based on language
+        if (language === 'french') {
+          frenchStore.addFrenchSentenceCard(data)
+          frenchStore.addHighlight('sentence', sentence.start, sentence.end, data.id)
+        } else {
+          addSentenceQuery(data)
+          addHighlight('sentence', sentence.start, sentence.end, data.id)
+        }
         
         // Switch to sentences tab to show the new query
         setActiveTab('sentences')
@@ -595,6 +613,9 @@ export default function MobileReadingView({ language, articleId, content, title 
                         articleId={articleId}
                         onDelete={(id) => {
                           setSentenceQueries(prev => prev.filter(q => q.id !== id))
+                          if (language === 'french') {
+                            frenchStore.removeFrenchSentenceCard(id)
+                          }
                         }}
                       />
                     ) : (

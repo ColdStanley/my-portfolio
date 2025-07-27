@@ -79,6 +79,18 @@ export default function JD2CVPanel() {
   // Tab state for capability sections
   const [activeCapabilityTab, setActiveCapabilityTab] = useState(0)
   
+  // Tab state for JD sections
+  const [activeJDTab, setActiveJDTab] = useState(0) // 0: Original, 1: Highlight
+  
+  // Tab state for each capability's sub-tabs (Original/Highlight)
+  const [activeCapabilitySubTabs, setActiveCapabilitySubTabs] = useState<number[]>([0, 0, 0, 0, 0]) // 0: Original, 1: Highlight for each capability
+  
+  // Tab state for each experience's sub-tabs (Original/Highlight)
+  const [activeExperienceSubTabs, setActiveExperienceSubTabs] = useState<number[]>([0, 0, 0, 0, 0]) // 0: Original, 1: Highlight for each experience
+  
+  // Tab state for each aligned experience's sub-tabs (Original/Highlight)
+  const [activeAlignedExperienceSubTabs, setActiveAlignedExperienceSubTabs] = useState<number[]>([0, 0, 0, 0, 0]) // 0: Original, 1: Highlight for each aligned experience
+  
   // Tooltip states for highlight editing
   const [deleteTooltip, setDeleteTooltip] = useState<{
     show: boolean
@@ -422,6 +434,60 @@ export default function JD2CVPanel() {
     }
   }
 
+  const handleGenerateKeySentences = async () => {
+    if (!jdData.title || !jdData.company || !jdData.full_job_description) {
+      alert('Please save JD first before generating key sentences.')
+      return
+    }
+
+    setIsGenerating(true)
+    setGenerateError(false)
+    try {
+      const response = await fetch('/api/jd2cv/extract-key-sentences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_job_description: jdData.full_job_description,
+          model: selectedModel,
+          sentenceCount: sentenceCount
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.keySentences) {
+          setKeySentences(data.keySentences)
+          // Auto switch to Highlight tab after generating key sentences
+          setActiveJDTab(1)
+          
+          // Save key sentences to Notion if we have a pageId
+          if (currentPageId) {
+            try {
+              await fetch('/api/jd2cv/update-key-sentences', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  title: jdData.title,
+                  company: jdData.company,
+                  keySentences: data.keySentences
+                })
+              })
+            } catch (error) {
+              console.error('Failed to save key sentences to Notion:', error)
+            }
+          }
+        }
+        setGenerateError(false)
+      } else {
+        setGenerateError(true)
+      }
+    } catch (error) {
+      setGenerateError(true)
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
   const handleJDSubmit = async () => {
     if (!jdData.title || !jdData.company || !jdData.full_job_description) {
       return
@@ -436,9 +502,7 @@ export default function JD2CVPanel() {
         body: JSON.stringify({
           title: jdData.title,
           company: jdData.company,
-          full_job_description: jdData.full_job_description,
-          model: selectedModel,
-          sentenceCount: sentenceCount
+          full_job_description: jdData.full_job_description
         })
       })
 
@@ -446,9 +510,6 @@ export default function JD2CVPanel() {
         const data = await response.json()
         if (data.id) {
           setCurrentPageId(data.id)
-        }
-        if (data.keySentences) {
-          setKeySentences(data.keySentences)
         }
         setJdSaved(true)
         setJdSaveError(false)
@@ -561,16 +622,14 @@ export default function JD2CVPanel() {
     })
 
     try {
-      const response = await fetch('/api/jd2cv/save-individual-capability', {
+      const response = await fetch('/api/jd2cv/save-capability-only', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: jdData.title,
           company: jdData.company,
           capabilityIndex: index + 1,
-          capabilityValue: capabilityValue,
-          model: selectedModel,
-          keywordCount: capabilityKeywordCounts[index]
+          capabilityValue: capabilityValue
         })
       })
 
@@ -579,21 +638,11 @@ export default function JD2CVPanel() {
         if (data.id && !currentPageId) {
           setCurrentPageId(data.id)
         }
-        // Update capability keywords immediately with returned keywords
-        if (data.keywords && Array.isArray(data.keywords)) {
-          setCapabilityKeywords(prev => {
-            const newState = [...prev]
-            newState[index] = data.keywords
-            return newState
-          })
-        }
         setCapabilitySaveMessages(prev => {
           const newState = [...prev]
           newState[index] = 'Saved successfully'
           return newState
         })
-        // Refresh keywords after successful save
-        setTimeout(() => loadKeywords(), 1000)
       } else {
         setCapabilitySaveMessages(prev => {
           const newState = [...prev]
@@ -613,8 +662,93 @@ export default function JD2CVPanel() {
         newState[index] = false
         return newState
       })
-      // Keep status message visible
-      // setTimeout removed to maintain persistent status display
+    }
+  }
+
+  // Generate keywords for capability
+  const handleGenerateCapabilityKeywords = async (index: number) => {
+    const capabilityKey = `capability_${index + 1}` as keyof JDData
+    const capabilityValue = jdData[capabilityKey]
+
+    if (!capabilityValue || capabilityValue.trim() === '') {
+      setCapabilitySaveMessages(prev => {
+        const newState = [...prev]
+        newState[index] = 'No content to generate keywords from'
+        return newState
+      })
+      return
+    }
+
+    setCapabilityIsSaving(prev => {
+      const newState = [...prev]
+      newState[index] = true
+      return newState
+    })
+
+    setCapabilitySaveMessages(prev => {
+      const newState = [...prev]
+      newState[index] = 'Generating keywords...'
+      return newState
+    })
+
+    try {
+      const response = await fetch('/api/jd2cv/extract-keywords', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: capabilityValue,
+          type: 'capability',
+          model: selectedModel,
+          keywordCount: capabilityKeywordCounts[index]
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.keywords) {
+          setCapabilityKeywords(prev => {
+            const newState = [...prev]
+            newState[index] = data.keywords
+            return newState
+          })
+          setCapabilitySaveMessages(prev => {
+            const newState = [...prev]
+            newState[index] = 'Keywords generated successfully'
+            return newState
+          })
+          
+          // Auto-switch to Highlight tab after successful keyword generation
+          setActiveCapabilitySubTabs(prev => {
+            const newSubTabs = [...prev]
+            newSubTabs[index] = 1  // Switch to Highlight tab (index 1)
+            return newSubTabs
+          })
+        } else {
+          setCapabilitySaveMessages(prev => {
+            const newState = [...prev]
+            newState[index] = 'Failed to generate keywords'
+            return newState
+          })
+        }
+      } else {
+        setCapabilitySaveMessages(prev => {
+          const newState = [...prev]
+          newState[index] = 'Keyword generation failed'
+          return newState
+        })
+      }
+    } catch (error) {
+      setCapabilitySaveMessages(prev => {
+        const newState = [...prev]
+        newState[index] = 'Keyword generation error'
+        return newState
+      })
+    } finally {
+      setCapabilityIsSaving(prev => {
+        const newState = [...prev]
+        newState[index] = false
+        return newState
+      })
     }
   }
 
@@ -779,6 +913,10 @@ export default function JD2CVPanel() {
           // Set key sentences if available
           if (data.record.job_description_key_sentences && Array.isArray(data.record.job_description_key_sentences)) {
             setKeySentences(data.record.job_description_key_sentences)
+            // Auto switch to Highlight tab if there are key sentences
+            if (data.record.job_description_key_sentences.length > 0) {
+              setActiveJDTab(1)
+            }
           }
           
           // Set match score if available (including 0)
@@ -867,6 +1005,10 @@ export default function JD2CVPanel() {
           // Set key sentences if available
           if (data.record.job_description_key_sentences && Array.isArray(data.record.job_description_key_sentences)) {
             setKeySentences(data.record.job_description_key_sentences)
+            // Auto switch to Highlight tab if there are key sentences
+            if (data.record.job_description_key_sentences.length > 0) {
+              setActiveJDTab(1)
+            }
           }
           
           // Set match score if available (including 0)
@@ -1306,16 +1448,14 @@ export default function JD2CVPanel() {
       // Remove emojis from the experience value before saving
       const cleanExperienceValue = removeEmojis(experienceValue || '')
       
-      const response = await fetch('/api/jd2cv/save-experience', {
+      const response = await fetch('/api/jd2cv/save-aligned-experience-only', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: jdData.title,
           company: jdData.company,
           experienceIndex: index + 1,
-          experienceValue: cleanExperienceValue,
-          model: selectedModel,
-          keywordCount: generatedTextKeywordCounts[index]
+          experienceValue: cleanExperienceValue
         })
       })
 
@@ -1324,13 +1464,71 @@ export default function JD2CVPanel() {
         if (data.id && !currentPageId) {
           setCurrentPageId(data.id)
         }
-        // Update generated text keywords immediately with returned keywords
-        if (data.keywords && Array.isArray(data.keywords)) {
-          setGeneratedTextKeywords(prev => {
-            const newState = [...prev]
-            newState[index] = data.keywords
-            return newState
-          })
+        setExperienceSaveMessages(prev => {
+          const newState = [...prev]
+          newState[index] = 'Saved successfully'
+          return newState
+        })
+      } else {
+        setExperienceSaveMessages(prev => {
+          const newState = [...prev]
+          newState[index] = 'Save failed'
+          return newState
+        })
+      }
+    } catch (error) {
+      setExperienceSaveMessages(prev => {
+        const newState = [...prev]
+        newState[index] = 'Save error'
+        return newState
+      })
+    } finally {
+      setExperienceIsSaving(prev => {
+        const newState = [...prev]
+        newState[index] = false
+        return newState
+      })
+      // Keep status message visible and remove height sync to prevent UI jitter
+    }
+  }
+
+  // Save aligned experience without keyword extraction (for Original tab)
+  const handleSaveAlignedExperienceOnly = async (index: number) => {
+    const experienceKey = `generated_text_${index + 1}` as keyof JDData
+    const experienceValue = jdData[experienceKey]
+
+    setExperienceIsSaving(prev => {
+      const newState = [...prev]
+      newState[index] = true
+      return newState
+    })
+
+    setExperienceSaveMessages(prev => {
+      const newState = [...prev]
+      newState[index] = ''
+      return newState
+    })
+
+    try {
+      // Remove emojis from the experience value before saving
+      const cleanExperienceValue = removeEmojis(experienceValue || '')
+      
+      // Use a simpler API that doesn't extract keywords
+      const response = await fetch('/api/jd2cv/save-aligned-experience-only', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: jdData.title,
+          company: jdData.company,
+          experienceIndex: index + 1,
+          experienceValue: cleanExperienceValue
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.id && !currentPageId) {
+          setCurrentPageId(data.id)
         }
         setExperienceSaveMessages(prev => {
           const newState = [...prev]
@@ -1358,7 +1556,97 @@ export default function JD2CVPanel() {
         newState[index] = false
         return newState
       })
-      // Keep status message visible and remove height sync to prevent UI jitter
+      // Keep status message visible for better user feedback
+      // setTimeout removed to maintain persistent status display
+    }
+  }
+
+  // Generate keywords for aligned experience (for Highlight tab)
+  const handleGenerateAlignedExperienceKeywords = async (index: number) => {
+    const experienceKey = `generated_text_${index + 1}` as keyof JDData
+    const experienceValue = jdData[experienceKey]
+
+    if (!experienceValue || experienceValue.trim() === '') {
+      setExperienceSaveMessages(prev => {
+        const newState = [...prev]
+        newState[index] = 'No content to generate keywords from'
+        return newState
+      })
+      return
+    }
+
+    setExperienceIsSaving(prev => {
+      const newState = [...prev]
+      newState[index] = true
+      return newState
+    })
+
+    setExperienceSaveMessages(prev => {
+      const newState = [...prev]
+      newState[index] = 'Generating keywords...'
+      return newState
+    })
+
+    try {
+      const cleanExperienceValue = removeEmojis(experienceValue || '')
+      
+      const response = await fetch('/api/jd2cv/extract-keywords', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: cleanExperienceValue,
+          type: 'generated_experience',
+          model: selectedModel,
+          keywordCount: generatedTextKeywordCounts[index]
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.keywords) {
+          setGeneratedTextKeywords(prev => {
+            const newState = [...prev]
+            newState[index] = data.keywords
+            return newState
+          })
+          setExperienceSaveMessages(prev => {
+            const newState = [...prev]
+            newState[index] = 'Keywords generated successfully'
+            return newState
+          })
+          
+          // Auto-switch to Highlight tab after successful keyword generation
+          setActiveAlignedExperienceSubTabs(prev => {
+            const newSubTabs = [...prev]
+            newSubTabs[index] = 1  // Switch to Highlight tab (index 1)
+            return newSubTabs
+          })
+        } else {
+          setExperienceSaveMessages(prev => {
+            const newState = [...prev]
+            newState[index] = 'Failed to generate keywords'
+            return newState
+          })
+        }
+      } else {
+        setExperienceSaveMessages(prev => {
+          const newState = [...prev]
+          newState[index] = 'Keyword generation failed'
+          return newState
+        })
+      }
+    } catch (error) {
+      setExperienceSaveMessages(prev => {
+        const newState = [...prev]
+        newState[index] = 'Keyword generation error'
+        return newState
+      })
+    } finally {
+      setExperienceIsSaving(prev => {
+        const newState = [...prev]
+        newState[index] = false
+        return newState
+      })
     }
   }
 
@@ -1439,6 +1727,167 @@ export default function JD2CVPanel() {
       console.error(`Error exporting generated text ${index + 1} to Notion:`, error)
     } finally {
       setGeneratedExporting(prev => {
+        const newState = [...prev]
+        newState[index] = false
+        return newState
+      })
+    }
+  }
+
+  // Save input experience without keyword extraction (for Original tab)
+  const handleSaveInputExperienceOnly = async (index: number) => {
+    const inputExperienceKey = `your_experience_${index + 1}` as keyof JDData
+    const inputExperienceValue = experienceInputs[index]
+
+    // Also update the jdData with the current input
+    setJdData(prev => ({
+      ...prev,
+      [inputExperienceKey]: inputExperienceValue
+    }))
+
+    setInputExperienceSaving(prev => {
+      const newState = [...prev]
+      newState[index] = true
+      return newState
+    })
+
+    setInputExperienceMessages(prev => {
+      const newState = [...prev]
+      newState[index] = ''
+      return newState
+    })
+
+    try {
+      // Remove emojis from the input experience value before saving
+      const cleanInputExperienceValue = removeEmojis(inputExperienceValue || '')
+      
+      // Use a simpler API that doesn't extract keywords
+      const response = await fetch('/api/jd2cv/save-aligned-experience-only', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: jdData.title,
+          company: jdData.company,
+          experienceIndex: index + 1,
+          experienceValue: cleanInputExperienceValue
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.id && !currentPageId) {
+          setCurrentPageId(data.id)
+        }
+        setInputExperienceMessages(prev => {
+          const newState = [...prev]
+          newState[index] = 'Saved successfully'
+          return newState
+        })
+        // Refresh keywords after successful save
+        setTimeout(() => loadKeywords(), 1000)
+      } else {
+        setInputExperienceMessages(prev => {
+          const newState = [...prev]
+          newState[index] = 'Save failed'
+          return newState
+        })
+      }
+    } catch (error) {
+      setInputExperienceMessages(prev => {
+        const newState = [...prev]
+        newState[index] = 'Save error'
+        return newState
+      })
+    } finally {
+      setInputExperienceSaving(prev => {
+        const newState = [...prev]
+        newState[index] = false
+        return newState
+      })
+      // Keep status message visible for better user feedback
+      // setTimeout removed to maintain persistent status display
+    }
+  }
+
+  // Generate keywords for input experience (for Highlight tab)
+  const handleGenerateInputExperienceKeywords = async (index: number) => {
+    const inputExperienceValue = experienceInputs[index]
+
+    if (!inputExperienceValue || inputExperienceValue.trim() === '') {
+      setInputExperienceMessages(prev => {
+        const newState = [...prev]
+        newState[index] = 'No content to generate keywords from'
+        return newState
+      })
+      return
+    }
+
+    setInputExperienceSaving(prev => {
+      const newState = [...prev]
+      newState[index] = true
+      return newState
+    })
+
+    setInputExperienceMessages(prev => {
+      const newState = [...prev]
+      newState[index] = 'Generating keywords...'
+      return newState
+    })
+
+    try {
+      const response = await fetch('/api/jd2cv/extract-keywords', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: inputExperienceValue,
+          type: 'experience',
+          model: selectedModel,
+          keywordCount: experienceKeywordCounts[index]
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.keywords) {
+          setExperienceInputKeywords(prev => {
+            const newState = [...prev]
+            newState[index] = data.keywords
+            return newState
+          })
+          setInputExperienceMessages(prev => {
+            const newState = [...prev]
+            newState[index] = 'Keywords generated successfully'
+            return newState
+          })
+          
+          // Auto-switch to Highlight tab after successful keyword generation
+          setActiveExperienceSubTabs(prev => {
+            const newSubTabs = [...prev]
+            newSubTabs[index] = 1  // Switch to Highlight tab (index 1)
+            return newSubTabs
+          })
+        } else {
+          setInputExperienceMessages(prev => {
+            const newState = [...prev]
+            newState[index] = 'Failed to generate keywords'
+            return newState
+          })
+        }
+      } else {
+        setInputExperienceMessages(prev => {
+          const newState = [...prev]
+          newState[index] = 'Keyword generation failed'
+          return newState
+        })
+      }
+    } catch (error) {
+      setInputExperienceMessages(prev => {
+        const newState = [...prev]
+        newState[index] = 'Keyword generation error'
+        return newState
+      })
+    } finally {
+      setInputExperienceSaving(prev => {
         const newState = [...prev]
         newState[index] = false
         return newState
@@ -1780,26 +2229,76 @@ export default function JD2CVPanel() {
         </div>
 
         <div className="mb-8">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Full Job Description <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-gray-700 mb-4">
+            Full Job Description <span className="text-purple-600">*</span>
           </label>
-          {!jdSaved ? (
-            <textarea
-              value={jdData.full_job_description}
-              onChange={(e) => {
-                setJdData(prev => ({ ...prev, full_job_description: e.target.value }))
-                if (jdSaved) setJdSaved(false) // Reset saved state when content changes
-                if (jdSaveError) setJdSaveError(false) // Reset error state when content changes
-                if (generateError) setGenerateError(false) // Reset generate error when content changes
-              }}
-              rows={6}
-              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-y min-h-[150px]"
-              placeholder="Paste the complete job description here..."
-            />
-          ) : (
-            <div className="w-full px-4 py-3 border border-gray-300 rounded-md bg-gray-50">
+          
+          {/* JD Tab Navigation */}
+          <div className="border-b border-gray-200 mb-4">
+            <nav className="flex space-x-1 -mb-px" role="tablist">
+              {['Original', 'Highlight'].map((tabName, index) => {
+                const isActive = activeJDTab === index
+                return (
+                  <button
+                    key={index}
+                    id={`jd-tab-${index}`}
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-controls={`jd-panel-${index}`}
+                    tabIndex={isActive ? 0 : -1}
+                    onClick={() => setActiveJDTab(index)}
+                    className={`px-4 py-2 rounded-t-lg font-medium text-sm transition-colors duration-200 focus:outline-none ${
+                      isActive 
+                        ? 'bg-purple-600 text-white' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {tabName}
+                  </button>
+                )
+              })}
+            </nav>
+          </div>
+          
+          {/* JD Tab Content */}
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            {activeJDTab === 0 ? (
+              // Original Tab - Editable textarea
+              <textarea
+                value={jdData.full_job_description}
+                onChange={(e) => {
+                  setJdData(prev => ({ ...prev, full_job_description: e.target.value }))
+                  if (jdSaved) setJdSaved(false)
+                  if (jdSaveError) setJdSaveError(false)
+                  if (generateError) setGenerateError(false)
+                  // Auto-resize textarea
+                  const target = e.target as HTMLTextAreaElement
+                  target.style.height = 'auto'
+                  target.style.height = `${target.scrollHeight}px`
+                }}
+                className="w-full border-0 focus:outline-none resize-none overflow-hidden min-h-[150px] text-gray-700"
+                placeholder="Paste the complete job description here..."
+                style={{
+                  height: jdData.full_job_description ? 'auto' : '150px'
+                }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement
+                  target.style.height = 'auto'
+                  target.style.height = `${target.scrollHeight}px`
+                }}
+                ref={(el) => {
+                  if (el && jdData.full_job_description) {
+                    setTimeout(() => {
+                      el.style.height = 'auto'
+                      el.style.height = `${el.scrollHeight}px`
+                    }, 0)
+                  }
+                }}
+              />
+            ) : (
+              // Highlight Tab - Read-only display with highlighting
               <div 
-                className="text-gray-700 leading-relaxed whitespace-pre-wrap"
+                className="text-gray-700 leading-relaxed whitespace-pre-wrap min-h-[150px]"
                 dangerouslySetInnerHTML={{
                   __html: highlightKeySentences(jdData.full_job_description, keySentences)
                 }}
@@ -1812,65 +2311,118 @@ export default function JD2CVPanel() {
                 }}
                 onMouseUp={handleTextSelection}
               />
+            )}
+          </div>
+        </div>
+
+        {/* Button Layout - Different for each tab */}
+        <div className="space-y-3">
+          {activeJDTab === 0 ? (
+            // Original Tab: Only Save to Database button
+            <div className="flex items-center gap-4 justify-end">
+              <button
+                onClick={handleJDSubmit}
+                disabled={isSaving || !jdData.full_job_description.trim()}
+                className="w-[160px] px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md transition-shadow text-center text-sm"
+              >
+                {isSaving ? 'Saving...' : jdSaveError ? 'Retry' : 'Save to Database'}
+              </button>
+            </div>
+          ) : (
+            // Highlight Tab: Key Sentences button with count input
+            <div className="flex items-center gap-4 justify-end">
+              {/* Sentence Count Input */}
+              <div className="flex items-center gap-2">
+                <label htmlFor="sentenceCount" className="text-sm font-medium text-gray-600">
+                  Count:
+                </label>
+                <input
+                  id="sentenceCount"
+                  type="number"
+                  value={sentenceCount}
+                  onChange={(e) => setSentenceCount(Math.max(1, Math.min(10, parseInt(e.target.value) || 5)))}
+                  className="w-16 px-2 py-1 border border-gray-300 rounded text-sm text-center focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  min="1"
+                  max="10"
+                />
+              </div>
+
+              {/* Key Sentences Button */}
+              <button
+                onClick={handleGenerateKeySentences}
+                disabled={isGenerating || !jdData.full_job_description.trim()}
+                className="w-[160px] px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md transition-shadow text-center text-sm"
+              >
+                {isGenerating ? 'Generating...' : generateError ? 'Retry' : 'Key Sentences'}
+              </button>
             </div>
           )}
         </div>
+      </div>
 
-        {/* Two-Row Button Layout */}
-        <div className="space-y-3">
-          {/* First Row: Key Sentences and Save JD */}
-          <div className="flex items-center gap-4 justify-end">
-            {/* Sentence Count Input */}
-            <div className="flex items-center gap-2">
-              <label htmlFor="sentenceCount" className="text-sm font-medium text-gray-600">
-                Key Sentences:
-              </label>
-              <input
-                id="sentenceCount"
-                type="number"
-                value={sentenceCount}
-                onChange={(e) => setSentenceCount(Math.max(1, Math.min(10, parseInt(e.target.value) || 5)))}
-                className="w-16 px-2 py-1 border border-gray-300 rounded text-sm text-center focus:outline-none focus:ring-2 focus:ring-purple-500"
-                min="1"
-                max="10"
-              />
+      {/* Role Expectations - Independent Section */}
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+              </svg>
             </div>
-
-            {/* Save JD Button */}
-            <button
-              onClick={handleJDSubmit}
-              disabled={isSaving}
-              className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md transition-shadow w-32"
-            >
-              {isSaving ? 'Saving...' : jdSaveError ? 'Retry' : 'Save JD'}
-            </button>
+            <h3 className="text-xl font-semibold text-gray-800">Role Expectations Analysis</h3>
           </div>
-
-          {/* Second Row: Categories and Generate */}
-          <div className="flex items-center gap-4 justify-end">
-            {/* Category Count Input */}
-            <div className="flex items-center gap-2">
-              <label htmlFor="categoryCount" className="text-sm font-medium text-gray-600">
-                Categories:
-              </label>
-              <input
-                id="categoryCount"
-                type="number"
-                value={categoryCount}
-                onChange={(e) => setCategoryCount(Math.max(1, Math.min(5, parseInt(e.target.value) || 3)))}
-                className="w-16 px-2 py-1 border border-gray-300 rounded text-sm text-center focus:outline-none focus:ring-2 focus:ring-purple-500"
-                min="1"
-                max="5"
-              />
+          <div className="flex items-center space-x-2">
+            <div className={`w-3 h-3 rounded-full ${keySentences.length > 0 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+            <div className={`w-3 h-3 rounded-full ${capabilitiesGenerated ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+          </div>
+        </div>
+        
+        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-4 border border-purple-100">
+          <p className="text-sm text-gray-600 mb-4">
+            Generate role expectations based on key sentences from the job description. This analysis bridges the job requirements with specific capability areas.
+          </p>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label htmlFor="categoryCount" className="text-sm font-medium text-gray-700">
+                  Categories:
+                </label>
+                <input
+                  id="categoryCount"
+                  type="number"
+                  value={categoryCount}
+                  onChange={(e) => setCategoryCount(Math.max(1, Math.min(5, parseInt(e.target.value) || 3)))}
+                  className="w-16 px-3 py-2 border border-gray-300 rounded-md text-sm text-center focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  min="1"
+                  max="5"
+                />
+              </div>
             </div>
             
-            {/* Generate Button */}
             <button
               onClick={handleGenerateCapabilities}
-              disabled={isGenerating}
-              className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md transition-shadow w-32"
+              disabled={isGenerating || keySentences.length === 0}
+              className="px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md text-sm flex items-center gap-2"
             >
-              {isGenerating ? 'Generating...' : generateError ? 'Retry' : 'Generate'}
+              {isGenerating ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Analyzing...
+                </>
+              ) : generateError ? (
+                'Retry Analysis'
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  Generate Role Expectations
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -1883,7 +2435,7 @@ export default function JD2CVPanel() {
           
           {/* Tab Navigation */}
           <div className="border-b border-gray-200">
-            <nav className="flex space-x-1 sm:space-x-2 overflow-x-auto scrollbar-hide pb-4" role="tablist">
+            <nav className="flex space-x-1 sm:space-x-2 overflow-x-auto scrollbar-hide -mb-px" role="tablist">
               {[1, 2, 3, 4, 5].map((num) => {
                 const index = num - 1
                 const isActive = activeCapabilityTab === index
@@ -1905,15 +2457,15 @@ export default function JD2CVPanel() {
                         setActiveCapabilityTab(index + 1)
                       }
                     }}
-                    className={`flex-shrink-0 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg font-medium text-sm sm:text-base transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
+                    className={`flex-shrink-0 px-3 py-2 sm:px-4 sm:py-2.5 rounded-t-lg border-l border-r border-t font-medium text-xs sm:text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
                       isActive 
-                        ? 'bg-purple-600 text-white shadow-md ring-2 ring-purple-200' 
+                        ? 'bg-purple-600 text-white shadow-md border-purple-600 relative z-10' 
                         : hasContent
-                          ? 'bg-purple-100 text-purple-700 hover:bg-purple-200 hover:shadow-sm'
-                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-600'
+                          ? 'bg-purple-50 text-purple-700 hover:bg-purple-100 hover:shadow-sm border-purple-200'
+                          : 'bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-600 border-gray-200'
                     }`}
                   >
-                    <span className="whitespace-nowrap">Capability {num}</span>
+                    <span className="whitespace-nowrap">Role Expectation {num}</span>
                   </button>
                 )
               })}
@@ -1933,333 +2485,567 @@ export default function JD2CVPanel() {
                 id={`capability-panel-${num}`}
                 role="tabpanel"
                 aria-labelledby={`capability-tab-${num}`}
-                className="mt-6"
+                className="mt-0"
               >
-                <div className="bg-gray-50 rounded-xl p-6 space-y-6 border border-gray-100">
+                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-b-xl rounded-tr-xl p-4 sm:p-6 space-y-4 sm:space-y-6 shadow-lg shadow-purple-100/50">
                   <div className="flex items-center justify-between">
-                    <h5 className="text-lg font-semibold text-gray-800">Role Expectation {num}</h5>
+                    <h5 className="text-base sm:text-lg font-semibold text-gray-800">Role Expectation {num}</h5>
                     <span className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full border">
                       {num}/5
                     </span>
                   </div>
                   
-                  {/* Capability Content */}
+                  {/* Capability Content - Secondary Tab System */}
                   <div className="space-y-4">
-                  {capabilityKeywords[index] && capabilityKeywords[index].length > 0 ? (
-                    // Show highlighted view when keywords are available
-                    <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
-                      <div 
-                        className="text-gray-700 leading-relaxed whitespace-pre-wrap min-h-[100px]"
-                        dangerouslySetInnerHTML={{
-                          __html: highlightKeywords(jdData[`capability_${num}` as keyof JDData] || '', capabilityKeywords[index])
-                        }}
-                        onClick={(e) => {
-                          const target = e.target as HTMLElement
-                          const keyword = target.getAttribute('data-keyword')
-                          if (keyword && capabilityKeywords[index].includes(keyword)) {
-                            handleKeywordClick(e, keyword, index)
-                          }
-                        }}
-                        onMouseUp={(e) => handleCapabilityTextSelection(e, index)}
-                      />
-                    </div>
-                  ) : (
-                    // Show editable textarea when no keywords are available
-                    <textarea
-                      value={jdData[`capability_${num}` as keyof JDData]}
-                      onChange={(e) => {
-                        setJdData(prev => ({ 
-                          ...prev, 
-                          [`capability_${num}`]: e.target.value 
-                        }))
-                        // Auto-resize on change
-                        setTimeout(() => autoResizeTextarea(e.target), 0)
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none overflow-hidden"
-                      placeholder={`Key capability ${num}`}
-                      style={{
-                        minHeight: '100px'
-                      }}
-                      onInput={(e) => autoResizeTextarea(e.target as HTMLTextAreaElement)}
-                      ref={(el) => {
-                        if (el) {
-                          // Auto-resize on initial render and when content changes
-                          setTimeout(() => autoResizeTextarea(el), 0)
-                        }
-                      }}
-                    />
-                  )}
-                  
-                  {/* Keywords Count and Save Button Row */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 mt-4 p-3 bg-white rounded-lg border border-gray-200">
-                    {/* Keywords Count Input */}
-                    <div className="flex items-center gap-2">
-                      <label htmlFor={`keywordCount-${index}`} className="text-sm font-medium text-gray-600">
-                        Keywords:
-                      </label>
-                      <input
-                        id={`keywordCount-${index}`}
-                        type="number"
-                        value={capabilityKeywordCounts[index]}
-                        onChange={(e) => {
-                          const newCount = Math.max(1, Math.min(10, parseInt(e.target.value) || 3))
-                          setCapabilityKeywordCounts(prev => {
-                            const newCounts = [...prev]
-                            newCounts[index] = newCount
-                            return newCounts
-                          })
-                        }}
-                        className="w-16 px-2 py-1.5 border border-gray-300 rounded-md text-sm text-center focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                        min="1"
-                        max="10"
-                      />
+                    {/* Secondary Tab Navigation */}
+                    <div className="border-b border-gray-200">
+                      <nav className="flex space-x-1 -mb-px" role="tablist">
+                        {['Original', 'Highlight'].map((tabName, subIndex) => {
+                          const isSubActive = activeCapabilitySubTabs[index] === subIndex
+                          return (
+                            <button
+                              key={subIndex}
+                              role="tab"
+                              aria-selected={isSubActive}
+                              onClick={() => {
+                                const newSubTabs = [...activeCapabilitySubTabs]
+                                newSubTabs[index] = subIndex
+                                setActiveCapabilitySubTabs(newSubTabs)
+                              }}
+                              className={`flex-shrink-0 px-3 py-1.5 rounded-t-md border-l border-r border-t font-medium text-xs transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-purple-400 ${
+                                isSubActive 
+                                  ? 'bg-indigo-500 text-white shadow-sm border-indigo-500 relative z-10' 
+                                  : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200'
+                              }`}
+                            >
+                              <span className="whitespace-nowrap">{tabName}</span>
+                            </button>
+                          )
+                        })}
+                      </nav>
                     </div>
                     
-                    {/* Action Buttons */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleSaveCapability(index)}
-                        disabled={capabilityIsSaving[index]}
-                        className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md"
-                      >
-                        {capabilityIsSaving[index] ? 'Saving...' : 'Save'}
-                      </button>
-                      
-                      <button
-                        onClick={() => handleExportCapability(index)}
-                        disabled={!currentPageId || capabilityExporting[index]}
-                        className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md"
-                      >
-                        {capabilityExporting[index] ? 'Exporting...' : 'Export'}
-                      </button>
+                    {/* Secondary Tab Content */}
+                    <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-b-lg rounded-tr-lg p-3 shadow-md shadow-indigo-100/50">
+                      {activeCapabilitySubTabs[index] === 0 ? (
+                        // Original Tab - Editable textarea
+                        <div>
+                          <textarea
+                            value={jdData[`capability_${num}` as keyof JDData]}
+                            onChange={(e) => {
+                              setJdData(prev => ({ 
+                                ...prev, 
+                                [`capability_${num}`]: e.target.value 
+                              }))
+                              // Auto-resize on change
+                              const target = e.target as HTMLTextAreaElement
+                              target.style.height = 'auto'
+                              target.style.height = `${target.scrollHeight}px`
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none overflow-hidden min-h-[100px]"
+                            placeholder={`Role expectation ${num} content...`}
+                            onInput={(e) => {
+                              const target = e.target as HTMLTextAreaElement
+                              target.style.height = 'auto'
+                              target.style.height = `${target.scrollHeight}px`
+                            }}
+                            ref={(el) => {
+                              if (el && jdData[`capability_${num}` as keyof JDData]) {
+                                // Auto-resize on initial render
+                                setTimeout(() => {
+                                  el.style.height = 'auto'
+                                  el.style.height = `${el.scrollHeight}px`
+                                }, 0)
+                              }
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        // Highlight Tab - Read-only display with highlighting
+                        <div>
+                          <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white min-h-[100px]">
+                            <div 
+                              className="text-gray-700 leading-relaxed whitespace-pre-wrap"
+                              dangerouslySetInnerHTML={{
+                                __html: highlightKeywords(jdData[`capability_${num}` as keyof JDData] || '', capabilityKeywords[index])
+                              }}
+                              onClick={(e) => {
+                                const target = e.target as HTMLElement
+                                const keyword = target.getAttribute('data-keyword')
+                                if (keyword && capabilityKeywords[index].includes(keyword)) {
+                                  handleKeywordClick(e, keyword, index)
+                                }
+                              }}
+                              onMouseUp={(e) => handleCapabilityTextSelection(e, index)}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
+                    
+                    {/* Button Layout - Different for each sub-tab */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 mt-4 p-3 bg-white rounded-lg border border-gray-200">
+                      {activeCapabilitySubTabs[index] === 0 ? (
+                        // Original Tab: Only Database button
+                        <div className="flex items-center gap-4 justify-end w-full">
+                          <button
+                            onClick={() => handleSaveCapability(index)}
+                            disabled={capabilityIsSaving[index] || !jdData[`capability_${num}` as keyof JDData]?.trim()}
+                            className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                          >
+                            {capabilityIsSaving[index] ? 'Saving...' : 'Database'}
+                          </button>
+                        </div>
+                      ) : (
+                        // Highlight Tab: Key Words button with count input
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2">
+                            <label htmlFor={`keywordCount-${index}`} className="text-sm font-medium text-gray-600">
+                              Count:
+                            </label>
+                            <input
+                              id={`keywordCount-${index}`}
+                              type="number"
+                              value={capabilityKeywordCounts[index]}
+                              onChange={(e) => {
+                                const newCount = Math.max(1, Math.min(10, parseInt(e.target.value) || 3))
+                                setCapabilityKeywordCounts(prev => {
+                                  const newCounts = [...prev]
+                                  newCounts[index] = newCount
+                                  return newCounts
+                                })
+                              }}
+                              className="w-16 px-2 py-1 border border-gray-300 rounded text-sm text-center focus:outline-none focus:ring-2 focus:ring-purple-500"
+                              min="1"
+                              max="10"
+                            />
+                          </div>
+                          
+                          <button
+                            onClick={() => handleGenerateCapabilityKeywords(index)}
+                            disabled={capabilityIsSaving[index] || !jdData[`capability_${num}` as keyof JDData]?.trim()}
+                            className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                          >
+                            {capabilityIsSaving[index] ? 'Generating...' : 'Key Words'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Page Export Section */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <h6 className="text-sm font-semibold text-gray-800">Export to Notion</h6>
+                      <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded-full border">
+                        Role Expectation {index + 1}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleExportCapability(index)}
+                      disabled={!currentPageId || capabilityExporting[index]}
+                      className="px-6 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                    >
+                      {capabilityExporting[index] ? 'Exporting...' : 'Page'}
+                    </button>
                   </div>
                 </div>
 
                 {/* Experience Customization */}
                 <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
-                  <h6 className="text-lg font-semibold text-gray-800 border-b border-gray-100 pb-3">Experience Customization</h6>
+                  <h6 className="text-base sm:text-lg font-semibold text-gray-800 border-b border-gray-100 pb-2">Experience Customization</h6>
                   
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                    {/* Left: Input Experience */}
+                  <div className="space-y-6">
+                    {/* Your Experience Section - Secondary Tab System */}
                     <div className="space-y-3">
-                      <label className="block text-sm font-medium text-gray-700">Your Experience</label>
-                      {experienceInputKeywords[index] && experienceInputKeywords[index].length > 0 ? (
-                        // Show highlighted view when keywords are available
-                        <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
-                          <div 
-                            className="text-gray-700 leading-relaxed whitespace-pre-wrap min-h-[120px]"
-                            dangerouslySetInnerHTML={{
-                              __html: highlightKeywords(experienceInputs[index] || '', experienceInputKeywords[index])
-                            }}
-                            onClick={(e) => {
-                              const target = e.target as HTMLElement
-                              const keyword = target.getAttribute('data-keyword')
-                              if (keyword) {
-                                e.stopPropagation()
-                                const rect = target.getBoundingClientRect()
-                                setDeleteExperienceKeywordTooltip({
-                                  show: true,
-                                  keyword: keyword,
-                                  experienceIndex: index,
-                                  position: { x: rect.right, y: rect.bottom + 5 }
-                                })
-                              }
-                            }}
-                            onMouseUp={(e) => {
-                              const selection = window.getSelection()
-                              const selectedText = selection?.toString().trim()
-                              
-                              if (selectedText && selectedText.length > 0) {
-                                const target = e.target as HTMLElement
-                                if (!target.getAttribute('data-keyword')) {
-                                  e.stopPropagation()
-                                  const rect = selection?.getRangeAt(0).getBoundingClientRect()
-                                  if (rect) {
-                                    setAddExperienceKeywordTooltip({
-                                      show: true,
-                                      text: selectedText,
-                                      experienceIndex: index,
-                                      position: { x: rect.right, y: rect.bottom + 5 }
-                                    })
-                                  }
-                                }
-                              }
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        // Show editable textarea when no keywords are available
-                        <textarea
-                          id={`your-experience-${index}`}
-                          value={experienceInputs[index]}
-                          onChange={(e) => {
-                            const newInputs = [...experienceInputs]
-                            newInputs[index] = e.target.value
-                            setExperienceInputs(newInputs)
-                          }}
-                          onInput={(e) => {
-                            // Auto-resize on input
-                            autoResizeTextarea(e.target as HTMLTextAreaElement)
-                          }}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none overflow-hidden"
-                          placeholder="Describe your relevant experience..."
-                          style={{ minHeight: '120px' }}
-                        />
-                      )}
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700">Your Experience</label>
                       
-                      {/* Save Button Row */}
-                      <div className="flex justify-end gap-3 mt-2 items-center">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600">Keywords:</span>
-                          <input
-                            type="number"
-                            min="1"
-                            max="10"
-                            value={experienceKeywordCounts[index]}
-                            onChange={(e) => {
-                              const newCounts = [...experienceKeywordCounts]
-                              newCounts[index] = parseInt(e.target.value) || 3
-                              setExperienceKeywordCounts(newCounts)
-                            }}
-                            className="w-12 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500 text-center"
-                          />
-                        </div>
-                        <button
-                          onClick={() => handleSaveInputExperience(index)}
-                          disabled={inputExperienceSaving[index]}
-                          className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md min-w-[80px]"
-                        >
-                          {inputExperienceSaving[index] ? 'Saving...' : 'Save'}
-                        </button>
+                      {/* Secondary Tab Navigation */}
+                      <div className="border-b border-gray-200">
+                        <nav className="flex space-x-1 -mb-px" role="tablist">
+                          {['Original', 'Highlight'].map((tabName, subIndex) => {
+                            const isSubActive = activeExperienceSubTabs[index] === subIndex
+                            return (
+                              <button
+                                key={subIndex}
+                                role="tab"
+                                aria-selected={isSubActive}
+                                onClick={() => {
+                                  const newSubTabs = [...activeExperienceSubTabs]
+                                  newSubTabs[index] = subIndex
+                                  setActiveExperienceSubTabs(newSubTabs)
+                                }}
+                                className={`flex-shrink-0 px-3 py-1.5 rounded-t-md border-l border-r border-t font-medium text-xs transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-purple-400 ${
+                                  isSubActive 
+                                    ? 'bg-indigo-500 text-white shadow-sm border-indigo-500 relative z-10' 
+                                    : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200'
+                                }`}
+                              >
+                                <span className="whitespace-nowrap">{tabName}</span>
+                              </button>
+                            )
+                          })}
+                        </nav>
+                      </div>
+                      
+                      {/* Secondary Tab Content */}
+                      <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-b-lg rounded-tr-lg p-3 shadow-md shadow-indigo-100/50">
+                        {activeExperienceSubTabs[index] === 0 ? (
+                          // Original Tab - Editable textarea
+                          <div>
+                            <textarea
+                              id={`your-experience-${index}`}
+                              value={experienceInputs[index]}
+                              onChange={(e) => {
+                                const newInputs = [...experienceInputs]
+                                newInputs[index] = e.target.value
+                                setExperienceInputs(newInputs)
+                                // Auto-resize on change
+                                const target = e.target as HTMLTextAreaElement
+                                target.style.height = 'auto'
+                                target.style.height = `${target.scrollHeight}px`
+                              }}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none overflow-hidden min-h-[120px]"
+                              placeholder="Describe your relevant experience..."
+                              onInput={(e) => {
+                                const target = e.target as HTMLTextAreaElement
+                                target.style.height = 'auto'
+                                target.style.height = `${target.scrollHeight}px`
+                              }}
+                              ref={(el) => {
+                                if (el && experienceInputs[index]) {
+                                  // Auto-resize on initial render
+                                  setTimeout(() => {
+                                    el.style.height = 'auto'
+                                    el.style.height = `${el.scrollHeight}px`
+                                  }, 0)
+                                }
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          // Highlight Tab - Read-only display with highlighting
+                          <div>
+                            <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white min-h-[120px]">
+                              {experienceInputKeywords[index] && experienceInputKeywords[index].length > 0 ? (
+                                // Show highlighted view when keywords are available
+                                <div 
+                                  className="text-gray-700 leading-relaxed whitespace-pre-wrap"
+                                  dangerouslySetInnerHTML={{
+                                    __html: highlightKeywords(experienceInputs[index] || '', experienceInputKeywords[index])
+                                  }}
+                                  onClick={(e) => {
+                                    const target = e.target as HTMLElement
+                                    const keyword = target.getAttribute('data-keyword')
+                                    if (keyword) {
+                                      e.stopPropagation()
+                                      const rect = target.getBoundingClientRect()
+                                      setDeleteExperienceKeywordTooltip({
+                                        show: true,
+                                        keyword: keyword,
+                                        experienceIndex: index,
+                                        position: { x: rect.right, y: rect.bottom + 5 }
+                                      })
+                                    }
+                                  }}
+                                  onMouseUp={(e) => {
+                                    const selection = window.getSelection()
+                                    const selectedText = selection?.toString().trim()
+                                    
+                                    if (selectedText && selectedText.length > 0) {
+                                      const target = e.target as HTMLElement
+                                      if (!target.getAttribute('data-keyword')) {
+                                        e.stopPropagation()
+                                        const rect = selection?.getRangeAt(0).getBoundingClientRect()
+                                        if (rect) {
+                                          setAddExperienceKeywordTooltip({
+                                            show: true,
+                                            text: selectedText,
+                                            experienceIndex: index,
+                                            position: { x: rect.right, y: rect.bottom + 5 }
+                                          })
+                                        }
+                                      }
+                                    }
+                                  }}
+                                />
+                              ) : (
+                                // Show plain text when no keywords are available
+                                <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                                  {experienceInputs[index] || 'Your experience content will appear here with highlighted keywords...'}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Button Layout - Different for each sub-tab */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 mt-4 p-3 bg-white rounded-lg border border-gray-200">
+                        {activeExperienceSubTabs[index] === 0 ? (
+                          // Original Tab: Only Save to Database button
+                          <div className="flex items-center gap-4 justify-end w-full">
+                            <button
+                              onClick={() => handleSaveInputExperienceOnly(index)}
+                              disabled={inputExperienceSaving[index] || !experienceInputs[index]?.trim()}
+                              className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                            >
+                              {inputExperienceSaving[index] ? 'Saving...' : 'Save to Database'}
+                            </button>
+                          </div>
+                        ) : (
+                          // Highlight Tab: Key Words button with count input
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center gap-2">
+                              <label htmlFor={`keywordCount-exp-${index}`} className="text-sm font-medium text-gray-600">
+                                Count:
+                              </label>
+                              <input
+                                id={`keywordCount-exp-${index}`}
+                                type="number"
+                                value={experienceKeywordCounts[index]}
+                                onChange={(e) => {
+                                  const newCount = Math.max(1, Math.min(10, parseInt(e.target.value) || 3))
+                                  setExperienceKeywordCounts(prev => {
+                                    const newCounts = [...prev]
+                                    newCounts[index] = newCount
+                                    return newCounts
+                                  })
+                                }}
+                                className="w-16 px-2 py-1 border border-gray-300 rounded text-sm text-center focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                min="1"
+                                max="10"
+                              />
+                            </div>
+                            
+                            <button
+                              onClick={() => handleGenerateInputExperienceKeywords(index)}
+                              disabled={inputExperienceSaving[index] || !experienceInputs[index]?.trim()}
+                              className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                            >
+                              {inputExperienceSaving[index] ? 'Generating...' : 'Key Words'}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {/* Right: Generated Experience */}
+                    {/* Generate Aligned Experience Button */}
+                    <div className="flex justify-center py-4">
+                      <button
+                        onClick={() => handleGenerateExperience(index)}
+                        disabled={experienceGenerating[index]}
+                        className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md min-w-[200px] flex items-center justify-center gap-2"
+                      >
+                        {experienceGenerating[index] ? (
+                          <>
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                            <span>Generating...</span>
+                          </>
+                        ) : (
+                          'Generate Aligned Experience'
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Aligned Experience Section - Secondary Tab System */}
                     <div className="space-y-3">
-                      <label className="block text-sm font-medium text-gray-700">Aligned Experience</label>
-                      {generatedTextKeywords[index] && generatedTextKeywords[index].length > 0 ? (
-                        // Show highlighted view when keywords are available
-                        <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
-                          <div 
-                            className="text-gray-700 leading-relaxed whitespace-pre-wrap min-h-[120px]"
-                            dangerouslySetInnerHTML={{
-                              __html: highlightKeywords(jdData[`generated_text_${num}` as keyof JDData] || '', generatedTextKeywords[index])
-                            }}
-                            onClick={(e) => {
-                              const target = e.target as HTMLElement
-                              const keyword = target.getAttribute('data-keyword')
-                              if (keyword) {
-                                e.stopPropagation()
-                                const rect = target.getBoundingClientRect()
-                                setDeleteGeneratedKeywordTooltip({
-                                  show: true,
-                                  keyword: keyword,
-                                  generatedIndex: index,
-                                  position: { x: rect.right, y: rect.bottom + 5 }
-                                })
-                              }
-                            }}
-                            onMouseUp={(e) => {
-                              const selection = window.getSelection()
-                              const selectedText = selection?.toString().trim()
-                              
-                              if (selectedText && selectedText.length > 0) {
-                                const target = e.target as HTMLElement
-                                if (!target.getAttribute('data-keyword')) {
-                                  e.stopPropagation()
-                                  const rect = selection?.getRangeAt(0).getBoundingClientRect()
-                                  if (rect) {
-                                    setAddGeneratedKeywordTooltip({
-                                      show: true,
-                                      text: selectedText,
-                                      generatedIndex: index,
-                                      position: { x: rect.right, y: rect.bottom + 5 }
-                                    })
-                                  }
-                                }
-                              }
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        // Show editable textarea when no keywords are available
-                        <textarea
-                          id={`generated-text-${index}`}
-                          value={jdData[`generated_text_${num}` as keyof JDData]}
-                          onChange={(e) => {
-                            setJdData(prev => ({ 
-                              ...prev, 
-                              [`generated_text_${num}`]: e.target.value 
-                            }))
-                          }}
-                          onInput={(e) => {
-                            // Auto-resize on input
-                            autoResizeTextarea(e.target as HTMLTextAreaElement)
-                          }}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none overflow-hidden"
-                          placeholder="Generated experience will appear here..."
-                          style={{ minHeight: '120px' }}
-                        />
-                      )}
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700">Aligned Experience</label>
                       
-                      {/* Buttons Row */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        {/* Generate Button */}
+                      {/* Secondary Tab Navigation */}
+                      <div className="border-b border-gray-200">
+                        <nav className="flex space-x-1 -mb-px" role="tablist">
+                          {['Original', 'Highlight'].map((tabName, subIndex) => {
+                            const isSubActive = activeAlignedExperienceSubTabs[index] === subIndex
+                            return (
+                              <button
+                                key={subIndex}
+                                role="tab"
+                                aria-selected={isSubActive}
+                                onClick={() => {
+                                  const newSubTabs = [...activeAlignedExperienceSubTabs]
+                                  newSubTabs[index] = subIndex
+                                  setActiveAlignedExperienceSubTabs(newSubTabs)
+                                }}
+                                className={`flex-shrink-0 px-3 py-1.5 rounded-t-md border-l border-r border-t font-medium text-xs transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-purple-400 ${
+                                  isSubActive 
+                                    ? 'bg-indigo-500 text-white shadow-sm border-indigo-500 relative z-10' 
+                                    : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200'
+                                }`}
+                              >
+                                <span className="whitespace-nowrap">{tabName}</span>
+                              </button>
+                            )
+                          })}
+                        </nav>
+                      </div>
+                      
+                      {/* Secondary Tab Content */}
+                      <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-b-lg rounded-tr-lg p-3 shadow-md shadow-indigo-100/50">
+                        {activeAlignedExperienceSubTabs[index] === 0 ? (
+                          // Original Tab - Editable textarea
+                          <div>
+                            <textarea
+                              id={`generated-text-${index}`}
+                              value={jdData[`generated_text_${num}` as keyof JDData]}
+                              onChange={(e) => {
+                                setJdData(prev => ({ 
+                                  ...prev, 
+                                  [`generated_text_${num}`]: e.target.value 
+                                }))
+                                // Auto-resize on change
+                                const target = e.target as HTMLTextAreaElement
+                                target.style.height = 'auto'
+                                target.style.height = `${target.scrollHeight}px`
+                              }}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none overflow-hidden min-h-[120px]"
+                              placeholder="Generated experience will appear here..."
+                              onInput={(e) => {
+                                const target = e.target as HTMLTextAreaElement
+                                target.style.height = 'auto'
+                                target.style.height = `${target.scrollHeight}px`
+                              }}
+                              ref={(el) => {
+                                if (el && jdData[`generated_text_${num}` as keyof JDData]) {
+                                  // Auto-resize on initial render
+                                  setTimeout(() => {
+                                    el.style.height = 'auto'
+                                    el.style.height = `${el.scrollHeight}px`
+                                  }, 0)
+                                }
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          // Highlight Tab - Read-only display with highlighting
+                          <div>
+                            <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white min-h-[120px]">
+                              {generatedTextKeywords[index] && generatedTextKeywords[index].length > 0 ? (
+                                // Show highlighted view when keywords are available
+                                <div 
+                                  className="text-gray-700 leading-relaxed whitespace-pre-wrap"
+                                  dangerouslySetInnerHTML={{
+                                    __html: highlightKeywords(jdData[`generated_text_${num}` as keyof JDData] || '', generatedTextKeywords[index])
+                                  }}
+                                  onClick={(e) => {
+                                    const target = e.target as HTMLElement
+                                    const keyword = target.getAttribute('data-keyword')
+                                    if (keyword) {
+                                      e.stopPropagation()
+                                      const rect = target.getBoundingClientRect()
+                                      setDeleteGeneratedKeywordTooltip({
+                                        show: true,
+                                        keyword: keyword,
+                                        generatedIndex: index,
+                                        position: { x: rect.right, y: rect.bottom + 5 }
+                                      })
+                                    }
+                                  }}
+                                  onMouseUp={(e) => {
+                                    const selection = window.getSelection()
+                                    const selectedText = selection?.toString().trim()
+                                    
+                                    if (selectedText && selectedText.length > 0) {
+                                      const target = e.target as HTMLElement
+                                      if (!target.getAttribute('data-keyword')) {
+                                        e.stopPropagation()
+                                        const rect = selection?.getRangeAt(0).getBoundingClientRect()
+                                        if (rect) {
+                                          setAddGeneratedKeywordTooltip({
+                                            show: true,
+                                            text: selectedText,
+                                            generatedIndex: index,
+                                            position: { x: rect.right, y: rect.bottom + 5 }
+                                          })
+                                        }
+                                      }
+                                    }
+                                  }}
+                                />
+                              ) : (
+                                // Show plain text when no keywords are available
+                                <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                                  {jdData[`generated_text_${num}` as keyof JDData] || 'Generated aligned experience content will appear here with highlighted keywords...'}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Button Layout - Different for each sub-tab */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 mt-4 p-3 bg-white rounded-lg border border-gray-200">
+                        {activeAlignedExperienceSubTabs[index] === 0 ? (
+                          // Original Tab: Only Save to Database button
+                          <div className="flex items-center gap-4 justify-end w-full">
+                            <button
+                              onClick={() => handleSaveAlignedExperienceOnly(index)}
+                              disabled={experienceIsSaving[index] || !jdData[`generated_text_${num}` as keyof JDData]?.trim()}
+                              className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                            >
+                              {experienceIsSaving[index] ? 'Saving...' : 'Save to Database'}
+                            </button>
+                          </div>
+                        ) : (
+                          // Highlight Tab: Key Words button with count input
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center gap-2">
+                              <label htmlFor={`keywordCount-aligned-${index}`} className="text-sm font-medium text-gray-600">
+                                Count:
+                              </label>
+                              <input
+                                id={`keywordCount-aligned-${index}`}
+                                type="number"
+                                value={generatedTextKeywordCounts[index]}
+                                onChange={(e) => {
+                                  const newCount = Math.max(1, Math.min(10, parseInt(e.target.value) || 3))
+                                  setGeneratedTextKeywordCounts(prev => {
+                                    const newCounts = [...prev]
+                                    newCounts[index] = newCount
+                                    return newCounts
+                                  })
+                                }}
+                                className="w-16 px-2 py-1 border border-gray-300 rounded text-sm text-center focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                min="1"
+                                max="10"
+                              />
+                            </div>
+                            
+                            <button
+                              onClick={() => handleGenerateAlignedExperienceKeywords(index)}
+                              disabled={experienceIsSaving[index] || !jdData[`generated_text_${num}` as keyof JDData]?.trim()}
+                              className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                            >
+                              {experienceIsSaving[index] ? 'Generating...' : 'Key Words'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Page Export Section for Aligned Experience */}
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 p-4 mt-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <h6 className="text-sm font-semibold text-gray-800">Export to Notion Page</h6>
+                          <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded-full border">
+                            Aligned Experience {index + 1}
+                          </span>
+                        </div>
                         <button
-                          onClick={() => handleGenerateExperience(index)}
-                          disabled={experienceGenerating[index]}
-                          className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md min-w-[100px] flex items-center justify-center gap-2"
+                          onClick={() => handleExportGeneratedText(index)}
+                          disabled={!currentPageId || generatedExporting[index]}
+                          className="px-6 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md"
                         >
-                          {experienceGenerating[index] ? (
-                            <>
-                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                              <span>Gen...</span>
-                            </>
-                          ) : (
-                            'Generate'
-                          )}
+                          {generatedExporting[index] ? 'Exporting...' : 'Page'}
                         </button>
-                        
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600">Keywords:</span>
-                          <input
-                            type="number"
-                            min="1"
-                            max="10"
-                            value={generatedTextKeywordCounts[index]}
-                            onChange={(e) => {
-                              const newCounts = [...generatedTextKeywordCounts]
-                              newCounts[index] = parseInt(e.target.value) || 3
-                              setGeneratedTextKeywordCounts(newCounts)
-                            }}
-                            className="w-12 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500 text-center"
-                          />
-                        </div>
-                        
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleSaveExperience(index)}
-                            disabled={experienceIsSaving[index]}
-                            className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md min-w-[80px]"
-                          >
-                            {experienceIsSaving[index] ? 'Saving...' : 'Save'}
-                          </button>
-                          
-                          <button
-                            onClick={() => handleExportGeneratedText(index)}
-                            disabled={!currentPageId || generatedExporting[index]}
-                            className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md min-w-[80px]"
-                          >
-                            {generatedExporting[index] ? 'Exporting...' : 'Export'}
-                          </button>
-                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-
                 </div>
               </div>
             )

@@ -7,7 +7,7 @@ const notion = new Client({
 
 export async function POST(request: NextRequest) {
   try {
-    const { title, company, full_job_description, model = 'deepseek', sentenceCount = 5 } = await request.json()
+    const { title, company, full_job_description } = await request.json()
 
     console.log('Received data:', { title, company, full_job_description: full_job_description?.length })
 
@@ -121,36 +121,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generate key sentences using LLM
-    let keySentences: string[] = []
-    try {
-      const keySentencesResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/jd2cv/extract-key-sentences`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          full_job_description: full_job_description,
-          model: model,
-          sentenceCount: sentenceCount
-        })
-      })
-      
-      if (keySentencesResponse.ok) {
-        const keySentencesData = await keySentencesResponse.json()
-        if (keySentencesData.success && keySentencesData.keySentences) {
-          keySentences = keySentencesData.keySentences
-        }
-      }
-    } catch (error) {
-      console.error('Failed to generate key sentences:', error)
-      // Continue with saving even if key sentences generation fails
-    }
-
-    // Add key sentences to properties
-    if (keySentences.length > 0) {
-      properties.job_description_key_sentences = {
-        rich_text: [{ text: { content: JSON.stringify(keySentences) } }]
-      }
-    }
 
     let response
     let pageId
@@ -175,8 +145,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ 
       success: true, 
-      id: pageId, 
-      keySentences: keySentences 
+      id: pageId 
     })
   } catch (error: any) {
     console.error('Error saving to Notion:', error)

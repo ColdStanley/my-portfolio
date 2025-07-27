@@ -32,6 +32,7 @@ interface WordQuery {
   response: string
   isStreaming: boolean
   timestamp: number
+  isExpanded?: boolean
 }
 
 export default function MobileFrenchSentenceCard({ 
@@ -44,6 +45,7 @@ export default function MobileFrenchSentenceCard({
   const [wordQueries, setWordQueries] = useState<WordQuery[]>([])
   const [wordInput, setWordInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [expandedWordId, setExpandedWordId] = useState<string | null>(null)
   const [playingText, setPlayingText] = useState<string | null>(null)
   const [phrasesAnalysis, setPhrasesAnalysis] = useState('')
   const [isLoadingPhrases, setIsLoadingPhrases] = useState(false)
@@ -185,13 +187,21 @@ export default function MobileFrenchSentenceCard({
         if (wordsResponse.ok) {
           const wordsData = await wordsResponse.json()
           if (wordsData && wordsData.length > 0) {
-            const savedWordQueries = wordsData.map((item: any) => ({
-              id: item.id.toString(),
-              word: item.sentence_text,
-              response: item.analysis,
-              isStreaming: false,
-              timestamp: new Date(item.created_at).getTime()
-            }))
+            const savedWordQueries = wordsData.map((item: any) => {
+              // Extract word from formatted sentence_text: "sentence::word::actualword"
+              const sentenceText = item.sentence_text
+              const wordMatch = sentenceText.match(/::word::(.+)$/)
+              const word = wordMatch ? wordMatch[1] : sentenceText
+              
+              return {
+                id: item.id.toString(),
+                word: word,
+                response: item.analysis,
+                isStreaming: false,
+                timestamp: new Date(item.created_at).getTime(),
+                isExpanded: false
+              }
+            })
             setWordQueries(savedWordQueries)
           }
         }
@@ -219,7 +229,8 @@ export default function MobileFrenchSentenceCard({
       word: word.trim(),
       response: '',
       isStreaming: true,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      isExpanded: false
     }
 
     setWordQueries(prev => [newQuery, ...prev])
@@ -244,7 +255,7 @@ export default function MobileFrenchSentenceCard({
 
 1. 中文解释（1句话，告诉我这个词在句中是什么意思）
 2. 用法说明（最多2句话，说明它在语法上起什么作用）
-3. 简单例句（1个法语例句 + 中文翻译，例句不能太难）
+3. 简单例句（2个法语例句 + 中文翻译，例句不能太难，若例句含有有价值的词组或者语法，也简单讲解一下）
 
 不要添加过多术语或语法细节。风格要温和、简洁，适合法语初学者阅读。`
         }),
@@ -303,7 +314,7 @@ export default function MobileFrenchSentenceCard({
         )
       )
 
-      // Save to database
+      // Save to database without triggering global state reload
       if (accumulatedResponse) {
         try {
           await fetch('/api/language-reading/save-phrase-analysis', {
@@ -311,7 +322,7 @@ export default function MobileFrenchSentenceCard({
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               articleId: articleId,
-              sentenceText: word.trim(),
+              sentenceText: `${query.sentence_text}::word::${word.trim()}`,
               analysis: accumulatedResponse,
               startOffset: query.start_offset,
               endOffset: query.end_offset,
@@ -346,6 +357,11 @@ export default function MobileFrenchSentenceCard({
   const handleWordInputSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     handleWordQuery(wordInput)
+  }
+
+  // Handle word query expansion
+  const toggleWordExpansion = (wordId: string) => {
+    setExpandedWordId(expandedWordId === wordId ? null : wordId)
   }
 
   const tabs = [
@@ -605,38 +621,95 @@ export default function MobileFrenchSentenceCard({
               </button>
             </form>
 
-            <div className="space-y-2 max-h-40 overflow-y-auto">
-              {wordQueries.map((wordQuery) => (
-                <div key={wordQuery.id} className="bg-gray-50 border border-gray-200 rounded p-2">
-                  <div className="flex items-center gap-1 mb-1">
-                    <span className="font-semibold text-purple-800 text-xs">
-                      {wordQuery.word}
-                    </span>
-                    <button
-                      onClick={() => handleSpeak(wordQuery.word)}
-                      disabled={playingText === wordQuery.word}
-                      className="text-purple-500 hover:text-purple-700 p-0.5 rounded"
+            <div className="space-y-2">
+              {wordQueries.map((wordQuery) => {
+                const isExpanded = expandedWordId === wordQuery.id
+                const hasContent = wordQuery.response && wordQuery.response.length > 0
+                
+                return (
+                  <div key={wordQuery.id} className="bg-gray-50 border border-gray-200 rounded">
+                    {/* Word header - always visible */}
+                    <div 
+                      className="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={() => hasContent && toggleWordExpansion(wordQuery.id)}
                     >
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.817L4.343 13.5H2a1 1 0 01-1-1v-5a1 1 0 011-1h2.343l4.04-3.317a1 1 0 01.997-.106z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div className="text-xs text-gray-700 leading-relaxed">
-                    {wordQuery.response && (
-                      <div className="formatted-response">
-                        {formatAIResponse(wordQuery.response)}
-                        {wordQuery.isStreaming && (
-                          <span className="inline-block w-1 h-3 bg-purple-500 ml-1 animate-pulse"></span>
-                        )}
+                      <div className="flex items-center gap-1">
+                        <span className="font-semibold text-purple-800 text-xs">
+                          {wordQuery.word}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleSpeak(wordQuery.word)
+                          }}
+                          disabled={playingText === wordQuery.word}
+                          className="text-purple-500 hover:text-purple-700 p-0.5 rounded"
+                        >
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.817L4.343 13.5H2a1 1 0 01-1-1v-5a1 1 0 011-1h2.343l4.04-3.317a1 1 0 01.997-.106z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      </div>
+                      
+                      {/* Expand/Collapse indicator */}
+                      {hasContent && (
+                        <svg 
+                          className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      )}
+                      
+                      {/* Loading indicator */}
+                      {wordQuery.isStreaming && (
+                        <div className="animate-spin rounded-full h-3 w-3 border-b border-purple-500"></div>
+                      )}
+                    </div>
+                    
+                    {/* Expandable content */}
+                    {hasContent && isExpanded && (
+                      <div className="border-t border-gray-200 p-2 max-h-96 overflow-y-auto">
+                        <div className="text-xs text-gray-700 leading-relaxed">
+                          <div className="formatted-response">
+                            {formatAIResponse(wordQuery.response)}
+                          </div>
+                        </div>
                       </div>
                     )}
+                    
+                    {/* Compact preview for non-expanded items */}
+                    {hasContent && !isExpanded && (
+                      <div className="border-t border-gray-200 p-2">
+                        <div className="text-xs text-gray-500 italic truncate">
+                          {wordQuery.response.split('\n')[0].substring(0, 50)}...
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Streaming content for new queries */}
+                    {wordQuery.isStreaming && wordQuery.response && (
+                      <div className="border-t border-gray-200 p-2">
+                        <div className="text-xs text-gray-700 leading-relaxed">
+                          <div className="formatted-response">
+                            {formatAIResponse(wordQuery.response)}
+                            <span className="inline-block w-1 h-3 bg-purple-500 ml-1 animate-pulse"></span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Loading state */}
                     {!wordQuery.response && wordQuery.isStreaming && (
-                      <div className="text-gray-500 text-xs">AI正在思考...</div>
+                      <div className="border-t border-gray-200 p-2">
+                        <div className="text-gray-500 text-xs">AI正在思考...</div>
+                      </div>
                     )}
                   </div>
-                </div>
-              ))}
+                )
+              })}
               {wordQueries.length === 0 && (
                 <div className="text-center py-4 text-gray-500 text-xs">
                   输入单词来向AI提问

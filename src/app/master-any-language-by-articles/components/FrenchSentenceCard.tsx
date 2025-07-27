@@ -315,7 +315,7 @@ export default function FrenchSentenceCard({
 
 1. 中文解释（1句话，告诉我这个词在句中是什么意思）
 2. 用法说明（最多2句话，说明它在语法上起什么作用）
-3. 简单例句（1个法语例句 + 中文翻译，例句不能太难）
+3. 简单例句（2个法语例句 + 中文翻译，例句不能太难，若例句含有有价值的词组或者语法，也简单讲解一下）
 
 不要添加过多术语或语法细节。风格要温和、简洁，适合法语初学者阅读。`
         }),
@@ -396,7 +396,7 @@ export default function FrenchSentenceCard({
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               articleId: articleId,
-              sentenceText: word.trim(), // Store word in sentence_text field
+              sentenceText: `${query.sentence_text}::word::${word.trim()}`, // Format for mobile compatibility
               analysis: accumulatedResponse,
               startOffset: query.start_offset,
               endOffset: query.end_offset,
@@ -435,6 +435,70 @@ export default function FrenchSentenceCard({
     handleWordQuery(wordInput)
   }
 
+  // Handle word click in highlighted sentence
+  const handleWordClick = (word: string) => {
+    // Switch to words tab
+    setActiveTab('words')
+    
+    // Find existing word query
+    const existingQuery = wordQueries.find(q => q.word.toLowerCase() === word.toLowerCase())
+    if (existingQuery) {
+      // Scroll to existing word query (optional: add visual feedback)
+      setTimeout(() => {
+        const wordElement = document.querySelector(`[data-word-id="${existingQuery.id}"]`)
+        if (wordElement) {
+          wordElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          // Add brief highlight effect
+          const element = wordElement as HTMLElement
+          element.style.boxShadow = '0 0 10px rgba(147, 51, 234, 0.3)'
+          setTimeout(() => {
+            element.style.boxShadow = ''
+          }, 1000)
+        }
+      }, 100)
+    } else {
+      // Query the word if not already queried
+      handleWordQuery(word)
+    }
+  }
+
+  // Render sentence with highlighted words
+  const renderHighlightedSentence = () => {
+    const sentenceText = query.sentence_text
+    if (!wordQueries.length) {
+      return sentenceText
+    }
+
+    // Create a list of words that have been queried
+    const queriedWords = wordQueries.map(q => q.word.toLowerCase())
+    
+    // Split sentence into words while preserving spaces and punctuation
+    const tokens = sentenceText.split(/(\s+|[.,!?;:()'"«»\-])/g)
+    
+    return tokens.map((token, index) => {
+      const cleanToken = token.replace(/[.,!?;:()'"«»\-]/g, '').toLowerCase()
+      
+      // Check if this token (word) has been queried
+      if (queriedWords.includes(cleanToken) && cleanToken.length > 0) {
+        return (
+          <mark
+            key={index}
+            className="inline-block px-2 py-1 rounded-lg bg-purple-100/20 text-purple-800 backdrop-blur-xs shadow-sm transition-all duration-200 ease-in-out hover:bg-purple-200/30 hover:shadow-md hover:scale-[1.005] cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation()
+              handleWordClick(cleanToken)
+            }}
+            title={`点击查看 "${cleanToken}" 的解释`}
+          >
+            {token}
+          </mark>
+        )
+      }
+      
+      return token
+    })
+  }
+
   // Load existing data on mount
   React.useEffect(() => {
     const loadExistingData = async () => {
@@ -462,13 +526,24 @@ export default function FrenchSentenceCard({
         if (wordsResponse.ok) {
           const wordsData = await wordsResponse.json()
           if (wordsData && wordsData.length > 0) {
-            const savedWordQueries = wordsData.map((item: any) => ({
-              id: item.id.toString(),
-              word: item.sentence_text, // Using sentence_text field to store word
-              response: item.analysis,
-              isStreaming: false,
-              timestamp: new Date(item.created_at).getTime()
-            }))
+            const savedWordQueries = wordsData.map((item: any) => {
+              // Extract word from formatted sentence_text (for mobile compatibility)
+              let word = item.sentence_text
+              
+              // Check if it's the new mobile format: "sentence::word::actualword"
+              const wordMatch = item.sentence_text.match(/::word::(.+)$/)
+              if (wordMatch) {
+                word = wordMatch[1]
+              }
+              
+              return {
+                id: item.id.toString(),
+                word: word,
+                response: item.analysis,
+                isStreaming: false,
+                timestamp: new Date(item.created_at).getTime()
+              }
+            })
             setWordQueries(savedWordQueries)
           }
         }
@@ -756,6 +831,7 @@ export default function FrenchSentenceCard({
               {wordQueries.map((wordQuery) => (
                 <div
                   key={wordQuery.id}
+                  data-word-id={wordQuery.id}
                   className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm"
                 >
                   <div className="flex items-center gap-2 mb-2">
@@ -970,7 +1046,9 @@ export default function FrenchSentenceCard({
         
         {/* Sentence Display */}
         <div className={`bg-gray-50/50 ${isMobile ? 'p-2' : 'p-3'} rounded-lg border-l-4 border-purple-300 ${isMobile ? 'mb-2' : 'mb-4'}`}>
-          <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-700 italic leading-relaxed`}>"{query.sentence_text}"</p>
+          <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-700 italic leading-relaxed`}>
+            "{renderHighlightedSentence()}"
+          </p>
           <p className={`text-xs text-gray-500 ${isMobile ? 'mt-1' : 'mt-2'}`}>{query.translation}</p>
         </div>
         
