@@ -12,6 +12,7 @@ export async function GET(req: NextRequest) {
     const articleId = searchParams.get('articleId')
     const type = searchParams.get('type')
     const contentType = searchParams.get('contentType')
+    const sentenceId = searchParams.get('sentenceId')
     const language = searchParams.get('language') || 'english'
 
     if (!articleId) {
@@ -31,6 +32,21 @@ export async function GET(req: NextRequest) {
       // Add content type filter for sentence queries
       if (table === 'english_reading_sentence_queries' && contentType) {
         query = query.eq('content_type', contentType)
+      }
+
+      // Add sentence-specific filter for phrase/word/grammar analysis
+      if (sentenceId && table === 'english_reading_sentence_queries' && contentType) {
+        // First get the sentence data to match by offset ranges
+        const sentenceResponse = await supabase
+          .from('english_reading_sentence_queries')
+          .select('start_offset, end_offset')
+          .eq('id', sentenceId)
+          .single()
+        
+        if (sentenceResponse.data) {
+          const { start_offset, end_offset } = sentenceResponse.data
+          query = query.eq('start_offset', start_offset).eq('end_offset', end_offset)
+        }
       }
       
       const { data, error } = await query.order('created_at', { ascending: true })

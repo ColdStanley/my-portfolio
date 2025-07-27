@@ -8,7 +8,7 @@ const supabase = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const { articleId, sentenceText, analysis, startOffset, endOffset, language, contentType } = await req.json()
+    const { articleId, sentenceText, analysis, startOffset, endOffset, language, contentType, relatedSentenceId } = await req.json()
     
     if (!articleId || !sentenceText || !analysis || startOffset === undefined || endOffset === undefined || !language) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })

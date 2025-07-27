@@ -21,6 +21,7 @@ interface SentenceQuery {
 interface FrenchSentenceCardProps {
   query: SentenceQuery
   language: Language
+  articleId: number
   onDelete: (id: number) => void
   onScrollToHighlight: (query: SentenceQuery) => void
   onAskAI: (query: SentenceQuery) => void
@@ -39,6 +40,7 @@ interface WordQuery {
 export default function FrenchSentenceCard({ 
   query, 
   language, 
+  articleId,
   onDelete, 
   onScrollToHighlight, 
   onAskAI 
@@ -393,7 +395,7 @@ export default function FrenchSentenceCard({
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              articleId: query.id,
+              articleId: articleId,
               sentenceText: word.trim(), // Store word in sentence_text field
               analysis: accumulatedResponse,
               startOffset: query.start_offset,
@@ -437,8 +439,8 @@ export default function FrenchSentenceCard({
   React.useEffect(() => {
     const loadExistingData = async () => {
       try {
-        // Load phrase analysis
-        const phrasesResponse = await fetch(`/api/language-reading/queries?articleId=${query.id}&type=sentence&contentType=phrase_analysis&language=${language}`)
+        // Load phrase analysis for this specific sentence
+        const phrasesResponse = await fetch(`/api/language-reading/queries?articleId=${articleId}&type=sentence&contentType=phrase_analysis&language=${language}&sentenceId=${query.id}`)
         if (phrasesResponse.ok) {
           const phrasesData = await phrasesResponse.json()
           if (phrasesData && phrasesData.length > 0) {
@@ -446,8 +448,8 @@ export default function FrenchSentenceCard({
           }
         }
 
-        // Load grammar analysis
-        const grammarResponse = await fetch(`/api/language-reading/queries?articleId=${query.id}&type=sentence&contentType=grammar_analysis&language=${language}`)
+        // Load grammar analysis for this specific sentence
+        const grammarResponse = await fetch(`/api/language-reading/queries?articleId=${articleId}&type=sentence&contentType=grammar_analysis&language=${language}&sentenceId=${query.id}`)
         if (grammarResponse.ok) {
           const grammarData = await grammarResponse.json()
           if (grammarData && grammarData.length > 0) {
@@ -455,8 +457,8 @@ export default function FrenchSentenceCard({
           }
         }
 
-        // Load word queries
-        const wordsResponse = await fetch(`/api/language-reading/queries?articleId=${query.id}&type=sentence&contentType=word_query&language=${language}`)
+        // Load word queries for this specific sentence
+        const wordsResponse = await fetch(`/api/language-reading/queries?articleId=${articleId}&type=sentence&contentType=word_query&language=${language}&sentenceId=${query.id}`)
         if (wordsResponse.ok) {
           const wordsData = await wordsResponse.json()
           if (wordsData && wordsData.length > 0) {
@@ -476,7 +478,7 @@ export default function FrenchSentenceCard({
     }
     
     loadExistingData()
-  }, [query.id, language])
+  }, [query.id, articleId, language])
 
   // Handle phrases analysis
   const handleAnalyzePhrases = async () => {
@@ -567,7 +569,7 @@ export default function FrenchSentenceCard({
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              articleId: query.id,
+              articleId: articleId,
               sentenceText: query.sentence_text,
               analysis: accumulatedResponse,
               startOffset: query.start_offset,
@@ -692,7 +694,7 @@ export default function FrenchSentenceCard({
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              articleId: query.id,
+              articleId: articleId,
               sentenceText: query.sentence_text,
               analysis: accumulatedResponse,
               startOffset: query.start_offset,

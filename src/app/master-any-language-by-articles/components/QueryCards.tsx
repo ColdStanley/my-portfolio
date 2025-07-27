@@ -447,6 +447,7 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
               key={`sentence-${query.id}`}
               query={query}
               language={language}
+              articleId={articleId}
               onDelete={(id) => handleDelete(id, 'sentence')}
               onScrollToHighlight={(query) => scrollToHighlight(query, 'sentence')}
               onAskAI={(query) => handleAskAI(query, 'sentence')}
