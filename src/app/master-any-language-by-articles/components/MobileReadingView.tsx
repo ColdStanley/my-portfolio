@@ -325,7 +325,7 @@ export default function MobileReadingView({ language, articleId, content, title 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Fixed Tab Navigation - positioned below navbar */}
-      <div className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+      <div className="fixed top-16 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm">
         <div className="flex">
           {tabs.map((tab) => (
             <button
@@ -352,7 +352,7 @@ export default function MobileReadingView({ language, articleId, content, title 
       </div>
 
       {/* Content Area - with top padding for fixed tabs */}
-      <div className="pt-20 pb-4">
+      <div className="pt-32 pb-4">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="flex items-center gap-3 text-purple-600">

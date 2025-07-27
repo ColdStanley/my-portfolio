@@ -50,6 +50,8 @@ export default function FrenchSentenceCard({
   const [playingText, setPlayingText] = useState<string | null>(null)
   const [phrasesAnalysis, setPhrasesAnalysis] = useState('')
   const [isLoadingPhrases, setIsLoadingPhrases] = useState(false)
+  const [grammarAnalysis, setGrammarAnalysis] = useState('')
+  const [isLoadingGrammar, setIsLoadingGrammar] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const uiTexts = getUITexts(language)
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -384,6 +386,27 @@ export default function FrenchSentenceCard({
         )
       )
 
+      // Save word query to database
+      if (accumulatedResponse) {
+        try {
+          await fetch('/api/language-reading/save-phrase-analysis', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              articleId: query.id,
+              sentenceText: word.trim(), // Store word in sentence_text field
+              analysis: accumulatedResponse,
+              startOffset: query.start_offset,
+              endOffset: query.end_offset,
+              language: language,
+              contentType: 'word_query'
+            })
+          })
+        } catch (saveError) {
+          console.error('Failed to save word query:', saveError)
+        }
+      }
+
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         // Request was aborted, remove the query
@@ -409,6 +432,51 @@ export default function FrenchSentenceCard({
     e.preventDefault()
     handleWordQuery(wordInput)
   }
+
+  // Load existing data on mount
+  React.useEffect(() => {
+    const loadExistingData = async () => {
+      try {
+        // Load phrase analysis
+        const phrasesResponse = await fetch(`/api/language-reading/queries?articleId=${query.id}&type=sentence&contentType=phrase_analysis&language=${language}`)
+        if (phrasesResponse.ok) {
+          const phrasesData = await phrasesResponse.json()
+          if (phrasesData && phrasesData.length > 0) {
+            setPhrasesAnalysis(phrasesData[0].analysis)
+          }
+        }
+
+        // Load grammar analysis
+        const grammarResponse = await fetch(`/api/language-reading/queries?articleId=${query.id}&type=sentence&contentType=grammar_analysis&language=${language}`)
+        if (grammarResponse.ok) {
+          const grammarData = await grammarResponse.json()
+          if (grammarData && grammarData.length > 0) {
+            setGrammarAnalysis(grammarData[0].analysis)
+          }
+        }
+
+        // Load word queries
+        const wordsResponse = await fetch(`/api/language-reading/queries?articleId=${query.id}&type=sentence&contentType=word_query&language=${language}`)
+        if (wordsResponse.ok) {
+          const wordsData = await wordsResponse.json()
+          if (wordsData && wordsData.length > 0) {
+            const savedWordQueries = wordsData.map((item: any) => ({
+              id: item.id.toString(),
+              word: item.sentence_text, // Using sentence_text field to store word
+              response: item.analysis,
+              isStreaming: false,
+              timestamp: new Date(item.created_at).getTime()
+            }))
+            setWordQueries(savedWordQueries)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load existing data:', error)
+      }
+    }
+    
+    loadExistingData()
+  }, [query.id, language])
 
   // Handle phrases analysis
   const handleAnalyzePhrases = async () => {
@@ -492,6 +560,28 @@ export default function FrenchSentenceCard({
         }
       }
 
+      // Save to database after successful analysis
+      if (accumulatedResponse) {
+        try {
+          await fetch('/api/language-reading/save-phrase-analysis', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              articleId: query.id,
+              sentenceText: query.sentence_text,
+              analysis: accumulatedResponse,
+              startOffset: query.start_offset,
+              endOffset: query.end_offset,
+              language: language,
+              contentType: 'phrase_analysis'
+            })
+          })
+        } catch (saveError) {
+          console.error('Failed to save phrase analysis:', saveError)
+          // Continue even if save fails - user still sees the analysis
+        }
+      }
+
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         // Request was aborted
@@ -502,6 +592,131 @@ export default function FrenchSentenceCard({
       }
     } finally {
       setIsLoadingPhrases(false)
+      abortControllerRef.current = null
+    }
+  }
+
+  // Handle grammar analysis
+  const handleAnalyzeGrammar = async () => {
+    if (isLoadingGrammar) return
+    
+    setIsLoadingGrammar(true)
+    setGrammarAnalysis('')
+
+    // Abort previous request if any
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
+    abortControllerRef.current = new AbortController()
+
+    try {
+      const response = await fetch('/api/language-reading/ask-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          queryData: query,
+          language: language,
+          userPrompt: `请用适合法语初学者的方式，分析这句话的语法结构：
+
+"${query.sentence_text}"
+
+请按照以下结构回答，每一项都要简洁清晰，不要使用太多专业术语：
+
+1. 这句话的整体结构是什么？  
+   → 分成几个部分？（比如主句 / 从句 / 插入语等）
+
+2. 这句话用了哪些时态？  
+   → 每个时态表示什么时间概念？为什么用它？
+
+3. 表达的逻辑关系是什么？  
+   → 是让步？假设？对比？因果？
+
+4. 每部分各自说了什么？  
+   → 用通俗中文逐句解释
+
+5. 有哪些法语初学者常犯的错误？  
+   → 这句话中哪些地方容易误解或误用？
+
+请不要解释词汇、不要展示太难的语法规则，只关注整个句子"怎么组织"的逻辑。`
+        }),
+        signal: abortControllerRef.current.signal
+      })
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`)
+      }
+
+      const reader = response.body?.getReader()
+      if (!reader) throw new Error('No response body')
+
+      const decoder = new TextDecoder()
+      let accumulatedResponse = ''
+      let buffer = ''
+      
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6).trim()
+            
+            if (data === '[DONE]') {
+              break
+            }
+
+            try {
+              const parsed = JSON.parse(data)
+              const content = parsed.content
+              
+              if (content) {
+                accumulatedResponse += content
+                setGrammarAnalysis(accumulatedResponse)
+              }
+            } catch (e) {
+              continue
+            }
+          }
+        }
+      }
+
+      // Save to database after successful analysis
+      if (accumulatedResponse) {
+        try {
+          await fetch('/api/language-reading/save-phrase-analysis', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              articleId: query.id,
+              sentenceText: query.sentence_text,
+              analysis: accumulatedResponse,
+              startOffset: query.start_offset,
+              endOffset: query.end_offset,
+              language: language,
+              contentType: 'grammar_analysis'
+            })
+          })
+        } catch (saveError) {
+          console.error('Failed to save grammar analysis:', saveError)
+          // Continue even if save fails - user still sees the analysis
+        }
+      }
+
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        // Request was aborted
+        setGrammarAnalysis('')
+      } else {
+        console.error('Grammar analysis failed:', error)
+        setGrammarAnalysis('分析失败，请重试')
+      }
+    } finally {
+      setIsLoadingGrammar(false)
       abortControllerRef.current = null
     }
   }
@@ -647,12 +862,49 @@ export default function FrenchSentenceCard({
       case 'grammar':
         return (
           <div className="space-y-3">
-            <div className="bg-green-50/50 p-3 rounded-lg border-l-4 border-green-300">
-              <h4 className="text-sm font-semibold text-green-800 mb-2">语法分析</h4>
-              <div className="text-sm text-gray-700">
-                {query.analysis || '分析句子结构、时态、语态等语法要点。'}
-              </div>
+            {/* Analyze button */}
+            <div className="flex justify-center">
+              <button
+                onClick={handleAnalyzeGrammar}
+                disabled={isLoadingGrammar}
+                className="px-4 py-2 bg-purple-500 text-white text-sm rounded-lg hover:bg-purple-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isLoadingGrammar ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    语法分析中...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    分析句子语法
+                  </>
+                )}
+              </button>
             </div>
+
+            {/* Grammar analysis result */}
+            {grammarAnalysis && (
+              <div className="bg-purple-50/50 p-3 rounded-lg border-l-4 border-purple-300">
+                <div className="text-sm text-gray-700 leading-relaxed">
+                  <div className="formatted-response">
+                    {formatAIResponse(grammarAnalysis)}
+                    {isLoadingGrammar && (
+                      <span className="inline-block w-2 h-4 bg-purple-500 ml-1 animate-pulse"></span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!grammarAnalysis && !isLoadingGrammar && (
+              <div className="text-center py-8 text-gray-500">
+                <div className="text-2xl mb-2">📚</div>
+                <p className="text-sm">点击按钮分析句子的语法结构</p>
+              </div>
+            )}
           </div>
         )
       

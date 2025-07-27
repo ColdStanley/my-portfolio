@@ -11,6 +11,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const articleId = searchParams.get('articleId')
     const type = searchParams.get('type')
+    const contentType = searchParams.get('contentType')
     const language = searchParams.get('language') || 'english'
 
     if (!articleId) {
@@ -21,12 +22,18 @@ export async function GET(req: NextRequest) {
     if (type) {
       const table = type === 'word' ? 'english_reading_word_queries' : 'english_reading_sentence_queries'
       
-      const { data, error } = await supabase
+      let query = supabase
         .from(table)
         .select('*')
         .eq('article_id', articleId)
         .or(`language.eq.${language},language.is.null`)
-        .order('created_at', { ascending: true })
+
+      // Add content type filter for sentence queries
+      if (table === 'english_reading_sentence_queries' && contentType) {
+        query = query.eq('content_type', contentType)
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: true })
 
       if (error) {
         console.error('Database error:', error)
