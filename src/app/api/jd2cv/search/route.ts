@@ -65,11 +65,28 @@ export async function POST(request: NextRequest) {
     // Combine all JD parts into complete content
     const completeJobDescription = jdPart1 + jdPart2 + jdPart3 + jdPart4 + jdPart5
 
+    // Extract key sentences
+    const keySentencesRaw = record.properties.job_description_key_sentences?.rich_text?.[0]?.text?.content || ''
+    let keySentences: string[] = []
+    if (keySentencesRaw) {
+      try {
+        keySentences = JSON.parse(keySentencesRaw)
+      } catch (error) {
+        console.error('Failed to parse key sentences:', error)
+        keySentences = []
+      }
+    }
+
+    // Extract match score
+    const matchScore = record.properties.match_score?.number || 0
+
     const extractedData = {
       id: record.id,
       title: record.properties.title?.title?.[0]?.text?.content || '',
       company: record.properties.company?.rich_text?.[0]?.text?.content || '',
       full_job_description: completeJobDescription,
+      job_description_key_sentences: keySentences,
+      match_score: matchScore,
       capability_1: record.properties.capability_1?.rich_text?.[0]?.text?.content || '',
       capability_2: record.properties.capability_2?.rich_text?.[0]?.text?.content || '',
       capability_3: record.properties.capability_3?.rich_text?.[0]?.text?.content || '',

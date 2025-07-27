@@ -47,6 +47,11 @@ interface LanguageReadingState {
     end: number
     text: string
   }>
+  pendingSentenceQueries: Array<{
+    start: number
+    end: number
+    text: string
+  }>
   
   addWordQuery: (query: WordQuery) => void
   addSentenceQuery: (query: SentenceQuery) => void
@@ -61,6 +66,9 @@ interface LanguageReadingState {
   addPendingWordQuery: (start: number, end: number, text: string) => void
   removePendingWordQuery: (start: number, end: number) => void
   triggerWordBounce: (start: number, end: number) => void
+  addPendingSentenceQuery: (start: number, end: number, text: string) => void
+  removePendingSentenceQuery: (start: number, end: number) => void
+  triggerSentenceBounce: (start: number, end: number) => void
 }
 
 export const useLanguageReadingStore = create<LanguageReadingState>((set, get) => ({
@@ -68,6 +76,7 @@ export const useLanguageReadingStore = create<LanguageReadingState>((set, get) =
   sentenceQueries: [],
   highlightedRanges: [],
   pendingWordQueries: [],
+  pendingSentenceQueries: [],
   
   addWordQuery: (query) => set((state) => ({
     wordQueries: [...state.wordQueries, query]
@@ -206,6 +215,27 @@ export const useLanguageReadingStore = create<LanguageReadingState>((set, get) =
       element.classList.add('word-bounce')
       setTimeout(() => {
         element.classList.remove('word-bounce')
+      }, 500)
+    }
+  },
+
+  addPendingSentenceQuery: (start: number, end: number, text: string) => set((state) => ({
+    pendingSentenceQueries: [...state.pendingSentenceQueries, { start, end, text }]
+  })),
+
+  removePendingSentenceQuery: (start: number, end: number) => set((state) => ({
+    pendingSentenceQueries: state.pendingSentenceQueries.filter(q => 
+      !(q.start === start && q.end === end)
+    )
+  })),
+
+  triggerSentenceBounce: (start: number, end: number) => {
+    // Trigger bounce animation for sentence at given position
+    const element = document.querySelector(`[data-sentence-range="${start}-${end}"]`) as HTMLElement
+    if (element) {
+      element.classList.add('sentence-bounce')
+      setTimeout(() => {
+        element.classList.remove('sentence-bounce')
       }, 500)
     }
   }

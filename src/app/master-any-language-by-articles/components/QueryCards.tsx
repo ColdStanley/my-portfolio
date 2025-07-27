@@ -7,26 +7,78 @@ import { Language, getUITexts } from '../config/uiText'
 import { playText } from '../utils/tts'
 import AIDialog from './AIDialog'
 import Tooltip from './Tooltip'
+import ReactMarkdown from 'react-markdown'
+import FrenchSentenceCard from './FrenchSentenceCard'
 
 interface CollapsibleContentProps {
   content: string
   maxLength: number
   className?: string
   language: Language
+  renderMarkdown?: boolean
 }
 
-function CollapsibleContent({ content, maxLength, className = '', language }: CollapsibleContentProps) {
+function CollapsibleContent({ content, maxLength, className = '', language, renderMarkdown = false }: CollapsibleContentProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const uiTexts = getUITexts(language)
   
-  if (content.length <= maxLength) {
-    return <div className={`${className} whitespace-pre-wrap`}>{content}</div>
+  const shouldCollapse = content.length > maxLength
+  const displayContent = shouldCollapse && !isExpanded ? `${content.slice(0, maxLength)}...` : content
+
+  const ContentWrapper = ({ children }: { children: React.ReactNode }) => (
+    <div className={`${className} ${!renderMarkdown ? 'whitespace-pre-wrap' : ''}`}>
+      {children}
+    </div>
+  )
+
+  if (!shouldCollapse) {
+    return (
+      <ContentWrapper>
+        {renderMarkdown ? (
+          <div className="prose prose-sm max-w-none">
+            <ReactMarkdown 
+              components={{
+                h1: ({children}) => <h1 className="text-base font-bold text-gray-800 mb-2">{children}</h1>,
+                h2: ({children}) => <h2 className="text-sm font-bold text-purple-700 mb-3 mt-4 pb-1 border-b border-purple-200">{children}</h2>,
+                h3: ({children}) => <h3 className="text-sm font-semibold text-gray-800 mb-1">{children}</h3>,
+                p: ({children}) => <p className="text-sm text-gray-700 mb-2 leading-relaxed">{children}</p>,
+                ul: ({children}) => <ul className="text-sm text-gray-700 mb-3 ml-2 space-y-1">{children}</ul>,
+                li: ({children}) => <li className="flex items-start gap-2"><span className="text-purple-500 mt-1">•</span><span>{children}</span></li>,
+                strong: ({children}) => <strong className="font-semibold text-gray-900">{children}</strong>
+              }}
+            >
+              {content}
+            </ReactMarkdown>
+          </div>
+        ) : (
+          content
+        )}
+      </ContentWrapper>
+    )
   }
 
   return (
     <div className={className}>
-      <div className="whitespace-pre-wrap">
-        {isExpanded ? content : `${content.slice(0, maxLength)}...`}
+      <div className={!renderMarkdown ? 'whitespace-pre-wrap' : ''}>
+        {renderMarkdown ? (
+          <div className="prose prose-sm max-w-none">
+            <ReactMarkdown 
+              components={{
+                h1: ({children}) => <h1 className="text-base font-bold text-gray-800 mb-2">{children}</h1>,
+                h2: ({children}) => <h2 className="text-sm font-bold text-purple-700 mb-3 mt-4 pb-1 border-b border-purple-200">{children}</h2>,
+                h3: ({children}) => <h3 className="text-sm font-semibold text-gray-800 mb-1">{children}</h3>,
+                p: ({children}) => <p className="text-sm text-gray-700 mb-2 leading-relaxed">{children}</p>,
+                ul: ({children}) => <ul className="text-sm text-gray-700 mb-3 ml-2 space-y-1">{children}</ul>,
+                li: ({children}) => <li className="flex items-start gap-2"><span className="text-purple-500 mt-1">•</span><span>{children}</span></li>,
+                strong: ({children}) => <strong className="font-semibold text-gray-900">{children}</strong>
+              }}
+            >
+              {displayContent}
+            </ReactMarkdown>
+          </div>
+        ) : (
+          displayContent
+        )}
       </div>
       <button
         onClick={(e) => {
@@ -388,14 +440,24 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
   return (
     <div className="h-full overflow-hidden">
       <div className="space-y-6">
-        {/* Sentence queries - full width */}
+        {/* Sentence queries - conditional rendering for French */}
         {sentences.map((query) => (
-          <div
-            key={`sentence-${query.id}`}
-            id={`sentence-card-${query.id}`}
-            className="bg-white rounded-xl shadow-lg border border-gray-200/80 p-4 w-full transition-all duration-300 cursor-pointer hover:shadow-xl hover:border-blue-200"
-            onClick={() => scrollToHighlight(query, 'sentence')}
-          >
+          language === 'french' ? (
+            <FrenchSentenceCard
+              key={`sentence-${query.id}`}
+              query={query}
+              language={language}
+              onDelete={(id) => handleDelete(id, 'sentence')}
+              onScrollToHighlight={(query) => scrollToHighlight(query, 'sentence')}
+              onAskAI={(query) => handleAskAI(query, 'sentence')}
+            />
+          ) : (
+            <div
+              key={`sentence-${query.id}`}
+              id={`sentence-card-${query.id}`}
+              className="bg-white rounded-xl shadow-lg border border-gray-200/80 p-4 w-full transition-all duration-300 cursor-pointer hover:shadow-xl hover:border-blue-200"
+              onClick={() => scrollToHighlight(query, 'sentence')}
+            >
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <span className="px-3 py-1.5 text-xs bg-blue-100 text-blue-800 rounded-full font-semibold">
@@ -525,14 +587,15 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
               </div>
             </div>
           </div>
+          )
         ))}
         
-        {/* Word queries - two columns */}
+        {/* Word queries - conditional layout based on language */}
         {words.length > 0 && (
-          <div className="flex gap-6">
-            {/* Left column */}
-            <div className="w-1/2 space-y-5">
-              {leftColumnWords.map((query) => (
+          <div className={language === 'french' ? 'space-y-5' : 'flex gap-6'}>
+            {/* Left column - or full width for French */}
+            <div className={language === 'french' ? 'w-full space-y-5' : 'w-1/2 space-y-5'}>
+              {(language === 'french' ? words : leftColumnWords).map((query) => (
                 <div
                   key={`word-left-${query.id}`}
                   id={`word-card-${query.id}`}
@@ -752,9 +815,10 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
               ))}
             </div>
             
-            {/* Right column */}
-            <div className="w-1/2 space-y-5">
-              {rightColumnWords.map((query) => (
+            {/* Right column - hidden for French */}
+            {language !== 'french' && (
+              <div className="w-1/2 space-y-5">
+                {rightColumnWords.map((query) => (
                 <div
                   key={`word-right-${query.id}`}
                   id={`word-card-${query.id}`}
@@ -973,6 +1037,7 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
                 </div>
               ))}
             </div>
+            )}
           </div>
         )}
 

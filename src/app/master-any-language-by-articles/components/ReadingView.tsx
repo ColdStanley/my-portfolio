@@ -42,9 +42,13 @@ export default function ReadingView({ language, articleId, content, title, onNew
     wordQueries, 
     sentenceQueries, 
     pendingWordQueries,
+    pendingSentenceQueries,
     addPendingWordQuery,
     removePendingWordQuery,
-    triggerWordBounce
+    triggerWordBounce,
+    addPendingSentenceQuery,
+    removePendingSentenceQuery,
+    triggerSentenceBounce
   } = useLanguageReadingStore()
 
   const handleAINotesRefresh = useCallback(() => {
@@ -283,13 +287,16 @@ export default function ReadingView({ language, articleId, content, title, onNew
     // Save selection data before potentially clearing it
     const savedSelectionData = { ...selectionData }
 
-    // For word queries, add pending state, remove auto-scroll, and immediately hide tooltip
+    // For both word and sentence queries, add pending state and immediately hide tooltip
     if (type === 'word') {
       addPendingWordQuery(savedSelectionData.range.start, savedSelectionData.range.end, savedSelectionData.text)
-      // Immediately hide tooltip to allow continued reading
-      setSelectionData(null)
-      window.getSelection()?.removeAllRanges()
+    } else {
+      addPendingSentenceQuery(savedSelectionData.range.start, savedSelectionData.range.end, savedSelectionData.text)
     }
+    
+    // Immediately hide tooltip to allow continued reading
+    setSelectionData(null)
+    window.getSelection()?.removeAllRanges()
 
     setIsLoading(true)
     try {
@@ -319,9 +326,12 @@ export default function ReadingView({ language, articleId, content, title, onNew
           }, 100)
         } else {
           addSentenceQuery(data)
-          // Keep auto-scroll for sentences
-          const cardId = `sentence-card-${data.id}`
-          scrollToCard(cardId)
+          // Remove pending state and trigger bounce
+          removePendingSentenceQuery(savedSelectionData.range.start, savedSelectionData.range.end)
+          // Trigger bounce for sentence instead of auto-scroll
+          setTimeout(() => {
+            triggerSentenceBounce(savedSelectionData.range.start, savedSelectionData.range.end)
+          }, 100)
         }
         addHighlight(type, savedSelectionData.range.start, savedSelectionData.range.end, data.id)
       }
@@ -330,14 +340,12 @@ export default function ReadingView({ language, articleId, content, title, onNew
       // Remove pending state on error
       if (type === 'word') {
         removePendingWordQuery(savedSelectionData.range.start, savedSelectionData.range.end)
+      } else {
+        removePendingSentenceQuery(savedSelectionData.range.start, savedSelectionData.range.end)
       }
     } finally {
       setIsLoading(false)
-      // Only clear selection data for sentence queries (word queries already cleared)
-      if (type === 'sentence') {
-        setSelectionData(null)
-        window.getSelection()?.removeAllRanges()
-      }
+      // Selection data already cleared for both word and sentence queries
     }
   }
 
@@ -391,11 +399,146 @@ export default function ReadingView({ language, articleId, content, title, onNew
   }
 
 
+  // French sentence splitting and clicking function
+  const splitIntoSentences = (text: string) => {
+    // Split by main punctuation marks: . ! ? ; :
+    const sentences = text.split(/([.!?;:])/).filter(Boolean)
+    const result: { text: string; start: number; end: number }[] = []
+    let currentOffset = 0
+    
+    for (let i = 0; i < sentences.length; i += 2) {
+      const sentenceText = sentences[i]
+      const punctuation = sentences[i + 1] || ''
+      const fullSentence = sentenceText + punctuation
+      
+      if (sentenceText.trim()) {
+        result.push({
+          text: fullSentence,
+          start: currentOffset,
+          end: currentOffset + fullSentence.length
+        })
+      }
+      currentOffset += fullSentence.length
+    }
+    
+    return result
+  }
+
+  // Handle French sentence click
+  const handleFrenchSentenceClick = async (sentence: { text: string; start: number; end: number }) => {
+    if (isLoading) return
+    
+    // Check if this sentence already has a query
+    const existingQuery = sentenceQueries.find(q => 
+      q.start_offset <= sentence.start && q.end_offset >= sentence.end
+    )
+    
+    if (existingQuery) {
+      const cardId = `sentence-card-${existingQuery.id}`
+      scrollToCard(cardId)
+      return
+    }
+    
+    // Add pending sentence query
+    addPendingSentenceQuery(sentence.start, sentence.end, sentence.text.trim())
+    
+    setIsLoading(true)
+    try {
+      const res = await fetch('/api/language-reading/query-sentence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          articleId,
+          sentenceText: sentence.text.trim(),
+          startOffset: sentence.start,
+          endOffset: sentence.end,
+          queryType: 'ai_query',
+          language: language
+        }),
+      })
+
+      const data = await res.json()
+      if (data.id) {
+        addSentenceQuery(data)
+        removePendingSentenceQuery(sentence.start, sentence.end)
+        addHighlight('sentence', sentence.start, sentence.end, data.id)
+        
+        // Scroll to the new card
+        setTimeout(() => {
+          const cardId = `sentence-card-${data.id}`
+          scrollToCard(cardId)
+        }, 100)
+      }
+    } catch (error) {
+      console.error('Sentence query failed:', error)
+      removePendingSentenceQuery(sentence.start, sentence.end)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const renderHighlightedText = () => {
     const ranges = useLanguageReadingStore.getState().highlightedRanges
-    const pendingQueries = useLanguageReadingStore.getState().pendingWordQueries
+    const pendingWordQueries = useLanguageReadingStore.getState().pendingWordQueries
+    const pendingSentenceQueries = useLanguageReadingStore.getState().pendingSentenceQueries
     
-    if (ranges.length === 0 && pendingQueries.length === 0) {
+    // For French, render with sentence-level interaction
+    if (language === 'french') {
+      return content.split('\n').map((paragraph, paragraphIndex) => {
+        if (!paragraph.trim()) {
+          return <br key={paragraphIndex} />
+        }
+        
+        const sentences = splitIntoSentences(paragraph)
+        let paragraphOffset = 0
+        
+        // Calculate the offset of this paragraph in the entire content
+        const precedingParagraphs = content.split('\n').slice(0, paragraphIndex)
+        const paragraphStartOffset = precedingParagraphs.reduce((acc, p) => acc + p.length + 1, 0)
+        
+        return (
+          <p key={paragraphIndex} className="mb-4 leading-relaxed">
+            {sentences.map((sentence, sentenceIndex) => {
+              const globalStart = paragraphStartOffset + sentence.start
+              const globalEnd = paragraphStartOffset + sentence.end
+              
+              // Check if this sentence has any highlights
+              const hasHighlight = ranges.some(range => 
+                range.start <= globalStart && range.end >= globalEnd
+              )
+              
+              // Check if this sentence is pending
+              const isPending = pendingSentenceQueries.some(pending => 
+                pending.start === globalStart && pending.end === globalEnd
+              )
+              
+              const className = isPending
+                ? 'cursor-pointer hover:bg-blue-50 transition-colors duration-200 animate-pulse bg-blue-100/30 rounded px-1'
+                : hasHighlight
+                ? 'cursor-pointer hover:bg-blue-100 transition-colors duration-200 bg-blue-50 rounded px-1'
+                : 'cursor-pointer hover:bg-gray-50 transition-colors duration-200 rounded px-1'
+              
+              return (
+                <span
+                  key={sentenceIndex}
+                  className={className}
+                  onClick={() => handleFrenchSentenceClick({
+                    text: sentence.text,
+                    start: globalStart,
+                    end: globalEnd
+                  })}
+                >
+                  {sentence.text}
+                </span>
+              )
+            })}
+          </p>
+        )
+      })
+    }
+    
+    // Original logic for other languages
+    if (ranges.length === 0 && pendingWordQueries.length === 0 && pendingSentenceQueries.length === 0) {
       return content.split('\n').map((paragraph, index) => (
         paragraph.trim() ? (
           <p key={index} className="mb-4 leading-relaxed">
@@ -409,9 +552,19 @@ export default function ReadingView({ language, articleId, content, title, onNew
 
     // Add pending queries to the ranges for rendering
     const allRanges = [...ranges]
-    pendingQueries.forEach(pending => {
+    pendingWordQueries.forEach(pending => {
       allRanges.push({
         type: 'word' as const,
+        start: pending.start,
+        end: pending.end,
+        id: -1, // Special ID for pending queries
+        isPending: true
+      })
+    })
+
+    pendingSentenceQueries.forEach(pending => {
+      allRanges.push({
+        type: 'sentence' as const,
         start: pending.start,
         end: pending.end,
         id: -1, // Special ID for pending queries
@@ -472,6 +625,10 @@ export default function ReadingView({ language, articleId, content, title, onNew
         // Pending word query - add pulsing animation with purple theme
         className = 'inline-block px-2 py-1 rounded-lg bg-purple-100/30 text-purple-800 backdrop-blur-xs shadow-sm cursor-pointer animate-pulse border-2 border-purple-300/50'
         extraAttributes = ` data-word-range="${range.start}-${range.end}"`
+      } else if (range.isPending && hasSentence) {
+        // Pending sentence query - add pulsing animation with blue theme
+        className = 'inline-block px-2 py-1 rounded-lg bg-blue-100/30 text-blue-800 backdrop-blur-xs shadow-sm cursor-pointer animate-pulse border-2 border-blue-300/50 font-bold'
+        extraAttributes = ` data-sentence-range="${range.start}-${range.end}"`
       } else if (hasBoth) {
         className = 'inline-block px-2 py-1 rounded-lg bg-purple-100/20 text-purple-800 backdrop-blur-xs shadow-sm transition-all duration-200 ease-in-out hover:bg-purple-200/30 hover:shadow-md hover:scale-[1.005] cursor-pointer font-bold'
         extraAttributes = ` data-word-range="${range.start}-${range.end}"`

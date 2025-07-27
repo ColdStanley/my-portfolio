@@ -7,7 +7,7 @@ const notion = new Client({
 
 export async function POST(request: NextRequest) {
   try {
-    const { title, company, full_job_description } = await request.json()
+    const { title, company, full_job_description, model = 'deepseek', sentenceCount = 5 } = await request.json()
 
     console.log('Received data:', { title, company, full_job_description: full_job_description?.length })
 
@@ -79,17 +79,6 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (existingRecords.results.length > 0) {
-      const existingPageId = existingRecords.results[0].id
-      return NextResponse.json(
-        { 
-          error: 'Record with same title and company already exists',
-          existingPageId: existingPageId
-        },
-        { status: 409 }
-      )
-    }
-
     // Split job description into chunks if needed
     const jdPart1 = full_job_description.substring(0, 2000)
     const jdPart2 = full_job_description.substring(2000, 4000)
@@ -132,13 +121,63 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const response = await notion.pages.create({
-      parent: { database_id: process.env.NOTION_JD2CV_DB_ID },
-      properties
-    })
+    // Generate key sentences using LLM
+    let keySentences: string[] = []
+    try {
+      const keySentencesResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/jd2cv/extract-key-sentences`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_job_description: full_job_description,
+          model: model,
+          sentenceCount: sentenceCount
+        })
+      })
+      
+      if (keySentencesResponse.ok) {
+        const keySentencesData = await keySentencesResponse.json()
+        if (keySentencesData.success && keySentencesData.keySentences) {
+          keySentences = keySentencesData.keySentences
+        }
+      }
+    } catch (error) {
+      console.error('Failed to generate key sentences:', error)
+      // Continue with saving even if key sentences generation fails
+    }
 
-    console.log('Successfully created page:', response.id)
-    return NextResponse.json({ success: true, id: response.id })
+    // Add key sentences to properties
+    if (keySentences.length > 0) {
+      properties.job_description_key_sentences = {
+        rich_text: [{ text: { content: JSON.stringify(keySentences) } }]
+      }
+    }
+
+    let response
+    let pageId
+
+    if (existingRecords.results.length > 0) {
+      // Update existing record
+      pageId = existingRecords.results[0].id
+      response = await notion.pages.update({
+        page_id: pageId,
+        properties
+      })
+      console.log('Successfully updated page:', pageId)
+    } else {
+      // Create new record
+      response = await notion.pages.create({
+        parent: { database_id: process.env.NOTION_JD2CV_DB_ID },
+        properties
+      })
+      pageId = response.id
+      console.log('Successfully created page:', pageId)
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      id: pageId, 
+      keySentences: keySentences 
+    })
   } catch (error: any) {
     console.error('Error saving to Notion:', error)
     console.error('Error details:', error?.body || error?.message)

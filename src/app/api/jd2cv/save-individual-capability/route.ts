@@ -5,9 +5,75 @@ const notion = new Client({
   auth: process.env.NOTION_API_KEY,
 })
 
+// Helper function to create rich text with bold keywords
+function createRichTextWithBoldKeywords(text: string, keywords: string[]) {
+  if (!keywords || keywords.length === 0) {
+    return [{
+      type: 'text',
+      text: { content: text }
+    }]
+  }
+
+  const richTextParts: any[] = []
+  let currentText = text
+  let currentIndex = 0
+
+  // Sort keywords by length (longest first) to handle overlapping matches
+  const sortedKeywords = keywords.sort((a, b) => b.length - a.length)
+
+  while (currentIndex < currentText.length) {
+    let foundMatch = false
+    
+    for (const keyword of sortedKeywords) {
+      const keywordIndex = currentText.toLowerCase().indexOf(keyword.toLowerCase(), currentIndex)
+      
+      if (keywordIndex === currentIndex) {
+        // Add the keyword as bold text
+        richTextParts.push({
+          type: 'text',
+          text: { content: currentText.substring(keywordIndex, keywordIndex + keyword.length) },
+          annotations: { bold: true }
+        })
+        currentIndex = keywordIndex + keyword.length
+        foundMatch = true
+        break
+      }
+    }
+    
+    if (!foundMatch) {
+      // Find the next keyword occurrence
+      let nextKeywordIndex = currentText.length
+      let nextKeyword = ''
+      
+      for (const keyword of sortedKeywords) {
+        const keywordIndex = currentText.toLowerCase().indexOf(keyword.toLowerCase(), currentIndex)
+        if (keywordIndex !== -1 && keywordIndex < nextKeywordIndex) {
+          nextKeywordIndex = keywordIndex
+          nextKeyword = keyword
+        }
+      }
+      
+      // Add regular text until next keyword
+      const regularText = currentText.substring(currentIndex, nextKeywordIndex)
+      if (regularText) {
+        richTextParts.push({
+          type: 'text',
+          text: { content: regularText }
+        })
+      }
+      currentIndex = nextKeywordIndex
+    }
+  }
+
+  return richTextParts.length > 0 ? richTextParts : [{
+    type: 'text',
+    text: { content: text }
+  }]
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { title, company, capabilityIndex, capabilityValue } = await request.json()
+    const { title, company, capabilityIndex, capabilityValue, model = 'deepseek', keywordCount = 3 } = await request.json()
 
     if (!title || !company || !capabilityIndex || capabilityValue === undefined) {
       return NextResponse.json(
@@ -38,7 +104,36 @@ export async function POST(request: NextRequest) {
     })
 
     const propertyName = `capability_${capabilityIndex}`
+    const keywordsPropertyName = `capability_${capabilityIndex}_keywords`
     let pageId: string
+
+    // Extract keywords from capability content using LLM
+    let keywords: string[] = []
+    let keywordsJson = '[]'
+    
+    try {
+      const keywordResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/jd2cv/extract-keywords`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: capabilityValue,
+          type: 'capability',
+          model: model,
+          keywordCount: keywordCount
+        })
+      })
+      
+      if (keywordResponse.ok) {
+        const keywordData = await keywordResponse.json()
+        if (keywordData.success && keywordData.keywords) {
+          keywords = keywordData.keywords
+          keywordsJson = JSON.stringify(keywords)
+        }
+      }
+    } catch (keywordError) {
+      console.error('Failed to extract keywords:', keywordError)
+      // Continue with empty keywords - don't fail the main operation
+    }
 
     if (database.results.length > 0) {
       // Update existing page
@@ -51,86 +146,12 @@ export async function POST(request: NextRequest) {
           [propertyName]: {
             rich_text: [{ text: { content: capabilityValue } }]
           },
+          [keywordsPropertyName]: {
+            rich_text: [{ text: { content: keywordsJson } }]
+          },
         },
       })
-      console.log(`Successfully updated database property ${propertyName}`)
-
-      // Check if capability callout already exists and delete it
-      const allBlocks = await notion.blocks.children.list({
-        block_id: pageId,
-      })
-      
-      const calloutTitle = `Capability ${capabilityIndex}`
-      
-      // Find and delete existing capability callout
-      for (const block of allBlocks.results) {
-        const blockData = block as any
-        if (blockData.type === 'callout') {
-          const firstChild = blockData.callout?.children?.[0]
-          if (firstChild?.type === 'heading_3') {
-            const headingText = firstChild.heading_3?.rich_text?.[0]?.text?.content || ''
-            if (headingText === calloutTitle) {
-              await notion.blocks.delete({ block_id: blockData.id })
-              console.log(`Deleted existing capability ${capabilityIndex} callout`)
-              break
-            }
-          }
-        }
-      }
-      
-      // Create new capability callout
-      try {
-        const calloutResponse = await notion.blocks.children.append({
-          block_id: pageId,
-          children: [
-            {
-              object: 'block',
-              type: 'callout',
-              callout: {
-                rich_text: [],
-                color: 'gray_background',
-                children: [
-                  {
-                    object: 'block',
-                    type: 'heading_3',
-                    heading_3: {
-                      rich_text: [
-                        {
-                          type: 'text',
-                          text: {
-                            content: calloutTitle,
-                          },
-                          annotations: {
-                            bold: true
-                          }
-                        },
-                      ],
-                    },
-                  },
-                  {
-                    object: 'block',
-                    type: 'paragraph',
-                    paragraph: {
-                      rich_text: [
-                        {
-                          type: 'text',
-                          text: {
-                            content: capabilityValue,
-                          },
-                        },
-                      ],
-                    },
-                  },
-                ],
-              },
-            },
-          ],
-        })
-        console.log(`Successfully created capability ${capabilityIndex} callout`)
-      } catch (calloutError) {
-        console.error(`Failed to create callout for capability ${capabilityIndex}:`, calloutError)
-        // Don't throw error here - database update was successful
-      }
+      console.log(`Successfully updated database property ${propertyName} and keywords`)
     } else {
       // Create new page
       const response = await notion.pages.create({
@@ -145,68 +166,15 @@ export async function POST(request: NextRequest) {
           [propertyName]: {
             rich_text: [{ text: { content: capabilityValue } }]
           },
+          [keywordsPropertyName]: {
+            rich_text: [{ text: { content: keywordsJson } }]
+          },
         },
       })
       pageId = response.id
-
-      // Create capability callout for new page
-      const calloutTitle = `Capability ${capabilityIndex}`
-      
-      try {
-        const calloutResponse = await notion.blocks.children.append({
-          block_id: pageId,
-          children: [
-            {
-              object: 'block',
-              type: 'callout',
-              callout: {
-                rich_text: [],
-                color: 'gray_background',
-                children: [
-                  {
-                    object: 'block',
-                    type: 'heading_3',
-                    heading_3: {
-                      rich_text: [
-                        {
-                          type: 'text',
-                          text: {
-                            content: calloutTitle,
-                          },
-                          annotations: {
-                            bold: true
-                          }
-                        },
-                      ],
-                    },
-                  },
-                  {
-                    object: 'block',
-                    type: 'paragraph',
-                    paragraph: {
-                      rich_text: [
-                        {
-                          type: 'text',
-                          text: {
-                            content: capabilityValue,
-                          },
-                        },
-                      ],
-                    },
-                  },
-                ],
-              },
-            },
-          ],
-        })
-        console.log(`Successfully created capability ${capabilityIndex} callout for new page`)
-      } catch (calloutError) {
-        console.error(`Failed to create callout for new page capability ${capabilityIndex}:`, calloutError)
-        // Don't throw error here - database update was successful
-      }
     }
 
-    return NextResponse.json({ success: true, id: pageId })
+    return NextResponse.json({ success: true, id: pageId, keywords: keywords })
   } catch (error) {
     console.error('Error saving individual capability to Notion:', error)
     return NextResponse.json(

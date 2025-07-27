@@ -7,7 +7,7 @@ const notion = new Client({
 
 export async function POST(request: NextRequest) {
   try {
-    const { title, company, experienceIndex, inputExperienceValue } = await request.json()
+    const { title, company, experienceIndex, inputExperienceValue, model = 'deepseek', keywordCount = 8 } = await request.json()
 
     if (!title || !company || !experienceIndex || inputExperienceValue === undefined) {
       return NextResponse.json(
@@ -38,7 +38,36 @@ export async function POST(request: NextRequest) {
     })
 
     const propertyName = `your_experience_${experienceIndex}`
+    const keywordsPropertyName = `your_experience_${experienceIndex}_keywords`
     let pageId: string
+
+    // Extract keywords from input experience using LLM
+    let keywords: string[] = []
+    let keywordsJson = '[]'
+    
+    try {
+      const keywordResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/jd2cv/extract-keywords`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: inputExperienceValue,
+          type: 'experience',
+          model: model,
+          keywordCount: keywordCount
+        })
+      })
+      
+      if (keywordResponse.ok) {
+        const keywordData = await keywordResponse.json()
+        if (keywordData.success && keywordData.keywords) {
+          keywords = keywordData.keywords
+          keywordsJson = JSON.stringify(keywords)
+        }
+      }
+    } catch (keywordError) {
+      console.error('Failed to extract keywords:', keywordError)
+      // Continue with empty keywords - don't fail the main operation
+    }
 
     if (database.results.length > 0) {
       // Update existing page
@@ -48,6 +77,9 @@ export async function POST(request: NextRequest) {
         properties: {
           [propertyName]: {
             rich_text: [{ text: { content: inputExperienceValue } }]
+          },
+          [keywordsPropertyName]: {
+            rich_text: [{ text: { content: keywordsJson } }]
           },
         },
       })
@@ -65,12 +97,15 @@ export async function POST(request: NextRequest) {
           [propertyName]: {
             rich_text: [{ text: { content: inputExperienceValue } }]
           },
+          [keywordsPropertyName]: {
+            rich_text: [{ text: { content: keywordsJson } }]
+          },
         },
       })
       pageId = response.id
     }
 
-    return NextResponse.json({ success: true, id: pageId })
+    return NextResponse.json({ success: true, id: pageId, keywords: keywords })
   } catch (error) {
     console.error('Error saving input experience to Notion:', error)
     return NextResponse.json(

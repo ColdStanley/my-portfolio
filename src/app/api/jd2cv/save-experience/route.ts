@@ -5,9 +5,75 @@ const notion = new Client({
   auth: process.env.NOTION_API_KEY,
 })
 
+// Helper function to create rich text with bold keywords
+function createRichTextWithBoldKeywords(text: string, keywords: string[]) {
+  if (!keywords || keywords.length === 0) {
+    return [{
+      type: 'text',
+      text: { content: text }
+    }]
+  }
+
+  const richTextParts: any[] = []
+  let currentText = text
+  let currentIndex = 0
+
+  // Sort keywords by length (longest first) to handle overlapping matches
+  const sortedKeywords = keywords.sort((a, b) => b.length - a.length)
+
+  while (currentIndex < currentText.length) {
+    let foundMatch = false
+    
+    for (const keyword of sortedKeywords) {
+      const keywordIndex = currentText.toLowerCase().indexOf(keyword.toLowerCase(), currentIndex)
+      
+      if (keywordIndex === currentIndex) {
+        // Add the keyword as bold text
+        richTextParts.push({
+          type: 'text',
+          text: { content: currentText.substring(keywordIndex, keywordIndex + keyword.length) },
+          annotations: { bold: true }
+        })
+        currentIndex = keywordIndex + keyword.length
+        foundMatch = true
+        break
+      }
+    }
+    
+    if (!foundMatch) {
+      // Find the next keyword occurrence
+      let nextKeywordIndex = currentText.length
+      let nextKeyword = ''
+      
+      for (const keyword of sortedKeywords) {
+        const keywordIndex = currentText.toLowerCase().indexOf(keyword.toLowerCase(), currentIndex)
+        if (keywordIndex !== -1 && keywordIndex < nextKeywordIndex) {
+          nextKeywordIndex = keywordIndex
+          nextKeyword = keyword
+        }
+      }
+      
+      // Add regular text until next keyword
+      const regularText = currentText.substring(currentIndex, nextKeywordIndex)
+      if (regularText) {
+        richTextParts.push({
+          type: 'text',
+          text: { content: regularText }
+        })
+      }
+      currentIndex = nextKeywordIndex
+    }
+  }
+
+  return richTextParts.length > 0 ? richTextParts : [{
+    type: 'text',
+    text: { content: text }
+  }]
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { title, company, experienceIndex, experienceValue } = await request.json()
+    const { title, company, experienceIndex, experienceValue, model = 'deepseek', keywordCount = 8 } = await request.json()
 
     if (!title || !company || !experienceIndex || experienceValue === undefined) {
       return NextResponse.json(
@@ -38,7 +104,36 @@ export async function POST(request: NextRequest) {
     })
 
     const propertyName = `generated_text_${experienceIndex}`
+    const keywordsPropertyName = `generated_text_${experienceIndex}_keywords`
     let pageId: string
+
+    // Extract keywords from generated experience text using LLM
+    let keywords: string[] = []
+    let keywordsJson = '[]'
+    
+    try {
+      const keywordResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/jd2cv/extract-keywords`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: experienceValue,
+          type: 'generated',
+          model: model,
+          keywordCount: keywordCount
+        })
+      })
+      
+      if (keywordResponse.ok) {
+        const keywordData = await keywordResponse.json()
+        if (keywordData.success && keywordData.keywords) {
+          keywords = keywordData.keywords
+          keywordsJson = JSON.stringify(keywords)
+        }
+      }
+    } catch (keywordError) {
+      console.error('Failed to extract keywords:', keywordError)
+      // Continue with empty keywords - don't fail the main operation
+    }
 
     if (database.results.length > 0) {
       // Update existing page
@@ -49,85 +144,11 @@ export async function POST(request: NextRequest) {
           [propertyName]: {
             rich_text: [{ text: { content: experienceValue } }]
           },
+          [keywordsPropertyName]: {
+            rich_text: [{ text: { content: keywordsJson } }]
+          },
         },
       })
-
-      // Check if generated experience callout already exists and delete it
-      const allBlocks = await notion.blocks.children.list({
-        block_id: pageId,
-      })
-      
-      const calloutTitle = `Generated Experience ${experienceIndex}`
-      
-      // Find and delete existing generated experience callout
-      for (const block of allBlocks.results) {
-        const blockData = block as any
-        if (blockData.type === 'callout') {
-          const firstChild = blockData.callout?.children?.[0]
-          if (firstChild?.type === 'heading_3') {
-            const headingText = firstChild.heading_3?.rich_text?.[0]?.text?.content || ''
-            if (headingText === calloutTitle) {
-              await notion.blocks.delete({ block_id: blockData.id })
-              console.log(`Deleted existing generated experience ${experienceIndex} callout`)
-              break
-            }
-          }
-        }
-      }
-      
-      // Create new generated experience callout
-      try {
-        await notion.blocks.children.append({
-          block_id: pageId,
-          children: [
-            {
-              object: 'block',
-              type: 'callout',
-              callout: {
-                rich_text: [],
-                color: 'gray_background',
-                children: [
-                  {
-                    object: 'block',
-                    type: 'heading_3',
-                    heading_3: {
-                      rich_text: [
-                        {
-                          type: 'text',
-                          text: {
-                            content: calloutTitle,
-                          },
-                          annotations: {
-                            bold: true
-                          }
-                        },
-                      ],
-                    },
-                  },
-                  {
-                    object: 'block',
-                    type: 'paragraph',
-                    paragraph: {
-                      rich_text: [
-                        {
-                          type: 'text',
-                          text: {
-                            content: experienceValue,
-                          },
-                        },
-                      ],
-                    },
-                  },
-                ],
-              },
-            },
-          ],
-        })
-        console.log(`Successfully created generated experience ${experienceIndex} callout`)
-      } catch (calloutError) {
-        console.error(`Failed to create callout for generated experience ${experienceIndex}:`, calloutError)
-        // Don't throw error here - database update was successful
-      }
     } else {
       // Create new page
       const response = await notion.pages.create({
@@ -142,68 +163,15 @@ export async function POST(request: NextRequest) {
           [propertyName]: {
             rich_text: [{ text: { content: experienceValue } }]
           },
+          [keywordsPropertyName]: {
+            rich_text: [{ text: { content: keywordsJson } }]
+          },
         },
       })
       pageId = response.id
-
-      // Create generated experience callout for new page
-      const calloutTitle = `Generated Experience ${experienceIndex}`
-      
-      try {
-        await notion.blocks.children.append({
-          block_id: pageId,
-          children: [
-            {
-              object: 'block',
-              type: 'callout',
-              callout: {
-                rich_text: [],
-                color: 'gray_background',
-                children: [
-                  {
-                    object: 'block',
-                    type: 'heading_3',
-                    heading_3: {
-                      rich_text: [
-                        {
-                          type: 'text',
-                          text: {
-                            content: calloutTitle,
-                          },
-                          annotations: {
-                            bold: true
-                          }
-                        },
-                      ],
-                    },
-                  },
-                  {
-                    object: 'block',
-                    type: 'paragraph',
-                    paragraph: {
-                      rich_text: [
-                        {
-                          type: 'text',
-                          text: {
-                            content: experienceValue,
-                          },
-                        },
-                      ],
-                    },
-                  },
-                ],
-              },
-            },
-          ],
-        })
-        console.log(`Successfully created generated experience ${experienceIndex} callout for new page`)
-      } catch (calloutError) {
-        console.error(`Failed to create callout for new page generated experience ${experienceIndex}:`, calloutError)
-        // Don't throw error here - database update was successful
-      }
     }
 
-    return NextResponse.json({ success: true, id: pageId })
+    return NextResponse.json({ success: true, id: pageId, keywords: keywords })
   } catch (error) {
     console.error('Error saving experience to Notion:', error)
     return NextResponse.json(

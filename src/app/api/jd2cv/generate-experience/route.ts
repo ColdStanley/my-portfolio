@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
-
-const openai = new OpenAI({
-  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
-})
+import { createOpenAIClient } from '@/utils/modelConfig'
 
 export async function POST(request: NextRequest) {
   try {
-    const { capability, experienceInput, prompt } = await request.json()
+    const { capability, experienceInput, prompt, model = 'deepseek' } = await request.json()
 
     if (!capability || !experienceInput) {
       return NextResponse.json(
@@ -16,7 +13,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const systemMessage = `You are an expert career consultant. ${prompt || ''}
+    // Define model-specific prompts
+    const gptPrompt = `You are an expert career consultant. ${prompt || ''}
 
 Based on the following capability requirement and the candidate's original experience/project, craft an enhanced and customized version that:
 
@@ -26,6 +24,7 @@ Based on the following capability requirement and the candidate's original exper
 - Maintains truthfulness and consistency with the original input
 - Uses concise, professional, and compelling language suitable for resumes or LinkedIn
 - Avoids generic phrasing or vague accomplishments
+- **CRITICAL: Preserve all company names, project names, website URLs, and brand names EXACTLY as written in the original text. Do not modify, abbreviate, or rewrite these proper nouns.**
 - Presents the final result as structured **bullet points**, suitable for resume use
 
 You may choose from the following frameworks to best express the enhanced experience:
@@ -46,8 +45,45 @@ ${experienceInput}
 
 Please return the enhanced experience as 1–3 bullet points, clearly reflecting one of the above frameworks.`
 
+    const deepseekPrompt = `You are an expert career consultant. ${prompt || ''}
+
+Based on the following capability requirement and the candidate's original experience/project, craft an enhanced and customized version that:
+
+- Directly addresses the specific capability requirement
+- Incorporates key phrases and technical terms from the capability description
+- Refines and restructures the original experience to better align with the capability
+- Maintains truthfulness and consistency with the original input
+- Uses concise, professional, and compelling language suitable for resumes or LinkedIn
+- Avoids generic phrasing or vague accomplishments
+- Do not add exaggerated metrics or overly embellish achievements
+- **CRITICAL: Preserve all company names, project names, website URLs, and brand names EXACTLY as written in the original text. Do not modify, abbreviate, or rewrite these proper nouns.**
+- Presents the final result as structured bullet points (no asterisks or markdown formatting), suitable for resume use
+
+You may choose from the following frameworks to best express the enhanced experience:
+- CAR (Challenge – Action – Result) — concise and outcome-driven
+- PAR (Problem – Action – Result) — suitable for business/tech roles
+- SOAR (Situation – Opportunity – Action – Result) — emphasizes influence
+- Why–What–How–Impact — ideal for explaining the rationale and impact of a project
+
+---
+
+Capability Requirement:
+${capability}
+
+Original Experience/Project:
+${experienceInput}
+
+Return only the enhanced experience as 1–3 bullet points. Do not explain your framework choice or provide commentary.`
+
+    // Select prompt based on model
+    const systemMessage = model === 'deepseek' ? deepseekPrompt : gptPrompt
+
+    // Create OpenAI client based on selected model
+    const { config, modelName } = createOpenAIClient(model as 'gpt-4' | 'deepseek')
+    const openai = new OpenAI(config)
+
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: modelName,
       messages: [
         {
           role: 'system',
