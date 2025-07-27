@@ -76,6 +76,9 @@ export default function JD2CVPanel() {
   const [capabilitiesGenerated, setCapabilitiesGenerated] = useState(false)
   const [isUpdatingKeySentences, setIsUpdatingKeySentences] = useState(false)
   
+  // Tab state for capability sections
+  const [activeCapabilityTab, setActiveCapabilityTab] = useState(0)
+  
   // Tooltip states for highlight editing
   const [deleteTooltip, setDeleteTooltip] = useState<{
     show: boolean
@@ -1873,19 +1876,75 @@ export default function JD2CVPanel() {
         </div>
       </div>
 
-      {/* All Capabilities and Experience Areas */}
+      {/* All Capabilities and Experience Areas - Tab Version */}
       <div className="bg-white rounded-lg shadow-lg p-4">
         <div className="space-y-6">
           <h4 className="text-lg font-medium text-gray-800">Key Required Capabilities</h4>
           
+          {/* Tab Navigation */}
+          <div className="border-b border-gray-200">
+            <nav className="flex space-x-1 sm:space-x-2 overflow-x-auto scrollbar-hide pb-4" role="tablist">
+              {[1, 2, 3, 4, 5].map((num) => {
+                const index = num - 1
+                const isActive = activeCapabilityTab === index
+                const hasContent = jdData[`capability_${num}` as keyof JDData]
+                
+                return (
+                  <button
+                    key={num}
+                    id={`capability-tab-${num}`}
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-controls={`capability-panel-${num}`}
+                    tabIndex={isActive ? 0 : -1}
+                    onClick={() => setActiveCapabilityTab(index)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'ArrowLeft' && index > 0) {
+                        setActiveCapabilityTab(index - 1)
+                      } else if (e.key === 'ArrowRight' && index < 4) {
+                        setActiveCapabilityTab(index + 1)
+                      }
+                    }}
+                    className={`flex-shrink-0 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg font-medium text-sm sm:text-base transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
+                      isActive 
+                        ? 'bg-purple-600 text-white shadow-md ring-2 ring-purple-200' 
+                        : hasContent
+                          ? 'bg-purple-100 text-purple-700 hover:bg-purple-200 hover:shadow-sm'
+                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-600'
+                    }`}
+                  >
+                    <span className="whitespace-nowrap">Capability {num}</span>
+                  </button>
+                )
+              })}
+            </nav>
+          </div>
+          
+          {/* Tab Content */}
           {[1, 2, 3, 4, 5].map((num) => {
             const index = num - 1
+            const isActive = activeCapabilityTab === index
+            
+            if (!isActive) return null
+            
             return (
-              <div key={num} className="bg-gray-50 p-4 rounded-lg space-y-4">
-                <h5 className="font-medium text-gray-800">Role Expectation {num}</h5>
-                
-                {/* Capability Content */}
-                <div className="space-y-3">
+              <div 
+                key={num} 
+                id={`capability-panel-${num}`}
+                role="tabpanel"
+                aria-labelledby={`capability-tab-${num}`}
+                className="mt-6"
+              >
+                <div className="bg-gray-50 rounded-xl p-6 space-y-6 border border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <h5 className="text-lg font-semibold text-gray-800">Role Expectation {num}</h5>
+                    <span className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full border">
+                      {num}/5
+                    </span>
+                  </div>
+                  
+                  {/* Capability Content */}
+                  <div className="space-y-4">
                   {capabilityKeywords[index] && capabilityKeywords[index].length > 0 ? (
                     // Show highlighted view when keywords are available
                     <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
@@ -1932,7 +1991,7 @@ export default function JD2CVPanel() {
                   )}
                   
                   {/* Keywords Count and Save Button Row */}
-                  <div className="flex items-center gap-3 mt-2">
+                  <div className="flex flex-wrap items-center justify-between gap-3 mt-4 p-3 bg-white rounded-lg border border-gray-200">
                     {/* Keywords Count Input */}
                     <div className="flex items-center gap-2">
                       <label htmlFor={`keywordCount-${index}`} className="text-sm font-medium text-gray-600">
@@ -1950,37 +2009,38 @@ export default function JD2CVPanel() {
                             return newCounts
                           })
                         }}
-                        className="w-16 px-2 py-1 border border-gray-300 rounded text-sm text-center focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        className="w-16 px-2 py-1.5 border border-gray-300 rounded-md text-sm text-center focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                         min="1"
                         max="10"
                       />
                     </div>
                     
-                    {/* Save Button */}
-                    <button
-                      onClick={() => handleSaveCapability(index)}
-                      disabled={capabilityIsSaving[index]}
-                      className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 flex-shrink-0"
-                    >
-                      {capabilityIsSaving[index] ? 'Saving...' : 'Save'}
-                    </button>
-                    
-                    {/* Export Button */}
-                    <button
-                      onClick={() => handleExportCapability(index)}
-                      disabled={!currentPageId || capabilityExporting[index]}
-                      className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 flex-shrink-0"
-                    >
-                      {capabilityExporting[index] ? 'Exporting...' : 'Export'}
-                    </button>
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleSaveCapability(index)}
+                        disabled={capabilityIsSaving[index]}
+                        className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                      >
+                        {capabilityIsSaving[index] ? 'Saving...' : 'Save'}
+                      </button>
+                      
+                      <button
+                        onClick={() => handleExportCapability(index)}
+                        disabled={!currentPageId || capabilityExporting[index]}
+                        className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                      >
+                        {capabilityExporting[index] ? 'Exporting...' : 'Export'}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
                 {/* Experience Customization */}
-                <div className="space-y-4">
-                  <h6 className="font-medium text-gray-700">Experience Customization</h6>
+                <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
+                  <h6 className="text-lg font-semibold text-gray-800 border-b border-gray-100 pb-3">Experience Customization</h6>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     {/* Left: Input Experience */}
                     <div className="space-y-3">
                       <label className="block text-sm font-medium text-gray-700">Your Experience</label>
@@ -2068,7 +2128,7 @@ export default function JD2CVPanel() {
                         <button
                           onClick={() => handleSaveInputExperience(index)}
                           disabled={inputExperienceSaving[index]}
-                          className="px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md transition-shadow w-20 text-center"
+                          className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md min-w-[80px]"
                         >
                           {inputExperienceSaving[index] ? 'Saving...' : 'Save'}
                         </button>
@@ -2144,17 +2204,17 @@ export default function JD2CVPanel() {
                       )}
                       
                       {/* Buttons Row */}
-                      <div className="flex justify-end gap-3 mt-2 items-center">
+                      <div className="flex flex-wrap items-center justify-between gap-3 mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
                         {/* Generate Button */}
                         <button
                           onClick={() => handleGenerateExperience(index)}
                           disabled={experienceGenerating[index]}
-                          className="px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md transition-shadow w-20 text-center flex items-center justify-center gap-2"
+                          className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md min-w-[100px] flex items-center justify-center gap-2"
                         >
                           {experienceGenerating[index] ? (
                             <>
                               <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                              Gen...
+                              <span>Gen...</span>
                             </>
                           ) : (
                             'Generate'
@@ -2177,26 +2237,28 @@ export default function JD2CVPanel() {
                           />
                         </div>
                         
-                        {/* Save Button */}
-                        <button
-                          onClick={() => handleSaveExperience(index)}
-                          disabled={experienceIsSaving[index]}
-                          className="px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md transition-shadow w-20 text-center"
-                        >
-                          {experienceIsSaving[index] ? 'Saving...' : 'Save'}
-                        </button>
-                        
-                        {/* Export Button */}
-                        <button
-                          onClick={() => handleExportGeneratedText(index)}
-                          disabled={!currentPageId || generatedExporting[index]}
-                          className="px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md transition-shadow w-20 text-center"
-                        >
-                          {generatedExporting[index] ? 'Exporting...' : 'Export'}
-                        </button>
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleSaveExperience(index)}
+                            disabled={experienceIsSaving[index]}
+                            className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md min-w-[80px]"
+                          >
+                            {experienceIsSaving[index] ? 'Saving...' : 'Save'}
+                          </button>
+                          
+                          <button
+                            onClick={() => handleExportGeneratedText(index)}
+                            disabled={!currentPageId || generatedExporting[index]}
+                            className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md min-w-[80px]"
+                          >
+                            {generatedExporting[index] ? 'Exporting...' : 'Export'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
+                </div>
 
                 </div>
               </div>

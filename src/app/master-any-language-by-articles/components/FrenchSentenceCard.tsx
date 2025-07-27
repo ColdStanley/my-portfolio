@@ -804,7 +804,6 @@ export default function FrenchSentenceCard({
               ))}
               {wordQueries.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
-                  <div className="text-2xl mb-2">📝</div>
                   <p className="text-sm">输入单词来向AI提问</p>
                 </div>
               )}
@@ -820,19 +819,19 @@ export default function FrenchSentenceCard({
               <button
                 onClick={handleAnalyzePhrases}
                 disabled={isLoadingPhrases}
-                className="px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-3 py-1.5 bg-purple-500 text-white text-xs rounded hover:bg-purple-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
               >
                 {isLoadingPhrases ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b border-white"></div>
                     分析中...
                   </>
                 ) : (
                   <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
-                    分析句子词组
+                    分析词组
                   </>
                 )}
               </button>
@@ -840,12 +839,12 @@ export default function FrenchSentenceCard({
 
             {/* Phrases analysis result */}
             {phrasesAnalysis && (
-              <div className="bg-blue-50/50 p-3 rounded-lg border-l-4 border-blue-300">
+              <div className="bg-purple-50/50 p-3 rounded-lg border-l-4 border-purple-300">
                 <div className="text-sm text-gray-700 leading-relaxed">
                   <div className="formatted-response">
                     {formatAIResponse(phrasesAnalysis)}
                     {isLoadingPhrases && (
-                      <span className="inline-block w-2 h-4 bg-blue-500 ml-1 animate-pulse"></span>
+                      <span className="inline-block w-2 h-4 bg-purple-500 ml-1 animate-pulse"></span>
                     )}
                   </div>
                 </div>
@@ -854,7 +853,6 @@ export default function FrenchSentenceCard({
 
             {!phrasesAnalysis && !isLoadingPhrases && (
               <div className="text-center py-8 text-gray-500">
-                <div className="text-2xl mb-2">🔗</div>
                 <p className="text-sm">点击按钮分析句子中的词组搭配</p>
               </div>
             )}
@@ -869,19 +867,19 @@ export default function FrenchSentenceCard({
               <button
                 onClick={handleAnalyzeGrammar}
                 disabled={isLoadingGrammar}
-                className="px-4 py-2 bg-purple-500 text-white text-sm rounded-lg hover:bg-purple-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-3 py-1.5 bg-purple-500 text-white text-xs rounded hover:bg-purple-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
               >
                 {isLoadingGrammar ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    语法分析中...
+                    <div className="animate-spin rounded-full h-3 w-3 border-b border-white"></div>
+                    分析中...
                   </>
                 ) : (
                   <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    分析句子语法
+                    分析语法
                   </>
                 )}
               </button>
@@ -903,7 +901,6 @@ export default function FrenchSentenceCard({
 
             {!grammarAnalysis && !isLoadingGrammar && (
               <div className="text-center py-8 text-gray-500">
-                <div className="text-2xl mb-2">📚</div>
                 <p className="text-sm">点击按钮分析句子的语法结构</p>
               </div>
             )}
@@ -938,10 +935,10 @@ export default function FrenchSentenceCard({
   }
 
   const tabs = [
-    { id: 'words' as TabType, label: '单词', icon: '📝' },
-    { id: 'phrases' as TabType, label: '词组', icon: '🔗' },
-    { id: 'grammar' as TabType, label: '语法', icon: '📚' },
-    { id: 'test' as TabType, label: '测试', icon: '🎯' }
+    { id: 'words' as TabType, label: 'Mots' },
+    { id: 'phrases' as TabType, label: 'Expressions' },
+    { id: 'grammar' as TabType, label: 'Grammaire' },
+    { id: 'test' as TabType, label: 'Test' }
   ]
 
   return (
@@ -953,8 +950,8 @@ export default function FrenchSentenceCard({
       <div>
         {/* Header */}
         <div className={`flex items-center gap-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
-          <span className={`${isMobile ? 'px-2 py-1 text-xs' : 'px-3 py-1.5 text-xs'} bg-blue-100 text-blue-800 rounded-full font-semibold`}>
-            {uiTexts.sentence}
+          <span className={`${isMobile ? 'px-2 py-1 text-xs' : 'px-3 py-1.5 text-xs'} bg-purple-100 text-purple-800 rounded-full font-semibold`}>
+            Phrase
           </span>
           <div className="flex-1"></div>
           <button
@@ -972,7 +969,7 @@ export default function FrenchSentenceCard({
         </div>
         
         {/* Sentence Display */}
-        <div className={`bg-gray-50/50 ${isMobile ? 'p-2' : 'p-3'} rounded-lg border-l-4 border-blue-300 ${isMobile ? 'mb-2' : 'mb-4'}`}>
+        <div className={`bg-gray-50/50 ${isMobile ? 'p-2' : 'p-3'} rounded-lg border-l-4 border-purple-300 ${isMobile ? 'mb-2' : 'mb-4'}`}>
           <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-700 italic leading-relaxed`}>"{query.sentence_text}"</p>
           <p className={`text-xs text-gray-500 ${isMobile ? 'mt-1' : 'mt-2'}`}>{query.translation}</p>
         </div>
@@ -986,12 +983,11 @@ export default function FrenchSentenceCard({
                 onClick={() => setActiveTab(tab.id)}
                 className={`${isMobile ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm'} font-medium rounded-t-lg transition-colors duration-200 flex items-center ${isMobile ? 'gap-1' : 'gap-1.5'} ${
                   activeTab === tab.id
-                    ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-500'
+                    ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-500'
                     : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                 } ${isMobile ? 'flex-1 justify-center' : ''}`}
               >
-                <span className="text-xs">{tab.icon}</span>
-                {!isMobile && tab.label}
+                {tab.label}
               </button>
             ))}
           </div>

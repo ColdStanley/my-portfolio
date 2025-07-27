@@ -349,11 +349,238 @@ export default function MobileFrenchSentenceCard({
   }
 
   const tabs = [
-    { id: 'words' as TabType, label: '单词', icon: '📝' },
-    { id: 'phrases' as TabType, label: '词组', icon: '🔗' },
-    { id: 'grammar' as TabType, label: '语法', icon: '📚' },
-    { id: 'test' as TabType, label: '测试', icon: '🎯' }
+    { id: 'words' as TabType, label: 'Mots' },
+    { id: 'phrases' as TabType, label: 'Expressions' },
+    { id: 'grammar' as TabType, label: 'Grammaire' },
+    { id: 'test' as TabType, label: 'Test' }
   ]
+
+  // Handle phrases analysis
+  const handleAnalyzePhrases = async () => {
+    if (isLoadingPhrases) return
+    
+    setIsLoadingPhrases(true)
+    setPhrasesAnalysis('')
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    abortControllerRef.current = new AbortController()
+
+    try {
+      const response = await fetch('/api/language-reading/ask-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          queryData: query,
+          language: language,
+          userPrompt: `请你帮助我学习下面这句法语中的重要词组。  
+我的法语水平是初学者，所以请你讲解得简单、清晰，避免用太复杂的语法术语或长难句。
+
+句子是：  
+"${query.sentence_text}"
+
+请你找出其中2–4个最有代表性的法语**词组（2词以上）**，然后按以下结构逐个解释：
+
+1. 词组原文（如：passer maître dans...）
+2. 中文意思（用一句话简单解释）
+3. 用法说明（最多两句话，说明它在句中做什么，不要太术语化）
+4. 简单例句（3个简单的法语句子 + 中文翻译）
+5. 联想记忆建议（可选，给出记忆方法或小贴士）
+
+请按以上格式分别列出每个词组的讲解。`
+        }),
+        signal: abortControllerRef.current.signal
+      })
+
+      if (!response.ok) throw new Error(`API request failed: ${response.status}`)
+
+      const reader = response.body?.getReader()
+      if (!reader) throw new Error('No response body')
+
+      const decoder = new TextDecoder()
+      let accumulatedResponse = ''
+      let buffer = ''
+      
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6).trim()
+            
+            if (data === '[DONE]') break
+
+            try {
+              const parsed = JSON.parse(data)
+              const content = parsed.content
+              
+              if (content) {
+                accumulatedResponse += content
+                setPhrasesAnalysis(accumulatedResponse)
+              }
+            } catch (e) {
+              continue
+            }
+          }
+        }
+      }
+
+      // Save to database
+      if (accumulatedResponse) {
+        try {
+          await fetch('/api/language-reading/save-phrase-analysis', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              articleId: articleId,
+              sentenceText: query.sentence_text,
+              analysis: accumulatedResponse,
+              startOffset: query.start_offset,
+              endOffset: query.end_offset,
+              language: language,
+              contentType: 'phrase_analysis'
+            })
+          })
+        } catch (saveError) {
+          console.error('Failed to save phrase analysis:', saveError)
+        }
+      }
+
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        setPhrasesAnalysis('')
+      } else {
+        console.error('Phrases analysis failed:', error)
+        setPhrasesAnalysis('分析失败，请重试')
+      }
+    } finally {
+      setIsLoadingPhrases(false)
+      abortControllerRef.current = null
+    }
+  }
+
+  // Handle grammar analysis
+  const handleAnalyzeGrammar = async () => {
+    if (isLoadingGrammar) return
+    
+    setIsLoadingGrammar(true)
+    setGrammarAnalysis('')
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    abortControllerRef.current = new AbortController()
+
+    try {
+      const response = await fetch('/api/language-reading/ask-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          queryData: query,
+          language: language,
+          userPrompt: `请用适合法语初学者的方式，分析这句话的语法结构：
+
+"${query.sentence_text}"
+
+请按照以下结构回答，每一项都要简洁清晰，不要使用太多专业术语：
+
+1. 这句话的整体结构是什么？  
+   → 分成几个部分？（比如主句 / 从句 / 插入语等）
+
+2. 这句话用了哪些时态？  
+   → 每个时态表示什么时间概念？为什么用它？
+
+3. 表达的逻辑关系是什么？  
+   → 是让步？假设？对比？因果？
+
+4. 每部分各自说了什么？  
+   → 用通俗中文逐句解释
+
+5. 有哪些法语初学者常犯的错误？  
+   → 这句话中哪些地方容易误解或误用？
+
+请不要解释词汇、不要展示太难的语法规则，只关注整个句子"怎么组织"的逻辑。`
+        }),
+        signal: abortControllerRef.current.signal
+      })
+
+      if (!response.ok) throw new Error(`API request failed: ${response.status}`)
+
+      const reader = response.body?.getReader()
+      if (!reader) throw new Error('No response body')
+
+      const decoder = new TextDecoder()
+      let accumulatedResponse = ''
+      let buffer = ''
+      
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6).trim()
+            
+            if (data === '[DONE]') break
+
+            try {
+              const parsed = JSON.parse(data)
+              const content = parsed.content
+              
+              if (content) {
+                accumulatedResponse += content
+                setGrammarAnalysis(accumulatedResponse)
+              }
+            } catch (e) {
+              continue
+            }
+          }
+        }
+      }
+
+      // Save to database
+      if (accumulatedResponse) {
+        try {
+          await fetch('/api/language-reading/save-phrase-analysis', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              articleId: articleId,
+              sentenceText: query.sentence_text,
+              analysis: accumulatedResponse,
+              startOffset: query.start_offset,
+              endOffset: query.end_offset,
+              language: language,
+              contentType: 'grammar_analysis'
+            })
+          })
+        } catch (saveError) {
+          console.error('Failed to save grammar analysis:', saveError)
+        }
+      }
+
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        setGrammarAnalysis('')
+      } else {
+        console.error('Grammar analysis failed:', error)
+        setGrammarAnalysis('分析失败，请重试')
+      }
+    } finally {
+      setIsLoadingGrammar(false)
+      abortControllerRef.current = null
+    }
+  }
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -418,13 +645,123 @@ export default function MobileFrenchSentenceCard({
             </div>
           </div>
         )
-      
-      default:
+
+      case 'phrases':
         return (
-          <div className="text-center py-4 text-gray-500 text-xs">
-            {activeTab} 功能开发中...
+          <div className="space-y-2">
+            <div className="flex justify-center">
+              <button
+                onClick={handleAnalyzePhrases}
+                disabled={isLoadingPhrases}
+                className="px-3 py-1.5 bg-purple-500 text-white text-xs rounded hover:bg-purple-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+              >
+                {isLoadingPhrases ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b border-white"></div>
+                    分析中...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    分析词组
+                  </>
+                )}
+              </button>
+            </div>
+
+            {phrasesAnalysis && (
+              <div className="bg-purple-50/50 p-2 rounded-lg border-l-2 border-purple-300 max-h-40 overflow-y-auto">
+                <div className="text-xs text-gray-700 leading-relaxed">
+                  <div className="formatted-response">
+                    {formatAIResponse(phrasesAnalysis)}
+                    {isLoadingPhrases && (
+                      <span className="inline-block w-1 h-3 bg-purple-500 ml-1 animate-pulse"></span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!phrasesAnalysis && !isLoadingPhrases && (
+              <div className="text-center py-4 text-gray-500 text-xs">
+                点击按钮分析句子中的词组搭配
+              </div>
+            )}
           </div>
         )
+
+      case 'grammar':
+        return (
+          <div className="space-y-2">
+            <div className="flex justify-center">
+              <button
+                onClick={handleAnalyzeGrammar}
+                disabled={isLoadingGrammar}
+                className="px-3 py-1.5 bg-purple-500 text-white text-xs rounded hover:bg-purple-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+              >
+                {isLoadingGrammar ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b border-white"></div>
+                    分析中...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    分析语法
+                  </>
+                )}
+              </button>
+            </div>
+
+            {grammarAnalysis && (
+              <div className="bg-purple-50/50 p-2 rounded-lg border-l-2 border-purple-300 max-h-40 overflow-y-auto">
+                <div className="text-xs text-gray-700 leading-relaxed">
+                  <div className="formatted-response">
+                    {formatAIResponse(grammarAnalysis)}
+                    {isLoadingGrammar && (
+                      <span className="inline-block w-1 h-3 bg-purple-500 ml-1 animate-pulse"></span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!grammarAnalysis && !isLoadingGrammar && (
+              <div className="text-center py-4 text-gray-500 text-xs">
+                点击按钮分析句子的语法结构
+              </div>
+            )}
+          </div>
+        )
+      
+      case 'test':
+        return (
+          <div className="space-y-2">
+            <div className="bg-orange-50/50 p-2 rounded-lg border-l-2 border-orange-300">
+              <h4 className="text-xs font-semibold text-orange-800 mb-1">练习测试</h4>
+              <div className="space-y-1">
+                <div className="text-xs text-gray-700 mb-1">
+                  根据这个句子生成练习题：
+                </div>
+                <div className="space-y-1">
+                  <button className="w-full text-left px-2 py-1 bg-white border border-orange-200 rounded hover:bg-orange-50 transition-colors text-xs">
+                    填空练习
+                  </button>
+                  <button className="w-full text-left px-2 py-1 bg-white border border-orange-200 rounded hover:bg-orange-50 transition-colors text-xs">
+                    翻译练习
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      
+      default:
+        return null
     }
   }
 
@@ -433,8 +770,8 @@ export default function MobileFrenchSentenceCard({
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b border-gray-100">
         <div className="flex items-center gap-2">
-          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-            句子
+          <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-semibold">
+            Phrase
           </span>
           <button
             onClick={() => setIsExpanded(!isExpanded)}
@@ -456,7 +793,7 @@ export default function MobileFrenchSentenceCard({
       </div>
       
       {/* Sentence Display */}
-      <div className="p-3 bg-gray-50/50 border-l-2 border-blue-300">
+      <div className="p-3 bg-gray-50/50 border-l-2 border-purple-300">
         <p className="text-xs text-gray-700 italic leading-relaxed">"{query.sentence_text}"</p>
         <p className="text-xs text-gray-500 mt-1">{query.translation}</p>
       </div>
@@ -473,11 +810,10 @@ export default function MobileFrenchSentenceCard({
                   onClick={() => setActiveTab(tab.id)}
                   className={`px-2 py-2 text-xs font-medium rounded-t-lg transition-colors duration-200 flex items-center gap-1 ${
                     activeTab === tab.id
-                      ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-500'
+                      ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-500'
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  <span className="text-xs">{tab.icon}</span>
                   <span>{tab.label}</span>
                 </button>
               ))}
