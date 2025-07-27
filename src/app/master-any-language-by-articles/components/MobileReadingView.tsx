@@ -6,6 +6,7 @@ import { Language, getUITexts } from '../config/uiText'
 import { playText } from '../utils/tts'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import MobileFrenchSentenceCard from './MobileFrenchSentenceCard'
 
 interface MobileReadingViewProps {
   language: Language
@@ -162,8 +163,9 @@ export default function MobileReadingView({ language, articleId, content, title 
   const [sentenceQueries, setSentenceQueries] = useState<SentenceQuery[]>([])
   const [aiNotes, setAiNotes] = useState<AINote[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isCreatingSentence, setIsCreatingSentence] = useState(false)
   
-  const { highlightedRanges } = useLanguageReadingStore()
+  const { highlightedRanges, addSentenceQuery, addHighlight } = useLanguageReadingStore()
   const uiTexts = getUITexts(language)
 
   // Fetch data when component mounts or articleId changes
@@ -220,7 +222,134 @@ export default function MobileReadingView({ language, articleId, content, title 
     }
   }
 
+  // French sentence splitting function (similar to desktop)
+  const splitIntoSentences = (text: string) => {
+    const sentences = text.split(/([.!?;:])/).filter(Boolean)
+    const result: { text: string; start: number; end: number }[] = []
+    let currentOffset = 0
+    
+    for (let i = 0; i < sentences.length; i += 2) {
+      const sentenceText = sentences[i]
+      const punctuation = sentences[i + 1] || ''
+      const fullSentence = sentenceText + punctuation
+      
+      if (sentenceText.trim()) {
+        result.push({
+          text: fullSentence,
+          start: currentOffset,
+          end: currentOffset + fullSentence.length
+        })
+      }
+      currentOffset += fullSentence.length
+    }
+    
+    return result
+  }
+
+  // Handle French sentence click for mobile
+  const handleFrenchSentenceClick = async (sentence: { text: string; start: number; end: number }) => {
+    if (isCreatingSentence) return
+    
+    // Check if this sentence already has a query
+    const existingQuery = sentenceQueries.find(q => 
+      q.start_offset <= sentence.start && q.end_offset >= sentence.end
+    )
+    
+    if (existingQuery) {
+      // Switch to sentences tab to show existing query
+      setActiveTab('sentences')
+      return
+    }
+    
+    setIsCreatingSentence(true)
+    
+    try {
+      const res = await fetch('/api/language-reading/query-sentence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          articleId,
+          sentenceText: sentence.text.trim(),
+          startOffset: sentence.start,
+          endOffset: sentence.end,
+          queryType: 'ai_query',
+          language: language
+        }),
+      })
+
+      const data = await res.json()
+      if (data.id) {
+        // Add to local state
+        setSentenceQueries(prev => [...prev, data])
+        
+        // Add to global store
+        addSentenceQuery(data)
+        addHighlight('sentence', sentence.start, sentence.end, data.id)
+        
+        // Switch to sentences tab to show the new query
+        setActiveTab('sentences')
+      }
+    } catch (error) {
+      console.error('Failed to create sentence query:', error)
+    } finally {
+      setIsCreatingSentence(false)
+    }
+  }
+
   const renderHighlightedText = () => {
+    // For French, render with sentence-level interaction (similar to desktop)
+    if (language === 'french') {
+      return content.split('\n').map((paragraph, paragraphIndex) => {
+        if (!paragraph.trim()) {
+          return <br key={paragraphIndex} />
+        }
+        
+        const sentences = splitIntoSentences(paragraph)
+        
+        // Calculate the offset of this paragraph in the entire content
+        const precedingParagraphs = content.split('\n').slice(0, paragraphIndex)
+        const paragraphStartOffset = precedingParagraphs.reduce((acc, p) => acc + p.length + 1, 0)
+        
+        return (
+          <p key={paragraphIndex} className="mb-3 leading-relaxed text-sm">
+            {sentences.map((sentence, sentenceIndex) => {
+              const globalStart = paragraphStartOffset + sentence.start
+              const globalEnd = paragraphStartOffset + sentence.end
+              
+              // Check if this sentence has any highlights
+              const hasHighlight = highlightedRanges.some(range => 
+                range.start <= globalStart && range.end >= globalEnd
+              )
+              
+              // Check if creating sentence
+              const isCreating = isCreatingSentence
+              
+              const className = hasHighlight
+                ? 'cursor-pointer bg-blue-50 rounded px-1 py-0.5 border border-blue-200'
+                : isCreating
+                ? 'cursor-wait opacity-50'
+                : 'cursor-pointer hover:bg-gray-50 transition-colors duration-200 rounded px-1 py-0.5'
+              
+              return (
+                <span
+                  key={sentenceIndex}
+                  className={className}
+                  onClick={() => handleFrenchSentenceClick({
+                    text: sentence.text,
+                    start: globalStart,
+                    end: globalEnd
+                  })}
+                >
+                  {sentence.text}
+                </span>
+              )
+            })}
+          </p>
+        )
+      })
+    }
+
+    // Original logic for other languages with highlighting
     if (highlightedRanges.length === 0) {
       return content.split('\n').map((paragraph, index) => (
         paragraph.trim() ? (
@@ -452,41 +581,55 @@ export default function MobileReadingView({ language, articleId, content, title 
                 {sentenceQueries.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <div className="text-4xl mb-2">💬</div>
-                    <p className="text-sm">No sentence queries yet</p>
+                    <p className="text-sm">
+                      {language === 'french' ? '点击文章中的句子开始学习' : 'No sentence queries yet'}
+                    </p>
                   </div>
                 ) : (
                   sentenceQueries.map((query) => (
-                    <div key={query.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <p className="text-sm text-gray-700 italic leading-relaxed border-l-4 border-blue-300 pl-3">
-                            "{query.sentence_text}"
+                    language === 'french' ? (
+                      <MobileFrenchSentenceCard
+                        key={query.id}
+                        query={query}
+                        language={language}
+                        articleId={articleId}
+                        onDelete={(id) => {
+                          setSentenceQueries(prev => prev.filter(q => q.id !== id))
+                        }}
+                      />
+                    ) : (
+                      <div key={query.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <p className="text-sm text-gray-700 italic leading-relaxed border-l-4 border-blue-300 pl-3">
+                              "{query.sentence_text}"
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => handleSpeak(query.sentence_text)}
+                            className="p-2 text-purple-400 hover:text-purple-600 hover:bg-purple-50 rounded-full transition-all duration-200 flex-shrink-0"
+                            title="Play sentence"
+                          >
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.817L4.343 13.5H2a1 1 0 01-1-1v-5a1 1 0 011-1h2.343l4.04-3.317a1 1 0 01.997-.106zM15.657 6.343a1 1 0 011.414 0A9.972 9.972 0 0119 12a9.972 9.972 0 01-1.929 5.657 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 12a7.971 7.971 0 00-1.343-4.243 1 1 0 010-1.414z" clipRule="evenodd" />
+                              <path fillRule="evenodd" d="M13.243 8.757a1 1 0 011.414 0A5.98 5.98 0 0116 12a5.98 5.98 0 01-1.343 3.243 1 1 0 01-1.414-1.414A3.99 3.99 0 0014 12a3.99 3.99 0 00-.757-2.329 1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </div>
+                        
+                        <div className="bg-blue-50/50 p-3 rounded-lg mb-3">
+                          <p className="text-sm text-blue-900 leading-relaxed font-medium whitespace-pre-wrap">
+                            {query.translation}
                           </p>
                         </div>
-                        <button
-                          onClick={() => handleSpeak(query.sentence_text)}
-                          className="p-2 text-purple-400 hover:text-purple-600 hover:bg-purple-50 rounded-full transition-all duration-200 flex-shrink-0"
-                          title="Play sentence"
-                        >
-                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.817L4.343 13.5H2a1 1 0 01-1-1v-5a1 1 0 011-1h2.343l4.04-3.317a1 1 0 01.997-.106zM15.657 6.343a1 1 0 011.414 0A9.972 9.972 0 0119 12a9.972 9.972 0 01-1.929 5.657 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 12a7.971 7.971 0 00-1.343-4.243 1 1 0 010-1.414z" clipRule="evenodd" />
-                            <path fillRule="evenodd" d="M13.243 8.757a1 1 0 011.414 0A5.98 5.98 0 0116 12a5.98 5.98 0 01-1.343 3.243 1 1 0 01-1.414-1.414A3.99 3.99 0 0014 12a3.99 3.99 0 00-.757-2.329 1 1 0 010-1.414z" clipRule="evenodd" />
-                          </svg>
-                        </button>
+                        
+                        <div className="bg-gray-50/30 p-3 rounded-lg">
+                          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                            {query.analysis}
+                          </p>
+                        </div>
                       </div>
-                      
-                      <div className="bg-blue-50/50 p-3 rounded-lg mb-3">
-                        <p className="text-sm text-blue-900 leading-relaxed font-medium whitespace-pre-wrap">
-                          {query.translation}
-                        </p>
-                      </div>
-                      
-                      <div className="bg-gray-50/30 p-3 rounded-lg">
-                        <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                          {query.analysis}
-                        </p>
-                      </div>
-                    </div>
+                    )
                   ))
                 )}
               </div>
