@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
+import PhotoUpload from './PhotoUpload'
 
 interface TaskRecord {
   id: string
@@ -280,7 +281,7 @@ export default function TaskCharts({ tasks, planOptions }: TaskChartsProps) {
         <TaskPlanChart tasks={tasks} planOptions={planOptions} />
       </div>
       <div className="bg-white p-4 rounded-lg border border-purple-200">
-        <TaskQuadrantChart tasks={tasks} />
+        <PhotoUpload />
       </div>
     </div>
   )

@@ -1015,8 +1015,17 @@ export default function StrategyPanel() {
                               {/* Plan Information - 移动端简化 */}
                               <div className="mb-2">
                                 <div className="flex items-center justify-between mb-1">
-                                  <span className="text-xs font-semibold text-purple-900 truncate flex-1">
+                                  <span 
+                                    className="text-xs font-semibold text-purple-900 truncate flex-1 cursor-pointer hover:text-purple-600 hover:underline transition-colors flex items-center gap-1"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      const notionPageUrl = `https://www.notion.so/${plan.id.replace(/-/g, '')}`
+                                      window.open(notionPageUrl, '_blank')
+                                    }}
+                                    title="Click to edit in Notion"
+                                  >
                                     {plan.objective || 'Untitled Plan'}
+                                    <span className="text-xs text-gray-400">🔗</span>
                                   </span>
                                   <div className="flex items-center gap-1 ml-2">
                                     {plan.status && (
@@ -1066,8 +1075,17 @@ export default function StrategyPanel() {
                                   {planTasks.map((task) => (
                                     <div key={task.id} className="bg-white rounded border border-purple-100 p-1.5">
                                       <div className="flex items-center justify-between mb-0.5">
-                                        <span className="text-xs font-medium text-purple-900 truncate flex-1">
+                                        <span 
+                                          className="text-xs font-medium text-purple-900 truncate flex-1 cursor-pointer hover:text-purple-600 hover:underline transition-colors flex items-center gap-1"
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            const notionPageUrl = `https://www.notion.so/${task.id.replace(/-/g, '')}`
+                                            window.open(notionPageUrl, '_blank')
+                                          }}
+                                          title="Click to edit in Notion"
+                                        >
                                           {task.title || 'Untitled Task'}
+                                          <span className="text-xs text-gray-400">🔗</span>
                                         </span>
                                         <div className="flex items-center gap-1 ml-1">
                                           {task.status && (
@@ -1126,8 +1144,17 @@ export default function StrategyPanel() {
                             {/* Plan Information */}
                             <div className="mb-3">
                               <div className="flex items-center justify-between mb-2">
-                                <h4 className="text-sm font-semibold text-purple-900 truncate flex-1">
+                                <h4 
+                                  className="text-sm font-semibold text-purple-900 truncate flex-1 cursor-pointer hover:text-purple-600 hover:underline transition-colors flex items-center gap-1"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    const notionPageUrl = `https://www.notion.so/${plan.id.replace(/-/g, '')}`
+                                    window.open(notionPageUrl, '_blank')
+                                  }}
+                                  title="Click to edit in Notion"
+                                >
                                   {plan.objective || 'Untitled Plan'}
+                                  <span className="text-xs text-gray-400">🔗</span>
                                 </h4>
                                 <div className="flex items-center gap-2 ml-2">
                                   {plan.status && (
@@ -1182,8 +1209,17 @@ export default function StrategyPanel() {
                                 {planTasks.map((task) => (
                                   <div key={task.id} className="bg-white rounded border border-purple-100 p-2">
                                     <div className="flex items-center justify-between mb-1">
-                                      <span className="text-xs font-medium text-purple-900 truncate flex-1">
+                                      <span 
+                                        className="text-xs font-medium text-purple-900 truncate flex-1 cursor-pointer hover:text-purple-600 hover:underline transition-colors flex items-center gap-1"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          const notionPageUrl = `https://www.notion.so/${task.id.replace(/-/g, '')}`
+                                          window.open(notionPageUrl, '_blank')
+                                        }}
+                                        title="Click to edit in Notion"
+                                      >
                                         {task.title || 'Untitled Task'}
+                                        <span className="text-xs text-gray-400">🔗</span>
                                       </span>
                                       <div className="flex items-center gap-1 ml-2">
                                         {task.status && (

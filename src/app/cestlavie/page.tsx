@@ -1,6 +1,25 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+
+interface TaskRecord {
+  id: string
+  title: string
+  status: string
+  start_date: string
+  end_date: string
+  all_day: boolean
+  plan: string[]
+  priority_quadrant: string
+  note: string
+  actual_start?: string
+  actual_end?: string
+  budget_time: number
+  actual_time: number
+  quality_rating?: number
+  next?: string
+  is_plan_critical?: boolean
+}
 import { useRouter } from 'next/navigation'
 import { useSimplifiedAuth } from '@/hooks/useSimplifiedAuth'
 import Sidebar from './components/Sidebar'
@@ -11,6 +30,7 @@ export default function CestLaViePage() {
   const [activeTab, setActiveTab] = useState('life')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [showConfigModal, setShowConfigModal] = useState(false)
+  const [tasks, setTasks] = useState<TaskRecord[]>([])
   const { user, loading, notionConfig } = useSimplifiedAuth()
   const router = useRouter()
 
@@ -104,12 +124,17 @@ export default function CestLaViePage() {
           mobileMenuOpen={mobileMenuOpen}
           setMobileMenuOpen={setMobileMenuOpen}
           onConfigClick={() => setShowConfigModal(true)}
+          tasks={tasks}
         />
         
-        {/* 主内容区域 */}
-        <div className="flex-1 overflow-hidden md:overflow-auto">
+        {/* 主内容区域 - 为固定侧边栏留出空间 */}
+        <div className="flex-1 overflow-hidden md:overflow-auto md:ml-64">
           <div className="h-full overflow-y-auto md:overflow-visible main-content-scroll">
-            <MainContent activeMainTab={activeTab} onConfigClick={() => setShowConfigModal(true)} />
+            <MainContent 
+              activeMainTab={activeTab} 
+              onConfigClick={() => setShowConfigModal(true)}
+              onTasksUpdate={setTasks}
+            />
           </div>
         </div>
       </div>

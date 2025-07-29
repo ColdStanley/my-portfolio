@@ -52,7 +52,30 @@ const hasTimeConflicts = (task: any, allTasks: any[]): boolean => {
   return conflicts.length > 0
 }
 
-export default function TaskPanelOptimized() {
+interface TaskRecord {
+  id: string
+  title: string
+  status: string
+  start_date: string
+  end_date: string
+  all_day: boolean
+  plan: string[]
+  priority_quadrant: string
+  note: string
+  actual_start?: string
+  actual_end?: string
+  budget_time: number
+  actual_time: number
+  quality_rating?: number
+  next?: string
+  is_plan_critical?: boolean
+}
+
+interface TaskPanelOptimizedProps {
+  onTasksUpdate?: (tasks: TaskRecord[]) => void
+}
+
+export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimizedProps) {
   const [state, actions] = useTaskReducer()
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null)
   
@@ -230,6 +253,11 @@ export default function TaskPanelOptimized() {
         actions.setPlanOptions(planOptions)
         actions.setStrategyOptions(strategyOptions)
         
+        // Update parent component with tasks data
+        if (onTasksUpdate) {
+          onTasksUpdate(tasks)
+        }
+        
         // Show warning if some data is missing but don't block the UI
         const failedRequests = [tasksRes, schemaRes, planRes, strategyRes].filter(res => res.status === 'rejected').length
         if (failedRequests > 0) {
@@ -248,6 +276,11 @@ export default function TaskPanelOptimized() {
         actions.setPriorityOptions(['Important & Urgent', 'Important & Not Urgent', 'Not Important & Urgent', 'Not Important & Not Urgent'])
         actions.setTasks([])
         actions.setPlanOptions([])
+        
+        // Update parent component with empty tasks
+        if (onTasksUpdate) {
+          onTasksUpdate([])
+        }
         
       } finally {
         actions.setLoading(false)
@@ -470,6 +503,11 @@ export default function TaskPanelOptimized() {
           .then(result => {
             const tasks = result.data || []
             actions.setTasks(tasks)
+            
+            // Update parent component with refreshed tasks
+            if (onTasksUpdate) {
+              onTasksUpdate(tasks)
+            }
           })
           .catch(err => console.warn('Background refresh failed:', err))
       }, 500)
@@ -517,6 +555,11 @@ export default function TaskPanelOptimized() {
       const result = await response.json()
       const tasks = result.data || []
       actions.setTasks(tasks)
+      
+      // Update parent component with refreshed tasks
+      if (onTasksUpdate) {
+        onTasksUpdate(tasks)
+      }
       
     } catch (error) {
       console.error('Error refreshing tasks:', error)

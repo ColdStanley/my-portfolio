@@ -1268,10 +1268,19 @@ export default function PlanPanel() {
                             <span className="text-xs text-purple-600 flex-shrink-0 font-medium">
                               {formatTaskTime(task.start_date, task.end_date)}
                             </span>
-                            <span className={`text-sm ml-2 truncate text-purple-900 ${
-                              task.is_plan_critical ? 'font-semibold' : 'font-medium'
-                            }`}>
+                            <span 
+                              className={`text-sm ml-2 truncate text-purple-900 cursor-pointer hover:text-purple-600 hover:underline transition-colors flex items-center gap-1 ${
+                                task.is_plan_critical ? 'font-semibold' : 'font-medium'
+                              }`}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                const notionPageUrl = `https://www.notion.so/${task.id.replace(/-/g, '')}`
+                                window.open(notionPageUrl, '_blank')
+                              }}
+                              title="Click to edit in Notion"
+                            >
                               {task.title || 'Untitled Task'}
+                              <span className="text-xs text-gray-400">🔗</span>
                             </span>
                           </div>
                           {/* 第二行：status + budget_time */}
@@ -1438,10 +1447,19 @@ export default function PlanPanel() {
                             <span className="text-xs text-purple-600 flex-shrink-0 font-medium">
                               {formatTaskTime(task.start_date, task.end_date)}
                             </span>
-                            <span className={`text-xs ml-2 truncate text-purple-900 ${
-                              task.is_plan_critical ? 'font-semibold' : 'font-medium'
-                            }`}>
+                            <span 
+                              className={`text-xs ml-2 truncate text-purple-900 cursor-pointer hover:text-purple-600 hover:underline transition-colors flex items-center gap-1 ${
+                                task.is_plan_critical ? 'font-semibold' : 'font-medium'
+                              }`}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                const notionPageUrl = `https://www.notion.so/${task.id.replace(/-/g, '')}`
+                                window.open(notionPageUrl, '_blank')
+                              }}
+                              title="Click to edit in Notion"
+                            >
                               {task.title || 'Untitled Task'}
+                              <span className="text-xs text-gray-400">🔗</span>
                             </span>
                           </div>
                           {/* 第二行：status + budget_time */}

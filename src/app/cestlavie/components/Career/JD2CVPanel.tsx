@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import PromptManager, { PromptData } from '@/components/PromptManager'
 
 
 interface JDData {
@@ -22,6 +23,11 @@ interface JDData {
   your_experience_3: string
   your_experience_4: string
   your_experience_5: string
+  application_stage: string
+  comment: string
+  role_group: string
+  firm_type: string
+  cv_pdf: string
 }
 
 export default function JD2CVPanel() {
@@ -43,7 +49,12 @@ export default function JD2CVPanel() {
     your_experience_2: '',
     your_experience_3: '',
     your_experience_4: '',
-    your_experience_5: ''
+    your_experience_5: '',
+    application_stage: '',
+    comment: '',
+    role_group: '',
+    firm_type: '',
+    cv_pdf: ''
   })
   
   const [isGenerating, setIsGenerating] = useState(false)
@@ -76,6 +87,43 @@ export default function JD2CVPanel() {
   const [capabilitiesGenerated, setCapabilitiesGenerated] = useState(false)
   const [isUpdatingKeySentences, setIsUpdatingKeySentences] = useState(false)
   
+  // Application stage state
+  const [isSavingApplicationStage, setIsSavingApplicationStage] = useState(false)
+  
+  // Role group state
+  const [isSavingRoleGroup, setIsSavingRoleGroup] = useState(false)
+  
+  // Firm type state
+  const [isSavingFirmType, setIsSavingFirmType] = useState(false)
+  
+  // Comment state
+  const [commentSaveTimeout, setCommentSaveTimeout] = useState<NodeJS.Timeout | null>(null)
+  
+  // Application stage options
+  const applicationStageOptions = [
+    'Capability Extraction',
+    'Raw Experience',
+    'Customized Experience',
+    'CV Polish',
+    'Submitted'
+  ]
+  
+  // Role group options
+  const roleGroupOptions = [
+    'Solution',
+    'TAM',
+    'Customer Success',
+    'BD',
+    'Sales'
+  ]
+  
+  // Firm type options
+  const firmTypeOptions = [
+    'Startup',
+    'Mature',
+    'Bigwig'
+  ]
+  
   // Tab state for capability sections
   const [activeCapabilityTab, setActiveCapabilityTab] = useState(0)
   
@@ -91,6 +139,133 @@ export default function JD2CVPanel() {
   // Tab state for each aligned experience's sub-tabs (Original/Highlight)
   const [activeAlignedExperienceSubTabs, setActiveAlignedExperienceSubTabs] = useState<number[]>([0, 0, 0, 0, 0]) // 0: Original, 1: Highlight for each aligned experience
   
+  // JD2CV specific prompts configuration
+  const [jd2cvPrompts, setJd2cvPrompts] = useState<PromptData>({
+    key_sentences_btn: {
+      name: 'Key Sentences Button',
+      location: 'JD Input → Highlight Tab',
+      model: 'gpt-4',
+      count: 5,
+      prompt: `You are an expert at analyzing job descriptions and identifying the most critical requirements.
+
+Analyze the following job description and extract the {count} most important sentences that define the core responsibilities, requirements, and expectations for this role.
+
+Focus on:
+- Key technical skills and qualifications
+- Primary job responsibilities  
+- Important experience requirements
+- Critical soft skills or attributes
+
+Job Description:
+{job_description}
+
+Return exactly {count} sentences as a JSON array of strings, with each sentence being a direct quote from the original text.`
+    },
+    generate_capabilities_btn: {
+      name: 'Generate Button',
+      location: 'Role Expectations Analysis',
+      model: 'gpt-4',
+      count: 3,
+      prompt: `You are an expert career consultant who specializes in breaking down job requirements into specific capability areas.
+
+Based on the following key sentences from a job description, generate {count} distinct role expectation categories that cover the main areas of capability required for this position.
+
+For each capability area, provide:
+1. A clear, specific description of what's expected
+2. Focus on actionable requirements rather than generic statements
+3. Ensure each area is distinct and non-overlapping
+
+Key sentences:
+{key_sentences}
+
+Return {count} capability descriptions as a JSON array of strings.`
+    },
+    capability_keywords_btn: {
+      name: 'Key Words Button',
+      location: 'Role Expectation → Highlight Tab',
+      model: 'gpt-4',
+      count: 3,
+      prompt: `You are an expert at identifying key terms and phrases that are important for applicant tracking systems (ATS) and hiring managers.
+
+Analyze the following capability text and extract the {count} most important keywords or key phrases that would be valuable for job matching and resume optimization.
+
+Focus on:
+- Technical skills and tools
+- Industry-specific terminology
+- Action words and competencies
+- Measurable qualifications
+
+Capability text:
+{text}
+
+Return exactly {count} keywords/phrases as a JSON array of strings.`
+    },
+    generate_aligned_experience_btn: {
+      name: 'Generate Aligned Experience Button',
+      location: 'Role Expectation → Experience Customization',
+      model: 'gpt-4',
+      count: 1,
+      prompt: `You are a professional resume writer who excels at aligning candidate experience with job requirements.
+
+Given the role expectation below and the candidate's experience, rewrite the experience to directly demonstrate how it meets the job requirement.
+
+Role Expectation:
+{role_expectation}
+
+Candidate Experience:
+{user_experience}
+
+Rewrite the experience to:
+1. Use similar terminology and keywords from the role expectation
+2. Highlight relevant achievements and responsibilities
+3. Quantify results where possible
+4. Show direct alignment with the requirement
+5. Maintain truthfulness while optimizing presentation
+
+Return the rewritten experience as a single string.`
+    },
+    experience_keywords_btn: {
+      name: 'Key Words Button',
+      location: 'Your Experience → Highlight Tab',
+      model: 'gpt-4',
+      count: 3,
+      prompt: `You are an expert at identifying key terms and phrases that are important for applicant tracking systems (ATS) and hiring managers.
+
+Analyze the following experience text and extract the {count} most important keywords or key phrases that would be valuable for job matching and resume optimization.
+
+Focus on:
+- Technical skills and tools
+- Industry-specific terminology
+- Action words and competencies
+- Measurable qualifications
+
+Experience text:
+{text}
+
+Return exactly {count} keywords/phrases as a JSON array of strings.`
+    },
+    aligned_experience_keywords_btn: {
+      name: 'Key Words Button',
+      location: 'Aligned Experience → Highlight Tab',
+      model: 'gpt-4',
+      count: 3,
+      prompt: `You are an expert at identifying key terms and phrases that are important for applicant tracking systems (ATS) and hiring managers.
+
+Analyze the following aligned experience text and extract the {count} most important keywords or key phrases that would be valuable for job matching and resume optimization.
+
+Focus on:
+- Technical skills and tools
+- Industry-specific terminology
+- Action words and competencies
+- Measurable qualifications
+
+Aligned experience text:
+{text}
+
+Return exactly {count} keywords/phrases as a JSON array of strings.`
+    }
+  })
+
   // Tooltip states for highlight editing
   const [deleteTooltip, setDeleteTooltip] = useState<{
     show: boolean
@@ -314,6 +489,15 @@ export default function JD2CVPanel() {
     // Scroll to top when component mounts
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
+
+  // Cleanup comment timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (commentSaveTimeout) {
+        clearTimeout(commentSaveTimeout)
+      }
+    }
+  }, [commentSaveTimeout])
 
   // Load keywords when title and company are available
   useEffect(() => {
@@ -970,7 +1154,12 @@ export default function JD2CVPanel() {
             your_experience_2: data.record.your_experience_2 || '',
             your_experience_3: data.record.your_experience_3 || '',
             your_experience_4: data.record.your_experience_4 || '',
-            your_experience_5: data.record.your_experience_5 || ''
+            your_experience_5: data.record.your_experience_5 || '',
+            application_stage: data.record.application_stage || '',
+            comment: data.record.comment || '',
+            role_group: data.record.role_group || '',
+            firm_type: data.record.firm_type || '',
+            cv_pdf: data.record.cv_pdf || ''
           })
           
           // Update experience inputs array
@@ -1131,6 +1320,129 @@ export default function JD2CVPanel() {
       console.error('Error saving match score:', error)
     } finally {
       setIsSavingMatchScore(false)
+    }
+  }
+
+  // Handle application stage save
+  const handleApplicationStageSave = async (stage: string) => {
+    if (!currentPageId || stage === jdData.application_stage) return
+    
+    setIsSavingApplicationStage(true)
+    try {
+      const response = await fetch('/api/jd2cv/save-application-stage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pageId: currentPageId,
+          applicationStage: stage
+        })
+      })
+      
+      if (response.ok) {
+        setJdData(prev => ({ ...prev, application_stage: stage }))
+      }
+    } catch (error) {
+      console.error('Failed to save application stage:', error)
+    } finally {
+      setIsSavingApplicationStage(false)
+    }
+  }
+
+  // Handle role group save
+  const handleRoleGroupSave = async (roleGroup: string) => {
+    if (!currentPageId || roleGroup === jdData.role_group) return
+    
+    setIsSavingRoleGroup(true)
+    try {
+      const response = await fetch('/api/jd2cv/save-role-group', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pageId: currentPageId,
+          roleGroup: roleGroup
+        })
+      })
+      
+      if (response.ok) {
+        setJdData(prev => ({ ...prev, role_group: roleGroup }))
+      }
+    } catch (error) {
+      console.error('Failed to save role group:', error)
+    } finally {
+      setIsSavingRoleGroup(false)
+    }
+  }
+
+  // Handle firm type save
+  const handleFirmTypeSave = async (firmType: string) => {
+    if (!currentPageId || firmType === jdData.firm_type) return
+    
+    setIsSavingFirmType(true)
+    try {
+      const response = await fetch('/api/jd2cv/save-firm-type', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pageId: currentPageId,
+          firmType: firmType
+        })
+      })
+      
+      if (response.ok) {
+        setJdData(prev => ({ ...prev, firm_type: firmType }))
+      }
+    } catch (error) {
+      console.error('Failed to save firm type:', error)
+    } finally {
+      setIsSavingFirmType(false)
+    }
+  }
+
+  // Handle comment save with debounce
+  const handleCommentSave = async (comment: string) => {
+    if (!currentPageId) return
+    
+    try {
+      const response = await fetch('/api/jd2cv/save-comment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pageId: currentPageId,
+          comment: comment
+        })
+      })
+      
+      if (response.ok) {
+        setJdData(prev => ({ ...prev, comment: comment }))
+      }
+    } catch (error) {
+      console.error('Failed to save comment:', error)
+    }
+  }
+
+  // Handle comment input with debounce
+  const handleCommentInput = (value: string) => {
+    setJdData(prev => ({ ...prev, comment: value }))
+    
+    if (commentSaveTimeout) {
+      clearTimeout(commentSaveTimeout)
+    }
+    
+    const timeout = setTimeout(() => {
+      handleCommentSave(value)
+    }, 500)
+    
+    setCommentSaveTimeout(timeout)
+  }
+
+  // Handle comment enter key
+  const handleCommentEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      if (commentSaveTimeout) {
+        clearTimeout(commentSaveTimeout)
+        setCommentSaveTimeout(null)
+      }
+      handleCommentSave(jdData.comment)
     }
   }
 
@@ -2104,14 +2416,52 @@ export default function JD2CVPanel() {
         </div>
         
         <div className="space-y-6 mb-8">
-          {/* Labels Row */}
-          <div className="grid grid-cols-2 gap-6">
-            <div className="flex items-center justify-between">
-              <label className="block text-sm font-medium text-gray-700">
-                Title <span className="text-red-500">*</span>
-              </label>
-              {currentPageId && (
-                <div className="flex items-center gap-2">
+          {/* Title and Company Input with Operations */}
+          <div className="flex items-start justify-between gap-6">
+            {/* Left: Input Area */}
+            <div className="w-1/2 space-y-4">
+              {/* Title Row */}
+              <div className="flex items-center gap-4">
+                <label className="text-sm font-medium text-gray-700 w-20 flex-shrink-0">
+                  Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={jdData.title}
+                  onChange={(e) => {
+                    setJdData(prev => ({ ...prev, title: e.target.value }))
+                    if (jdSaved) setJdSaved(false)
+                    if (jdSaveError) setJdSaveError(false)
+                  }}
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Senior Software Engineer"
+                />
+              </div>
+              
+              {/* Company Row */}
+              <div className="flex items-center gap-4">
+                <label className="text-sm font-medium text-gray-700 w-20 flex-shrink-0">
+                  Company <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={jdData.company}
+                  onChange={(e) => {
+                    setJdData(prev => ({ ...prev, company: e.target.value }))
+                    if (jdSaved) setJdSaved(false)
+                    if (jdSaveError) setJdSaveError(false)
+                  }}
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Google"
+                />
+              </div>
+            </div>
+            
+            {/* Right: Operations Area */}
+            {currentPageId && (
+              <div className="w-1/2 space-y-2">
+                {/* First Row: Stars, PDF, Delete, Notion (Right Aligned) */}
+                <div className="flex items-center justify-end gap-2">
                   {/* Match Score Stars */}
                   <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map((star) => (
@@ -2137,11 +2487,25 @@ export default function JD2CVPanel() {
                     )}
                   </div>
                   
+                  {/* PDF Button */}
+                  {jdData.cv_pdf && (
+                    <button
+                      onClick={() => window.open(jdData.cv_pdf, '_blank')}
+                      className="w-20 text-purple-600 hover:text-purple-700 text-sm font-medium flex items-center justify-center gap-1 px-2 py-1 rounded-md border border-purple-200 bg-white shadow-sm hover:shadow-md transition-shadow"
+                      title="Open CV PDF"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      PDF
+                    </button>
+                  )}
+                  
                   <div className="relative">
                     <button
                       onClick={() => setDeleteTooltipShow(true)}
                       disabled={isDeleting}
-                      className="text-purple-600 hover:text-purple-700 text-sm font-medium flex items-center gap-1 px-2 py-1 rounded-md border border-purple-200 bg-white shadow-sm hover:shadow-md transition-shadow disabled:opacity-50"
+                      className="w-20 text-purple-600 hover:text-purple-700 text-sm font-medium flex items-center justify-center gap-1 px-2 py-1 rounded-md border border-purple-200 bg-white shadow-sm hover:shadow-md transition-shadow disabled:opacity-50"
                       title="Delete page"
                     >
                       {isDeleting ? (
@@ -2182,8 +2546,13 @@ export default function JD2CVPanel() {
                   </div>
                   
                   <button
-                    onClick={() => window.open(`https://www.notion.so/${currentPageId.replace(/-/g, '')}`, '_blank')}
-                    className="text-purple-600 hover:text-purple-700 text-sm font-medium flex items-center gap-1 px-2 py-1 rounded-md border border-purple-200 bg-white shadow-sm hover:shadow-md transition-shadow"
+                    onClick={() => {
+                      console.log('Current Page ID:', currentPageId)
+                      const notionUrl = `https://www.notion.so/${currentPageId.replace(/-/g, '')}`
+                      console.log('Opening Notion URL:', notionUrl)
+                      window.open(notionUrl, '_blank')
+                    }}
+                    className="w-20 text-purple-600 hover:text-purple-700 text-sm font-medium flex items-center justify-center gap-1 px-2 py-1 rounded-md border border-purple-200 bg-white shadow-sm hover:shadow-md transition-shadow"
                     title="Open in Notion"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2192,39 +2561,72 @@ export default function JD2CVPanel() {
                     Notion
                   </button>
                 </div>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Company <span className="text-red-500">*</span>
-              </label>
-            </div>
-          </div>
-          
-          {/* Input Fields Row */}
-          <div className="grid grid-cols-2 gap-6">
-            <input
-              type="text"
-              value={jdData.title}
-              onChange={(e) => {
-                setJdData(prev => ({ ...prev, title: e.target.value }))
-                if (jdSaved) setJdSaved(false)
-                if (jdSaveError) setJdSaveError(false)
-              }}
-              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              placeholder="Senior Software Engineer"
-            />
-            <input
-              type="text"
-              value={jdData.company}
-              onChange={(e) => {
-                setJdData(prev => ({ ...prev, company: e.target.value }))
-                if (jdSaved) setJdSaved(false)
-                if (jdSaveError) setJdSaveError(false)
-              }}
-              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              placeholder="Google"
-            />
+                
+                {/* Second Row: Dropdowns (Right Aligned, Equal Width) */}
+                <div className="flex items-center justify-end gap-2">
+                  {/* Application Stage Dropdown */}
+                  <select
+                    value={jdData.application_stage}
+                    onChange={(e) => handleApplicationStageSave(e.target.value)}
+                    disabled={isSavingApplicationStage}
+                    className="w-24 text-xs px-2 py-1 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white shadow-sm hover:shadow-md transition-shadow disabled:opacity-50"
+                    title="Application Stage"
+                  >
+                    <option value="">Stage</option>
+                    {applicationStageOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  {/* Role Group Dropdown */}
+                  <select
+                    value={jdData.role_group}
+                    onChange={(e) => handleRoleGroupSave(e.target.value)}
+                    disabled={isSavingRoleGroup}
+                    className="w-24 text-xs px-2 py-1 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white shadow-sm hover:shadow-md transition-shadow disabled:opacity-50"
+                    title="Role Group"
+                  >
+                    <option value="">Role</option>
+                    {roleGroupOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  {/* Firm Type Dropdown */}
+                  <select
+                    value={jdData.firm_type}
+                    onChange={(e) => handleFirmTypeSave(e.target.value)}
+                    disabled={isSavingFirmType}
+                    className="w-24 text-xs px-2 py-1 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white shadow-sm hover:shadow-md transition-shadow disabled:opacity-50"
+                    title="Firm Type"
+                  >
+                    <option value="">Firm</option>
+                    {firmTypeOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                {/* Third Row: Comment Input */}
+                <div className="flex items-center">
+                  <input
+                    type="text"
+                    value={jdData.comment}
+                    onChange={(e) => handleCommentInput(e.target.value)}
+                    onKeyDown={handleCommentEnter}
+                    placeholder="Add comment..."
+                    className="w-full text-sm px-3 py-1 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white shadow-sm hover:shadow-md transition-shadow"
+                    title="Press Enter to save immediately"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -2364,7 +2766,7 @@ export default function JD2CVPanel() {
       <div className="bg-white rounded-lg shadow-lg p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
               </svg>
@@ -2377,7 +2779,7 @@ export default function JD2CVPanel() {
           </div>
         </div>
         
-        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-4 border border-purple-100">
+        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
           <p className="text-sm text-gray-600 mb-4">
             Generate role expectations based on key sentences from the job description. This analysis bridges the job requirements with specific capability areas.
           </p>
@@ -2403,26 +2805,9 @@ export default function JD2CVPanel() {
             <button
               onClick={handleGenerateCapabilities}
               disabled={isGenerating || keySentences.length === 0}
-              className="px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md text-sm flex items-center gap-2"
+              className="w-24 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50 text-sm"
             >
-              {isGenerating ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Analyzing...
-                </>
-              ) : generateError ? (
-                'Retry Analysis'
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                  Generate Role Expectations
-                </>
-              )}
+              Generate
             </button>
           </div>
         </div>
@@ -2487,13 +2872,7 @@ export default function JD2CVPanel() {
                 aria-labelledby={`capability-tab-${num}`}
                 className="mt-0"
               >
-                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-b-xl rounded-tr-xl p-4 sm:p-6 space-y-4 sm:space-y-6 shadow-lg shadow-purple-100/50">
-                  <div className="flex items-center justify-between">
-                    <h5 className="text-base sm:text-lg font-semibold text-gray-800">Role Expectation {num}</h5>
-                    <span className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full border">
-                      {num}/5
-                    </span>
-                  </div>
+                <div className="bg-white rounded-lg p-4 sm:p-6 space-y-4 sm:space-y-6">
                   
                   {/* Capability Content - Secondary Tab System */}
                   <div className="space-y-4">
@@ -2514,8 +2893,8 @@ export default function JD2CVPanel() {
                               }}
                               className={`flex-shrink-0 px-3 py-1.5 rounded-t-md border-l border-r border-t font-medium text-xs transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-purple-400 ${
                                 isSubActive 
-                                  ? 'bg-indigo-500 text-white shadow-sm border-indigo-500 relative z-10' 
-                                  : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200'
+                                  ? 'bg-purple-600 text-white shadow-sm border-purple-600 relative z-10' 
+                                  : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200'
                               }`}
                             >
                               <span className="whitespace-nowrap">{tabName}</span>
@@ -2526,7 +2905,7 @@ export default function JD2CVPanel() {
                     </div>
                     
                     {/* Secondary Tab Content */}
-                    <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-b-lg rounded-tr-lg p-3 shadow-md shadow-indigo-100/50">
+                    <div className="bg-gray-50 rounded-lg p-3">
                       {activeCapabilitySubTabs[index] === 0 ? (
                         // Original Tab - Editable textarea
                         <div>
@@ -2584,7 +2963,7 @@ export default function JD2CVPanel() {
                     </div>
                     
                     {/* Button Layout - Different for each sub-tab */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 mt-4 p-3 bg-white rounded-lg border border-gray-200">
+                    <div className="flex flex-wrap items-center justify-between gap-3 mt-4 p-3">
                       {activeCapabilitySubTabs[index] === 0 ? (
                         // Original Tab: Only Database button
                         <div className="flex items-center gap-4 justify-end w-full">
@@ -2593,7 +2972,7 @@ export default function JD2CVPanel() {
                             disabled={capabilityIsSaving[index] || !jdData[`capability_${num}` as keyof JDData]?.trim()}
                             className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md"
                           >
-                            {capabilityIsSaving[index] ? 'Saving...' : 'Database'}
+                            {capabilityIsSaving[index] ? 'Saving...' : 'Save to Database'}
                           </button>
                         </div>
                       ) : (
@@ -2635,27 +3014,18 @@ export default function JD2CVPanel() {
                 </div>
 
                 {/* Page Export Section */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <h6 className="text-sm font-semibold text-gray-800">Export to Notion</h6>
-                      <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded-full border">
-                        Role Expectation {index + 1}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => handleExportCapability(index)}
-                      disabled={!currentPageId || capabilityExporting[index]}
-                      className="px-6 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md"
-                    >
-                      {capabilityExporting[index] ? 'Exporting...' : 'Page'}
-                    </button>
-                  </div>
+                <div className="flex justify-end mt-4">
+                  <button
+                    onClick={() => handleExportCapability(index)}
+                    disabled={!currentPageId || capabilityExporting[index]}
+                    className="px-6 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
+                    {capabilityExporting[index] ? 'Exporting...' : 'Page'}
+                  </button>
                 </div>
 
                 {/* Experience Customization */}
-                <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
+                <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-6 mt-6">
                   <h6 className="text-base sm:text-lg font-semibold text-gray-800 border-b border-gray-100 pb-2">Experience Customization</h6>
                   
                   <div className="space-y-6">
@@ -2680,8 +3050,8 @@ export default function JD2CVPanel() {
                                 }}
                                 className={`flex-shrink-0 px-3 py-1.5 rounded-t-md border-l border-r border-t font-medium text-xs transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-purple-400 ${
                                   isSubActive 
-                                    ? 'bg-indigo-500 text-white shadow-sm border-indigo-500 relative z-10' 
-                                    : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200'
+                                    ? 'bg-purple-600 text-white shadow-sm border-purple-600 relative z-10' 
+                                    : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200'
                                 }`}
                               >
                                 <span className="whitespace-nowrap">{tabName}</span>
@@ -2692,7 +3062,7 @@ export default function JD2CVPanel() {
                       </div>
                       
                       {/* Secondary Tab Content */}
-                      <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-b-lg rounded-tr-lg p-3 shadow-md shadow-indigo-100/50">
+                      <div className="bg-gray-50 rounded-lg p-3">
                         {activeExperienceSubTabs[index] === 0 ? (
                           // Original Tab - Editable textarea
                           <div>
@@ -2784,7 +3154,7 @@ export default function JD2CVPanel() {
                       </div>
                       
                       {/* Button Layout - Different for each sub-tab */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 mt-4 p-3 bg-white rounded-lg border border-gray-200">
+                      <div className="flex flex-wrap items-center justify-between gap-3 mt-4 p-3">
                         {activeExperienceSubTabs[index] === 0 ? (
                           // Original Tab: Only Save to Database button
                           <div className="flex items-center gap-4 justify-end w-full">
@@ -2834,7 +3204,7 @@ export default function JD2CVPanel() {
                     </div>
 
                     {/* Generate Aligned Experience Button */}
-                    <div className="flex justify-center py-4">
+                    <div className="flex justify-end py-4">
                       <button
                         onClick={() => handleGenerateExperience(index)}
                         disabled={experienceGenerating[index]}
@@ -2872,8 +3242,8 @@ export default function JD2CVPanel() {
                                 }}
                                 className={`flex-shrink-0 px-3 py-1.5 rounded-t-md border-l border-r border-t font-medium text-xs transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-purple-400 ${
                                   isSubActive 
-                                    ? 'bg-indigo-500 text-white shadow-sm border-indigo-500 relative z-10' 
-                                    : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200'
+                                    ? 'bg-purple-600 text-white shadow-sm border-purple-600 relative z-10' 
+                                    : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200'
                                 }`}
                               >
                                 <span className="whitespace-nowrap">{tabName}</span>
@@ -2884,7 +3254,7 @@ export default function JD2CVPanel() {
                       </div>
                       
                       {/* Secondary Tab Content */}
-                      <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-b-lg rounded-tr-lg p-3 shadow-md shadow-indigo-100/50">
+                      <div className="bg-gray-50 rounded-lg p-3">
                         {activeAlignedExperienceSubTabs[index] === 0 ? (
                           // Original Tab - Editable textarea
                           <div>
@@ -2977,7 +3347,7 @@ export default function JD2CVPanel() {
                       </div>
                       
                       {/* Button Layout - Different for each sub-tab */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 mt-4 p-3 bg-white rounded-lg border border-gray-200">
+                      <div className="flex flex-wrap items-center justify-between gap-3 mt-4 p-3">
                         {activeAlignedExperienceSubTabs[index] === 0 ? (
                           // Original Tab: Only Save to Database button
                           <div className="flex items-center gap-4 justify-end w-full">
@@ -3027,23 +3397,14 @@ export default function JD2CVPanel() {
                     </div>
 
                     {/* Page Export Section for Aligned Experience */}
-                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 p-4 mt-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          <h6 className="text-sm font-semibold text-gray-800">Export to Notion Page</h6>
-                          <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded-full border">
-                            Aligned Experience {index + 1}
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => handleExportGeneratedText(index)}
-                          disabled={!currentPageId || generatedExporting[index]}
-                          className="px-6 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md"
-                        >
-                          {generatedExporting[index] ? 'Exporting...' : 'Page'}
-                        </button>
-                      </div>
+                    <div className="flex justify-end mt-4">
+                      <button
+                        onClick={() => handleExportGeneratedText(index)}
+                        disabled={!currentPageId || generatedExporting[index]}
+                        className="px-6 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                      >
+                        {generatedExporting[index] ? 'Exporting...' : 'Page'}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -3064,7 +3425,7 @@ export default function JD2CVPanel() {
             width: '200px'
           }}
         >
-          <div className="bg-gradient-to-r from-purple-400 to-purple-500 p-3">
+          <div className="bg-purple-600 p-3">
             <p className="text-white font-medium text-sm">Remove Highlight</p>
           </div>
           <div className="p-3">
@@ -3101,7 +3462,7 @@ export default function JD2CVPanel() {
             width: '200px'
           }}
         >
-          <div className="bg-gradient-to-r from-purple-400 to-purple-500 p-3">
+          <div className="bg-purple-600 p-3">
             <p className="text-white font-medium text-sm">Add Highlight</p>
           </div>
           <div className="p-3">
@@ -3138,7 +3499,7 @@ export default function JD2CVPanel() {
             width: '200px'
           }}
         >
-          <div className="bg-gradient-to-r from-purple-400 to-purple-500 p-3">
+          <div className="bg-purple-600 p-3">
             <p className="text-white font-medium text-sm">Remove Keyword</p>
           </div>
           <div className="p-3">
@@ -3174,7 +3535,7 @@ export default function JD2CVPanel() {
             width: '200px'
           }}
         >
-          <div className="bg-gradient-to-r from-purple-400 to-purple-500 p-3">
+          <div className="bg-purple-600 p-3">
             <p className="text-white font-medium text-sm">Add Keyword</p>
           </div>
           <div className="p-3">
@@ -3210,7 +3571,7 @@ export default function JD2CVPanel() {
             width: '200px'
           }}
         >
-          <div className="bg-gradient-to-r from-purple-400 to-purple-500 p-3">
+          <div className="bg-purple-600 p-3">
             <p className="text-white font-medium text-sm">Delete Keyword</p>
           </div>
           <div className="p-3">
@@ -3226,7 +3587,7 @@ export default function JD2CVPanel() {
               </button>
               <button
                 onClick={() => setDeleteExperienceKeywordTooltip({ show: false, keyword: '', experienceIndex: -1, position: { x: 0, y: 0 } })}
-                className="flex-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 font-medium transition-colors duration-200 text-sm active:scale-95 transform"
+                className="flex-1 px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 font-medium transition-colors duration-200 text-sm active:scale-95 transform"
               >
                 Cancel
               </button>
@@ -3246,7 +3607,7 @@ export default function JD2CVPanel() {
             width: '200px'
           }}
         >
-          <div className="bg-gradient-to-r from-purple-400 to-purple-500 p-3">
+          <div className="bg-purple-600 p-3">
             <p className="text-white font-medium text-sm">Add Keyword</p>
           </div>
           <div className="p-3">
@@ -3262,7 +3623,7 @@ export default function JD2CVPanel() {
               </button>
               <button
                 onClick={() => setAddExperienceKeywordTooltip({ show: false, text: '', experienceIndex: -1, position: { x: 0, y: 0 } })}
-                className="flex-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 font-medium transition-colors duration-200 text-sm active:scale-95 transform"
+                className="flex-1 px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 font-medium transition-colors duration-200 text-sm active:scale-95 transform"
               >
                 Cancel
               </button>
@@ -3282,7 +3643,7 @@ export default function JD2CVPanel() {
             width: '200px'
           }}
         >
-          <div className="bg-gradient-to-r from-purple-400 to-purple-500 p-3">
+          <div className="bg-purple-600 p-3">
             <p className="text-white font-medium text-sm">Delete Keyword</p>
           </div>
           <div className="p-3">
@@ -3298,7 +3659,7 @@ export default function JD2CVPanel() {
               </button>
               <button
                 onClick={() => setDeleteGeneratedKeywordTooltip({ show: false, keyword: '', generatedIndex: -1, position: { x: 0, y: 0 } })}
-                className="flex-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 font-medium transition-colors duration-200 text-sm active:scale-95 transform"
+                className="flex-1 px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 font-medium transition-colors duration-200 text-sm active:scale-95 transform"
               >
                 Cancel
               </button>
@@ -3318,7 +3679,7 @@ export default function JD2CVPanel() {
             width: '200px'
           }}
         >
-          <div className="bg-gradient-to-r from-purple-400 to-purple-500 p-3">
+          <div className="bg-purple-600 p-3">
             <p className="text-white font-medium text-sm">Add Keyword</p>
           </div>
           <div className="p-3">
@@ -3334,7 +3695,7 @@ export default function JD2CVPanel() {
               </button>
               <button
                 onClick={() => setAddGeneratedKeywordTooltip({ show: false, text: '', generatedIndex: -1, position: { x: 0, y: 0 } })}
-                className="flex-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 font-medium transition-colors duration-200 text-sm active:scale-95 transform"
+                className="flex-1 px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 font-medium transition-colors duration-200 text-sm active:scale-95 transform"
               >
                 Cancel
               </button>
@@ -3342,6 +3703,15 @@ export default function JD2CVPanel() {
           </div>
         </div>
       )}
+
+      {/* PromptManager Component */}
+      <PromptManager
+        prompts={jd2cvPrompts}
+        onPromptsChange={setJd2cvPrompts}
+        position="bottom-right"
+        storageKey="jd2cv-prompts"
+        buttonIcon="</>"
+      />
 
     </div>
   )

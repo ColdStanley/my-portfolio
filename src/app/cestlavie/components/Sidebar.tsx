@@ -1,11 +1,33 @@
 'use client'
 
+import SidebarCalendar from './SidebarCalendar'
+
+interface TaskRecord {
+  id: string
+  title: string
+  status: string
+  start_date: string
+  end_date: string
+  all_day: boolean
+  plan: string[]
+  priority_quadrant: string
+  note: string
+  actual_start?: string
+  actual_end?: string
+  budget_time: number
+  actual_time: number
+  quality_rating?: number
+  next?: string
+  is_plan_critical?: boolean
+}
+
 interface SidebarProps {
   activeTab: string
   setActiveTab: (tab: string) => void
   mobileMenuOpen?: boolean
   setMobileMenuOpen?: (open: boolean) => void
   onConfigClick?: () => void
+  tasks?: TaskRecord[]
 }
 
 const tabs = [
@@ -14,7 +36,7 @@ const tabs = [
   { key: 'study', label: 'Study', icon: '📚' },
 ]
 
-export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMobileMenuOpen }: SidebarProps) {
+export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMobileMenuOpen, tasks = [] }: SidebarProps) {
   const handleTabClick = (tabKey: string) => {
     setActiveTab(tabKey)
     // 移动端点击后关闭菜单
@@ -25,12 +47,12 @@ export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMo
 
   return (
     <>
-      {/* 桌面端侧边栏 - 保持原样 */}
-      <div className="hidden md:flex w-64 bg-white border-r border-gray-200 h-full flex-col">
+      {/* 桌面端侧边栏 - 固定定位 */}
+      <div className="hidden md:flex w-64 bg-white border-r border-gray-200 h-[calc(100vh-3.5rem)] flex-col fixed left-0 top-14 z-30">
         <div className="p-6 border-b border-gray-200">
           <h1 className="text-2xl font-bold text-purple-600">C'est la vie!</h1>
         </div>
-        <nav className="flex-1 p-4">
+        <div className="flex-1 p-4 flex flex-col">
           <div className="space-y-2">
             {tabs.map((tab) => (
               <button
@@ -47,7 +69,12 @@ export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMo
               </button>
             ))}
           </div>
-        </nav>
+          
+          {/* Calendar positioned with margin from bottom to avoid Vercel logo */}
+          <div className="mt-6 mb-8">
+            <SidebarCalendar tasks={tasks} />
+          </div>
+        </div>
       </div>
 
       {/* 移动端右上角下拉菜单 - 悬浮设计 */}

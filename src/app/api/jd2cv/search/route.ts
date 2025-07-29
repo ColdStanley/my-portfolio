@@ -102,6 +102,11 @@ export async function POST(request: NextRequest) {
       your_experience_3: record.properties.your_experience_3?.rich_text?.[0]?.text?.content || '',
       your_experience_4: record.properties.your_experience_4?.rich_text?.[0]?.text?.content || '',
       your_experience_5: record.properties.your_experience_5?.rich_text?.[0]?.text?.content || '',
+      comment: record.properties.comment?.rich_text?.[0]?.text?.content || '',
+      application_stage: record.properties.application_stage?.select?.name || '',
+      role_group: record.properties.role_group?.select?.name || '',
+      firm_type: record.properties.firm_type?.select?.name || '',
+      cv_pdf: record.properties.cv_pdf?.files?.[0]?.file?.url || '',
     }
 
     return NextResponse.json({ 

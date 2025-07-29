@@ -13,9 +13,29 @@ import PlanPanel from './Life/PlanPanel'
 import TaskPanelOptimized from './Life/TaskPanelOptimized'
 import TBDPanel from './Life/TBDPanel'
 
+interface TaskRecord {
+  id: string
+  title: string
+  status: string
+  start_date: string
+  end_date: string
+  all_day: boolean
+  plan: string[]
+  priority_quadrant: string
+  note: string
+  actual_start?: string
+  actual_end?: string
+  budget_time: number
+  actual_time: number
+  quality_rating?: number
+  next?: string
+  is_plan_critical?: boolean
+}
+
 interface MainContentProps {
   activeMainTab: string
   onConfigClick?: () => void
+  onTasksUpdate?: (tasks: TaskRecord[]) => void
 }
 
 const careerSubTabs = ['user-matcher', 'notion', 'cv-modules', 'figma-builder', 'jd2cv'] as const
@@ -23,7 +43,7 @@ const lifeSubTabs = ['strategy', 'plan', 'task', 'tbd'] as const
 type CareerSubTabKey = typeof careerSubTabs[number]
 type LifeSubTabKey = typeof lifeSubTabs[number]
 
-export default function MainContent({ activeMainTab, onConfigClick }: MainContentProps) {
+export default function MainContent({ activeMainTab, onConfigClick, onTasksUpdate }: MainContentProps) {
   const [activeCareerSubTab, setActiveCareerSubTab] = useState<CareerSubTabKey>('jd2cv')
   const [activeLifeSubTab, setActiveLifeSubTab] = useState<LifeSubTabKey>('task')
 
@@ -42,7 +62,7 @@ export default function MainContent({ activeMainTab, onConfigClick }: MainConten
     switch (activeLifeSubTab) {
       case 'strategy': return <StrategyPanel />
       case 'plan': return <PlanPanel />
-      case 'task': return <TaskPanelOptimized />
+      case 'task': return <TaskPanelOptimized onTasksUpdate={onTasksUpdate} />
       case 'tbd': return <TBDPanel />
       default: return <div className="text-gray-500 text-sm">This section is under construction.</div>
     }
