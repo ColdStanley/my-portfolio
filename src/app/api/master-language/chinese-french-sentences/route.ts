@@ -22,11 +22,24 @@ export async function GET(req: NextRequest) {
       .from(ARTICLES_TABLE)
       .select('learning_records')
       .eq('id', articleId)
-      .single()
+      .maybeSingle() // Use maybeSingle instead of single to handle no records
 
     if (error) {
-      console.error('Database error:', error)
-      return NextResponse.json({ error: 'Failed to fetch learning records' }, { status: 500 })
+      console.error('Database error in sentence-queries GET:', {
+        error,
+        articleId,
+        tableName: ARTICLES_TABLE
+      })
+      return NextResponse.json({ 
+        error: 'Failed to fetch learning records',
+        details: error.message 
+      }, { status: 500 })
+    }
+
+    // If no article found, return empty array
+    if (!data) {
+      console.log('No article found with ID:', articleId)
+      return NextResponse.json([])
     }
 
     // Return sentences array from learning_records, mapped to expected format
@@ -42,7 +55,12 @@ export async function GET(req: NextRequest) {
       user_notes: sentence.user_notes || '',
       ai_notes: sentence.ai_notes || '',
       created_at: new Date(sentence.timestamp || Date.now()).toISOString(),
-      updated_at: new Date(sentence.timestamp || Date.now()).toISOString()
+      updated_at: new Date(sentence.timestamp || Date.now()).toISOString(),
+      // Include analysis dimensions for frontend restoration
+      words: sentence.words || [],
+      phrases: sentence.phrases || [],
+      grammar: sentence.grammar || [],
+      others: sentence.others || []
     }))
     return NextResponse.json(sentences)
   } catch (error) {
@@ -52,6 +70,88 @@ export async function GET(req: NextRequest) {
 }
 
 // POST: Create new sentence learning record
+// PATCH: Save analysis query to existing sentence
+export async function PATCH(req: NextRequest) {
+  try {
+    const { 
+      articleId, 
+      sentenceId,
+      dimension,
+      query,
+      response,
+      prompt
+    } = await req.json()
+
+    if (!articleId || !sentenceId || !dimension || !query || !response) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    // Get current learning records
+    const { data: currentData, error: fetchError } = await supabase
+      .from(ARTICLES_TABLE)
+      .select('learning_records')
+      .eq('id', articleId)
+      .maybeSingle()
+
+    if (fetchError) {
+      console.error('Database fetch error in PATCH:', fetchError)
+      return NextResponse.json({ error: 'Failed to fetch current data' }, { status: 500 })
+    }
+
+    if (!currentData) {
+      return NextResponse.json({ error: 'Article not found' }, { status: 404 })
+    }
+
+    let currentRecords = currentData?.learning_records || { sentences: [] }
+    
+    // Find the target sentence
+    const sentenceIndex = currentRecords.sentences.findIndex((s: any) => 
+      (typeof s.id === 'string' ? parseInt(s.id) : s.id) === parseInt(sentenceId)
+    )
+    
+    if (sentenceIndex === -1) {
+      return NextResponse.json({ error: 'Sentence not found' }, { status: 404 })
+    }
+
+    // Create new analysis item
+    const newAnalysisItem = {
+      id: Date.now().toString(),
+      query,
+      response,
+      prompt,
+      isStreaming: false,
+      timestamp: Date.now()
+    }
+
+    // Add to the appropriate dimension array
+    const sentence = currentRecords.sentences[sentenceIndex]
+    if (!sentence[dimension]) {
+      sentence[dimension] = []
+    }
+    sentence[dimension].push(newAnalysisItem)
+
+    // Update database
+    const { error: updateError } = await supabase
+      .from(ARTICLES_TABLE)
+      .update({ learning_records: currentRecords })
+      .eq('id', articleId)
+
+    if (updateError) {
+      console.error('Database update error:', updateError)
+      return NextResponse.json({ error: 'Failed to save analysis' }, { status: 500 })
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      data: newAnalysisItem
+    })
+    
+  } catch (error) {
+    console.error('API error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { 
@@ -70,14 +170,34 @@ export async function POST(req: NextRequest) {
       .from(ARTICLES_TABLE)
       .select('learning_records')
       .eq('id', articleId)
-      .single()
+      .maybeSingle()
 
     if (fetchError) {
-      console.error('Database fetch error:', fetchError)
+      console.error('Database fetch error in POST:', fetchError)
       return NextResponse.json({ error: 'Failed to fetch current data' }, { status: 500 })
     }
 
-    const currentRecords = currentData?.learning_records || { sentences: [] }
+    let currentRecords = currentData?.learning_records || { sentences: [] }
+
+    // If article doesn't exist, create it first
+    if (!currentData) {
+      const { error: insertError } = await supabase
+        .from(ARTICLES_TABLE)
+        .insert({ 
+          id: parseInt(articleId),
+          learning_records: { sentences: [] },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+
+      if (insertError) {
+        console.error('Failed to create article in POST:', insertError)
+        return NextResponse.json({ error: 'Failed to create article' }, { status: 500 })
+      }
+      
+      currentRecords = { sentences: [] }
+    }
+
     const sentenceId = Date.now() // Use number ID for consistency
 
     // Create new sentence record
@@ -141,11 +261,17 @@ export async function DELETE(req: NextRequest) {
       .from(ARTICLES_TABLE)
       .select('learning_records')
       .eq('id', articleId)
-      .single()
+      .maybeSingle()
 
     if (fetchError) {
-      console.error('Database fetch error:', fetchError)
+      console.error('Database fetch error in DELETE:', fetchError)
       return NextResponse.json({ error: 'Failed to fetch current data' }, { status: 500 })
+    }
+
+    // If no article found, return success (nothing to delete)
+    if (!currentData) {
+      console.log('No article found with ID:', articleId, 'for sentence deletion')
+      return NextResponse.json({ success: true })
     }
 
     const currentRecords = currentData?.learning_records || { sentences: [] }

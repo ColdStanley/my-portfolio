@@ -104,62 +104,36 @@ export default function ChineseFrenchInterface({ article, onBack }: ChineseFrenc
   const handleSmartTooltipCardCreated = useCallback(async (mode: AnalysisMode, data: any) => {
     if (!selectionData) return
 
-    try {
-      // Create sentence card via chinese-french API with new JSON structure
-      const createResponse = await fetch('/api/master-language/sentence-queries', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },  
-        body: JSON.stringify({
-          articleId: article.id,
-          sentenceText: selectionData.text,
-          startOffset: selectionData.range.start,
-          endOffset: selectionData.range.end
-        })
-      })
-
-      if (!createResponse.ok) {
-        throw new Error('Failed to create sentence card')
-      }
-
-      const result = await createResponse.json()
-      
-      if (result.success && result.data) {
-        // Create a sentence query object compatible with the card component
-        const sentenceQuery = {
-          id: result.data.id,
-          sentence_text: selectionData.text,
-          translation: '',
-          analysis: '',
-          start_offset: selectionData.range.start,
-          end_offset: selectionData.range.end,
-          query_type: 'sentence_analysis',
-          user_notes: '',
-          ai_notes: ''
-        }
-
-        // Add to local store
-        addSentenceCard(sentenceQuery)
-        setSelectedSentenceId(result.data.id)
-        
-        // Scroll to the new card (at bottom of right panel)
-        setTimeout(() => {
-          const rightPanel = document.querySelector('.w-\\[65\\%\\]')
-          if (rightPanel) {
-            rightPanel.scrollTo({ 
-              top: rightPanel.scrollHeight, 
-              behavior: 'smooth' 
-            })
-          }
-        }, 100)
-        
-        console.log('French sentence card created successfully')
-      }
-
-    } catch (error) {
-      console.error('Failed to create sentence card:', error)
-      alert('Failed to create sentence card. Please try again.')
+    // SmartTooltip has already saved to database, just update local state
+    const sentenceQuery = {
+      id: data.id,
+      sentence_text: selectionData.text,
+      translation: '',
+      analysis: '',
+      start_offset: selectionData.range.start,
+      end_offset: selectionData.range.end,
+      query_type: 'sentence_analysis',
+      user_notes: '',
+      ai_notes: ''
     }
-  }, [addSentenceCard, setSelectedSentenceId, selectionData, article.id])
+
+    // Add to local store
+    addSentenceCard(sentenceQuery)
+    setSelectedSentenceId(data.id)
+    
+    // Scroll to the new card (at bottom of right panel)
+    setTimeout(() => {
+      const rightPanel = document.querySelector('.w-\\[65\\%\\]')
+      if (rightPanel) {
+        rightPanel.scrollTo({ 
+          top: rightPanel.scrollHeight, 
+          behavior: 'smooth' 
+        })
+      }
+    }, 100)
+    
+    console.log('French sentence card created successfully')
+  }, [addSentenceCard, setSelectedSentenceId, selectionData])
 
   // Handle SmartTooltip close
   const handleSmartTooltipClose = useCallback(() => {

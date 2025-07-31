@@ -29,7 +29,7 @@ export default function ChineseFrenchQueryCards({ articleId }: ChineseFrenchQuer
     try {
       console.log('Deleting sentence with ID:', sentenceId, 'Type:', typeof sentenceId)
       
-      const response = await fetch(`/api/master-language/sentence-queries?articleId=${articleId}&sentenceId=${sentenceId}`, {
+      const response = await fetch(`/api/master-language/chinese-french-sentences?articleId=${articleId}&sentenceId=${sentenceId}`, {
         method: 'DELETE'
       })
 
@@ -168,20 +168,16 @@ export default function ChineseFrenchQueryCards({ articleId }: ChineseFrenchQuer
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 h-full">
-      <div className="h-full overflow-y-auto">
-        <div className="space-y-6">
-          {sentenceCards.map((query) => (
-            <ChineseFrenchSentenceCard
-              key={`french-sentence-${query.id}`}
-              query={query}
-              articleId={articleId}
-              onDelete={handleDelete}
-              onScrollToHighlight={scrollToHighlight}
-            />
-          ))}
-        </div>
-      </div>
+    <div className="space-y-6">
+      {sentenceCards.map((query) => (
+        <ChineseFrenchSentenceCard
+          key={`french-sentence-${query.id}`}
+          query={query}
+          articleId={articleId}
+          onDelete={handleDelete}
+          onScrollToHighlight={scrollToHighlight}
+        />
+      ))}
     </div>
   )
 }

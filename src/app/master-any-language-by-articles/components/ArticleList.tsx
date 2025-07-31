@@ -35,7 +35,7 @@ export default function ArticleList({ language, languagePair, onSelectArticle, i
         
         if (languagePair === 'chinese-french') {
           apiEndpoint = '/api/master-language/articles/list'
-          queryParam = '' // Chinese-French API doesn't need query params
+          queryParam = 'languagePair=chinese-french'
         } else if (languagePair) {
           queryParam = `languagePair=${languagePair}`
         }

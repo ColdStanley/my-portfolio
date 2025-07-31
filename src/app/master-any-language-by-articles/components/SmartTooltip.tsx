@@ -182,11 +182,10 @@ export default function SmartTooltip({
   }
 
   const handleModeSelect = async (mode: AnalysisMode) => {
-    setSelectedMode(mode)
-
     if (mode === 'mark') {
       // For French: create sentence card directly and close tooltip
       if (language === 'french') {
+        // Don't set selectedMode to avoid flashing English UI
         const cardData = {
           id: Date.now(),
           sentence_text: selectedText,
@@ -208,7 +207,8 @@ export default function SmartTooltip({
         return
       }
 
-      // Mark mode for English: create card immediately, keep tooltip for notes input
+      // Mark mode for English: set selectedMode and create card immediately, keep tooltip for notes input
+      setSelectedMode(mode)
       const cardData = {
         id: Date.now(),
         word_text: selectedText,
@@ -228,7 +228,8 @@ export default function SmartTooltip({
       return
     }
 
-    // For Simple/Deep/Grammar modes: start streaming analysis
+    // For Simple/Deep/Grammar modes: set selectedMode and start streaming analysis
+    setSelectedMode(mode)
     setIsLoading(true)
     setStreamContent('')
     setIsStreamComplete(false)
@@ -330,20 +331,13 @@ export default function SmartTooltip({
       // Use new unified API for chinese-english
       const languagePair = nativeLanguage === 'chinese' && language === 'english' ? 'chinese-english' : `${nativeLanguage}-${language}`
       
-      const endpoint = '/api/master-language/analysis-records'
+      const endpoint = '/api/master-language/chinese-french-sentences'
       
       console.log('Saving to database:', {
         articleId,
-        languagePair,
-        selectedText,
-        contextSentence,
-        analysis: data.definition || data.analysis || '',
-        analysisMode: mode,
-        userNotes: userNotes || '',
-        aiNotes: data.ai_notes || '',
+        sentenceText: selectedText,
         startOffset: textRange?.start || 0,
-        endOffset: textRange?.end || selectedText.length,
-        queryType: 'ai_query'
+        endOffset: textRange?.end || selectedText.length
       })
 
       const response = await fetch(endpoint, {
@@ -351,16 +345,9 @@ export default function SmartTooltip({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           articleId,
-          languagePair,
-          selectedText,
-          contextSentence,
-          analysis: data.definition || data.analysis || '',
-          analysisMode: mode,
-          userNotes: userNotes || '',
-          aiNotes: data.ai_notes || '',
+          sentenceText: selectedText,
           startOffset: textRange?.start || 0,
-          endOffset: textRange?.end || selectedText.length,
-          queryType: 'ai_query'
+          endOffset: textRange?.end || selectedText.length
         })
       })
       
@@ -372,6 +359,11 @@ export default function SmartTooltip({
       
       const result = await response.json()
       console.log('Save successful:', result)
+      
+      // Update data with actual database ID
+      if (result.success && result.data) {
+        data.id = result.data.id
+      }
     } catch (error) {
       console.error('Failed to save to database:', error)
       throw error

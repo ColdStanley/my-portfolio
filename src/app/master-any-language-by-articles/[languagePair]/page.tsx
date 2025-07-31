@@ -48,6 +48,7 @@ export default function LanguagePairPage({ params }: LanguagePairProps) {
   const [articleTitle, setArticleTitle] = useState<string>('')
   const [articleData, setArticleData] = useState<any>(null)
   const [isMobile, setIsMobile] = useState(false)
+  const [isRestoring, setIsRestoring] = useState(true)
   
   const { loadStoredData } = useLanguageReadingStore()
   const { loadSentenceCards } = useChineseFrenchStore()
@@ -91,6 +92,9 @@ export default function LanguagePairPage({ params }: LanguagePairProps) {
         }
       } catch (error) {
         console.error('Failed to restore last article:', error)
+      } finally {
+        // Always set restoring to false after attempt
+        setIsRestoring(false)
       }
     }
     
@@ -127,6 +131,18 @@ export default function LanguagePairPage({ params }: LanguagePairProps) {
     const nativeName = LANGUAGE_DISPLAY_NAMES[native]
     const learningName = LANGUAGE_DISPLAY_NAMES[learning]
     return `${nativeName} → ${learningName}`
+  }
+
+  // Loading state during restoration
+  if (isRestoring) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-purple-600">Loading...</p>
+        </div>
+      </div>
+    )
   }
 
   // Mobile view - always start with management page
@@ -188,7 +204,7 @@ export default function LanguagePairPage({ params }: LanguagePairProps) {
     )
   }
 
-  // Desktop view - always start with management page
+  // Desktop view
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8">

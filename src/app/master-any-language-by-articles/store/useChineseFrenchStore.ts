@@ -60,7 +60,7 @@ export const useChineseFrenchStore = create<ChineseFrenchState>((set, get) => ({
       set({ sentenceCards: [] })
       
       // Load sentence queries from chinese-french specific API
-      const response = await fetch(`/api/master-language/sentence-queries?articleId=${articleId}`)
+      const response = await fetch(`/api/master-language/chinese-french-sentences?articleId=${articleId}`)
       
       if (response.ok) {
         const sentenceQueries = await response.json()
