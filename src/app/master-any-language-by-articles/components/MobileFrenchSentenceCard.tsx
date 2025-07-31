@@ -164,8 +164,8 @@ export default function MobileFrenchSentenceCard({
   React.useEffect(() => {
     const loadExistingData = async () => {
       try {
-        // Load phrase analysis for this specific sentence
-        const phrasesResponse = await fetch(`/api/language-reading/queries?articleId=${articleId}&type=sentence&contentType=phrase_analysis&language=${language}&sentenceId=${query.id}`)
+        // Queries API removed - phrase analysis moved to articles.analysis_records
+        console.log('MobileFrenchSentenceCard phrase queries API deprecated')
         if (phrasesResponse.ok) {
           const phrasesData = await phrasesResponse.json()
           if (phrasesData && phrasesData.length > 0) {
@@ -173,8 +173,8 @@ export default function MobileFrenchSentenceCard({
           }
         }
 
-        // Load grammar analysis for this specific sentence
-        const grammarResponse = await fetch(`/api/language-reading/queries?articleId=${articleId}&type=sentence&contentType=grammar_analysis&language=${language}&sentenceId=${query.id}`)
+        // Queries API removed - grammar analysis moved to articles.analysis_records
+        console.log('MobileFrenchSentenceCard grammar queries API deprecated')
         if (grammarResponse.ok) {
           const grammarData = await grammarResponse.json()
           if (grammarData && grammarData.length > 0) {
@@ -182,8 +182,8 @@ export default function MobileFrenchSentenceCard({
           }
         }
 
-        // Load word queries for this specific sentence
-        const wordsResponse = await fetch(`/api/language-reading/queries?articleId=${articleId}&type=sentence&contentType=word_query&language=${language}&sentenceId=${query.id}`)
+        // Queries API removed - word queries moved to articles.analysis_records
+        console.log('MobileFrenchSentenceCard word queries API deprecated')
         if (wordsResponse.ok) {
           const wordsData = await wordsResponse.json()
           if (wordsData && wordsData.length > 0) {
@@ -243,21 +243,16 @@ export default function MobileFrenchSentenceCard({
     abortControllerRef.current = new AbortController()
 
     try {
-      const response = await fetch('/api/language-reading/ask-ai', {
+      const response = await fetch('/api/master-language/smart-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          queryData: query,
+          mode: 'simple',
+          selectedText: word,
+          contextSentence: query.sentence_text,
           language: language,
-          userPrompt: `请用简洁易懂的方式解释这个法语单词 "${word}" 在句子 "${query.sentence_text}" 中的意思和用法。
-
-请按照以下结构回答，并确保每一项都非常简短、清晰：
-
-1. 中文解释（1句话，告诉我这个词在句中是什么意思）
-2. 用法说明（最多2句话，说明它在语法上起什么作用）
-3. 简单例句（2个法语例句 + 中文翻译，例句不能太难，若例句含有有价值的词组或者语法，也简单讲解一下）
-
-不要添加过多术语或语法细节。风格要温和、简洁，适合法语初学者阅读。`
+          nativeLanguage: 'chinese',
+          articleId: articleId
         }),
         signal: abortControllerRef.current.signal
       })
@@ -314,26 +309,7 @@ export default function MobileFrenchSentenceCard({
         )
       )
 
-      // Save to database without triggering global state reload
-      if (accumulatedResponse) {
-        try {
-          await fetch('/api/language-reading/save-phrase-analysis', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              articleId: articleId,
-              sentenceText: `${query.sentence_text}::word::${word.trim()}`,
-              analysis: accumulatedResponse,
-              startOffset: query.start_offset,
-              endOffset: query.end_offset,
-              language: language,
-              contentType: 'word_query'
-            })
-          })
-        } catch (saveError) {
-          console.error('Failed to save word query:', saveError)
-        }
-      }
+      // Database save is now handled by the unified smart-analysis API
 
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
@@ -384,27 +360,16 @@ export default function MobileFrenchSentenceCard({
     abortControllerRef.current = new AbortController()
 
     try {
-      const response = await fetch('/api/language-reading/ask-ai', {
+      const response = await fetch('/api/master-language/smart-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          queryData: query,
+          mode: 'deep',
+          selectedText: query.sentence_text,
+          contextSentence: query.sentence_text,
           language: language,
-          userPrompt: `请你帮助我学习下面这句法语中的重要词组。  
-我的法语水平是初学者，所以请你讲解得简单、清晰，避免用太复杂的语法术语或长难句。
-
-句子是：  
-"${query.sentence_text}"
-
-请你找出其中2–4个最有代表性的法语**词组（2词以上）**，然后按以下结构逐个解释：
-
-1. 词组原文（如：passer maître dans...）
-2. 中文意思（用一句话简单解释）
-3. 用法说明（最多两句话，说明它在句中做什么，不要太术语化）
-4. 简单例句（3个简单的法语句子 + 中文翻译）
-5. 联想记忆建议（可选，给出记忆方法或小贴士）
-
-请按以上格式分别列出每个词组的讲解。`
+          nativeLanguage: 'chinese',
+          articleId: articleId
         }),
         signal: abortControllerRef.current.signal
       })
@@ -447,26 +412,7 @@ export default function MobileFrenchSentenceCard({
         }
       }
 
-      // Save to database
-      if (accumulatedResponse) {
-        try {
-          await fetch('/api/language-reading/save-phrase-analysis', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              articleId: articleId,
-              sentenceText: query.sentence_text,
-              analysis: accumulatedResponse,
-              startOffset: query.start_offset,
-              endOffset: query.end_offset,
-              language: language,
-              contentType: 'phrase_analysis'
-            })
-          })
-        } catch (saveError) {
-          console.error('Failed to save phrase analysis:', saveError)
-        }
-      }
+      // Database save is now handled by the unified smart-analysis API
 
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
@@ -494,34 +440,16 @@ export default function MobileFrenchSentenceCard({
     abortControllerRef.current = new AbortController()
 
     try {
-      const response = await fetch('/api/language-reading/ask-ai', {
+      const response = await fetch('/api/master-language/smart-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          queryData: query,
+          mode: 'grammar',
+          selectedText: query.sentence_text,
+          contextSentence: query.sentence_text,
           language: language,
-          userPrompt: `请用适合法语初学者的方式，分析这句话的语法结构：
-
-"${query.sentence_text}"
-
-请按照以下结构回答，每一项都要简洁清晰，不要使用太多专业术语：
-
-1. 这句话的整体结构是什么？  
-   → 分成几个部分？（比如主句 / 从句 / 插入语等）
-
-2. 这句话用了哪些时态？  
-   → 每个时态表示什么时间概念？为什么用它？
-
-3. 表达的逻辑关系是什么？  
-   → 是让步？假设？对比？因果？
-
-4. 每部分各自说了什么？  
-   → 用通俗中文逐句解释
-
-5. 有哪些法语初学者常犯的错误？  
-   → 这句话中哪些地方容易误解或误用？
-
-请不要解释词汇、不要展示太难的语法规则，只关注整个句子"怎么组织"的逻辑。`
+          nativeLanguage: 'chinese',
+          articleId: articleId
         }),
         signal: abortControllerRef.current.signal
       })
@@ -564,26 +492,7 @@ export default function MobileFrenchSentenceCard({
         }
       }
 
-      // Save to database
-      if (accumulatedResponse) {
-        try {
-          await fetch('/api/language-reading/save-phrase-analysis', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              articleId: articleId,
-              sentenceText: query.sentence_text,
-              analysis: accumulatedResponse,
-              startOffset: query.start_offset,
-              endOffset: query.end_offset,
-              language: language,
-              contentType: 'grammar_analysis'
-            })
-          })
-        } catch (saveError) {
-          console.error('Failed to save grammar analysis:', saveError)
-        }
-      }
+      // Database save is now handled by the unified smart-analysis API
 
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
@@ -608,7 +517,7 @@ export default function MobileFrenchSentenceCard({
                 type="text"
                 value={wordInput}
                 onChange={(e) => setWordInput(e.target.value)}
-                placeholder="输入单词..."
+                placeholder="Entrez un mot..."
                 className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500"
                 disabled={isLoading}
               />

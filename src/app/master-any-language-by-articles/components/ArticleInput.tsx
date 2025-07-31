@@ -6,11 +6,12 @@ import { Language, getUITexts } from '../config/uiText'
 
 interface ArticleInputProps {
   language: Language
+  languagePair?: string
   onSubmit: (id: number, content: string, title?: string) => void
-  onSelectArticle: (id: number, content: string, title?: string) => void
+  onSelectArticle: (id: number, content: string, title?: string, fullData?: any) => void
 }
 
-export default function ArticleInput({ language, onSubmit, onSelectArticle }: ArticleInputProps) {
+export default function ArticleInput({ language, languagePair, onSubmit, onSelectArticle }: ArticleInputProps) {
   const [content, setContent] = useState('')
   const [title, setTitle] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -31,7 +32,7 @@ export default function ArticleInput({ language, onSubmit, onSelectArticle }: Ar
         const formData = new FormData()
         formData.append('image', backgroundImage)
         
-        const imageRes = await fetch('/api/language-reading/upload-image', {
+        const imageRes = await fetch('/api/master-language/upload-image', {
           method: 'POST',
           body: formData
         })
@@ -43,14 +44,19 @@ export default function ArticleInput({ language, onSubmit, onSelectArticle }: Ar
         setImageUploading(false)
       }
       
-      const res = await fetch('/api/language-reading/articles', {
+      // Use appropriate API endpoint based on language pair
+      const apiEndpoint = languagePair === 'chinese-french' 
+        ? '/api/master-language/articles'
+        : '/api/master-language/articles'
+      
+      const res = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           content: content.trim(), 
           title: title.trim() || uiTexts.untitled,
-          language: language,
-          backgroundImageUrl: backgroundImageUrl
+          languagePair: languagePair || `chinese-${language}`,
+          background_image_url: backgroundImageUrl
         })
       })
       
@@ -142,7 +148,7 @@ export default function ArticleInput({ language, onSubmit, onSelectArticle }: Ar
       
       {/* Right Panel - Article List */}
       <div className="w-1/2 flex flex-col">
-        <ArticleList language={language} onSelectArticle={onSelectArticle} />
+        <ArticleList language={language} languagePair={languagePair} onSelectArticle={onSelectArticle} />
       </div>
     </div>
   )

@@ -188,17 +188,14 @@ export default function MobileReadingView({ language, articleId, content, title 
         setSentenceQueries(frenchStore.frenchSentenceCards)
         setWordQueries([]) // French mobile uses sentence cards, not separate word queries
       } else {
-        // For other languages, use global store
-        const queriesResponse = await fetch(`/api/language-reading/queries?articleId=${articleId}&language=${language}`)
-        if (queriesResponse.ok) {
-          const queriesData = await queriesResponse.json()
-          setWordQueries(queriesData.wordQueries || [])
-          setSentenceQueries(queriesData.sentenceQueries || [])
-        }
+        // Queries API removed - data moved to articles.analysis_records
+        console.log('MobileReadingView queries API deprecated')
+        setWordQueries([])
+        setSentenceQueries([])
       }
 
       // Fetch AI notes
-      const aiNotesResponse = await fetch(`/api/language-reading/ai-notes?articleId=${articleId}&language=${language}`)
+      const aiNotesResponse = await fetch(`/api/master-language/ai-notes?articleId=${articleId}&language=${language}`)
       if (aiNotesResponse.ok) {
         const aiNotesData = await aiNotesResponse.json()
         const combinedAINotes = [
@@ -277,7 +274,7 @@ export default function MobileReadingView({ language, articleId, content, title 
     setIsCreatingSentence(true)
     
     try {
-      const res = await fetch('/api/language-reading/query-sentence', {
+      const res = await fetch('/api/master-language/query-sentence', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

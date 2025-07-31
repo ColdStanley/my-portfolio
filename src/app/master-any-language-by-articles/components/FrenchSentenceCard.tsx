@@ -37,6 +37,14 @@ interface WordQuery {
   timestamp: number
 }
 
+interface PhraseQuery {
+  id: string
+  phrase: string
+  response: string
+  isStreaming: boolean
+  timestamp: number
+}
+
 export default function FrenchSentenceCard({ 
   query, 
   language, 
@@ -47,8 +55,15 @@ export default function FrenchSentenceCard({
 }: FrenchSentenceCardProps) {
   const [activeTab, setActiveTab] = useState<TabType>('words')
   const [wordQueries, setWordQueries] = useState<WordQuery[]>([])
+  const [selectedWordId, setSelectedWordId] = useState<string | null>(null)
   const [wordInput, setWordInput] = useState('')
+  const [phraseQueries, setPhraseQueries] = useState<PhraseQuery[]>([])
+  const [selectedPhraseId, setSelectedPhraseId] = useState<string | null>(null)
+  const [phraseInput, setPhraseInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [typewriterText, setTypewriterText] = useState<{[key: string]: string}>({})
+  const [typewriterTimers, setTypewriterTimers] = useState<{[key: string]: NodeJS.Timeout}>({})
+  const [showTypewriter, setShowTypewriter] = useState<{[key: string]: boolean}>({})
   const [playingText, setPlayingText] = useState<string | null>(null)
   const [phrasesAnalysis, setPhrasesAnalysis] = useState('')
   const [isLoadingPhrases, setIsLoadingPhrases] = useState(false)
@@ -65,6 +80,15 @@ export default function FrenchSentenceCard({
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // Cleanup typewriter timers on unmount
+  React.useEffect(() => {
+    return () => {
+      Object.values(typewriterTimers).forEach(timer => {
+        if (timer) clearTimeout(timer)
+      })
+    }
+  }, [typewriterTimers])
 
   // Handle TTS playback
   const handleSpeak = async (text: string) => {
@@ -272,6 +296,7 @@ export default function FrenchSentenceCard({
     const existingQuery = wordQueries.find(q => q.word.toLowerCase() === word.trim().toLowerCase())
     if (existingQuery) {
       setWordInput('')
+      setSelectedWordId(existingQuery.id) // Select existing word
       return
     }
 
@@ -286,6 +311,7 @@ export default function FrenchSentenceCard({
 
     // Add new query to the top of the list
     setWordQueries(prev => [newQuery, ...prev])
+    setSelectedWordId(queryId) // Select the new word
     setWordInput('')
     setIsLoading(true)
 
@@ -297,116 +323,44 @@ export default function FrenchSentenceCard({
     abortControllerRef.current = new AbortController()
 
     try {
-      console.log('Making API request with data:', {
-        queryData: query,
-        language: language,
-        userPrompt: `请用简洁易懂的方式解释这个法语单词 "${word}" 在句子 "${query.sentence_text}" 中的意思和用法。`
-      })
-      
-      const response = await fetch('/api/language-reading/ask-ai', {
+      const response = await fetch('/api/master-language/smart-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          queryData: query,
+          mode: 'simple',
+          selectedText: word.trim(),
+          contextSentence: query.sentence_text,
           language: language,
-          userPrompt: `请用简洁易懂的方式解释这个法语单词 "${word}" 在句子 "${query.sentence_text}" 中的意思和用法。
-
-请按照以下结构回答，并确保每一项都非常简短、清晰：
-
-1. 中文解释（1句话，告诉我这个词在句中是什么意思）
-2. 用法说明（最多2句话，说明它在语法上起什么作用）
-3. 简单例句（2个法语例句 + 中文翻译，例句不能太难，若例句含有有价值的词组或者语法，也简单讲解一下）
-
-不要添加过多术语或语法细节。风格要温和、简洁，适合法语初学者阅读。`
+          nativeLanguage: 'chinese',
+          articleId: articleId
         }),
         signal: abortControllerRef.current.signal
       })
 
-      console.log('Response status:', response.status, response.statusText)
-      
       if (!response.ok) {
         const errorText = await response.text()
         console.error('API error response:', errorText)
         throw new Error(`API request failed: ${response.status} ${errorText}`)
       }
 
-      const reader = response.body?.getReader()
-      if (!reader) throw new Error('No response body')
-
-      const decoder = new TextDecoder()
-      let accumulatedResponse = ''
-
-      let buffer = ''
+      const data = await response.json()
+      console.log('Received word query data:', data)
       
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6).trim()
-            
-            if (data === '[DONE]') {
-              break
-            }
-
-            try {
-              const parsed = JSON.parse(data)
-              const content = parsed.content
-              
-              if (content) {
-                accumulatedResponse += content
-                console.log('Received content chunk:', content)
-                
-                // Update the streaming query
-                setWordQueries(prev => 
-                  prev.map(q => 
-                    q.id === queryId 
-                      ? { ...q, response: accumulatedResponse }
-                      : q
-                  )
-                )
-              }
-            } catch (e) {
-              console.log('Failed to parse data:', data, e)
-              continue
-            }
-          }
-        }
-      }
-
-      // Mark streaming as complete
+      // Format the response for display
+      const formattedResponse = data.definition || data.analysis || 'No analysis available'
+      
+      // Update the query with the response
       setWordQueries(prev => 
         prev.map(q => 
           q.id === queryId 
-            ? { ...q, isStreaming: false }
+            ? { ...q, response: formattedResponse, isStreaming: false }
             : q
         )
       )
 
-      // Save word query to database
-      if (accumulatedResponse) {
-        try {
-          await fetch('/api/language-reading/save-phrase-analysis', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              articleId: articleId,
-              sentenceText: `${query.sentence_text}::word::${word.trim()}`, // Format for mobile compatibility
-              analysis: accumulatedResponse,
-              startOffset: query.start_offset,
-              endOffset: query.end_offset,
-              language: language,
-              contentType: 'word_query'
-            })
-          })
-        } catch (saveError) {
-          console.error('Failed to save word query:', saveError)
-        }
+      // Start typewriter effect
+      if (formattedResponse) {
+        startTypewriterEffect(queryId, formattedResponse)
       }
 
     } catch (error) {
@@ -435,6 +389,107 @@ export default function FrenchSentenceCard({
     handleWordQuery(wordInput)
   }
 
+  // Handle phrase query submission
+  const handlePhraseQuery = async (phrase: string) => {
+    if (!phrase.trim() || isLoading) return
+    
+    // Check if phrase already exists
+    const existingQuery = phraseQueries.find(q => q.phrase.toLowerCase() === phrase.trim().toLowerCase())
+    if (existingQuery) {
+      setPhraseInput('')
+      setSelectedPhraseId(existingQuery.id) // Select existing phrase
+      return
+    }
+
+    const queryId = Date.now().toString()
+    const newQuery: PhraseQuery = {
+      id: queryId,
+      phrase: phrase.trim(),
+      response: '',
+      isStreaming: true,
+      timestamp: Date.now()
+    }
+
+    // Add new query to the top of the list
+    setPhraseQueries(prev => [newQuery, ...prev])
+    setSelectedPhraseId(queryId) // Select the new phrase
+    setPhraseInput('')
+    setIsLoading(true)
+
+    // Abort previous request if any
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
+    abortControllerRef.current = new AbortController()
+
+    try {
+      const response = await fetch('/api/master-language/smart-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'deep',
+          selectedText: phrase.trim(),
+          contextSentence: query.sentence_text,
+          language: language,
+          nativeLanguage: 'chinese',
+          articleId: articleId
+        }),
+        signal: abortControllerRef.current.signal
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('API error response:', errorText)
+        throw new Error(`API request failed: ${response.status} ${errorText}`)
+      }
+
+      const data = await response.json()
+      console.log('Received phrase query data:', data)
+      
+      // Format the response for display
+      const formattedResponse = data.definition || data.analysis || 'No analysis available'
+      
+      // Update the query with the response
+      setPhraseQueries(prev => 
+        prev.map(q => 
+          q.id === queryId 
+            ? { ...q, response: formattedResponse, isStreaming: false }
+            : q
+        )
+      )
+
+      // Start typewriter effect
+      if (formattedResponse) {
+        startTypewriterEffect(queryId, formattedResponse)
+      }
+
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        // Request was aborted, remove the query
+        setPhraseQueries(prev => prev.filter(q => q.id !== queryId))
+      } else {
+        console.error('Phrase query failed:', error)
+        // Update with error message
+        setPhraseQueries(prev => 
+          prev.map(q => 
+            q.id === queryId 
+              ? { ...q, response: '查询失败，请重试', isStreaming: false }
+              : q
+          )
+        )
+      }
+    } finally {
+      setIsLoading(false)
+      abortControllerRef.current = null
+    }
+  }
+
+  const handlePhraseInputSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    handlePhraseQuery(phraseInput)
+  }
+
   // Handle word click in highlighted sentence
   const handleWordClick = (word: string) => {
     // Switch to words tab
@@ -460,6 +515,84 @@ export default function FrenchSentenceCard({
       // Query the word if not already queried
       handleWordQuery(word)
     }
+  }
+
+  // Handle word deletion
+  const handleDeleteWord = (wordId: string) => {
+    setWordQueries(prev => {
+      const filtered = prev.filter(q => q.id !== wordId)
+      // If deleting currently selected word, select another one or clear selection
+      if (selectedWordId === wordId) {
+        setSelectedWordId(filtered.length > 0 ? filtered[0].id : null)
+      }
+      return filtered
+    })
+  }
+
+  // Handle phrase deletion
+  const handleDeletePhrase = (phraseId: string) => {
+    setPhraseQueries(prev => {
+      const filtered = prev.filter(q => q.id !== phraseId)
+      // If deleting currently selected phrase, select another one or clear selection
+      if (selectedPhraseId === phraseId) {
+        setSelectedPhraseId(filtered.length > 0 ? filtered[0].id : null)
+      }
+      return filtered
+    })
+  }
+
+  // Auto-select first word when wordQueries changes and no word is selected
+  React.useEffect(() => {
+    if (wordQueries.length > 0 && !selectedWordId) {
+      setSelectedWordId(wordQueries[0].id)
+    }
+  }, [wordQueries, selectedWordId])
+
+  // Auto-select first phrase when phraseQueries changes and no phrase is selected
+  React.useEffect(() => {
+    if (phraseQueries.length > 0 && !selectedPhraseId) {
+      setSelectedPhraseId(phraseQueries[0].id)
+    }
+  }, [phraseQueries, selectedPhraseId])
+
+  // Start typewriter effect for a word
+  const startTypewriterEffect = (wordId: string, content: string) => {
+    // Clear existing timer for this word
+    if (typewriterTimers[wordId]) {
+      clearTimeout(typewriterTimers[wordId])
+    }
+
+    // Wait 2 seconds then start typewriter
+    const delayTimer = setTimeout(() => {
+      setShowTypewriter(prev => ({ ...prev, [wordId]: true }))
+      setTypewriterText(prev => ({ ...prev, [wordId]: '' }))
+      
+      let index = 0
+      const typeWriter = () => {
+        if (index < content.length) {
+          setTypewriterText(prev => ({ 
+            ...prev, 
+            [wordId]: content.substring(0, index + 1) 
+          }))
+          index++
+          const timer = setTimeout(typeWriter, 30)
+          setTypewriterTimers(prev => ({ ...prev, [wordId]: timer }))
+        }
+      }
+      typeWriter()
+    }, 2000)
+    
+    setTypewriterTimers(prev => ({ ...prev, [wordId]: delayTimer }))
+  }
+
+  // Format markdown content
+  const formatMarkdown = (text: string): string => {
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-purple-800 font-semibold">$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em class="text-purple-700">$1</em>')
+      .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 rounded text-purple-800">$1</code>')
+      .replace(/\n\n/g, '<br/><br/>')
+      .replace(/\n/g, '<br/>')
   }
 
   // Render sentence with highlighted words
@@ -503,8 +636,8 @@ export default function FrenchSentenceCard({
   React.useEffect(() => {
     const loadExistingData = async () => {
       try {
-        // Load phrase analysis for this specific sentence
-        const phrasesResponse = await fetch(`/api/language-reading/queries?articleId=${articleId}&type=sentence&contentType=phrase_analysis&language=${language}&sentenceId=${query.id}`)
+        // Queries API removed - phrase analysis moved to articles.analysis_records
+        console.log('FrenchSentenceCard phrase queries API deprecated')
         if (phrasesResponse.ok) {
           const phrasesData = await phrasesResponse.json()
           if (phrasesData && phrasesData.length > 0) {
@@ -512,8 +645,8 @@ export default function FrenchSentenceCard({
           }
         }
 
-        // Load grammar analysis for this specific sentence
-        const grammarResponse = await fetch(`/api/language-reading/queries?articleId=${articleId}&type=sentence&contentType=grammar_analysis&language=${language}&sentenceId=${query.id}`)
+        // Queries API removed - grammar analysis moved to articles.analysis_records
+        console.log('FrenchSentenceCard grammar queries API deprecated')
         if (grammarResponse.ok) {
           const grammarData = await grammarResponse.json()
           if (grammarData && grammarData.length > 0) {
@@ -521,30 +654,48 @@ export default function FrenchSentenceCard({
           }
         }
 
-        // Load word queries for this specific sentence
-        const wordsResponse = await fetch(`/api/language-reading/queries?articleId=${articleId}&type=sentence&contentType=word_query&language=${language}&sentenceId=${query.id}`)
+        // Queries API removed - word queries moved to articles.analysis_records
+        console.log('FrenchSentenceCard word queries API deprecated')
         if (wordsResponse.ok) {
           const wordsData = await wordsResponse.json()
           if (wordsData && wordsData.length > 0) {
-            const savedWordQueries = wordsData.map((item: any) => {
-              // Extract word from formatted sentence_text (for mobile compatibility)
-              let word = item.sentence_text
-              
-              // Check if it's the new mobile format: "sentence::word::actualword"
-              const wordMatch = item.sentence_text.match(/::word::(.+)$/)
-              if (wordMatch) {
-                word = wordMatch[1]
-              }
-              
-              return {
-                id: item.id.toString(),
-                word: word,
-                response: item.analysis,
-                isStreaming: false,
-                timestamp: new Date(item.created_at).getTime()
-              }
-            })
+            // Filter word queries that fall within this sentence's range
+            const sentenceWordQueries = wordsData.filter((item: any) => 
+              item.start_offset >= query.start_offset && 
+              item.end_offset <= query.end_offset
+            )
+            
+            const savedWordQueries = sentenceWordQueries.map((item: any) => ({
+              id: item.id.toString(),
+              word: item.word_text,
+              response: item.definition || item.analysis || 'No definition available',
+              isStreaming: false,
+              timestamp: new Date(item.created_at).getTime()
+            }))
             setWordQueries(savedWordQueries)
+          }
+        }
+
+        // Queries API removed - phrase queries moved to articles.analysis_records
+        console.log('FrenchSentenceCard phrase word queries API deprecated')
+        if (phraseQueriesResponse.ok) {
+          const phraseQueriesData = await phraseQueriesResponse.json()
+          if (phraseQueriesData && phraseQueriesData.length > 0) {
+            // Filter phrase queries that fall within this sentence's range and have phrase type
+            const sentencePhraseQueries = phraseQueriesData.filter((item: any) => 
+              item.start_offset >= query.start_offset && 
+              item.end_offset <= query.end_offset &&
+              (item.query_type === 'phrase_query' || item.analysis_mode === 'phrase')
+            )
+            
+            const savedPhraseQueries = sentencePhraseQueries.map((item: any) => ({
+              id: item.id.toString(),
+              phrase: item.word_text,
+              response: item.definition || item.analysis || 'No analysis available',
+              isStreaming: false,
+              timestamp: new Date(item.created_at).getTime()
+            }))
+            setPhraseQueries(savedPhraseQueries)
           }
         }
       } catch (error) {
@@ -570,27 +721,16 @@ export default function FrenchSentenceCard({
     abortControllerRef.current = new AbortController()
 
     try {
-      const response = await fetch('/api/language-reading/ask-ai', {
+      const response = await fetch('/api/master-language/smart-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          queryData: query,
+          mode: 'deep',
+          selectedText: query.sentence_text,
+          contextSentence: query.sentence_text,
           language: language,
-          userPrompt: `请你帮助我学习下面这句法语中的重要词组。  
-我的法语水平是初学者，所以请你讲解得简单、清晰，避免用太复杂的语法术语或长难句。
-
-句子是：  
-"${query.sentence_text}"
-
-请你找出其中2–4个最有代表性的法语**词组（2词以上）**，然后按以下结构逐个解释：
-
-1. 词组原文（如：passer maître dans...）
-2. 中文意思（用一句话简单解释）
-3. 用法说明（最多两句话，说明它在句中做什么，不要太术语化）
-4. 简单例句（3个简单的法语句子 + 中文翻译）
-5. 联想记忆建议（可选，给出记忆方法或小贴士）
-
-请按以上格式分别列出每个词组的讲解。`
+          nativeLanguage: 'chinese',
+          articleId: articleId
         }),
         signal: abortControllerRef.current.signal
       })
@@ -637,27 +777,6 @@ export default function FrenchSentenceCard({
         }
       }
 
-      // Save to database after successful analysis
-      if (accumulatedResponse) {
-        try {
-          await fetch('/api/language-reading/save-phrase-analysis', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              articleId: articleId,
-              sentenceText: query.sentence_text,
-              analysis: accumulatedResponse,
-              startOffset: query.start_offset,
-              endOffset: query.end_offset,
-              language: language,
-              contentType: 'phrase_analysis'
-            })
-          })
-        } catch (saveError) {
-          console.error('Failed to save phrase analysis:', saveError)
-          // Continue even if save fails - user still sees the analysis
-        }
-      }
 
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
@@ -688,34 +807,16 @@ export default function FrenchSentenceCard({
     abortControllerRef.current = new AbortController()
 
     try {
-      const response = await fetch('/api/language-reading/ask-ai', {
+      const response = await fetch('/api/master-language/smart-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          queryData: query,
+          mode: 'grammar',
+          selectedText: query.sentence_text,
+          contextSentence: query.sentence_text,
           language: language,
-          userPrompt: `请用适合法语初学者的方式，分析这句话的语法结构：
-
-"${query.sentence_text}"
-
-请按照以下结构回答，每一项都要简洁清晰，不要使用太多专业术语：
-
-1. 这句话的整体结构是什么？  
-   → 分成几个部分？（比如主句 / 从句 / 插入语等）
-
-2. 这句话用了哪些时态？  
-   → 每个时态表示什么时间概念？为什么用它？
-
-3. 表达的逻辑关系是什么？  
-   → 是让步？假设？对比？因果？
-
-4. 每部分各自说了什么？  
-   → 用通俗中文逐句解释
-
-5. 有哪些法语初学者常犯的错误？  
-   → 这句话中哪些地方容易误解或误用？
-
-请不要解释词汇、不要展示太难的语法规则，只关注整个句子"怎么组织"的逻辑。`
+          nativeLanguage: 'chinese',
+          articleId: articleId
         }),
         signal: abortControllerRef.current.signal
       })
@@ -765,7 +866,7 @@ export default function FrenchSentenceCard({
       // Save to database after successful analysis
       if (accumulatedResponse) {
         try {
-          await fetch('/api/language-reading/save-phrase-analysis', {
+          await fetch('/api/master-language/save-phrase-analysis', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -790,7 +891,7 @@ export default function FrenchSentenceCard({
         setGrammarAnalysis('')
       } else {
         console.error('Grammar analysis failed:', error)
-        setGrammarAnalysis('分析失败，请重试')
+        setGrammarAnalysis('Analyse échouée, veuillez réessayer')
       }
     } finally {
       setIsLoadingGrammar(false)
@@ -810,7 +911,7 @@ export default function FrenchSentenceCard({
                   type="text"
                   value={wordInput}
                   onChange={(e) => setWordInput(e.target.value)}
-                  placeholder="输入要询问的单词..."
+                  placeholder="Entrez un mot à rechercher..."
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   disabled={isLoading}
                 />
@@ -826,63 +927,110 @@ export default function FrenchSentenceCard({
               </div>
             </form>
 
-            {/* Word queries cards */}
-            <div className="space-y-3 max-h-80 overflow-y-auto">
-              {wordQueries.map((wordQuery) => (
-                <div
-                  key={wordQuery.id}
-                  data-word-id={wordQuery.id}
-                  className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="font-semibold text-purple-800">
-                      {wordQuery.word}
-                    </span>
-                    <button
-                      onClick={() => handleSpeak(wordQuery.word)}
-                      disabled={playingText === wordQuery.word}
-                      className="text-purple-500 hover:text-purple-700 hover:bg-purple-50 p-1 rounded-full transition-all duration-200 disabled:opacity-50"
-                      title={`播放: ${wordQuery.word}`}
+            {/* Left-Right Tab Layout */}
+            <div className="flex gap-4 h-80">
+              {/* Left Panel - Word Tabs */}
+              <div className="w-1/4 border-r border-gray-200 pr-3">
+                <div className="space-y-1 max-h-full overflow-y-auto">
+                  {wordQueries.map((wordQuery) => (
+                    <div
+                      key={wordQuery.id}
+                      onClick={() => setSelectedWordId(wordQuery.id)}
+                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
+                        selectedWordId === wordQuery.id
+                          ? 'bg-purple-100 border border-purple-300'
+                          : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
+                      }`}
                     >
-                      {playingText === wordQuery.word ? (
-                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-500"></div>
-                      ) : (
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.817L4.343 13.5H2a1 1 0 01-1-1v-5a1 1 0 011-1h2.343l4.04-3.317a1 1 0 01.997-.106zM15.657 6.343a1 1 0 011.414 0A9.972 9.972 0 0119 12a9.972 9.972 0 01-1.929 5.657 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 12a7.971 7.971 0 00-1.343-4.243 1 1 0 010-1.414z" clipRule="evenodd" />
-                          <path fillRule="evenodd" d="M13.243 8.757a1 1 0 011.414 0A5.98 5.98 0 0116 12a5.98 5.98 0 01-1.343 3.243 1 1 0 01-1.414-1.414A3.99 3.99 0 0014 12a3.99 3.99 0 00-.757-2.329 1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                      )}
-                    </button>
-                    {wordQuery.isStreaming && (
-                      <div className="flex items-center text-xs text-gray-500">
-                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-500 mr-1"></div>
-                        回复中...
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="text-sm font-medium text-gray-800 truncate">
+                          {wordQuery.word}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleSpeak(wordQuery.word)
+                          }}
+                          disabled={playingText === wordQuery.word}
+                          className="text-purple-500 hover:text-purple-700 disabled:opacity-50 transition-colors"
+                        >
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.817L4.343 13.5H2a1 1 0 01-1-1v-5a1 1 0 011-1h2.343l4.04-3.317a1 1 0 01.997-.106z" clipRule="evenodd" />
+                          </svg>
+                        </button>
                       </div>
-                    )}
-                  </div>
-                  <div className="text-sm text-gray-700 leading-relaxed">
-                    {wordQuery.response && (
-                      <div className="formatted-response">
-                        {formatAIResponse(wordQuery.response)}
-                        {wordQuery.isStreaming && (
-                          <span className="inline-block w-2 h-4 bg-purple-500 ml-1 animate-pulse"></span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteWord(wordQuery.id)
+                        }}
+                        className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                  {wordQueries.length === 0 && (
+                    <div className="text-center text-gray-500 text-sm py-8">
+                      Aucun mot recherché
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right Panel - Word Content */}
+              <div className="flex-1 pl-4">
+                {selectedWordId ? (
+                  (() => {
+                    const selectedWord = wordQueries.find(q => q.id === selectedWordId)
+                    if (!selectedWord) return null
+                    
+                    return (
+                      <div className="bg-white border border-gray-200 rounded-lg p-4 h-full overflow-y-auto">
+                        <div className="mb-4">
+                          <h4 className="font-semibold text-purple-800 text-lg">
+                            {selectedWord.word}
+                          </h4>
+                        </div>
+                        
+                        {selectedWord.isStreaming ? (
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
+                            <span>Analyse en cours...</span>
+                          </div>
+                        ) : showTypewriter[selectedWord.id] ? (
+                          <div className="prose prose-sm max-w-none">
+                            <div 
+                              className="text-xs text-gray-700 leading-relaxed"
+                              dangerouslySetInnerHTML={{
+                                __html: formatMarkdown(typewriterText[selectedWord.id] || '')
+                              }}
+                            />
+                            {typewriterText[selectedWord.id] && typewriterText[selectedWord.id].length < selectedWord.response.length && (
+                              <span className="inline-block w-1.5 h-3 bg-purple-500 ml-1 animate-pulse rounded-sm"></span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="prose prose-sm max-w-none">
+                            <div 
+                              className="text-xs text-gray-700 leading-relaxed"
+                              dangerouslySetInnerHTML={{
+                                __html: formatMarkdown(selectedWord.response)
+                              }}
+                            />
+                          </div>
                         )}
                       </div>
-                    )}
-                    {!wordQuery.response && wordQuery.isStreaming && (
-                      <div className="flex items-center text-gray-500">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500 mr-2"></div>
-                        AI正在思考...
-                      </div>
-                    )}
+                    )
+                  })()
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500 text-sm">
+                    Sélectionnez un mot pour voir son analyse
                   </div>
-                </div>
-              ))}
-              {wordQueries.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <p className="text-sm">输入单词来向AI提问</p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         )
@@ -890,48 +1038,134 @@ export default function FrenchSentenceCard({
       case 'phrases':
         return (
           <div className="space-y-3">
-            {/* Analyze button */}
-            <div className="flex justify-center">
-              <button
-                onClick={handleAnalyzePhrases}
-                disabled={isLoadingPhrases}
-                className="px-3 py-1.5 bg-purple-500 text-white text-xs rounded hover:bg-purple-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-              >
-                {isLoadingPhrases ? (
-                  <>
-                    <div className="animate-spin rounded-full h-3 w-3 border-b border-white"></div>
-                    分析中...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    分析词组
-                  </>
-                )}
-              </button>
-            </div>
+            {/* Phrase input search box */}
+            <form onSubmit={handlePhraseInputSubmit} className="flex gap-2">
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  value={phraseInput}
+                  onChange={(e) => setPhraseInput(e.target.value)}
+                  placeholder="Entrez une expression à rechercher..."
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  disabled={isLoading}
+                />
+                <button
+                  type="submit"
+                  disabled={!phraseInput.trim() || isLoading}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-purple-500 hover:text-purple-700 disabled:text-gray-400"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </button>
+              </div>
+            </form>
 
-            {/* Phrases analysis result */}
-            {phrasesAnalysis && (
-              <div className="bg-purple-50/50 p-3 rounded-lg border-l-4 border-purple-300">
-                <div className="text-sm text-gray-700 leading-relaxed">
-                  <div className="formatted-response">
-                    {formatAIResponse(phrasesAnalysis)}
-                    {isLoadingPhrases && (
-                      <span className="inline-block w-2 h-4 bg-purple-500 ml-1 animate-pulse"></span>
-                    )}
-                  </div>
+            {/* Left-Right Tab Layout for Phrases */}
+            <div className="flex gap-4 h-80">
+              {/* Left Panel - Phrase Tabs (wider than words for longer phrases) */}
+              <div className="w-1/3 border-r border-gray-200 pr-3">
+                <div className="space-y-1 max-h-full overflow-y-auto">
+                  {phraseQueries.map((phraseQuery) => (
+                    <div
+                      key={phraseQuery.id}
+                      onClick={() => setSelectedPhraseId(phraseQuery.id)}
+                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
+                        selectedPhraseId === phraseQuery.id
+                          ? 'bg-purple-100 border border-purple-300'
+                          : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="text-sm font-medium text-gray-800 truncate">
+                          {phraseQuery.phrase}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleSpeak(phraseQuery.phrase)
+                          }}
+                          disabled={playingText === phraseQuery.phrase}
+                          className="text-purple-500 hover:text-purple-700 disabled:opacity-50 transition-colors flex-shrink-0"
+                        >
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.817L4.343 13.5H2a1 1 0 01-1-1v-5a1 1 0 011-1h2.343l4.04-3.317a1 1 0 01.997-.106z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeletePhrase(phraseQuery.id)
+                        }}
+                        className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                  {phraseQueries.length === 0 && (
+                    <div className="text-center text-gray-500 text-sm py-8">
+                      Aucune expression recherchée
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
 
-            {!phrasesAnalysis && !isLoadingPhrases && (
-              <div className="text-center py-8 text-gray-500">
-                <p className="text-sm">点击按钮分析句子中的词组搭配</p>
+              {/* Right Panel - Phrase Content */}
+              <div className="flex-1 pl-4">
+                {selectedPhraseId ? (
+                  (() => {
+                    const selectedPhrase = phraseQueries.find(q => q.id === selectedPhraseId)
+                    if (!selectedPhrase) return null
+                    
+                    return (
+                      <div className="bg-white border border-gray-200 rounded-lg p-4 h-full overflow-y-auto">
+                        <div className="mb-4">
+                          <h4 className="font-semibold text-purple-800 text-lg">
+                            {selectedPhrase.phrase}
+                          </h4>
+                        </div>
+                        
+                        {selectedPhrase.isStreaming ? (
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
+                            <span>Analyse en cours...</span>
+                          </div>
+                        ) : showTypewriter[selectedPhrase.id] ? (
+                          <div className="prose prose-sm max-w-none">
+                            <div 
+                              className="text-xs text-gray-700 leading-relaxed"
+                              dangerouslySetInnerHTML={{
+                                __html: formatMarkdown(typewriterText[selectedPhrase.id] || '')
+                              }}
+                            />
+                            {typewriterText[selectedPhrase.id] && typewriterText[selectedPhrase.id].length < selectedPhrase.response.length && (
+                              <span className="inline-block w-1.5 h-3 bg-purple-500 ml-1 animate-pulse rounded-sm"></span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="prose prose-sm max-w-none">
+                            <div 
+                              className="text-xs text-gray-700 leading-relaxed"
+                              dangerouslySetInnerHTML={{
+                                __html: formatMarkdown(selectedPhrase.response)
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500 text-sm">
+                    Sélectionnez une expression pour voir son analyse
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         )
       
@@ -948,14 +1182,14 @@ export default function FrenchSentenceCard({
                 {isLoadingGrammar ? (
                   <>
                     <div className="animate-spin rounded-full h-3 w-3 border-b border-white"></div>
-                    分析中...
+                    Analyse en cours...
                   </>
                 ) : (
                   <>
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    分析语法
+                    Analyser la grammaire
                   </>
                 )}
               </button>
@@ -977,7 +1211,7 @@ export default function FrenchSentenceCard({
 
             {!grammarAnalysis && !isLoadingGrammar && (
               <div className="text-center py-8 text-gray-500">
-                <p className="text-sm">点击按钮分析句子的语法结构</p>
+                <p className="text-sm">Cliquez sur le bouton pour analyser la grammaire de cette phrase</p>
               </div>
             )}
           </div>

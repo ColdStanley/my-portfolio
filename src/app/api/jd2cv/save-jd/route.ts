@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
         const needsUpdate = !currentProperties.full_job_description_part_2
 
         if (needsUpdate) {
-          console.log('Creating additional fields for long JD content...')
+          console.log('Creating additional fields for long JD content and new key sentence/keyword fields...')
           await notion.databases.update({
             database_id: process.env.NOTION_JD2CV_DB_ID,
             properties: {
@@ -47,7 +47,9 @@ export async function POST(request: NextRequest) {
               full_job_description_part_2: { rich_text: {} },
               full_job_description_part_3: { rich_text: {} },
               full_job_description_part_4: { rich_text: {} },
-              full_job_description_part_5: { rich_text: {} }
+              full_job_description_part_5: { rich_text: {} },
+              jd_key_sentences: { rich_text: {} },
+              keywords_from_sentences: { rich_text: {} }
             }
           })
           console.log('Successfully created additional fields')

@@ -146,7 +146,7 @@ const AINotesCards = forwardRef<AINotesCardsRef, AINotesCardsProps>(({ language,
   const fetchAINotesData = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/language-reading/ai-notes?articleId=${articleId}&language=${language}`)
+      const response = await fetch(`/api/master-language/ai-notes?articleId=${articleId}&language=${language}`)
       if (response.ok) {
         const data = await response.json()
         setWordQueries(data.wordQueries || [])

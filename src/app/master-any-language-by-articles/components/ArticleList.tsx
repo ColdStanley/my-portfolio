@@ -15,11 +15,12 @@ interface Article {
 
 interface ArticleListProps {
   language: Language
-  onSelectArticle: (id: number, content: string, title?: string) => void
+  languagePair?: string
+  onSelectArticle: (id: number, content: string, title?: string, fullData?: Article) => void
   isMobile?: boolean
 }
 
-export default function ArticleList({ language, onSelectArticle, isMobile = false }: ArticleListProps) {
+export default function ArticleList({ language, languagePair, onSelectArticle, isMobile = false }: ArticleListProps) {
   const [articles, setArticles] = useState<Article[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [displayedCount, setDisplayedCount] = useState(6)
@@ -28,7 +29,20 @@ export default function ArticleList({ language, onSelectArticle, isMobile = fals
   useEffect(() => {
     const fetchArticles = async () => {
       try {
-        const res = await fetch(`/api/language-reading/articles/list?language=${language}`)
+        // Use appropriate API endpoint based on language pair
+        let apiEndpoint = '/api/master-language/articles/list'
+        let queryParam = `language=${language}`
+        
+        if (languagePair === 'chinese-french') {
+          apiEndpoint = '/api/master-language/articles/list'
+          queryParam = '' // Chinese-French API doesn't need query params
+        } else if (languagePair) {
+          queryParam = `languagePair=${languagePair}`
+        }
+        
+        const url = queryParam ? `${apiEndpoint}?${queryParam}` : apiEndpoint
+        const res = await fetch(url)
+        
         if (res.ok) {
           const data = await res.json()
           setArticles(data)
@@ -41,11 +55,11 @@ export default function ArticleList({ language, onSelectArticle, isMobile = fals
     }
 
     fetchArticles()
-  }, [language])
+  }, [language, languagePair])
 
   const handleSelectArticle = (article: Article) => {
     localStorage.setItem(`lastArticleId_${language}`, article.id.toString())
-    onSelectArticle(article.id, article.content, article.title)
+    onSelectArticle(article.id, article.content || '', article.title || 'Untitled', article)
   }
 
   const formatDate = (dateString: string) => {
@@ -110,7 +124,7 @@ export default function ArticleList({ language, onSelectArticle, isMobile = fals
                 </div>
                 
                 <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
-                  {article.content.substring(0, 120)}...
+                  {article.content ? `${article.content.substring(0, 120)}...` : 'No content available'}
                 </p>
               </div>
               

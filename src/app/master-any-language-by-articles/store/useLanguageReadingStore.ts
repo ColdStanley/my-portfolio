@@ -2,12 +2,13 @@ import { create } from 'zustand'
 import { Language } from '../config/uiText'
 
 interface WordQuery {
-  id: number
+  id: number | string // Support both number (old system) and string (UUID for new system)
   word_text: string
-  definition: string
+  definition?: string
+  analysis?: string
   part_of_speech?: string
   root_form?: string
-  examples: string[]
+  examples?: string[]
   example_translation?: string
   start_offset: number
   end_offset: number
@@ -15,22 +16,24 @@ interface WordQuery {
   user_notes?: string
   ai_notes?: string
   language?: string
+  analysis_mode?: 'mark' | 'simple' | 'deep' | 'grammar'
   // French-specific fields
   gender?: string // masculin/féminin
   conjugation_info?: string
 }
 
 interface SentenceQuery {
-  id: number
+  id: number | string // Support both number (old system) and string (UUID for new system)
   sentence_text: string
-  translation: string
-  analysis: string
+  translation?: string
+  analysis?: string
   start_offset: number
   end_offset: number
   query_type?: string
   user_notes?: string
   ai_notes?: string
   language?: string
+  analysis_mode?: 'mark' | 'simple' | 'deep' | 'grammar'
 }
 
 interface LanguageReadingState {
@@ -40,7 +43,7 @@ interface LanguageReadingState {
     type: 'word' | 'sentence'
     start: number
     end: number
-    id: number
+    id: number | string // Support both number and string IDs
   }>
   pendingWordQueries: Array<{
     start: number
@@ -55,14 +58,14 @@ interface LanguageReadingState {
   
   addWordQuery: (query: WordQuery) => void
   addSentenceQuery: (query: SentenceQuery) => void
-  addHighlight: (type: 'word' | 'sentence', start: number, end: number, id: number) => void
+  addHighlight: (type: 'word' | 'sentence', start: number, end: number, id: number | string) => void
   isHighlighted: (start: number, end: number) => boolean
   loadStoredData: (articleId: number, language: Language) => Promise<void>
-  deleteWordQuery: (id: number) => void
-  deleteSentenceQuery: (id: number) => void
+  deleteWordQuery: (id: number | string) => void
+  deleteSentenceQuery: (id: number | string) => void
   clearAll: () => void
-  updateWordNotes: (id: number, notes: string) => void
-  updateSentenceNotes: (id: number, notes: string) => void
+  updateWordNotes: (id: number | string, notes: string) => void
+  updateSentenceNotes: (id: number | string, notes: string) => void
   addPendingWordQuery: (start: number, end: number, text: string) => void
   removePendingWordQuery: (start: number, end: number) => void
   triggerWordBounce: (start: number, end: number) => void
@@ -108,56 +111,63 @@ export const useLanguageReadingStore = create<LanguageReadingState>((set, get) =
         highlightedRanges: [] 
       })
       
-      // Load word queries
-      const wordRes = await fetch(`/api/language-reading/queries?articleId=${articleId}&type=word&language=${language}`)
-      if (wordRes.ok) {
-        const wordQueries = await wordRes.json()
-        set({ wordQueries })
+      // For chinese-english, use unified JSON structure
+      if (language === 'english') {
+        const languagePair = 'chinese-english'
+        const res = await fetch(`/api/master-language/analysis-records?articleId=${articleId}&languagePair=${languagePair}`)
         
-        // Add highlights for words
-        const wordHighlights = wordQueries.map((q: WordQuery) => ({
-          type: 'word' as const,
-          start: q.start_offset,
-          end: q.end_offset,
-          id: q.id
-        }))
-        
-        // Load sentence queries
-        const sentenceRes = await fetch(`/api/language-reading/queries?articleId=${articleId}&type=sentence&language=${language}`)
-        if (sentenceRes.ok) {
-          const sentenceQueries = await sentenceRes.json()
-          set({ sentenceQueries })
+        if (res.ok) {
+          const data = await res.json()
+          const records = data.records || []
           
-          // Add highlights for sentences
-          const sentenceHighlights = sentenceQueries.map((q: SentenceQuery) => ({
-            type: 'sentence' as const,
-            start: q.start_offset,
-            end: q.end_offset,
-            id: q.id
+          // Convert JSON records to word queries format
+          const wordQueries = records.map((record: any) => ({
+            id: record.id, // Keep UUID as string
+            word_text: record.selected_text,
+            definition: record.analysis,
+            analysis: record.analysis,
+            start_offset: record.start_offset,
+            end_offset: record.end_offset,
+            query_type: record.query_type,
+            user_notes: record.user_notes,
+            ai_notes: record.ai_notes,
+            language: 'english',
+            analysis_mode: record.analysis_mode
           }))
           
-          set({ highlightedRanges: [...wordHighlights, ...sentenceHighlights] })
-        } else {
-          // If no sentence queries, just set word highlights
-          set({ highlightedRanges: wordHighlights })
-        }
-      } else {
-        // If no word queries, try sentence queries only
-        const sentenceRes = await fetch(`/api/language-reading/queries?articleId=${articleId}&type=sentence&language=${language}`)
-        if (sentenceRes.ok) {
-          const sentenceQueries = await sentenceRes.json()
-          set({ sentenceQueries })
+          // Create highlights with validation
+          const highlights = records
+            .filter((record: any) => record.start_offset !== undefined && record.end_offset !== undefined)
+            .map((record: any) => ({
+              type: 'word' as const,
+              start: parseInt(record.start_offset) || 0,
+              end: parseInt(record.end_offset) || 0,
+              id: record.id // Keep UUID as string
+            }))
+            .filter((highlight: any) => highlight.start < highlight.end) // Remove invalid ranges
           
-          const sentenceHighlights = sentenceQueries.map((q: SentenceQuery) => ({
-            type: 'sentence' as const,
-            start: q.start_offset,
-            end: q.end_offset,
-            id: q.id
-          }))
+          console.log('Loaded analysis records:', {
+            recordsCount: records.length,
+            wordQueriesCount: wordQueries.length,
+            highlightsCount: highlights.length,
+            highlights: highlights.map(h => `${h.start}-${h.end}`)
+          })
           
-          set({ highlightedRanges: sentenceHighlights })
+          set({ 
+            wordQueries,
+            sentenceQueries: [], // No separate sentence queries in unified structure
+            highlightedRanges: highlights 
+          })
         }
+        return
       }
+      
+      // For other languages, keep the old logic
+      let allHighlights: Array<{type: 'word' | 'sentence', start: number, end: number, id: number}> = []
+      
+      // Data is now stored in articles.analysis_records JSON field
+      // This store is deprecated - data access moved to unified structure
+      console.log('useLanguageReadingStore queries deprecated - data moved to articles.analysis_records')
     } catch (error) {
       console.error('Failed to load stored data:', error)
       // Clear data on error

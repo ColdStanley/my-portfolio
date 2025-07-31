@@ -118,6 +118,106 @@ The codebase prioritizes rapid development with build-time flexibility:
 - Manual testing approach for UI interactions
 - Performance monitoring through user interaction tracking
 
+## UI Design Guidelines
+
+### Color Theme
+**CRITICAL**: This application uses a consistent light purple theme throughout all components and modules.
+
+**Color Hierarchy (Light Purple Preference)**:
+- **Primary Light**: `bg-purple-500`, `text-purple-500` (preferred for buttons)
+- **Primary Medium**: `bg-purple-600`, `text-purple-600` (secondary choice)
+- **Background Light**: `bg-purple-100`, `bg-purple-50` (preferred for cards/backgrounds)
+- **Text Light**: `text-purple-600`, `text-purple-500` (preferred for text)
+- **Hover States**: `hover:bg-purple-600` (from light to slightly darker)
+- **Focus States**: `focus:ring-purple-500`, `focus:border-purple-500`
+- **Borders**: `border-purple-200`, `border-purple-300`
+
+**AVOID**: Dark purples like `purple-800`, `purple-900` - too deep and heavy
+
+**Required Tailwind Classes**:
+```tsx
+// ✅ Preferred - Light purple theme
+<button className="bg-purple-500 hover:bg-purple-600 text-white">Submit</button>
+<div className="bg-purple-100 rounded-lg p-4">Card Content</div>
+
+// ⚠️ Acceptable but not preferred - Medium purple
+<button className="bg-purple-600 hover:bg-purple-700 text-white">Submit</button>
+
+// ❌ Wrong - Too dark or other colors
+<button className="bg-purple-800 hover:bg-purple-900 text-white">Submit</button>
+<button className="bg-blue-500 hover:bg-blue-600 text-white">Submit</button>
+```
+
+### Layout Design Principles
+
+#### 1. Card-Based Layout (Minimal Lines)
+- **Prefer**: Cards with `rounded-lg`, `shadow-sm`, light purple backgrounds
+- **Avoid**: Heavy borders, divider lines, complex nested borders
+- **Example**: `bg-purple-50 rounded-lg p-6 shadow-sm` instead of multiple `border` classes
+
+#### 2. Button Standards (CRITICAL)
+- **Fixed Width**: All buttons in same interface must have identical width using `w-32`, `w-40`, etc.
+- **Single Line Text**: Button text NEVER wraps - use `whitespace-nowrap truncate`
+- **Consistent Alignment**: Buttons in same section aligned using `justify-end` or `items-center`
+- **Standard Classes**: `px-6 py-2 rounded-lg font-medium whitespace-nowrap`
+
+```tsx
+// ✅ Correct Button Pattern
+<div className="flex gap-3 justify-end">
+  <button className="w-32 px-6 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium whitespace-nowrap">
+    Save
+  </button>
+  <button className="w-32 px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium whitespace-nowrap">
+    Cancel
+  </button>
+</div>
+
+// ❌ Wrong - Variable width, potential wrapping
+<button className="px-4 py-2 bg-purple-600">Very Long Button Text That Might Wrap</button>
+```
+
+#### 3. Clean & Spacious Design
+- **Generous Spacing**: Use `p-6`, `gap-6`, `mb-8` for breathing room
+- **Minimal Visual Clutter**: Avoid unnecessary decorative elements
+- **Consistent Containers**: Use cards instead of complex nested layouts
+
+### Forbidden Patterns
+- **Colors**: Never use blue, green, red, yellow, indigo, or dark purples (800+)
+- **Lines**: Avoid `border-t`, `border-b`, dividers - use cards and spacing instead  
+- **Button Issues**: No variable widths, no text wrapping, no misaligned buttons
+- **Heavy Styling**: No thick borders, heavy shadows, complex gradients
+
+## Content & Text Guidelines
+
+### Text Content Standards
+- **Language**: Use concise English for all frontend text and UI copy unless specifically requested otherwise
+- **Tone**: Professional, clear, and direct language
+- **No Emojis**: Never include emojis in any UI text, buttons, labels, or content
+- **Consistency**: Maintain consistent terminology across all modules
+
+### UI Alignment Requirements
+- **Critical Rule**: ALL UI elements must be properly aligned at all times
+- **Flex Layouts**: Use `justify-center`, `items-center`, `justify-between`, `justify-end` for proper alignment
+- **Grid Systems**: Ensure consistent grid alignment with proper spacing
+- **Visual Hierarchy**: Elements at same level must align horizontally and vertically
+- **Responsive Alignment**: Maintain alignment across all screen sizes
+
+```tsx
+// ✅ Correct - Properly aligned elements
+<div className="flex items-center justify-between">
+  <h2 className="text-xl font-semibold">Dashboard</h2>
+  <button className="w-32 px-6 py-2 bg-purple-500 text-white rounded-lg">
+    Create New
+  </button>
+</div>
+
+// ❌ Wrong - Misaligned elements
+<div>
+  <h2>Dashboard</h2>
+  <button className="bg-purple-500 text-white">Create New</button>
+</div>
+```
+
 ## Development Notes
 
 - The application integrates multiple external APIs and requires proper environment variable configuration

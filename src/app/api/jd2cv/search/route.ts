@@ -66,16 +66,10 @@ export async function POST(request: NextRequest) {
     const completeJobDescription = jdPart1 + jdPart2 + jdPart3 + jdPart4 + jdPart5
 
     // Extract key sentences
-    const keySentencesRaw = record.properties.job_description_key_sentences?.rich_text?.[0]?.text?.content || ''
-    let keySentences: string[] = []
-    if (keySentencesRaw) {
-      try {
-        keySentences = JSON.parse(keySentencesRaw)
-      } catch (error) {
-        console.error('Failed to parse key sentences:', error)
-        keySentences = []
-      }
-    }
+    const keySentencesRaw = record.properties.jd_key_sentences?.rich_text?.[0]?.text?.content || ''
+    
+    // Extract keywords from sentences
+    const keywordsRaw = record.properties.keywords_from_sentences?.rich_text?.[0]?.text?.content || ''
 
     // Extract match score
     const matchScore = record.properties.match_score?.number || 0
@@ -85,7 +79,8 @@ export async function POST(request: NextRequest) {
       title: record.properties.title?.title?.[0]?.text?.content || '',
       company: record.properties.company?.rich_text?.[0]?.text?.content || '',
       full_job_description: completeJobDescription,
-      job_description_key_sentences: keySentences,
+      jd_key_sentences: keySentencesRaw,
+      keywords_from_sentences: keywordsRaw,
       match_score: matchScore,
       capability_1: record.properties.capability_1?.rich_text?.[0]?.text?.content || '',
       capability_2: record.properties.capability_2?.rich_text?.[0]?.text?.content || '',

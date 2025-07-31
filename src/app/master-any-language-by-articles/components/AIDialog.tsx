@@ -214,14 +214,18 @@ export default function AIDialog({
     const currentQuestion = userPrompt.trim()
 
     try {
-      const response = await fetch('/api/language-reading/ask-ai', {
+      const response = await fetch('/api/master-language/smart-analysis', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          queryData: { ...queryData, type: queryType },
+          mode: 'ask-ai',
+          selectedText: queryData.word_text || queryData.sentence_text || '',
+          contextSentence: queryData.sentence_text || '',
           language,
+          nativeLanguage: 'chinese',
+          articleId: queryData.article_id || 0,
           userPrompt: currentQuestion
         }),
       })
@@ -306,7 +310,7 @@ export default function AIDialog({
         queryData
       })
 
-      const response = await fetch('/api/language-reading/save-ai-notes', {
+      const response = await fetch('/api/master-language/save-ai-notes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

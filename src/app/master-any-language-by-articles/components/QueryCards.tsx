@@ -9,6 +9,7 @@ import AIDialog from './AIDialog'
 import Tooltip from './Tooltip'
 import ReactMarkdown from 'react-markdown'
 import FrenchSentenceCard from './FrenchSentenceCard'
+import AnalysisModeTag from './AnalysisModeTag'
 
 interface CollapsibleContentProps {
   content: string
@@ -38,13 +39,21 @@ function CollapsibleContent({ content, maxLength, className = '', language, rend
           <div className="prose prose-sm max-w-none">
             <ReactMarkdown 
               components={{
-                h1: ({children}) => <h1 className="text-base font-bold text-gray-800 mb-2">{children}</h1>,
-                h2: ({children}) => <h2 className="text-sm font-bold text-purple-700 mb-3 mt-4 pb-1 border-b border-purple-200">{children}</h2>,
-                h3: ({children}) => <h3 className="text-sm font-semibold text-gray-800 mb-1">{children}</h3>,
+                h1: ({children}) => <h1 className="text-base font-bold text-gray-800 mb-3 mt-4">{children}</h1>,
+                h2: ({children}) => <h2 className="text-sm font-bold text-purple-700 mb-2 mt-3 pb-1 border-b border-purple-200">{children}</h2>,
+                h3: ({children}) => <h3 className="text-sm font-bold text-gray-800 mb-2 mt-3">{children}</h3>,
+                h4: ({children}) => <h4 className="text-sm font-semibold text-gray-800 mb-1 mt-2">{children}</h4>,
+                h5: ({children}) => <h5 className="text-xs font-semibold text-gray-800 mb-1 mt-2">{children}</h5>,
+                h6: ({children}) => <h6 className="text-xs font-semibold text-gray-800 mb-1 mt-2">{children}</h6>,
                 p: ({children}) => <p className="text-sm text-gray-700 mb-2 leading-relaxed">{children}</p>,
-                ul: ({children}) => <ul className="text-sm text-gray-700 mb-3 ml-2 space-y-1">{children}</ul>,
-                li: ({children}) => <li className="flex items-start gap-2"><span className="text-purple-500 mt-1">•</span><span>{children}</span></li>,
-                strong: ({children}) => <strong className="font-semibold text-gray-900">{children}</strong>
+                ul: ({children}) => <ul className="text-sm text-gray-700 mb-2 ml-3 space-y-0.5 list-disc list-outside">{children}</ul>,
+                ol: ({children}) => <ol className="text-sm text-gray-700 mb-2 ml-3 space-y-0.5 list-decimal list-outside">{children}</ol>,
+                li: ({children}) => <li className="text-sm text-gray-700 leading-relaxed">{children}</li>,
+                strong: ({children}) => <strong className="font-bold text-gray-900">{children}</strong>,
+                em: ({children}) => <em className="italic text-gray-800">{children}</em>,
+                code: ({children}) => <code className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>,
+                blockquote: ({children}) => <blockquote className="border-l-4 border-gray-300 pl-3 py-1 my-2 bg-gray-50 text-gray-700 italic text-sm">{children}</blockquote>,
+                br: () => <br className="my-1" />
               }}
             >
               {content}
@@ -64,13 +73,21 @@ function CollapsibleContent({ content, maxLength, className = '', language, rend
           <div className="prose prose-sm max-w-none">
             <ReactMarkdown 
               components={{
-                h1: ({children}) => <h1 className="text-base font-bold text-gray-800 mb-2">{children}</h1>,
-                h2: ({children}) => <h2 className="text-sm font-bold text-purple-700 mb-3 mt-4 pb-1 border-b border-purple-200">{children}</h2>,
-                h3: ({children}) => <h3 className="text-sm font-semibold text-gray-800 mb-1">{children}</h3>,
+                h1: ({children}) => <h1 className="text-base font-bold text-gray-800 mb-3 mt-4">{children}</h1>,
+                h2: ({children}) => <h2 className="text-sm font-bold text-purple-700 mb-2 mt-3 pb-1 border-b border-purple-200">{children}</h2>,
+                h3: ({children}) => <h3 className="text-sm font-bold text-gray-800 mb-2 mt-3">{children}</h3>,
+                h4: ({children}) => <h4 className="text-sm font-semibold text-gray-800 mb-1 mt-2">{children}</h4>,
+                h5: ({children}) => <h5 className="text-xs font-semibold text-gray-800 mb-1 mt-2">{children}</h5>,
+                h6: ({children}) => <h6 className="text-xs font-semibold text-gray-800 mb-1 mt-2">{children}</h6>,
                 p: ({children}) => <p className="text-sm text-gray-700 mb-2 leading-relaxed">{children}</p>,
-                ul: ({children}) => <ul className="text-sm text-gray-700 mb-3 ml-2 space-y-1">{children}</ul>,
-                li: ({children}) => <li className="flex items-start gap-2"><span className="text-purple-500 mt-1">•</span><span>{children}</span></li>,
-                strong: ({children}) => <strong className="font-semibold text-gray-900">{children}</strong>
+                ul: ({children}) => <ul className="text-sm text-gray-700 mb-2 ml-3 space-y-0.5 list-disc list-outside">{children}</ul>,
+                ol: ({children}) => <ol className="text-sm text-gray-700 mb-2 ml-3 space-y-0.5 list-decimal list-outside">{children}</ol>,
+                li: ({children}) => <li className="text-sm text-gray-700 leading-relaxed">{children}</li>,
+                strong: ({children}) => <strong className="font-bold text-gray-900">{children}</strong>,
+                em: ({children}) => <em className="italic text-gray-800">{children}</em>,
+                code: ({children}) => <code className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>,
+                blockquote: ({children}) => <blockquote className="border-l-4 border-gray-300 pl-3 py-1 my-2 bg-gray-50 text-gray-700 italic text-sm">{children}</blockquote>,
+                br: () => <br className="my-1" />
               }}
             >
               {displayContent}
@@ -143,7 +160,7 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
   useEffect(() => {
     if (isTestMode && testQuestions.length === 0) {
       setTestLoading(true)
-      fetch(`/api/language-reading/review-test?articleId=${articleId}&language=${language}`)
+      fetch(`/api/master-language/review-test?articleId=${articleId}&language=${language}`)
         .then(response => response.json())
         .then(data => {
           if (data.questions) {
@@ -292,21 +309,61 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
     }
   }
   
-  const handleDelete = async (id: number, type: 'word' | 'sentence') => {
+  const handleDelete = async (id: number | string, type: 'word' | 'sentence') => {
     try {
-      const res = await fetch(`/api/language-reading/queries?id=${id}&type=${type}`, {
-        method: 'DELETE'
-      })
+      console.log('Deleting:', { id, type, language })
       
-      if (res.ok) {
-        if (type === 'word') {
-          deleteWordQuery(id)
+      // For chinese-english, use the new analysis-records DELETE endpoint
+      if (language === 'english') {
+        const languagePair = 'chinese-english'
+        const res = await fetch(`/api/master-language/analysis-records?articleId=${articleId}&recordId=${id}&languagePair=${languagePair}`, {
+          method: 'DELETE'
+        })
+        
+        if (res.ok) {
+          console.log('Delete successful')
+          // Update local state immediately
+          if (type === 'word') {
+            deleteWordQuery(id)
+          } else {
+            deleteSentenceQuery(id)
+          }
         } else {
-          deleteSentenceQuery(id)
+          console.error('Delete failed:', res.status, res.statusText)
+          const errorData = await res.json().catch(() => null)
+          if (errorData) {
+            console.error('Error details:', errorData)
+            alert(`Delete failed: ${errorData.error || 'Unknown error'}`)
+          }
+        }
+      } else {
+        // For other languages, use the old endpoint
+        const res = await fetch('/api/master-language/delete-query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, type, language })
+        })
+        
+        if (res.ok) {
+          console.log('Delete successful')
+          // Update local state immediately
+          if (type === 'word') {
+            deleteWordQuery(id)
+          } else {
+            deleteSentenceQuery(id)
+          }
+        } else {
+          console.error('Delete failed:', res.status, res.statusText)
+          const errorData = await res.json().catch(() => null)
+          if (errorData) {
+            console.error('Error details:', errorData)
+            alert(`Delete failed: ${errorData.error || 'Unknown error'}`)
+          }
         }
       }
     } catch (error) {
       console.error('Failed to delete query:', error)
+      alert('Failed to delete item. Please try again.')
     }
   }
 
@@ -361,7 +418,7 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
     if (!editingNotes) return
     
     try {
-      const response = await fetch('/api/language-reading/update-notes', {
+      const response = await fetch('/api/master-language/update-notes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -433,9 +490,13 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
   const words = allQueries.filter(q => q.type === 'word')
   const sentences = allQueries.filter(q => q.type === 'sentence')
   
-  // Distribute word queries into two columns
-  const leftColumnWords = words.filter((_, index) => index % 2 === 0)
-  const rightColumnWords = words.filter((_, index) => index % 2 === 1)
+  // Separate words by analysis mode for special layout
+  const deepGrammarWords = words.filter(q => q.analysis_mode === 'deep' || q.analysis_mode === 'grammar')
+  const normalWords = words.filter(q => q.analysis_mode !== 'deep' && q.analysis_mode !== 'grammar')
+  
+  // Distribute normal word queries into two columns
+  const leftColumnWords = normalWords.filter((_, index) => index % 2 === 0)
+  const rightColumnWords = normalWords.filter((_, index) => index % 2 === 1)
 
   return (
     <div className="h-full overflow-hidden">
@@ -540,9 +601,10 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
                     <div className="bg-gray-50/30 p-3 rounded-lg">
                       <CollapsibleContent
                         content={query.analysis}
-                        maxLength={150}
+                        maxLength={200}
                         className="text-sm text-gray-700 leading-relaxed"
                         language={language}
+                        renderMarkdown={true}
                       />
                     </div>
                   </>
@@ -552,12 +614,13 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
                 <div className="mt-4 pt-3 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
                   <div className="flex gap-2 justify-between items-center">
                     <div className="flex gap-2">
-                      <button
+                      <AnimatedButton
                         onClick={() => handleAskAI(query, 'sentence')}
-                        className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-sm rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                        variant="secondary"
+                        size="sm"
                       >
-                        Ask AI
-                      </button>
+                        {uiTexts.askAI}
+                      </AnimatedButton>
                       {query.ai_notes && (
                         <Tooltip content={query.ai_notes} position="right">
                           <button className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 text-purple-700 text-sm rounded-lg hover:bg-purple-100 transition-all duration-200 border border-purple-200">
@@ -591,12 +654,190 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
           )
         ))}
         
-        {/* Word queries - conditional layout based on language */}
-        {words.length > 0 && (
+        {/* Deep/Grammar word queries - full width at top */}
+        {deepGrammarWords.length > 0 && (
+          <div className="space-y-5">
+            {deepGrammarWords.map((query) => (
+              <div
+                key={`deep-grammar-${query.id}`}
+                id={`word-card-${query.id}`}
+                className="bg-white rounded-xl shadow-lg border border-purple-300/50 p-4 transition-all duration-300 cursor-pointer hover:shadow-xl hover:border-purple-400 w-full"
+                onClick={() => scrollToHighlight(query, 'word')}
+              >
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <AnalysisModeTag mode={query.analysis_mode || 'simple'} />
+                    <h3 className="font-bold text-gray-900 flex-1 text-base">
+                      {query.word_text}
+                    </h3>
+                    <div className="flex gap-1 items-center">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleSpeak(query.word_text)
+                        }}
+                        className="text-purple-500 hover:text-purple-700 hover:bg-purple-50 p-1.5 rounded-full transition-all duration-200"
+                        title={uiTexts.playWord}
+                      >
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.817L4.343 13.5H2a1 1 0 01-1-1v-5a1 1 0 011-1h2.343l4.04-3.317a1 1 0 01.997-.106zM15.657 6.343a1 1 0 011.414 0A9.972 9.972 0 0119 12a9.972 9.972 0 01-1.929 5.657 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 12a7.971 7.971 0 00-1.343-4.243 1 1 0 010-1.414z" clipRule="evenodd" />
+                          <path fillRule="evenodd" d="M13.243 8.757a1 1 0 011.414 0A5.98 5.98 0 0116 12a5.98 5.98 0 01-1.343 3.243 1 1 0 01-1.414-1.414A3.99 3.99 0 0014 12a3.99 3.99 0 00-.757-2.329 1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDelete(query.id, 'word')
+                        }}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-full transition-all duration-200"
+                        title={uiTexts.delete}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {query.query_type === 'manual_mark' ? (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <p className="text-sm font-medium text-gray-700 mb-1">{uiTexts.yourNotes}</p>
+                        {editingNotes?.id === query.id && editingNotes?.type === 'word' ? (
+                          <div>
+                            <textarea
+                              value={editingNotes.notes}
+                              onChange={(e) => setEditingNotes({...editingNotes, notes: e.target.value})}
+                              className="w-full text-sm text-gray-600 border border-purple-300 rounded p-2 min-h-[60px] focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                              placeholder={uiTexts.notesPlaceholder}
+                              autoFocus
+                            />
+                            <div className="flex gap-2 mt-2">
+                              <AnimatedButton
+                                onClick={handleSaveNotes}
+                                variant="primary"
+                                size="sm"
+                              >
+                                {uiTexts.save}
+                              </AnimatedButton>
+                              <AnimatedButton
+                                onClick={handleCancelEditing}
+                                variant="secondary"
+                                size="sm"
+                              >
+                                {uiTexts.cancel}
+                              </AnimatedButton>
+                            </div>
+                          </div>
+                        ) : (
+                          <div
+                            onClick={() => handleStartEditing(query.id, 'word', query.user_notes || '')}
+                            className={`w-full text-sm rounded p-2 min-h-[60px] cursor-text border transition-colors whitespace-pre-wrap ${
+                              query.user_notes 
+                                ? 'text-gray-600 border-gray-300 hover:border-purple-300' 
+                                : 'text-gray-400 border-gray-200 hover:border-purple-300 italic'
+                            }`}
+                          >
+                            {query.user_notes || uiTexts.notesPlaceholder}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {/* Analysis or Definition */}
+                        {query.analysis ? (
+                          <div className="bg-purple-50/50 p-3 rounded-lg border-l-4 border-purple-300">
+                            {(query.analysis_mode === 'deep' || query.analysis_mode === 'grammar') ? (
+                              <div className="prose prose-xs max-w-none">
+                                <div 
+                                  className="whitespace-pre-wrap text-gray-700 text-xs leading-relaxed"
+                                  dangerouslySetInnerHTML={{
+                                    __html: query.analysis
+                                      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-purple-800 font-semibold text-xs">$1</strong>')
+                                      .replace(/• (.*?)(?=\n|$)/g, '<li class="ml-3 text-gray-700 text-xs list-disc">$1</li>')
+                                      .replace(/\(([^)]+)\)/g, '<span class="text-gray-600 text-xs">($1)</span>')
+                                      .replace(/\n\n/g, '<br/><br/>')
+                                      .replace(/\n/g, '<br/>')
+                                  }}
+                                />
+                              </div>
+                            ) : (
+                              <CollapsibleContent
+                                content={query.analysis}
+                                maxLength={400}
+                                className="text-sm text-gray-800 leading-relaxed"
+                                language={language}
+                                renderMarkdown={true}
+                              />
+                            )}
+                          </div>
+                        ) : query.definition ? (
+                          <div className="bg-purple-50/50 p-3 rounded-lg border-l-4 border-purple-300">
+                            <CollapsibleContent
+                              content={query.definition}
+                              maxLength={200}
+                              className="text-sm text-gray-800 leading-relaxed font-medium"
+                              language={language}
+                            />
+                          </div>
+                        ) : null}
+                        
+                        {/* Part of speech, gender, and root form */}
+                        <div className="flex gap-2 text-xs flex-wrap">
+                          {query.part_of_speech && (
+                            <span className="bg-purple-100 text-purple-800 px-3 py-1.5 rounded-full font-semibold text-xs">
+                              {query.part_of_speech}
+                            </span>
+                          )}
+                          {query.gender && language === 'french' && (
+                            <span className="bg-pink-100 text-pink-800 px-3 py-1.5 rounded-full font-semibold text-xs">
+                              {query.gender}
+                            </span>
+                          )}
+                          {query.root_form && query.root_form !== query.word_text && (
+                            <span className="bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full font-semibold text-xs flex items-center gap-1.5">
+                              → {query.root_form}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleSpeak(query.root_form || '')
+                                }}
+                                className="text-gray-500 hover:text-gray-700 transition-colors"
+                                title={uiTexts.playRootForm}
+                              >
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.817L4.343 13.5H2a1 1 0 01-1-1v-5a1 1 0 011-1h2.343l4.04-3.317a1 1 0 01.997-.106z" clipRule="evenodd" />
+                                </svg>
+                              </button>
+                            </span>
+                          )}
+                        </div>
+                        
+                        {/* Action buttons */}
+                        <div className="flex gap-2 flex-wrap pt-2" onClick={(e) => e.stopPropagation()}>
+                          <AnimatedButton
+                            onClick={() => handleAskAI(query, 'word')}
+                            variant="secondary"
+                            size="sm"
+                          >
+                            {uiTexts.askAI}
+                          </AnimatedButton>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Normal word queries - conditional layout based on language */}
+        {normalWords.length > 0 && (
           <div className={language === 'french' ? 'space-y-5' : 'flex gap-6'}>
             {/* Left column - or full width for French */}
             <div className={language === 'french' ? 'w-full space-y-5' : 'w-1/2 space-y-5'}>
-              {(language === 'french' ? words : leftColumnWords).map((query) => (
+              {(language === 'french' ? normalWords : leftColumnWords).map((query) => (
                 <div
                   key={`word-left-${query.id}`}
                   id={`word-card-${query.id}`}
@@ -605,9 +846,7 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
                 >
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="px-3 py-1.5 text-xs bg-purple-100 text-purple-800 rounded-full font-semibold">
-                        {uiTexts.word}
-                      </span>
+                      <AnalysisModeTag mode={query.analysis_mode || 'simple'} />
                       <h3 className="font-bold text-gray-900 flex-1 text-base">
                         {query.word_text}
                       </h3>
@@ -685,15 +924,34 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
                         </div>
                       ) : (
                         <div className="space-y-3">
-                          {/* Definition */}
-                          <div className="bg-purple-50/50 p-3 rounded-lg border-l-4 border-purple-300">
-                            <CollapsibleContent
-                              content={query.definition}
-                              maxLength={80}
-                              className="text-sm text-gray-800 leading-relaxed font-medium"
-                              language={language}
-                            />
-                          </div>
+                          {/* Analysis or Definition */}
+                          {query.analysis ? (
+                            <div className="bg-purple-50/50 p-3 rounded-lg border-l-4 border-purple-300">
+                              <div className="prose prose-xs max-w-none">
+                                <div 
+                                  className="whitespace-pre-wrap text-gray-700 text-xs leading-relaxed"
+                                  dangerouslySetInnerHTML={{
+                                    __html: query.analysis
+                                      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-purple-800 font-semibold text-xs">$1</strong>')
+                                      .replace(/\*(.*?)\*/g, '<em class="text-purple-700 text-xs">$1</em>')
+                                      .replace(/• (.*)/g, '<li class="ml-3 text-gray-700 text-xs">$1</li>')
+                                      .replace(/\[(.*?)\]/g, '<span class="text-purple-700 font-medium text-xs">$1</span>')
+                                      .replace(/\(([^)]+)\)/g, '<span class="text-gray-600 text-xs">($1)</span>')
+                                      .replace(/\n/g, '<br/>')
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          ) : query.definition ? (
+                            <div className="bg-purple-50/50 p-3 rounded-lg border-l-4 border-purple-300">
+                              <CollapsibleContent
+                                content={query.definition}
+                                maxLength={80}
+                                className="text-sm text-gray-800 leading-relaxed font-medium"
+                                language={language}
+                              />
+                            </div>
+                          ) : null}
                           
                           {/* Part of speech, gender, and root form */}
                           <div className="flex gap-2 text-xs flex-wrap">
@@ -777,12 +1035,13 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
                       <div className="mt-4 pt-3 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
                         <div className="flex gap-2 justify-between items-center">
                           <div className="flex gap-2">
-                            <button
+                            <AnimatedButton
                               onClick={() => handleAskAI(query, 'word')}
-                              className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-sm rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                              variant="secondary"
+                              size="sm"
                             >
-                              Ask AI
-                            </button>
+                              {uiTexts.askAI}
+                            </AnimatedButton>
                             {query.ai_notes && (
                               <Tooltip content={query.ai_notes} position="right">
                                 <button className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 text-purple-700 text-sm rounded-lg hover:bg-purple-100 transition-all duration-200 border border-purple-200">
@@ -828,9 +1087,7 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
                 >
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="px-3 py-1.5 text-xs bg-purple-100 text-purple-800 rounded-full font-semibold">
-                        {uiTexts.word}
-                      </span>
+                      <AnalysisModeTag mode={query.analysis_mode || 'simple'} />
                       <h3 className="font-bold text-gray-900 flex-1 text-base">
                         {query.word_text}
                       </h3>
@@ -908,15 +1165,34 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
                         </div>
                       ) : (
                         <div className="space-y-3">
-                          {/* Definition */}
-                          <div className="bg-purple-50/50 p-3 rounded-lg border-l-4 border-purple-300">
-                            <CollapsibleContent
-                              content={query.definition}
-                              maxLength={80}
-                              className="text-sm text-gray-800 leading-relaxed font-medium"
-                              language={language}
-                            />
-                          </div>
+                          {/* Analysis or Definition */}
+                          {query.analysis ? (
+                            <div className="bg-purple-50/50 p-3 rounded-lg border-l-4 border-purple-300">
+                              <div className="prose prose-xs max-w-none">
+                                <div 
+                                  className="whitespace-pre-wrap text-gray-700 text-xs leading-relaxed"
+                                  dangerouslySetInnerHTML={{
+                                    __html: query.analysis
+                                      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-purple-800 font-semibold text-xs">$1</strong>')
+                                      .replace(/\*(.*?)\*/g, '<em class="text-purple-700 text-xs">$1</em>')
+                                      .replace(/• (.*)/g, '<li class="ml-3 text-gray-700 text-xs">$1</li>')
+                                      .replace(/\[(.*?)\]/g, '<span class="text-purple-700 font-medium text-xs">$1</span>')
+                                      .replace(/\(([^)]+)\)/g, '<span class="text-gray-600 text-xs">($1)</span>')
+                                      .replace(/\n/g, '<br/>')
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          ) : query.definition ? (
+                            <div className="bg-purple-50/50 p-3 rounded-lg border-l-4 border-purple-300">
+                              <CollapsibleContent
+                                content={query.definition}
+                                maxLength={80}
+                                className="text-sm text-gray-800 leading-relaxed font-medium"
+                                language={language}
+                              />
+                            </div>
+                          ) : null}
                           
                           {/* Part of speech, gender, and root form */}
                           <div className="flex gap-2 text-xs flex-wrap">
@@ -1000,12 +1276,13 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
                       <div className="mt-4 pt-3 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
                         <div className="flex gap-2 justify-between items-center">
                           <div className="flex gap-2">
-                            <button
+                            <AnimatedButton
                               onClick={() => handleAskAI(query, 'word')}
-                              className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-sm rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                              variant="secondary"
+                              size="sm"
                             >
-                              Ask AI
-                            </button>
+                              {uiTexts.askAI}
+                            </AnimatedButton>
                             {query.ai_notes && (
                               <Tooltip content={query.ai_notes} position="left">
                                 <button className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 text-purple-700 text-sm rounded-lg hover:bg-purple-100 transition-all duration-200 border border-purple-200">

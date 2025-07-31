@@ -5,10 +5,11 @@ import { Language, getUITexts } from '../config/uiText'
 
 interface MobileArticleInputProps {
   language: Language
-  onSelectArticle: (id: number, content: string, title?: string) => void
+  languagePair?: string
+  onSelectArticle: (id: number, content: string, title?: string, fullData?: any) => void
 }
 
-export default function MobileArticleInput({ language, onSelectArticle }: MobileArticleInputProps) {
+export default function MobileArticleInput({ language, languagePair, onSelectArticle }: MobileArticleInputProps) {
   const uiTexts = getUITexts(language)
 
   return (
@@ -29,7 +30,7 @@ export default function MobileArticleInput({ language, onSelectArticle }: Mobile
 
       {/* Article List */}
       <div className="px-4 py-6">
-        <ArticleList language={language} onSelectArticle={onSelectArticle} isMobile={true} />
+        <ArticleList language={language} languagePair={languagePair} onSelectArticle={onSelectArticle} isMobile={true} />
       </div>
 
       {/* Instructions for creating new articles */}

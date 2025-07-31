@@ -10,27 +10,34 @@ import AnimatedButton from './AnimatedButton'
 import ReadingTimer from './ReadingTimer'
 import { Language, getUITexts } from '../config/uiText'
 import { playText } from '../utils/tts'
+import SmartTooltip, { AnalysisMode } from './SmartTooltip'
+import PromptManagement from './PromptManagement'
 
 interface ReadingViewProps {
   language: Language
+  nativeLanguage: string
   articleId: number
   content: string
   title?: string
   onNewArticle: () => void
 }
 
-export default function ReadingView({ language, articleId, content, title, onNewArticle }: ReadingViewProps) {
+export default function ChineseEnglishReadingView({ language, nativeLanguage, articleId, content, title, onNewArticle }: ReadingViewProps) {
   const { clearAll } = useLanguageReadingStore()
   const uiTexts = getUITexts(language)
   const [selectionData, setSelectionData] = useState<{
     text: string
     range: { start: number; end: number }
-    position: { x: number; y: number }
+    position: { x: number; y: number; width: number; height: number }
+    contextSentence: string
   } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [showSmartTooltip, setShowSmartTooltip] = useState(false)
   const [isTestMode, setIsTestMode] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string | null>(null)
+  const [showBackToTop, setShowBackToTop] = useState(false)
+  const [showPromptManagement, setShowPromptManagement] = useState(false)
   
   const textRef = useRef<HTMLDivElement>(null)
   const aiNotesRef = useRef<AINotesCardsRef>(null)
@@ -69,11 +76,22 @@ export default function ReadingView({ language, articleId, content, title, onNew
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
+  // Handle scroll for back to top button
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 400)
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   // Fetch article background image
   useEffect(() => {
     const fetchArticleDetails = async () => {
       try {
-        const res = await fetch(`/api/language-reading/articles?id=${articleId}&language=${language}`)
+        const languagePair = nativeLanguage === 'chinese' && language === 'english' ? 'chinese-english' : `${nativeLanguage}-${language}`
+        const res = await fetch(`/api/master-language/articles?id=${articleId}&languagePair=${languagePair}`)
         if (res.ok) {
           const article = await res.json()
           console.log('Article data:', article) // Debug log
@@ -109,6 +127,62 @@ export default function ReadingView({ language, articleId, content, title, onNew
     return null
   }
 
+  const extractContextSentence = (content: string, startOffset: number, endOffset: number) => {
+    // Find the sentence boundaries around the selected text
+    let sentenceStart = startOffset
+    let sentenceEnd = endOffset
+
+    // Look backwards for sentence start - only stop at strong sentence boundaries
+    while (sentenceStart > 0) {
+      const char = content[sentenceStart - 1]
+      // Only treat period, exclamation, question mark, and newline as sentence boundaries
+      // Remove semicolon and colon to allow longer complex sentences
+      if (/[.!?\n]/.test(char)) {
+        break
+      }
+      sentenceStart--
+    }
+
+    // Look forwards for sentence end - only stop at strong sentence boundaries  
+    while (sentenceEnd < content.length) {
+      const char = content[sentenceEnd]
+      // Only treat period, exclamation, question mark, and newline as sentence boundaries
+      if (/[.!?\n]/.test(char)) {
+        sentenceEnd++
+        break
+      }
+      sentenceEnd++
+    }
+
+    // If the extracted sentence is too short relative to selection, 
+    // try to get more context by expanding the boundaries
+    let extracted = content.slice(sentenceStart, sentenceEnd).trim()
+    
+    // If selection is most of the extracted sentence, expand further
+    const selectionLength = endOffset - startOffset
+    if (extracted.length < selectionLength * 1.5) {
+      // Expand search to paragraph boundaries
+      let expandedStart = sentenceStart
+      let expandedEnd = sentenceEnd
+      
+      // Look for paragraph breaks (double newlines or start/end of content)
+      while (expandedStart > 0 && !content.slice(expandedStart - 2, expandedStart).includes('\n\n')) {
+        expandedStart--
+      }
+      
+      while (expandedEnd < content.length && !content.slice(expandedEnd, expandedEnd + 2).includes('\n\n')) {
+        expandedEnd++
+      }
+      
+      const expandedText = content.slice(expandedStart, expandedEnd).trim()
+      if (expandedText.length > extracted.length) {
+        extracted = expandedText
+      }
+    }
+
+    return extracted
+  }
+
   const handleTextSelection = useCallback(() => {
     const selection = window.getSelection()
     if (!selection || selection.rangeCount === 0) return
@@ -116,7 +190,8 @@ export default function ReadingView({ language, articleId, content, title, onNew
     const range = selection.getRangeAt(0)
     const selectedText = selection.toString().trim()
     
-    if (!selectedText || !textRef.current) {
+    // Allow selections from 1 character to very long sentences (up to 2000 characters)
+    if (!selectedText || selectedText.length < 1 || selectedText.length > 2000 || !textRef.current) {
       setSelectionData(null)
       return
     }
@@ -144,25 +219,38 @@ export default function ReadingView({ language, articleId, content, title, onNew
 
     if (selectionStartInDOM === -1) return
 
-    const searchWindowStart = Math.max(0, selectionStartInDOM - 100)
-    const searchWindowEnd = Math.min(content.length, selectionStartInDOM + 100)
+    // For long selections, use a larger search window
+    const windowSize = Math.max(200, selectedText.length * 2)
+    const searchWindowStart = Math.max(0, selectionStartInDOM - windowSize)
+    const searchWindowEnd = Math.min(content.length, selectionStartInDOM + windowSize)
     const searchWindow = content.slice(searchWindowStart, searchWindowEnd)
     
     const relativeIndex = searchWindow.indexOf(selectedText)
     if (relativeIndex === -1) {
-      const globalIndex = content.indexOf(selectedText)
-      if (globalIndex === -1) return
+      // Try global search with better normalization
+      const normalizedSelected = selectedText.replace(/\s+/g, ' ').trim()
+      const normalizedContent = content.replace(/\s+/g, ' ')
+      const globalIndex = normalizedContent.indexOf(normalizedSelected)
+      
+      if (globalIndex === -1) {
+        console.warn('Selected text not found in content:', selectedText.substring(0, 100))
+        return
+      }
       
       const startOffset = globalIndex
       const endOffset = startOffset + selectedText.length
       
+      const fallbackRect = range.getBoundingClientRect()
       setSelectionData({
         text: selectedText,
         range: { start: startOffset, end: endOffset },
         position: {
-          x: range.getBoundingClientRect().left + range.getBoundingClientRect().width / 2,
-          y: range.getBoundingClientRect().top - 10
-        }
+          x: fallbackRect.left,
+          y: fallbackRect.top,
+          width: fallbackRect.width,
+          height: fallbackRect.height
+        },
+        contextSentence: extractContextSentence(content, startOffset, endOffset)
       })
       return
     }
@@ -180,18 +268,61 @@ export default function ReadingView({ language, articleId, content, title, onNew
       return
     }
 
+    // Extract context sentence
+    const contextSentence = extractContextSentence(content, startOffset, endOffset)
+
     const rect = range.getBoundingClientRect()
     setSelectionData({
       text: selectedText,
       range: { start: startOffset, end: endOffset },
       position: {
-        x: rect.left + rect.width / 2,
-        y: rect.top - 10
-      }
+        x: rect.left,
+        y: rect.top,
+        width: rect.width,
+        height: rect.height
+      },
+      contextSentence
     })
+    setShowSmartTooltip(true)
     
   }, [content, wordQueries, sentenceQueries])
 
+  const handleSmartTooltipCardCreated = useCallback(async (mode: AnalysisMode, data: any) => {
+    // Add the card to the appropriate store
+    if (mode === 'mark' && language === 'french') {
+      // For French mark mode, create a sentence query
+      addSentenceQuery({
+        ...data,
+        analysis_mode: mode
+      })
+      addHighlight('sentence', selectionData?.range.start || 0, selectionData?.range.end || 0, data.id)
+    } else if (mode === 'mark') {
+      // For English mark mode, create a word query
+      addWordQuery({
+        ...data,
+        analysis_mode: mode
+      })
+      addHighlight('word', selectionData?.range.start || 0, selectionData?.range.end || 0, data.id)
+    } else {
+      // For Simple/Deep/Grammar modes, create word query with analysis
+      addWordQuery({
+        ...data,
+        analysis_mode: mode
+      })
+      addHighlight('word', selectionData?.range.start || 0, selectionData?.range.end || 0, data.id)
+    }
+  }, [addWordQuery, addSentenceQuery, addHighlight, selectionData, language])
+
+  const handleSmartTooltipClose = useCallback(() => {
+    setShowSmartTooltip(false)
+    setSelectionData(null)
+    // Clear text selection
+    window.getSelection()?.removeAllRanges()
+  }, [])
+
+  const handleBackToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
 
 
   const scrollToCard = (cardId: string) => {
@@ -301,7 +432,7 @@ export default function ReadingView({ language, articleId, content, title, onNew
     setIsLoading(true)
     try {
       const endpoint = type === 'word' ? 'query-word' : 'query-sentence'
-      const res = await fetch(`/api/language-reading/${endpoint}`, {
+      const res = await fetch(`/api/master-language/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -355,7 +486,7 @@ export default function ReadingView({ language, articleId, content, title, onNew
     setIsLoading(true)
     try {
       const endpoint = type === 'word' ? 'mark-word' : 'mark-sentence'
-      const res = await fetch(`/api/language-reading/${endpoint}`, {
+      const res = await fetch(`/api/master-language/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -444,7 +575,7 @@ export default function ReadingView({ language, articleId, content, title, onNew
     
     setIsLoading(true)
     try {
-      const res = await fetch('/api/language-reading/query-sentence', {
+      const res = await fetch('/api/master-language/query-sentence', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -478,66 +609,10 @@ export default function ReadingView({ language, articleId, content, title, onNew
   }
 
   const renderHighlightedText = () => {
-    const ranges = useLanguageReadingStore.getState().highlightedRanges
-    const pendingWordQueries = useLanguageReadingStore.getState().pendingWordQueries
-    const pendingSentenceQueries = useLanguageReadingStore.getState().pendingSentenceQueries
+    const { highlightedRanges, pendingWordQueries, pendingSentenceQueries } = useLanguageReadingStore()
+    const ranges = highlightedRanges
     
-    // For French, render with sentence-level interaction
-    if (language === 'french') {
-      return content.split('\n').map((paragraph, paragraphIndex) => {
-        if (!paragraph.trim()) {
-          return <br key={paragraphIndex} />
-        }
-        
-        const sentences = splitIntoSentences(paragraph)
-        let paragraphOffset = 0
-        
-        // Calculate the offset of this paragraph in the entire content
-        const precedingParagraphs = content.split('\n').slice(0, paragraphIndex)
-        const paragraphStartOffset = precedingParagraphs.reduce((acc, p) => acc + p.length + 1, 0)
-        
-        return (
-          <p key={paragraphIndex} className="mb-4 leading-relaxed">
-            {sentences.map((sentence, sentenceIndex) => {
-              const globalStart = paragraphStartOffset + sentence.start
-              const globalEnd = paragraphStartOffset + sentence.end
-              
-              // Check if this sentence has any highlights
-              const hasHighlight = ranges.some(range => 
-                range.start <= globalStart && range.end >= globalEnd
-              )
-              
-              // Check if this sentence is pending
-              const isPending = pendingSentenceQueries.some(pending => 
-                pending.start === globalStart && pending.end === globalEnd
-              )
-              
-              const className = isPending
-                ? 'cursor-pointer hover:bg-blue-50 transition-colors duration-200 animate-pulse bg-blue-100/30 rounded px-1'
-                : hasHighlight
-                ? 'cursor-pointer hover:bg-blue-100 transition-colors duration-200 bg-blue-50 rounded px-1'
-                : 'cursor-pointer hover:bg-gray-50 transition-colors duration-200 rounded px-1'
-              
-              return (
-                <span
-                  key={sentenceIndex}
-                  className={className}
-                  onClick={() => handleFrenchSentenceClick({
-                    text: sentence.text,
-                    start: globalStart,
-                    end: globalEnd
-                  })}
-                >
-                  {sentence.text}
-                </span>
-              )
-            })}
-          </p>
-        )
-      })
-    }
-    
-    // Original logic for other languages
+    // Original logic for all languages (including French)
     if (ranges.length === 0 && pendingWordQueries.length === 0 && pendingSentenceQueries.length === 0) {
       return content.split('\n').map((paragraph, index) => (
         paragraph.trim() ? (
@@ -732,7 +807,7 @@ export default function ReadingView({ language, articleId, content, title, onNew
       
       <div className="flex gap-6">
         {/* Left Panel - Article Content & AI Notes */}
-        <div className="w-1/2 flex flex-col gap-6">
+        <div className="w-[35%] flex flex-col gap-6">
           {/* Article Content */}
           <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
             <div
@@ -765,7 +840,7 @@ export default function ReadingView({ language, articleId, content, title, onNew
         </div>
 
         {/* Right Panel - Query Results */}
-        <div className="w-1/2">
+        <div className="w-[65%]">
           <QueryCards 
             language={language} 
             articleId={articleId}
@@ -776,98 +851,52 @@ export default function ReadingView({ language, articleId, content, title, onNew
         </div>
       </div>
 
-      {/* Selection Tooltip */}
-      {selectionData && (
-        <div
-          className="fixed z-50 w-80 bg-white shadow-xl border border-purple-200 rounded-2xl text-gray-700 overflow-hidden"
-          style={{
-            left: Math.min(window.innerWidth - 330, selectionData.position.x + 30),
-            top: Math.max(10, selectionData.position.y - 240),
-            pointerEvents: 'auto'
-          }}
+      {/* Smart Tooltip */}
+      <SmartTooltip
+        isVisible={showSmartTooltip && selectionData !== null}
+        position={selectionData?.position || { x: 0, y: 0, width: 0, height: 0 }}
+        selectedText={selectionData?.text || ''}
+        contextSentence={selectionData?.contextSentence || ''}
+        language={language}
+        nativeLanguage={nativeLanguage}
+        articleId={articleId}
+        textRange={selectionData?.range}
+        onClose={handleSmartTooltipClose}
+        onCardCreated={handleSmartTooltipCardCreated}
+      />
+
+      {/* Back to Top Button */}
+      {showBackToTop && (
+        <button
+          onClick={handleBackToTop}
+          className="fixed bottom-8 right-8 z-40 bg-purple-500 hover:bg-purple-600 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
+          title="Back to Top"
         >
-          {/* Header */}
-          <div className="bg-gradient-to-r from-purple-600 to-purple-700 p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-purple-200 rounded-full"></div>
-                <p className="text-white font-medium text-xs">{uiTexts.textAnalysis}</p>
-              </div>
-              <button
-                onClick={() => setSelectionData(null)}
-                className="text-purple-100 hover:text-white text-xl leading-none transition-colors"
-              >
-                ×
-              </button>
-            </div>
-            <p className="text-purple-100 text-xs mt-2 max-w-full truncate">
-              "{selectionData.text}"
-            </p>
-          </div>
-          
-          {/* Content */}
-          <div className="p-4">
-            {isLoading && (
-              <div className="mb-3 relative">
-                <ThinkingAnimation 
-                  message={uiTexts.analyzing}
-                  className="p-3 rounded-lg"
-                />
-              </div>
-            )}
-            
-            {/* Manual Mark Section */}
-            <div className="mb-4">
-              <p className="text-xs font-semibold text-purple-700 mb-2 uppercase tracking-wide">{uiTexts.manualNotes}</p>
-              <div className="flex gap-2">
-                <AnimatedButton
-                  onClick={() => handleMarkOnly('word')}
-                  disabled={isLoading}
-                  variant="accent"
-                  size="sm"
-                  className="flex-1"
-                >
-                  {uiTexts.markWord}
-                </AnimatedButton>
-                <AnimatedButton
-                  onClick={() => handleMarkOnly('sentence')}
-                  disabled={isLoading}
-                  variant="accent"
-                  size="sm"
-                  className="flex-1"
-                >
-                  {uiTexts.markSentence}
-                </AnimatedButton>
-              </div>
-            </div>
-            
-            {/* AI Query Section */}
-            <div className="border-t border-purple-100 pt-3">
-              <p className="text-xs font-semibold text-purple-700 mb-2 uppercase tracking-wide">{uiTexts.aiAnalysis}</p>
-              <div className="flex gap-2">
-                <AnimatedButton
-                  onClick={() => handleQuery('word')}
-                  disabled={isLoading}
-                  variant="primary"
-                  size="sm"
-                  className="flex-1"
-                >
-                  {uiTexts.queryWord}
-                </AnimatedButton>
-                <AnimatedButton
-                  onClick={() => handleQuery('sentence')}
-                  disabled={isLoading}
-                  variant="primary"
-                  size="sm"
-                  className="flex-1"
-                >
-                  {uiTexts.querySentence}
-                </AnimatedButton>
-              </div>
-            </div>
-          </div>
-        </div>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+          </svg>
+        </button>
       )}
+
+      {/* Prompt Management Button */}
+      <button
+        onClick={() => setShowPromptManagement(true)}
+        className="fixed z-40 bg-gray-700/50 hover:bg-gray-700/70 text-white w-6 h-6 flex items-center justify-center rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 backdrop-blur-sm"
+        title="Prompt Management"
+        style={{ 
+          bottom: '1rem', // Move further down below back-to-top button
+          right: 'calc(2rem + 24px - 12px)' // right-8 + (back-to-top width - prompt width)/2 to center align
+        }}
+      >
+        <span className="text-xs font-mono font-bold">&lt;/&gt;</span>
+      </button>
+
+      {/* Prompt Management Modal */}
+      <PromptManagement
+        isVisible={showPromptManagement}
+        language={language}
+        onClose={() => setShowPromptManagement(false)}
+      />
       </div>
     </div>
   )

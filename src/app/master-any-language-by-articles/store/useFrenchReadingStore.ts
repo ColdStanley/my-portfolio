@@ -107,33 +107,9 @@ export const useFrenchReadingStore = create<FrenchReadingState>((set, get) => ({
         highlightedRanges: [] 
       })
       
-      // Load French sentence cards (main sentences, not word queries)
-      const frenchSentenceRes = await fetch(`/api/language-reading/queries?articleId=${articleId}&type=sentence&language=${language}`)
-      if (frenchSentenceRes.ok) {
-        const frenchSentenceQueries = await frenchSentenceRes.json()
-        // Filter out word queries to prevent duplicate cards
-        const mainSentences = frenchSentenceQueries.filter((q: SentenceQuery) => 
-          !q.sentence_text.includes('::word::')
-        )
-        set({ frenchSentenceCards: mainSentences })
-      }
-      
-      // Load word queries for reading view highlighting (if needed)
-      const wordRes = await fetch(`/api/language-reading/queries?articleId=${articleId}&type=word&language=${language}`)
-      if (wordRes.ok) {
-        const wordQueries = await wordRes.json()
-        set({ wordQueries })
-        
-        // Add highlights for words
-        const wordHighlights = wordQueries.map((q: WordQuery) => ({
-          type: 'word' as const,
-          start: q.start_offset,
-          end: q.end_offset,
-          id: q.id
-        }))
-        
-        set({ highlightedRanges: wordHighlights })
-      }
+      // Data is now stored in articles.analysis_records JSON field
+      // This store is deprecated - data access moved to unified structure
+      console.log('useFrenchReadingStore is deprecated - data moved to articles.analysis_records')
       
     } catch (error) {
       console.error('Failed to load French reading data:', error)
