@@ -5,7 +5,6 @@ import { useLanguageReadingStore } from '../store/useLanguageReadingStore'
 import AnimatedButton from './AnimatedButton'
 import { Language, getUITexts } from '../config/uiText'
 import { playText } from '../utils/tts'
-import AIDialog from './AIDialog'
 import Tooltip from './Tooltip'
 import ReactMarkdown from 'react-markdown'
 import FrenchSentenceCard from './FrenchSentenceCard'
@@ -147,12 +146,6 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
   const [testScore, setTestScore] = useState(0)
   const [testLoading, setTestLoading] = useState(false)
   const [testCompleted, setTestCompleted] = useState(false)
-  const [aiDialog, setAiDialog] = useState<{
-    isOpen: boolean
-    queryData: any
-    queryType: 'word' | 'sentence'
-    initialResponse?: string
-  }>({ isOpen: false, queryData: null, queryType: 'word' })
   const [fromQuizQueryId, setFromQuizQueryId] = useState<string | null>(null)
   const uiTexts = getUITexts(language)
 
@@ -274,20 +267,6 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
         block: 'center' 
       })
     }
-  }
-
-  // AI助手相关函数
-  const handleAskAI = (query: any, type: 'word' | 'sentence') => {
-    setAiDialog({
-      isOpen: true,
-      queryData: query,
-      queryType: type,
-      initialResponse: query.ai_notes || undefined
-    })
-  }
-
-  const handleCloseAIDialog = () => {
-    setAiDialog({ isOpen: false, queryData: null, queryType: 'word' })
   }
 
   const handleAISaved = async () => {
@@ -511,7 +490,6 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
               articleId={articleId}
               onDelete={(id) => handleDelete(id, 'sentence')}
               onScrollToHighlight={(query) => scrollToHighlight(query, 'sentence')}
-              onAskAI={(query) => handleAskAI(query, 'sentence')}
             />
           ) : (
             <div
@@ -610,44 +588,43 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
                   </>
                 )}
                 
-                {/* AI Assistant Section for Sentences */}
-                <div className="mt-4 pt-3 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex gap-2 justify-between items-center">
-                    <div className="flex gap-2">
-                      <AnimatedButton
-                        onClick={() => handleAskAI(query, 'sentence')}
-                        variant="secondary"
-                        size="sm"
-                      >
-                        {uiTexts.askAI}
-                      </AnimatedButton>
-                      {query.ai_notes && (
-                        <Tooltip content={query.ai_notes} position="right">
-                          <button className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 text-purple-700 text-sm rounded-lg hover:bg-purple-100 transition-all duration-200 border border-purple-200">
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z"/>
-                              <path d="M6 8h8v2H6V8zm0 4h5v2H6v-2z"/>
-                            </svg>
-                            Notes
-                          </button>
-                        </Tooltip>
-                      )}
-                    </div>
-                    {/* Back to Quiz button - only show if this card was accessed from quiz */}
-                    {isTestMode && fromQuizQueryId === query.id.toString() && (
-                      <button
-                        onClick={scrollBackToQuiz}
-                        className="text-xs text-gray-500 hover:text-purple-600 hover:bg-gray-50 px-2 py-1 rounded transition-all duration-200 flex items-center gap-1"
-                        title="Return to quiz"
-                      >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                        </svg>
-                        {uiTexts.backToQuiz}
-                      </button>
-                    )}
+                {/* Back to Quiz button - only show if this card was accessed from quiz */}
+                {isTestMode && fromQuizQueryId === query.id.toString() && (
+                  <div className="mt-4 pt-3 border-t border-gray-100 flex justify-end" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={scrollBackToQuiz}
+                      className="text-xs text-gray-500 hover:text-purple-600 hover:bg-gray-50 px-2 py-1 rounded transition-all duration-200 flex items-center gap-1"
+                      title="Return to quiz"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                      </svg>
+                      {uiTexts.backToQuiz}
+                    </button>
                   </div>
-                </div>
+                )}
+                
+                {/* AI Notes display for sentences */}
+                {query.ai_notes && (
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z"/>
+                        <path d="M6 8h8v2H6V8zm0 4h5v2H6v-2z"/>
+                      </svg>
+                      <span className="text-sm font-medium text-purple-600">AI Notes</span>
+                    </div>
+                    <div className="bg-purple-50/30 p-3 rounded-lg">
+                      <CollapsibleContent
+                        content={query.ai_notes}
+                        maxLength={200}
+                        className="text-sm text-gray-700 leading-relaxed"
+                        language={language}
+                        renderMarkdown={true}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -811,17 +788,6 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
                               </button>
                             </span>
                           )}
-                        </div>
-                        
-                        {/* Action buttons */}
-                        <div className="flex gap-2 flex-wrap pt-2" onClick={(e) => e.stopPropagation()}>
-                          <AnimatedButton
-                            onClick={() => handleAskAI(query, 'word')}
-                            variant="secondary"
-                            size="sm"
-                          >
-                            {uiTexts.askAI}
-                          </AnimatedButton>
                         </div>
                       </div>
                     )}
@@ -1031,44 +997,43 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
                         </div>
                       )}
                       
-                      {/* AI Assistant Section for Words - Left Column */}
-                      <div className="mt-4 pt-3 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex gap-2 justify-between items-center">
-                          <div className="flex gap-2">
-                            <AnimatedButton
-                              onClick={() => handleAskAI(query, 'word')}
-                              variant="secondary"
-                              size="sm"
-                            >
-                              {uiTexts.askAI}
-                            </AnimatedButton>
-                            {query.ai_notes && (
-                              <Tooltip content={query.ai_notes} position="right">
-                                <button className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 text-purple-700 text-sm rounded-lg hover:bg-purple-100 transition-all duration-200 border border-purple-200">
-                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z"/>
-                                    <path d="M6 8h8v2H6V8zm0 4h5v2H6v-2z"/>
-                                  </svg>
-                                  Notes
-                                </button>
-                              </Tooltip>
-                            )}
-                          </div>
-                          {/* Back to Quiz button - only show if this card was accessed from quiz */}
-                          {isTestMode && fromQuizQueryId === query.id.toString() && (
-                            <button
-                              onClick={scrollBackToQuiz}
-                              className="text-xs text-gray-500 hover:text-purple-600 hover:bg-gray-50 px-2 py-1 rounded transition-all duration-200 flex items-center gap-1"
-                              title="Return to quiz"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                              </svg>
-                              {uiTexts.backToQuiz}
-                            </button>
-                          )}
+                      {/* Back to Quiz button - only show if this card was accessed from quiz */}
+                      {isTestMode && fromQuizQueryId === query.id.toString() && (
+                        <div className="mt-4 pt-3 border-t border-gray-100 flex justify-end" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={scrollBackToQuiz}
+                            className="text-xs text-gray-500 hover:text-purple-600 hover:bg-gray-50 px-2 py-1 rounded transition-all duration-200 flex items-center gap-1"
+                            title="Return to quiz"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            </svg>
+                            {uiTexts.backToQuiz}
+                          </button>
                         </div>
-                      </div>
+                      )}
+                      
+                      {/* AI Notes display for words */}
+                      {query.ai_notes && (
+                        <div className="mt-4 pt-3 border-t border-gray-100">
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z"/>
+                              <path d="M6 8h8v2H6V8zm0 4h5v2H6v-2z"/>
+                            </svg>
+                            <span className="text-sm font-medium text-purple-600">AI Notes</span>
+                          </div>
+                          <div className="bg-purple-50/30 p-3 rounded-lg">
+                            <CollapsibleContent
+                              content={query.ai_notes}
+                              maxLength={200}
+                              className="text-sm text-gray-700 leading-relaxed"
+                              language={language}
+                              renderMarkdown={true}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1272,44 +1237,43 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
                         </div>
                       )}
                       
-                      {/* AI Assistant Section for Words - Right Column */}
-                      <div className="mt-4 pt-3 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex gap-2 justify-between items-center">
-                          <div className="flex gap-2">
-                            <AnimatedButton
-                              onClick={() => handleAskAI(query, 'word')}
-                              variant="secondary"
-                              size="sm"
-                            >
-                              {uiTexts.askAI}
-                            </AnimatedButton>
-                            {query.ai_notes && (
-                              <Tooltip content={query.ai_notes} position="left">
-                                <button className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 text-purple-700 text-sm rounded-lg hover:bg-purple-100 transition-all duration-200 border border-purple-200">
-                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z"/>
-                                    <path d="M6 8h8v2H6V8zm0 4h5v2H6v-2z"/>
-                                  </svg>
-                                  Notes
-                                </button>
-                              </Tooltip>
-                            )}
-                          </div>
-                          {/* Back to Quiz button - only show if this card was accessed from quiz */}
-                          {isTestMode && fromQuizQueryId === query.id.toString() && (
-                            <button
-                              onClick={scrollBackToQuiz}
-                              className="text-xs text-gray-500 hover:text-purple-600 hover:bg-gray-50 px-2 py-1 rounded transition-all duration-200 flex items-center gap-1"
-                              title="Return to quiz"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                              </svg>
-                              {uiTexts.backToQuiz}
-                            </button>
-                          )}
+                      {/* Back to Quiz button - only show if this card was accessed from quiz */}
+                      {isTestMode && fromQuizQueryId === query.id.toString() && (
+                        <div className="mt-4 pt-3 border-t border-gray-100 flex justify-end" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={scrollBackToQuiz}
+                            className="text-xs text-gray-500 hover:text-purple-600 hover:bg-gray-50 px-2 py-1 rounded transition-all duration-200 flex items-center gap-1"
+                            title="Return to quiz"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            </svg>
+                            {uiTexts.backToQuiz}
+                          </button>
                         </div>
-                      </div>
+                      )}
+                      
+                      {/* AI Notes display for words */}
+                      {query.ai_notes && (
+                        <div className="mt-4 pt-3 border-t border-gray-100">
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z"/>
+                              <path d="M6 8h8v2H6V8zm0 4h5v2H6v-2z"/>
+                            </svg>
+                            <span className="text-sm font-medium text-purple-600">AI Notes</span>
+                          </div>
+                          <div className="bg-purple-50/30 p-3 rounded-lg">
+                            <CollapsibleContent
+                              content={query.ai_notes}
+                              maxLength={200}
+                              className="text-sm text-gray-700 leading-relaxed"
+                              language={language}
+                              renderMarkdown={true}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1473,17 +1437,6 @@ export default function QueryCards({ language, articleId, isTestMode, onExitTest
           </div>
         )}
       </div>
-      
-      {/* AI Dialog */}
-      <AIDialog
-        isOpen={aiDialog.isOpen}
-        onClose={handleCloseAIDialog}
-        queryData={aiDialog.queryData}
-        queryType={aiDialog.queryType}
-        language={language}
-        initialResponse={aiDialog.initialResponse}
-        onSaved={handleAISaved}
-      />
     </div>
   )
 }

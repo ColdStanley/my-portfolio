@@ -70,7 +70,7 @@ export default function MobileFrenchSentenceCard({
 
   // Parse markdown-like formatting (simplified for mobile)
   const parseMarkdown = (text: string) => {
-    let processedText = text.replace(/^(#{1,3})\s+(.+)$/gm, '$2')
+    const processedText = text.replace(/^(#{1,3})\s+(.+)$/gm, '$2')
     
     const boldRegex = /\*\*(.*?)\*\*/g
     const italicRegex = /\*(.*?)\*/g

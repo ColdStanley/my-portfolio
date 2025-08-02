@@ -11,7 +11,7 @@ import ReadingTimer from './ReadingTimer'
 import { Language, getUITexts } from '../config/uiText'
 import { playText } from '../utils/tts'
 import SmartTooltip, { AnalysisMode } from './SmartTooltip'
-import PromptManagement from './PromptManagement'
+import AIDialog from './AIDialog'
 
 interface ReadingViewProps {
   language: Language
@@ -37,7 +37,7 @@ export default function ChineseEnglishReadingView({ language, nativeLanguage, ar
   const [isMobile, setIsMobile] = useState(false)
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string | null>(null)
   const [showBackToTop, setShowBackToTop] = useState(false)
-  const [showPromptManagement, setShowPromptManagement] = useState(false)
+  const [showGlobalAIDialog, setShowGlobalAIDialog] = useState(false)
   
   const textRef = useRef<HTMLDivElement>(null)
   const aiNotesRef = useRef<AINotesCardsRef>(null)
@@ -359,6 +359,20 @@ export default function ChineseEnglishReadingView({ language, nativeLanguage, ar
               50% { transform: scale(1.1); background-color: rgba(34, 197, 94, 0.3); }
               75% { transform: scale(1.05); background-color: rgba(34, 197, 94, 0.2); }
               100% { transform: scale(1); background-color: initial; }
+            }
+            @keyframes tech-pulse {
+              0% { 
+                box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+                transform: scale(1);
+              }
+              50% { 
+                box-shadow: 0 0 0 8px rgba(99, 102, 241, 0.1);
+                transform: scale(1.02);
+              }
+              100% { 
+                box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+                transform: scale(1);
+              }
             }
             .word-bounce {
               animation: wordBounce 0.5s ease-in-out;
@@ -869,33 +883,54 @@ export default function ChineseEnglishReadingView({ language, nativeLanguage, ar
       {showBackToTop && (
         <button
           onClick={handleBackToTop}
-          className="fixed bottom-8 right-8 z-40 bg-purple-500 hover:bg-purple-600 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
+          className="fixed z-40 w-10 h-10 bg-purple-500 hover:bg-purple-600 text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
+          style={{
+            bottom: '5.5rem',
+            right: '1.5rem'
+          }}
           title="Back to Top"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
           </svg>
         </button>
       )}
 
-      {/* Prompt Management Button */}
+      {/* Global Ask AI Button */}
       <button
-        onClick={() => setShowPromptManagement(true)}
-        className="fixed z-40 bg-gray-700/50 hover:bg-gray-700/70 text-white w-6 h-6 flex items-center justify-center rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 backdrop-blur-sm"
-        title="Prompt Management"
-        style={{ 
-          bottom: '1rem', // Move further down below back-to-top button
-          right: 'calc(2rem + 24px - 12px)' // right-8 + (back-to-top width - prompt width)/2 to center align
+        onClick={() => setShowGlobalAIDialog(true)}
+        className="fixed z-40 w-10 h-10 text-white rounded-full shadow-md backdrop-blur-sm bg-opacity-90 transition-all duration-300 ease-out hover:scale-105 hover:shadow-lg border border-white/10"
+        style={{
+          background: 'linear-gradient(135deg, #64748b 0%, #6366f1 100%)',
+          bottom: '2.5rem',
+          right: '1.5rem',
+          animation: 'tech-pulse 4s ease-in-out infinite'
         }}
+        title="Ask AI Assistant"
       >
-        <span className="text-xs font-mono font-bold">&lt;/&gt;</span>
+        <svg className="w-4 h-4 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path strokeWidth="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+          <circle cx="12" cy="12" r="0.5" fill="currentColor"/>
+        </svg>
+        <div className="absolute top-1 right-1 w-1 h-1 bg-white/60 rounded-full animate-ping"></div>
       </button>
 
-      {/* Prompt Management Modal */}
-      <PromptManagement
-        isVisible={showPromptManagement}
+
+
+      {/* Global AI Dialog */}
+      <AIDialog
+        isOpen={showGlobalAIDialog}
+        onClose={() => setShowGlobalAIDialog(false)}
+        queryData={{
+          article_id: articleId,
+          word_text: '',
+          sentence_text: '',
+          definition: 'Global AI Assistant',
+          translation: 'Ask any question about your reading'
+        }}
+        queryType="word"
         language={language}
-        onClose={() => setShowPromptManagement(false)}
+        onSaved={handleAINotesRefresh}
       />
       </div>
     </div>

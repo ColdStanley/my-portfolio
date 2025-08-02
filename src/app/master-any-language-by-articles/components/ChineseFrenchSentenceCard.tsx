@@ -65,10 +65,13 @@ const formatMarkdownResponse = (content: string): string => {
     // Wrap in paragraphs
     .replace(/^(.+)$/gm, '<p class="mb-3">$1</p>')
     
-    // Clean up empty paragraphs
+    // Clean up empty paragraphs and fix spacing around headers and bold titles
     .replace(/<p class="mb-3"><\/p>/g, '')
     .replace(/<p class="mb-3">(<h[1-6][^>]*>)/g, '$1')
     .replace(/(<\/h[1-6]>)<\/p>/g, '$1')
+    // Fix spacing around standalone bold text (section titles)
+    .replace(/<p class="mb-3">(<strong[^>]*>[^<]*<\/strong>)<br><\/p>/g, '<div class="font-bold text-purple-700 mb-2 mt-3">$1</div>')
+    .replace(/<p class="mb-3">(<strong[^>]*>[^<]*<\/strong>)<\/p>/g, '<div class="font-bold text-purple-700 mb-2 mt-3">$1</div>')
 }
 
 export default function ChineseFrenchSentenceCard({ 
@@ -179,10 +182,20 @@ export default function ChineseFrenchSentenceCard({
     try {
       // Create prompt based on tab type
       const promptTemplates = {
-        words: `讲解一下"${input}"这个法语单词，目标是让法语初学者（A1-A2）能彻底掌握该单词。最好使用例句。`,
-        phrases: `分析一下"${input}"这个法语表达/短语，解释其含义、用法和使用场景。请提供例句帮助法语初学者（A1-A2）理解和运用。`,
-        grammar: `解释一下"${input}"相关的法语语法知识，用简单易懂的方式讲解语法规则、变位规律或句型结构，适合法语初学者（A1-A2）学习。请提供实例说明。`,
-        others: `关于"${input}"，请提供相关的法语学习知识，可以包括文化背景、使用技巧、翻译对比或其他有助于法语初学者（A1-A2）理解的内容。`
+        words: `你是一名高级法语教师，擅长通过例句与语境帮助 A1–A2 中文母语初学者掌握法语词汇。请以"${input}"这个词为例，围绕以下要点展开讲解：
+
+用法与意思：通过简单自然的法语例句，帮助学生理解这个词的不同用法（如形容词与名词）。例句要简单、实用，学生能一看就懂。
+
+记忆建议：如何用图像、词根、联想等方法更轻松记住它。避免太学术化的术语。
+
+使用场景：在哪些日常情境中会用到这个词，比如工作、性格描述等。可配合例句说明。
+
+中文母语初学者常犯的错误：列出1个最容易混淆的点，并用一句正确 + 一句错误的例句对比讲解。
+
+请避免使用"词性""中文解释""用法说明"等中文结构标签。整个讲解请像老师面对学生说话一样自然清晰，语言风格友好温和。`,
+        phrases: `你是一名高级法语教师，目标是让法语初学者（A1 - A2）能够通过法语例句（而非英语例句）来学习"${input}"这个法语表达/短语，确保法语初学者（A1-A2）能够掌握并灵运用该法语表达/短语，包括记忆技巧和使用技巧。`,
+        grammar: `你是一名高级法语教师，目标是让法语初学者（A1-A2）能够学习和理解"${input}"这句法语的语法相关的知识。讲解要全面，覆盖该句所有的语法相关的知识。并且通过法语例句（而非英语例句）的方式来帮助法语初学者（A1-A2）加深理解。`,
+        others: `关于"${input}"，请提供相关的法语学习知识，可以包括文化背景、使用技巧、翻译对比或其他有助于法语初学者（A1-A2）理解的内容。使用法语例句（而非英语例句）进行说明。`
       }
       
       const fullPrompt = promptTemplates[tabType] || promptTemplates.others
@@ -291,6 +304,53 @@ export default function ChineseFrenchSentenceCard({
     }
   }
 
+  const handleDeleteAnalysisItem = async (tabType: TabType, itemId: string) => {
+    try {
+      console.log('Deleting analysis item:', { tabType, itemId, articleId, sentenceId: query.id })
+      
+      // Call API to delete from database using URL parameters
+      const params = new URLSearchParams({
+        articleId: articleId.toString(),
+        sentenceId: query.id.toString(),
+        dimension: tabType,
+        itemId: itemId
+      })
+      
+      const response = await fetch(`/api/master-language/chinese-french-sentences?${params}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        console.error('Delete API response error:', response.status, response.statusText, errorData)
+        throw new Error(`Failed to delete analysis item: ${response.status} ${response.statusText}`)
+      }
+
+      const responseData = await response.json()
+      console.log('Delete API response:', responseData)
+
+      // Remove from local state
+      setAnalysisItems(prev => ({
+        ...prev,
+        [tabType]: prev[tabType].filter(item => item.id !== itemId)
+      }))
+
+      // If the deleted item was selected, select the first remaining item or null
+      if (selectedItems[tabType] === itemId) {
+        const remainingItems = analysisItems[tabType].filter(item => item.id !== itemId)
+        setSelectedItems(prev => ({
+          ...prev,
+          [tabType]: remainingItems.length > 0 ? remainingItems[0].id : null
+        }))
+      }
+
+      console.log('Analysis item deleted successfully')
+    } catch (error) {
+      console.error('Failed to delete analysis item:', error)
+      alert(`Failed to delete item: ${error.message}. Please try again.`)
+    }
+  }
+
   const currentItems = analysisItems[activeTab]
   const selectedItemId = selectedItems[activeTab]
   const selectedItem = currentItems.find(item => item.id === selectedItemId)
@@ -395,7 +455,7 @@ export default function ChineseFrenchSentenceCard({
                 {currentItems.map((item) => (
                   <div
                     key={item.id}
-                    className={`w-full text-left p-2 rounded-lg shadow-sm transition-all flex items-center justify-between ${
+                    className={`w-full text-left p-2 rounded-lg shadow-sm transition-all flex items-start gap-2 ${
                       selectedItemId === item.id
                         ? 'bg-purple-100 text-purple-700'
                         : 'bg-white hover:bg-purple-50 text-purple-600'
@@ -406,28 +466,39 @@ export default function ChineseFrenchSentenceCard({
                         ...prev,
                         [activeTab]: item.id
                       }))}
-                      className="flex-1 text-left"
+                      className="w-4/5 text-left"
                     >
-                      <div className="text-sm font-medium truncate">
+                      <div className="text-sm font-medium leading-tight">
                         {item.query}
                       </div>
                     </button>
-                    <button
-                      onClick={async () => {
-                        try {
-                          await playFrenchText(item.query)
-                        } catch (error) {
-                          console.error('Google TTS failed:', error)
-                        }
-                      }}
-                      className="text-purple-400 hover:text-purple-600 hover:bg-purple-50 p-1 rounded-lg transition-colors flex-shrink-0 ml-2"
-                      title="Écouter le mot/phrase"
-                    >
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.817L4.343 13.5H2a1 1 0 01-1-1v-5a1 1 0 011-1h2.343l4.04-3.317a1 1 0 01.997-.106zM15.657 6.343a1 1 0 011.414 0A9.972 9.972 0 0119 12a9.972 9.972 0 01-1.929 5.657 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 12a7.971 7.971 0 00-1.343-4.243 1 1 0 010-1.414z" clipRule="evenodd" />
-                        <path fillRule="evenodd" d="M13.243 8.757a1 1 0 011.414 0A5.98 5.98 0 0116 12a5.98 5.98 0 01-1.343 3.243 1 1 0 01-1.414-1.414A3.99 3.99 0 0014 12a3.99 3.99 0 00-.757-2.329 1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                    </button>
+                    <div className="w-1/5 flex items-center justify-end gap-1 flex-shrink-0">
+                      <button
+                        onClick={async () => {
+                          try {
+                            await playFrenchText(item.query)
+                          } catch (error) {
+                            console.error('Google TTS failed:', error)
+                          }
+                        }}
+                        className="text-purple-400 hover:text-purple-600 hover:bg-purple-50 p-1 rounded transition-colors flex-shrink-0"
+                        title="Écouter le mot/phrase"
+                      >
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.817L4.343 13.5H2a1 1 0 01-1-1v-5a1 1 0 011-1h2.343l4.40-3.317a1 1 0 01.997-.106zM15.657 6.343a1 1 0 011.414 0A9.972 9.972 0 0119 12a9.972 9.972 0 01-1.929 5.657 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 12a7.971 7.971 0 00-1.343-4.243 1 1 0 010-1.414z" clipRule="evenodd" />
+                          <path fillRule="evenodd" d="M13.243 8.757a1 1 0 011.414 0A5.98 5.98 0 0116 12a5.98 5.98 0 01-1.343 3.243 1 1 0 01-1.414-1.414A3.99 3.99 0 0014 12a3.99 3.99 0 00-.757-2.329 1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteAnalysisItem(activeTab, item.id)}
+                        className="text-purple-400 hover:text-red-600 hover:bg-red-50 p-1 rounded transition-colors flex-shrink-0"
+                        title="Supprimer cet élément"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

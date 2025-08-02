@@ -24,7 +24,6 @@ interface FrenchSentenceCardProps {
   articleId: number
   onDelete: (id: number) => void
   onScrollToHighlight: (query: SentenceQuery) => void
-  onAskAI: (query: SentenceQuery) => void
 }
 
 type TabType = 'words' | 'phrases' | 'grammar' | 'test'
@@ -50,8 +49,7 @@ export default function FrenchSentenceCard({
   language, 
   articleId,
   onDelete, 
-  onScrollToHighlight, 
-  onAskAI 
+  onScrollToHighlight
 }: FrenchSentenceCardProps) {
   const [activeTab, setActiveTab] = useState<TabType>('words')
   const [wordQueries, setWordQueries] = useState<WordQuery[]>([])
@@ -107,7 +105,7 @@ export default function FrenchSentenceCard({
   // Parse markdown-like formatting in text
   const parseMarkdown = (text: string) => {
     // Handle markdown headers (### text) - remove the # symbols
-    let processedText = text.replace(/^(#{1,3})\s+(.+)$/gm, '$2')
+    const processedText = text.replace(/^(#{1,3})\s+(.+)$/gm, '$2')
     
     // Handle **bold** text
     const boldRegex = /\*\*(.*?)\*\*/g
@@ -223,7 +221,7 @@ export default function FrenchSentenceCard({
     if (typeof content === 'string') {
       // Simple logic: find text that starts with letter and ends with . ! ?
       const parts = []
-      let remaining = content
+      const remaining = content
       let partIndex = 0
       
       // Find all sentences that start with letter and end with . ! ?
@@ -1310,28 +1308,23 @@ export default function FrenchSentenceCard({
           {renderTabContent()}
         </div>
         
-        {/* AI Assistant Section */}
-        <div className="mt-4 pt-3 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
-          <div className="flex gap-2 justify-between items-center">
-            <div className="flex gap-2">
-              <button
-                onClick={() => onAskAI(query)}
-                className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-sm rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow-md"
-              >
-                Ask AI
-              </button>
-              {query.ai_notes && (
-                <button className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 text-purple-700 text-sm rounded-lg hover:bg-purple-100 transition-all duration-200 border border-purple-200">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z"/>
-                    <path d="M6 8h8v2H6V8zm0 4h5v2H6v-2z"/>
-                  </svg>
-                  Notes
-                </button>
-              )}
+        {/* AI Notes display */}
+        {query.ai_notes && (
+          <div className="mt-4 pt-3 border-t border-gray-100">
+            <div className="flex items-center gap-1.5 mb-2">
+              <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z"/>
+                <path d="M6 8h8v2H6V8zm0 4h5v2H6v-2z"/>
+              </svg>
+              <span className="text-sm font-medium text-purple-600">AI Notes</span>
+            </div>
+            <div className="bg-purple-50/30 p-3 rounded-lg">
+              <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                {query.ai_notes}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )

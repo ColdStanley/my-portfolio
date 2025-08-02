@@ -15,7 +15,46 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Query all records to get available titles and companies
+    // Get database schema to fetch current select options
+    const database = await notion.databases.retrieve({
+      database_id: process.env.NOTION_JD2CV_DB_ID,
+    })
+
+    // Extract current select options from database schema
+    const applicationStages: string[] = []
+    const roleGroups: string[] = []
+    const firmTypes: string[] = []
+
+    const properties = database.properties as any
+
+    // Get application_stage options
+    if (properties.application_stage?.select?.options) {
+      properties.application_stage.select.options.forEach((option: any) => {
+        if (option.name) {
+          applicationStages.push(option.name)
+        }
+      })
+    }
+
+    // Get role_group options
+    if (properties.role_group?.select?.options) {
+      properties.role_group.select.options.forEach((option: any) => {
+        if (option.name) {
+          roleGroups.push(option.name)
+        }
+      })
+    }
+
+    // Get firm_type options
+    if (properties.firm_type?.select?.options) {
+      properties.firm_type.select.options.forEach((option: any) => {
+        if (option.name) {
+          firmTypes.push(option.name)
+        }
+      })
+    }
+
+    // Query all records to get available titles and companies (still needed for combinations)
     const allRecords = await notion.databases.query({
       database_id: process.env.NOTION_JD2CV_DB_ID,
     })
@@ -63,6 +102,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       titles: Array.from(titles).sort(),
       companies: Array.from(companies).sort(),
+      applicationStages: applicationStages, // Keep Notion's original order
+      roleGroups: roleGroups, // Keep Notion's original order
+      firmTypes: firmTypes, // Keep Notion's original order
       combinations: combinationsArray,
       reverseCombinations: reverseCombinationsArray
     })

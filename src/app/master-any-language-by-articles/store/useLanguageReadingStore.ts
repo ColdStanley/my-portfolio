@@ -163,7 +163,7 @@ export const useLanguageReadingStore = create<LanguageReadingState>((set, get) =
       }
       
       // For other languages, keep the old logic
-      let allHighlights: Array<{type: 'word' | 'sentence', start: number, end: number, id: number}> = []
+      const allHighlights: Array<{type: 'word' | 'sentence', start: number, end: number, id: number}> = []
       
       // Data is now stored in articles.analysis_records JSON field
       // This store is deprecated - data access moved to unified structure

@@ -4,7 +4,7 @@ import { createOpenAIClient } from '@/utils/modelConfig'
 
 export async function POST(request: NextRequest) {
   try {
-    const { text, type, model = 'deepseek', keywordCount = 3 } = await request.json()
+    const { text, type, model = 'deepseek', keywordCount = 3, customPrompt } = await request.json()
 
     if (!text || !type) {
       return NextResponse.json(
@@ -148,16 +148,28 @@ Guidelines:
 
 Return ONLY a valid JSON array of strings, no additional text or formatting. STRICTLY FORBIDDEN: Do not include "\`\`\`json", "\`\`\`", "json", or any code block markers in your response. Your response must start directly with [ and end with ].`
 
-    // Select prompts based on model
-    const prompts = model === 'deepseek' ? deepseekPrompts : gptPrompts
-    const systemMessage = model === 'deepseek' ? deepseekSystemMessage : gptSystemMessage
-    const userPrompt = prompts[type as keyof typeof prompts]
+    // Use custom prompt if provided, otherwise use default prompts
+    let userPrompt: string
+    let systemMessage: string
     
-    if (!userPrompt) {
-      return NextResponse.json(
-        { error: 'Invalid type. Must be one of: capability, experience, generated' },
-        { status: 400 }
-      )
+    if (customPrompt) {
+      // Replace template variables in custom prompt
+      userPrompt = customPrompt
+        .replace(/{text}/g, text)
+        .replace(/{keywordCount}/g, keywordCount.toString())
+      systemMessage = model === 'deepseek' ? deepseekSystemMessage : gptSystemMessage
+    } else {
+      // Use default prompts
+      const prompts = model === 'deepseek' ? deepseekPrompts : gptPrompts
+      systemMessage = model === 'deepseek' ? deepseekSystemMessage : gptSystemMessage
+      userPrompt = prompts[type as keyof typeof prompts]
+      
+      if (!userPrompt) {
+        return NextResponse.json(
+          { error: 'Invalid type. Must be one of: capability, experience, generated' },
+          { status: 400 }
+        )
+      }
     }
 
     // Create OpenAI client based on selected model

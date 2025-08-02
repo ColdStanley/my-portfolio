@@ -2,18 +2,12 @@
 > my-portfolio@0.1.0 dev
 > next dev -H 0.0.0.0
 
+ ⚠ Port 3000 is in use, using available port 3001 instead.
    ▲ Next.js 15.3.3
-   - Local:        http://localhost:3000
-   - Network:      http://0.0.0.0:3000
+   - Local:        http://localhost:3001
+   - Network:      http://0.0.0.0:3001
    - Environments: .env.local
 
  ✓ Starting...
- ✓ Ready in 1576ms
- ○ Compiling / ...
- ✓ Compiled / in 3s (2128 modules)
-No base URL configured, using fallback data
- GET / 200 in 3342ms
- ○ Compiling /master-any-language-by-articles/[language] ...
- ✓ Compiled /master-any-language-by-articles/[language] in 1700ms (2698 modules)
- GET /master-any-language-by-articles/french 200 in 2381ms
+ ✓ Ready in 1461ms
 [?25h

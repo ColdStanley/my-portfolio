@@ -167,7 +167,20 @@ export default function SmartTooltip({
       }
     }
 
-    // Default position - to the right of selected text
+    // If a mode is selected (analysis results), center the dialog on screen
+    if (selectedMode) {
+      const viewportWidth = window.innerWidth
+      const viewportHeight = window.innerHeight
+      
+      return {
+        left: (viewportWidth - tooltipWidth) / 2,
+        top: Math.max(50, (viewportHeight - tooltipHeight) / 2),
+        width: tooltipWidth,
+        maxHeight: tooltipHeight
+      }
+    }
+
+    // Default position for mode selection - to the right of selected text
     const offset = 5 // Closer to selected text
     const selectionRect = position
     const x = selectionRect.x + selectionRect.width + offset
@@ -414,11 +427,13 @@ export default function SmartTooltip({
       className="fixed z-50 bg-white border-2 border-purple-200 rounded-xl shadow-2xl shadow-purple-100 overflow-hidden backdrop-blur-sm"
       style={getTooltipStyle()}
     >
-      {/* Arrow pointing to selected text */}
-      <div
-        className="absolute w-0 h-0"
-        style={getArrowStyle()}
-      />
+      {/* Arrow pointing to selected text - only show during mode selection */}
+      {!selectedMode && (
+        <div
+          className="absolute w-0 h-0"
+          style={getArrowStyle()}
+        />
+      )}
       {/* Header */}
       <div 
         className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-3"

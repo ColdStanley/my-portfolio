@@ -102,7 +102,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Article not found' }, { status: 404 })
     }
 
-    let currentRecords = currentData?.learning_records || { sentences: [] }
+    const currentRecords = currentData?.learning_records || { sentences: [] }
     
     // Find the target sentence
     const sentenceIndex = currentRecords.sentences.findIndex((s: any) => 
@@ -245,12 +245,16 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// DELETE: Remove sentence learning record
+// DELETE: Remove sentence learning record or specific analysis item
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const articleId = searchParams.get('articleId')
     const sentenceId = searchParams.get('sentenceId')
+    const dimension = searchParams.get('dimension')
+    const itemId = searchParams.get('itemId')
+
+    console.log('DELETE request params:', { articleId, sentenceId, dimension, itemId })
 
     if (!articleId || !sentenceId) {
       return NextResponse.json({ error: 'Missing articleId or sentenceId' }, { status: 400 })
@@ -270,36 +274,75 @@ export async function DELETE(req: NextRequest) {
 
     // If no article found, return success (nothing to delete)
     if (!currentData) {
-      console.log('No article found with ID:', articleId, 'for sentence deletion')
+      console.log('No article found with ID:', articleId, 'for deletion')
       return NextResponse.json({ success: true })
     }
 
     const currentRecords = currentData?.learning_records || { sentences: [] }
     
-    // Remove sentence from array (normalize IDs for comparison)
-    const targetId = parseInt(sentenceId)
-    const updatedRecords = {
-      ...currentRecords,
-      sentences: (currentRecords.sentences || []).filter((s: any) => {
-        const currentId = typeof s.id === 'string' ? parseInt(s.id) : s.id
-        return currentId !== targetId
-      })
+    // If dimension and itemId are provided, delete specific analysis item
+    if (dimension && itemId) {
+      console.log('Deleting analysis item:', { dimension, itemId, sentenceId })
+      
+      // Find the target sentence
+      const sentenceIndex = currentRecords.sentences.findIndex((s: any) => 
+        (typeof s.id === 'string' ? parseInt(s.id) : s.id) === parseInt(sentenceId)
+      )
+      
+      if (sentenceIndex === -1) {
+        return NextResponse.json({ error: 'Sentence not found' }, { status: 404 })
+      }
+
+      // Remove the specific analysis item from the dimension array
+      const sentence = currentRecords.sentences[sentenceIndex]
+      if (sentence[dimension]) {
+        sentence[dimension] = sentence[dimension].filter((item: any) => item.id !== itemId)
+        console.log(`Removed item ${itemId} from ${dimension}. Remaining items:`, sentence[dimension].length)
+      }
+
+      const updatedRecords = {
+        ...currentRecords,
+        sentences: [...currentRecords.sentences]
+      }
+
+      // Update database
+      const { error: updateError } = await supabase
+        .from(ARTICLES_TABLE)
+        .update({ learning_records: updatedRecords })
+        .eq('id', articleId)
+
+      if (updateError) {
+        console.error('Database update error:', updateError)
+        return NextResponse.json({ error: 'Failed to delete analysis item' }, { status: 500 })
+      }
+
+      return NextResponse.json({ success: true })
+    } else {
+      // Delete entire sentence (original functionality)
+      const targetId = parseInt(sentenceId)
+      const updatedRecords = {
+        ...currentRecords,
+        sentences: (currentRecords.sentences || []).filter((s: any) => {
+          const currentId = typeof s.id === 'string' ? parseInt(s.id) : s.id
+          return currentId !== targetId
+        })
+      }
+      
+      console.log('Deleting sentence with ID:', targetId, 'Found sentences:', currentRecords.sentences?.length || 0)
+
+      // Update database
+      const { error: updateError } = await supabase
+        .from(ARTICLES_TABLE)
+        .update({ learning_records: updatedRecords })
+        .eq('id', articleId)
+
+      if (updateError) {
+        console.error('Database update error:', updateError)
+        return NextResponse.json({ error: 'Failed to delete sentence record' }, { status: 500 })
+      }
+
+      return NextResponse.json({ success: true })
     }
-    
-    console.log('Deleting sentence with ID:', targetId, 'Found sentences:', currentRecords.sentences?.length || 0)
-
-    // Update database
-    const { error: updateError } = await supabase
-      .from(ARTICLES_TABLE)
-      .update({ learning_records: updatedRecords })
-      .eq('id', articleId)
-
-    if (updateError) {
-      console.error('Database update error:', updateError)
-      return NextResponse.json({ error: 'Failed to delete sentence record' }, { status: 500 })
-    }
-
-    return NextResponse.json({ success: true })
   } catch (error) {
     console.error('API error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

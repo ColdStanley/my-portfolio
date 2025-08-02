@@ -5,13 +5,29 @@ const notion = new Client({
   auth: process.env.NOTION_API_KEY,
 })
 
+// Company field name mapping for JD2CV table columns
+const getCompanyFieldName = (companyKey: string): string => {
+  const fieldMapping: Record<string, string> = {
+    'stanleyhi': 'stanleyhi',
+    'savvy': 'savvy',
+    'ncs': 'ncs',
+    'icekredit': 'icekredit',
+    'huawei': 'huawei',
+    'diebold': 'dieboldnixdorf',
+    'fujixerox': 'fujixerox'
+  }
+  return fieldMapping[companyKey] || companyKey
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { 
       jdTitle, 
       jdCompany, 
       experienceTitle, 
-      experienceContent 
+      experienceContent,
+      companyKey,
+      saveToField
     } = await request.json()
 
     // Validate required fields
@@ -114,15 +130,49 @@ export async function POST(request: NextRequest) {
       }
     ]
 
-    // Append the experience content to the title page
-    await notion.blocks.children.append({
-      block_id: pageId, // Use the page ID directly - this will add content to the page
-      children: contentBlocks
-    })
+    // Prepare operations array for parallel execution
+    const operations = []
+
+    // 1. Always append experience content to the page
+    operations.push(
+      notion.blocks.children.append({
+        block_id: pageId,
+        children: contentBlocks
+      })
+    )
+
+    // 2. Optionally save to company field (overwrite strategy)
+    if (saveToField && companyKey) {
+      const fieldName = getCompanyFieldName(companyKey)
+      operations.push(
+        notion.pages.update({
+          page_id: pageId,
+          properties: {
+            [fieldName]: {
+              rich_text: [
+                {
+                  type: 'text',
+                  text: {
+                    content: experienceContent
+                  }
+                }
+              ]
+            }
+          }
+        })
+      )
+    }
+
+    // Execute all operations in parallel
+    await Promise.all(operations)
+
+    const fieldMessage = saveToField && companyKey 
+      ? ` and ${getCompanyFieldName(companyKey)} field` 
+      : ''
 
     return NextResponse.json({
       success: true,
-      message: `Experience successfully saved to JD page: "${jdTitle}" at "${jdCompany}"`
+      message: `Experience successfully saved to JD page${fieldMessage}: "${jdTitle}" at "${jdCompany}"`
     })
   } catch (error) {
     console.error('Error saving experience to page:', error)

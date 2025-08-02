@@ -10,21 +10,11 @@ interface JDData {
   full_job_description: string
   jd_key_sentences: string
   keywords_from_sentences: string
-  generated_text_1: string
-  generated_text_2: string
-  generated_text_3: string
-  generated_text_4: string
-  generated_text_5: string
-  your_experience_1: string
-  your_experience_2: string
-  your_experience_3: string
-  your_experience_4: string
-  your_experience_5: string
   application_stage: string
   comment: string
   role_group: string
   firm_type: string
-  cv_pdf: string
+  cv_pdf?: string
 }
 
 interface ExperienceRecord {
@@ -53,6 +43,20 @@ const getCompanyDatabaseName = (companyKey: CompanyName): string => {
     'fujixerox': 'Fuji Xerox'
   }
   return mapping[companyKey]
+}
+
+// Company field name mapping for JD2CV table columns
+const getCompanyFieldName = (companyKey: CompanyName): string => {
+  const fieldMapping: Record<CompanyName, string> = {
+    'stanleyhi': 'stanleyhi',
+    'savvy': 'savvy',
+    'ncs': 'ncs',
+    'icekredit': 'icekredit',
+    'huawei': 'huawei',
+    'diebold': 'dieboldnixdorf',
+    'fujixerox': 'fujixerox'
+  }
+  return fieldMapping[companyKey]
 }
 
 // Experience Form Component
@@ -461,16 +465,6 @@ export default function JD2CVPanel() {
     full_job_description: '',
     jd_key_sentences: '',
     keywords_from_sentences: '',
-    generated_text_1: '',
-    generated_text_2: '',
-    generated_text_3: '',
-    generated_text_4: '',
-    generated_text_5: '',
-    your_experience_1: '',
-    your_experience_2: '',
-    your_experience_3: '',
-    your_experience_4: '',
-    your_experience_5: '',
     application_stage: '',
     comment: '',
     role_group: '',
@@ -485,15 +479,6 @@ export default function JD2CVPanel() {
   const [generateError, setGenerateError] = useState(false)
   const [currentPageId, setCurrentPageId] = useState<string>('')
   
-  const [experienceSaveMessages, setExperienceSaveMessages] = useState<string[]>(['', '', '', '', ''])
-  const [experienceIsSaving, setExperienceIsSaving] = useState<boolean[]>([false, false, false, false, false])
-  const [generatedExporting, setGeneratedExporting] = useState<boolean[]>([false, false, false, false, false])
-  const [experienceInputs, setExperienceInputs] = useState<string[]>(['', '', '', '', ''])
-  const [experienceGenerating, setExperienceGenerating] = useState<boolean[]>([false, false, false, false, false])
-  const [experienceMessages, setExperienceMessages] = useState<string[]>(['', '', '', '', ''])
-  const [inputExperienceSaving, setInputExperienceSaving] = useState<boolean[]>([false, false, false, false, false])
-  const [inputExperienceMessages, setInputExperienceMessages] = useState<string[]>(['', '', '', '', ''])
-  const [experienceSectionExpanded, setExperienceSectionExpanded] = useState<boolean[]>([false, false, false, false, false])
   const [jdSaved, setJdSaved] = useState(false)
   const [isGeneratingKeySentences, setIsGeneratingKeySentences] = useState(false)
   const [isGeneratingKeywords, setIsGeneratingKeywords] = useState(false)
@@ -510,7 +495,7 @@ export default function JD2CVPanel() {
   const [isSavingFirmType, setIsSavingFirmType] = useState(false)
   
   // Comment state
-  const [commentSaveTimeout, setCommentSaveTimeout] = useState<NodeJS.Timeout | null>(null)
+  const [isSavingComment, setIsSavingComment] = useState(false)
   
   // Application stage options
   const applicationStageOptions = [
@@ -539,6 +524,20 @@ export default function JD2CVPanel() {
   
   // Tab state for JD sections
   const [activeJDTab, setActiveJDTab] = useState(0) // 0: Original, 1: Key Sentences, 2: Key Words
+  
+  // Tab state for operations area
+  const [activeOperationTab, setActiveOperationTab] = useState(0) // 0: Details, 1: Status, 2: PDF, 3: More
+  
+  // PDF upload state
+  const [isUploadingPDF, setIsUploadingPDF] = useState(false)
+  const [uploadSuccess, setUploadSuccess] = useState('')
+  
+  // Temporary states for button-triggered saves
+  const [tempMatchScore, setTempMatchScore] = useState(0)
+  const [tempApplicationStage, setTempApplicationStage] = useState('')
+  const [tempRoleGroup, setTempRoleGroup] = useState('')
+  const [tempFirmType, setTempFirmType] = useState('')
+  const [tempComment, setTempComment] = useState('')
   
   
   
@@ -609,11 +608,11 @@ export default function JD2CVPanel() {
   
   // JD2CV specific prompts configuration
   const [jd2cvPrompts, setJd2cvPrompts] = useState<PromptData>({
-    generate_key_sentences: {
-      name: 'Generate Key Sentences',
-      location: 'JD Tab → Key Sentences',
-      model: 'deepseek',
-      count: 10,
+    // 生成关键句子 - GPT-4版本
+    generate_key_sentences_gpt4: {
+      name: 'Generate Key Sentences - GPT-4',
+      location: 'JD Tab → Key Sentences (GPT-4)',
+      model: 'gpt-4',
       prompt: `Analyze the following job description and extract the 10 most important sentences that define the core responsibilities, requirements, and expectations for this role.
 
 Focus on:
@@ -637,11 +636,41 @@ Please provide exactly 10 sentences from the original job description text, rank
 
 Do not use JSON, markdown formatting, or any special characters. Use only plain text with simple numbering.`
     },
-    generate_keywords: {
-      name: 'Generate Keywords',
-      location: 'JD Tab → Key Words',
+
+    // 生成关键句子 - DeepSeek版本
+    generate_key_sentences_deepseek: {
+      name: 'Generate Key Sentences - DeepSeek',
+      location: 'JD Tab → Key Sentences (DeepSeek)',
       model: 'deepseek',
-      count: 3,
+      prompt: `Analyze the following job description and extract the 10 most important sentences that define the core responsibilities, requirements, and expectations for this role.
+
+Focus on:
+- Key technical skills and qualifications
+- Primary job responsibilities
+- Important experience requirements
+- Critical performance expectations
+- Essential competencies
+
+Job Title: {title}
+
+Job Description:
+{full_job_description}
+
+Please provide exactly 10 sentences from the original job description text, ranked by importance (1 being most important). Format as a simple numbered list using plain text only:
+
+1. [First sentence]
+2. [Second sentence]
+3. [Third sentence]
+...
+
+Do not use JSON, markdown formatting, or any special characters. Use only plain text with simple numbering.`
+    },
+
+    // 生成关键词 - GPT-4版本
+    generate_keywords_gpt4: {
+      name: 'Generate Keywords - GPT-4',
+      location: 'JD Tab → Key Words (GPT-4)',
+      model: 'gpt-4',
       prompt: `Based on the following 10 key sentences extracted from a job description and the job title, identify the most important 3 groups of keywords (3 keywords per group) that represent the core competencies and requirements for this role.
 
 Job Title: {title}
@@ -668,18 +697,111 @@ Group 3: [Theme Name]
 
 Focus on the most critical skills, technologies, and competencies mentioned in the key sentences. Use only plain text formatting without markdown symbols, asterisks, or dashes.`
     },
-    generate_customized_experience: {
-      name: 'Generate Customized Experience',
-      location: 'Experience Hub → Generate Button',
+
+    // 生成关键词 - DeepSeek版本
+    generate_keywords_deepseek: {
+      name: 'Generate Keywords - DeepSeek',
+      location: 'JD Tab → Key Words (DeepSeek)',
       model: 'deepseek',
-      count: 1,
-      prompt: `Here is my work experience at {company}. Evaluate which group from {keywords_from_sentences} best matches this experience (no need to explain the evaluation). Then customize the work experience targeting that group using an appropriate framework (such as CAR framework: Challenge – Action – Result or STAR framework: Situation – Task – Action – Result), ensuring each numbered point contains specific numbers. Use numbered points, plain text format only. Do not use any markdown formatting including asterisks (*), dashes (-), bold, italics, or any special characters for formatting.
+      prompt: `Based on the following 10 key sentences extracted from a job description and the job title, identify the most important 3 groups of keywords (3 keywords per group) that represent the core competencies and requirements for this role.
 
-Work Experience:
-{experience}
+Job Title: {title}
 
-Keywords Groups:
-{keywords_from_sentences}`
+Key Sentences:
+{key_sentences}
+
+Please provide exactly 3 groups of keywords, with each group containing exactly 3 related keywords. Format as plain text only:
+
+Group 1: [Theme Name]
+1. Keyword 1
+2. Keyword 2
+3. Keyword 3
+
+Group 2: [Theme Name]
+1. Keyword 1
+2. Keyword 2
+3. Keyword 3
+
+Group 3: [Theme Name]
+1. Keyword 1
+2. Keyword 2
+3. Keyword 3
+
+Focus on the most critical skills, technologies, and competencies mentioned in the key sentences. Use only plain text formatting without markdown symbols, asterisks, or dashes.`
+    },
+
+
+    // 生成定制化经验 - GPT-4版本
+    generate_experience_gpt4: {
+      name: 'Generate Experience - GPT-4',
+      location: 'Experience Tab → Generate (GPT-4)',
+      model: 'gpt-4',
+      prompt: `You are an expert career consultant. {prompt}
+
+Based on the following capability requirement and the candidate's original experience/project, craft an enhanced and customized version that:
+
+- Directly addresses the specific capability requirement
+- Incorporates key phrases and technical terms from the capability description
+- Expands or rewrites the original experience to better align with the capability
+- Maintains truthfulness and consistency with the original input
+- Uses concise, professional, and compelling language suitable for resumes or LinkedIn
+- Avoids generic phrasing or vague accomplishments
+- **CRITICAL: Preserve all company names, project names, website URLs, and brand names EXACTLY as written in the original text. Do not modify, abbreviate, or rewrite these proper nouns.**
+- Presents the final result as structured **bullet points**, suitable for resume use
+
+You may choose from the following frameworks to best express the enhanced experience:
+- **CAR** (Challenge – Action – Result) — concise and outcome-driven
+- **PAR** (Problem – Action – Result) — suitable for business/tech roles
+- **SOAR** (Situation – Opportunity – Action – Result) — emphasizes influence
+- **Why–What–How–Impact** — ideal for explaining the rationale and impact of a project
+
+Select the most appropriate framework based on the content, and clearly reflect its logic in the output.
+
+---
+
+Capability Requirement:
+{capability}
+
+Original Experience/Project:
+{experienceInput}
+
+Please return the enhanced experience as 1–3 bullet points, clearly reflecting one of the above frameworks.`
+    },
+
+    // 生成定制化经验 - DeepSeek版本
+    generate_experience_deepseek: {
+      name: 'Generate Experience - DeepSeek',
+      location: 'Experience Tab → Generate (DeepSeek)',
+      model: 'deepseek',
+      prompt: `You are an expert career consultant. {prompt}
+
+Based on the following capability requirement and the candidate's original experience/project, craft an enhanced and customized version that:
+
+- Directly addresses the specific capability requirement
+- Incorporates key phrases and technical terms from the capability description
+- Refines and restructures the original experience to better align with the capability
+- Maintains truthfulness and consistency with the original input
+- Uses concise, professional, and compelling language suitable for resumes or LinkedIn
+- Avoids generic phrasing or vague accomplishments
+- Do not add exaggerated metrics or overly embellish achievements
+- **CRITICAL: Preserve all company names, project names, website URLs, and brand names EXACTLY as written in the original text. Do not modify, abbreviate, or rewrite these proper nouns.**
+- Presents the final result as structured bullet points (no asterisks or markdown formatting), suitable for resume use
+
+You may choose from the following frameworks to best express the enhanced experience:
+- CAR (Challenge – Action – Result) — concise and outcome-driven
+- PAR (Problem – Action – Result) — suitable for business/tech roles
+- SOAR (Situation – Opportunity – Action – Result) — emphasizes influence
+- Why–What–How–Impact — ideal for explaining the rationale and impact of a project
+
+---
+
+Capability Requirement:
+{capability}
+
+Original Experience/Project:
+{experienceInput}
+
+Return only the enhanced experience as 1–3 bullet points. Do not explain your framework choice or provide commentary.`
     }
   })
 
@@ -743,25 +865,24 @@ Keywords Groups:
   }
   
   // Filter states
+  const [filterApplicationStage, setFilterApplicationStage] = useState('')
+  const [filterRoleGroup, setFilterRoleGroup] = useState('')
+  const [filterFirmType, setFilterFirmType] = useState('')
   const [filterTitle, setFilterTitle] = useState('')
   const [filterCompany, setFilterCompany] = useState('')
   const [isFiltering, setIsFiltering] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
   const [availableTitles, setAvailableTitles] = useState<string[]>([])
   const [availableCompanies, setAvailableCompanies] = useState<string[]>([])
+  const [availableApplicationStages, setAvailableApplicationStages] = useState<string[]>([])
+  const [availableRoleGroups, setAvailableRoleGroups] = useState<string[]>([])
+  const [availableFirmTypes, setAvailableFirmTypes] = useState<string[]>([])
   const [allTitles, setAllTitles] = useState<string[]>([])
   const [allCompanies, setAllCompanies] = useState<string[]>([])
   const [combinations, setCombinations] = useState<Record<string, string[]>>({})
   const [reverseCombinations, setReverseCombinations] = useState<Record<string, string[]>>({})
   const [optionsLoaded, setOptionsLoaded] = useState(false)
   
-  // Keywords states
-  const [experienceKeywords, setExperienceKeywords] = useState<string[][]>([[], [], [], [], []])
-  const [generatedKeywords, setGeneratedKeywords] = useState<string[][]>([[], [], [], [], []])
-  const [experienceKeywordCounts, setExperienceKeywordCounts] = useState<number[]>([3, 3, 3, 3, 3])
-  const [generatedTextKeywordCounts, setGeneratedTextKeywordCounts] = useState<number[]>([3, 3, 3, 3, 3])
-  const [generatedTextKeywords, setGeneratedTextKeywords] = useState<string[][]>([[], [], [], [], []])
-  const [experienceInputKeywords, setExperienceInputKeywords] = useState<string[][]>([[], [], [], [], []])
   
   // Model selection state
   const [selectedModel, setSelectedModel] = useState<'gpt-4' | 'deepseek'>('deepseek')
@@ -806,51 +927,6 @@ Keywords Groups:
   }, [deleteTooltipShow])
 
 
-  // Load keywords from database
-  const loadKeywords = async () => {
-    if (!jdData.title || !jdData.company) return
-    
-    try {
-      const response = await fetch('/api/jd2cv/get-keywords', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          title: jdData.title, 
-          company: jdData.company 
-        })
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        
-        // Update experience keywords
-        const newExperienceKeywords = [[], [], [], [], []]
-        data.experienceKeywords.forEach((item: any) => {
-          if (item.index >= 1 && item.index <= 5) {
-            newExperienceKeywords[item.index - 1] = item.keywords || []
-          }
-        })
-        setExperienceKeywords(newExperienceKeywords)
-        
-        // Update experience input keywords for highlighting
-        setExperienceInputKeywords(newExperienceKeywords)
-        
-        // Update generated keywords
-        const newGeneratedKeywords = [[], [], [], [], []]
-        data.generatedKeywords.forEach((item: any) => {
-          if (item.index >= 1 && item.index <= 5) {
-            newGeneratedKeywords[item.index - 1] = item.keywords || []
-          }
-        })
-        setGeneratedKeywords(newGeneratedKeywords)
-        
-        // Update generated text keywords for highlighting
-        setGeneratedTextKeywords(newGeneratedKeywords)
-      }
-    } catch (error) {
-      console.error('Failed to load keywords:', error)
-    }
-  }
 
 
   // Load available options on component mount and scroll to top
@@ -860,52 +936,32 @@ Keywords Groups:
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
 
+  // Sync data to temporary states when jdData changes
+  useEffect(() => {
+    setTempMatchScore(matchScore)
+    setTempApplicationStage(jdData.application_stage)
+    setTempRoleGroup(jdData.role_group)
+    setTempFirmType(jdData.firm_type)
+    setTempComment(jdData.comment)
+  }, [jdData, matchScore])
+
   // Cleanup comment timeout on unmount
   useEffect(() => {
     return () => {
-      if (commentSaveTimeout) {
-        clearTimeout(commentSaveTimeout)
-      }
+      // No cleanup needed for comment timeout anymore
     }
-  }, [commentSaveTimeout])
+  }, [])
 
-  // Load keywords when title and company are available
-  useEffect(() => {
-    if (jdData.title && jdData.company) {
-      loadKeywords()
-    }
-  }, [jdData.title, jdData.company])
 
-  // Auto-resize textareas when data changes
-  useEffect(() => {
-    // Auto-resize all textareas after data loads or changes
-    for (let i = 0; i < 5; i++) {
-      setTimeout(() => {
-        const yourExpTextarea = document.getElementById(`your-experience-${i}`) as HTMLTextAreaElement
-        const generatedTextarea = document.getElementById(`generated-text-${i}`) as HTMLTextAreaElement
-        if (yourExpTextarea) autoResizeTextarea(yourExpTextarea)
-        if (generatedTextarea) autoResizeTextarea(generatedTextarea)
-      }, 100)
-    }
-  }, [jdData, experienceInputs])
 
-  // Auto-resize textareas when experience generation completes
-  useEffect(() => {
-    // Auto-resize after experience generation completes
-    for (let i = 0; i < 5; i++) {
-      if (!experienceGenerating[i]) {
-        setTimeout(() => {
-          const generatedTextarea = document.getElementById(`generated-text-${i}`) as HTMLTextAreaElement
-          if (generatedTextarea) autoResizeTextarea(generatedTextarea)
-        }, 100)
-      }
-    }
-  }, [experienceGenerating])
 
   const handleClearFilter = () => {
     setIsClearing(true)
     
-    // Clear filter selections
+    // Clear all filter selections
+    setFilterApplicationStage('')
+    setFilterRoleGroup('')
+    setFilterFirmType('')
     setFilterTitle('')
     setFilterCompany('')
     
@@ -941,25 +997,97 @@ Keywords Groups:
         setAllCompanies(data.companies || [])
         setAvailableTitles(data.titles || [])
         setAvailableCompanies(data.companies || [])
+        setAvailableApplicationStages(data.applicationStages || [])
+        setAvailableRoleGroups(data.roleGroups || [])
+        setAvailableFirmTypes(data.firmTypes || [])
         setCombinations(data.combinations || {})
         setReverseCombinations(data.reverseCombinations || {})
         setOptionsLoaded(true)
+        // Initialize available options after loading
+        setAvailableTitles(data.titles || [])
+        setAvailableCompanies(data.companies || [])
       }
     } catch (error) {
       console.error('Error loading filter options:', error)
     }
   }
 
-  // Handle cascade filtering
+  // Handle cascade filtering - 5 level hierarchy
+  const updateAvailableOptions = () => {
+    // Start with all options data from API
+    let filteredData = combinations
+
+    // Apply filters in sequence: Application Stage -> Role Group -> Firm Type -> Title -> Company
+    if (filterApplicationStage) {
+      // Filter by application stage (this will need API support)
+      // For now, keep all combinations - this will be implemented when API supports it
+    }
+
+    if (filterRoleGroup) {
+      // Filter by role group (this will need API support)
+      // For now, keep all combinations - this will be implemented when API supports it
+    }
+
+    if (filterFirmType) {
+      // Filter by firm type (this will need API support)
+      // For now, keep all combinations - this will be implemented when API supports it
+    }
+
+    // Update available titles and companies based on current selections
+    if (filterTitle) {
+      // If title is selected, filter companies based on title
+      const availableCompaniesForTitle = filteredData[filterTitle] || []
+      setAvailableCompanies(availableCompaniesForTitle)
+      setAvailableTitles(Object.keys(filteredData))
+    } else if (filterCompany) {
+      // If company is selected, filter titles based on company
+      const availableTitlesForCompany = reverseCombinations[filterCompany] || []
+      setAvailableTitles(availableTitlesForCompany)
+      setAvailableCompanies(allCompanies)
+    } else {
+      // No title or company selected - show all options
+      setAvailableTitles(Object.keys(filteredData))
+      const allFilteredCompanies = [...new Set(Object.values(filteredData).flat())]
+      setAvailableCompanies(allFilteredCompanies)
+    }
+  }
+
+  const handleApplicationStageChange = (selectedStage: string) => {
+    setFilterApplicationStage(selectedStage)
+    // Clear downstream selections
+    setFilterRoleGroup('')
+    setFilterFirmType('')
+    setFilterTitle('')
+    setFilterCompany('')
+    updateAvailableOptions()
+  }
+
+  const handleRoleGroupChange = (selectedRoleGroup: string) => {
+    setFilterRoleGroup(selectedRoleGroup)
+    // Clear downstream selections
+    setFilterFirmType('')
+    setFilterTitle('')
+    setFilterCompany('')
+    updateAvailableOptions()
+  }
+
+  const handleFirmTypeChange = (selectedFirmType: string) => {
+    setFilterFirmType(selectedFirmType)
+    // Clear downstream selections
+    setFilterTitle('')
+    setFilterCompany('')
+    updateAvailableOptions()
+  }
+
   const handleTitleChange = (selectedTitle: string) => {
     setFilterTitle(selectedTitle)
     
+    // Update available companies based on selected title
     if (selectedTitle) {
-      // Filter companies based on selected title
       const availableCompaniesForTitle = combinations[selectedTitle] || []
       setAvailableCompanies(availableCompaniesForTitle)
       
-      // Clear company selection if current company is not available for this title
+      // Clear company if it's not available for this title
       if (filterCompany && !availableCompaniesForTitle.includes(filterCompany)) {
         setFilterCompany('')
       }
@@ -973,19 +1101,30 @@ Keywords Groups:
   const handleCompanyChange = (selectedCompany: string) => {
     setFilterCompany(selectedCompany)
     
+    // Update available titles based on selected company
     if (selectedCompany) {
-      // Filter titles based on selected company
       const availableTitlesForCompany = reverseCombinations[selectedCompany] || []
       setAvailableTitles(availableTitlesForCompany)
       
-      // Clear title selection if current title is not available for this company
+      // Clear title if it's not available for this company
       if (filterTitle && !availableTitlesForCompany.includes(filterTitle)) {
         setFilterTitle('')
       }
     } else {
       // Show all titles when no company is selected
       setAvailableTitles(allTitles)
-      setFilterTitle('')
+    }
+  }
+
+  // Get latest prompt from localStorage to ensure real-time updates
+  const getLatestPrompt = (key: string) => {
+    try {
+      const saved = localStorage.getItem('jd2cv-prompts')
+      const prompts = saved ? JSON.parse(saved) : jd2cvPrompts
+      return prompts[key]?.prompt
+    } catch (error) {
+      console.error('Failed to read prompts from localStorage:', error)
+      return jd2cvPrompts[key]?.prompt
     }
   }
 
@@ -1004,7 +1143,7 @@ Keywords Groups:
           full_job_description: jdData.full_job_description,
           title: jdData.title,
           model: selectedModel,
-          customPrompt: jd2cvPrompts.generate_key_sentences?.prompt
+          customPrompt: getLatestPrompt(selectedModel === 'gpt-4' ? 'generate_key_sentences_gpt4' : 'generate_key_sentences_deepseek')
         })
       })
 
@@ -1060,7 +1199,7 @@ Keywords Groups:
           key_sentences: jdData.jd_key_sentences,
           title: jdData.title,
           model: selectedModel,
-          customPrompt: jd2cvPrompts.generate_keywords?.prompt
+          customPrompt: getLatestPrompt(selectedModel === 'gpt-4' ? 'generate_keywords_gpt4' : 'generate_keywords_deepseek')
         })
       })
 
@@ -1101,6 +1240,27 @@ Keywords Groups:
     }
   }
 
+  // Clear previous session state to ensure fresh display after save
+  const clearPreviousSessionState = () => {
+    // Reset key sentences and keywords from previous sessions
+    setJdData(prev => ({
+      ...prev,
+      jd_key_sentences: '',
+      keywords_from_sentences: ''
+    }))
+    
+    // Reset keyword states were cleaned up - obsolete state variables removed
+    
+    // Reset generation states
+    setExperienceGenerating([false, false, false, false, false])
+    setGeneratedExporting([false, false, false, false, false])
+    setExperienceIsSaving([false, false, false, false, false])
+    setExperienceSaveMessages(['', '', '', '', ''])
+    
+    // Reset match score
+    setMatchScore(0)
+  }
+
   const handleJDSubmit = async () => {
     if (!jdData.title || !jdData.company || !jdData.full_job_description) {
       return
@@ -1126,6 +1286,10 @@ Keywords Groups:
         }
         setJdSaved(true)
         setJdSaveError(false)
+        
+        // Clear previous state to ensure fresh display
+        clearPreviousSessionState()
+        
       } else if (response.status === 409) {
         const data = await response.json()
         if (data.existingPageId) {
@@ -1133,6 +1297,10 @@ Keywords Groups:
         }
         setJdSaved(true)
         setJdSaveError(false)
+        
+        // Clear previous state to ensure fresh display
+        clearPreviousSessionState()
+        
       } else {
         setJdSaveError(true)
       }
@@ -1176,16 +1344,6 @@ Keywords Groups:
             full_job_description: data.record.full_job_description || '',
             jd_key_sentences: data.record.jd_key_sentences || '',
             keywords_from_sentences: data.record.keywords_from_sentences || '',
-            generated_text_1: data.record.generated_text_1 || '',
-            generated_text_2: data.record.generated_text_2 || '',
-            generated_text_3: data.record.generated_text_3 || '',
-            generated_text_4: data.record.generated_text_4 || '',
-            generated_text_5: data.record.generated_text_5 || '',
-            your_experience_1: data.record.your_experience_1 || '',
-            your_experience_2: data.record.your_experience_2 || '',
-            your_experience_3: data.record.your_experience_3 || '',
-            your_experience_4: data.record.your_experience_4 || '',
-            your_experience_5: data.record.your_experience_5 || '',
             application_stage: data.record.application_stage || '',
             comment: data.record.comment || '',
             role_group: data.record.role_group || '',
@@ -1193,14 +1351,6 @@ Keywords Groups:
             cv_pdf: data.record.cv_pdf || ''
           })
           
-          // Update experience inputs array
-          setExperienceInputs([
-            data.record.your_experience_1 || '',
-            data.record.your_experience_2 || '',
-            data.record.your_experience_3 || '',
-            data.record.your_experience_4 || '',
-            data.record.your_experience_5 || ''
-          ])
 
           // Set states to show the data is loaded
           setJdSaved(true)
@@ -1208,18 +1358,7 @@ Keywords Groups:
             setCurrentPageId(data.record.id)
           }
           
-          // Auto-resize textareas after data is loaded
-          setTimeout(() => {
-            for (let i = 0; i < 5; i++) {
-              const yourExpTextarea = document.getElementById(`your-experience-${i}`) as HTMLTextAreaElement
-              const generatedTextarea = document.getElementById(`generated-text-${i}`) as HTMLTextAreaElement
-              if (yourExpTextarea) autoResizeTextarea(yourExpTextarea)
-              if (generatedTextarea) autoResizeTextarea(generatedTextarea)
-            }
-          }, 200)
           
-          // Load keywords after data is loaded
-          setTimeout(() => loadKeywords(), 300)
           
           // Keep default tab as Job Description
           // setActiveJDTab(0) // Default is already 0
@@ -1256,38 +1395,20 @@ Keywords Groups:
       if (response.ok) {
         const data = await response.json()
         if (data.found) {
-          // Fill all form fields with the found data (same logic as search)
-          setJdData({
+          // Fill all form fields with the found data
+          setJdData(prev => ({
             title: data.record.title || '',
             company: data.record.company || '',
             full_job_description: data.record.full_job_description || '',
             jd_key_sentences: data.record.jd_key_sentences || '',
             keywords_from_sentences: data.record.keywords_from_sentences || '',
-            generated_text_1: data.record.generated_text_1 || '',
-            generated_text_2: data.record.generated_text_2 || '',
-            generated_text_3: data.record.generated_text_3 || '',
-            generated_text_4: data.record.generated_text_4 || '',
-            generated_text_5: data.record.generated_text_5 || '',
-            your_experience_1: data.record.your_experience_1 || '',
-            your_experience_2: data.record.your_experience_2 || '',
-            your_experience_3: data.record.your_experience_3 || '',
-            your_experience_4: data.record.your_experience_4 || '',
-            your_experience_5: data.record.your_experience_5 || '',
             application_stage: data.record.application_stage || '',
             comment: data.record.comment || '',
             role_group: data.record.role_group || '',
             firm_type: data.record.firm_type || '',
             cv_pdf: data.record.cv_pdf || ''
-          })
+          }))
           
-          // Update experience inputs array
-          setExperienceInputs([
-            data.record.your_experience_1 || '',
-            data.record.your_experience_2 || '',
-            data.record.your_experience_3 || '',
-            data.record.your_experience_4 || '',
-            data.record.your_experience_5 || ''
-          ])
 
           // Set states to show the data is loaded
           setJdSaved(true)
@@ -1295,18 +1416,7 @@ Keywords Groups:
             setCurrentPageId(data.record.id)
           }
           
-          // Auto-resize textareas after data is loaded
-          setTimeout(() => {
-            for (let i = 0; i < 5; i++) {
-              const yourExpTextarea = document.getElementById(`your-experience-${i}`) as HTMLTextAreaElement
-              const generatedTextarea = document.getElementById(`generated-text-${i}`) as HTMLTextAreaElement
-              if (yourExpTextarea) autoResizeTextarea(yourExpTextarea)
-              if (generatedTextarea) autoResizeTextarea(generatedTextarea)
-            }
-          }, 200)
           
-          // Load keywords after data is loaded
-          setTimeout(() => loadKeywords(), 300)
           
           // Keep default tab as Job Description
           // setActiveJDTab(0) // Default is already 0
@@ -1349,36 +1459,20 @@ Keywords Groups:
           company: '',
           full_job_description: '',
           jd_key_sentences: '',
-          keywords_from_sentences: '',
-          generated_text_1: '',
-          generated_text_2: '',
-          generated_text_3: '',
-          generated_text_4: '',
-          generated_text_5: '',
-          your_experience_1: '',
-          your_experience_2: '',
-          your_experience_3: '',
-          your_experience_4: '',
-          your_experience_5: ''
+          keywords_from_sentences: ''
         })
         setJdSaved(false)
             setCurrentPageId('')
-        setExperienceInputs(['', '', '', '', ''])
         
-        // Reset all keyword states
-        setExperienceKeywords([[], [], [], [], []])
-        setGeneratedKeywords([[], [], [], [], []])
-        setGeneratedTextKeywords([[], [], [], [], []])
-        setExperienceInputKeywords([[], [], [], [], []])
-        setExperienceKeywordCounts([3, 3, 3, 3, 3])
-        setGeneratedTextKeywordCounts([3, 3, 3, 3, 3])
+        // Reset all UI states
+        setActiveOperationTab(0)
+        setTempMatchScore(0)
+        setTempComment('')
         
-        // Reset all save messages
-        setExperienceSaveMessages(['', '', '', '', ''])
-        setInputExperienceMessages(['', '', '', '', ''])
-        setExperienceMessages(['', '', '', '', ''])
-        
-        // Reset filter states
+        // Reset all filter states
+        setFilterApplicationStage('')
+        setFilterRoleGroup('')
+        setFilterFirmType('')
         setFilterTitle('')
         setFilterCompany('')
         setAvailableTitles(allTitles)
@@ -1502,50 +1596,160 @@ Keywords Groups:
   }
 
   // Handle comment save with debounce
-  const handleCommentSave = async (comment: string) => {
+  const handleCommentSave = async () => {
     if (!currentPageId) return
     
+    setIsSavingComment(true)
     try {
       const response = await fetch('/api/jd2cv/save-comment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           pageId: currentPageId,
-          comment: comment
+          comment: tempComment
         })
       })
       
       if (response.ok) {
-        setJdData(prev => ({ ...prev, comment: comment }))
+        setJdData(prev => ({ ...prev, comment: tempComment }))
+      } else {
+        console.error('Error saving comment')
       }
     } catch (error) {
       console.error('Failed to save comment:', error)
+    } finally {
+      setIsSavingComment(false)
     }
   }
 
   // Handle comment input with debounce
   const handleCommentInput = (value: string) => {
     setJdData(prev => ({ ...prev, comment: value }))
-    
-    if (commentSaveTimeout) {
-      clearTimeout(commentSaveTimeout)
-    }
-    
-    const timeout = setTimeout(() => {
-      handleCommentSave(value)
-    }, 500)
-    
-    setCommentSaveTimeout(timeout)
   }
 
   // Handle comment enter key
   const handleCommentEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      if (commentSaveTimeout) {
-        clearTimeout(commentSaveTimeout)
-        setCommentSaveTimeout(null)
+      handleCommentSave()
+    }
+  }
+
+  // Handle Status tab unified save (Stage + Group + Type)
+  const handleStatusSave = async () => {
+    if (!currentPageId) return
+    
+    const hasChanges = tempApplicationStage !== jdData.application_stage || 
+                       tempRoleGroup !== jdData.role_group || 
+                       tempFirmType !== jdData.firm_type
+    
+    if (!hasChanges) return
+    
+    setIsSavingApplicationStage(true)
+    setIsSavingRoleGroup(true) 
+    setIsSavingFirmType(true)
+    
+    try {
+      // Save all three fields in parallel
+      const promises = []
+      
+      if (tempApplicationStage !== jdData.application_stage) {
+        promises.push(
+          fetch('/api/jd2cv/save-application-stage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              pageId: currentPageId,
+              applicationStage: tempApplicationStage
+            })
+          })
+        )
       }
-      handleCommentSave(jdData.comment)
+      
+      if (tempRoleGroup !== jdData.role_group) {
+        promises.push(
+          fetch('/api/jd2cv/save-role-group', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              pageId: currentPageId,
+              roleGroup: tempRoleGroup
+            })
+          })
+        )
+      }
+      
+      if (tempFirmType !== jdData.firm_type) {
+        promises.push(
+          fetch('/api/jd2cv/save-firm-type', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              pageId: currentPageId,
+              firmType: tempFirmType
+            })
+          })
+        )
+      }
+      
+      const responses = await Promise.all(promises)
+      const allSuccessful = responses.every(response => response.ok)
+      
+      if (allSuccessful) {
+        // Update local state
+        setJdData(prev => ({
+          ...prev,
+          application_stage: tempApplicationStage || prev.application_stage,
+          role_group: tempRoleGroup || prev.role_group,
+          firm_type: tempFirmType || prev.firm_type
+        }))
+      }
+    } catch (error) {
+      console.error('Failed to save status fields:', error)
+    } finally {
+      setIsSavingApplicationStage(false)
+      setIsSavingRoleGroup(false)
+      setIsSavingFirmType(false)
+    }
+  }
+
+  // Handle PDF upload
+  const handlePDFUpload = async (file: File) => {
+    if (!currentPageId) {
+      console.error('No page ID available for PDF upload')
+      return
+    }
+
+    setIsUploadingPDF(true)
+    setUploadSuccess('')
+    
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('pageId', currentPageId)
+
+      const response = await fetch('/api/jd2cv/upload-pdf', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setUploadSuccess('PDF uploaded successfully')
+        
+        // Update local state
+        setJdData(prev => ({ ...prev, cv_pdf: data.fileName }))
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => setUploadSuccess(''), 3000)
+      } else {
+        throw new Error('Upload failed')
+      }
+    } catch (error) {
+      console.error('Error uploading PDF:', error)
+      setUploadSuccess('Upload failed')
+      setTimeout(() => setUploadSuccess(''), 3000)
+    } finally {
+      setIsUploadingPDF(false)
     }
   }
 
@@ -1586,58 +1790,16 @@ Keywords Groups:
 
 
 
-  // Handle confirming delete of experience keyword
-  const handleConfirmExperienceKeywordDelete = () => {
-    const { keyword, experienceIndex } = deleteExperienceKeywordTooltip
-    setDeleteExperienceKeywordTooltip({ show: false, keyword: '', experienceIndex: -1, position: { x: 0, y: 0 } })
 
-    // Update local state immediately
-    setExperienceInputKeywords(prev => {
-      const newState = [...prev]
-      newState[experienceIndex] = newState[experienceIndex].filter(k => k !== keyword)
-      
-      // Update database with new keywords
-      updateKeywordsInDatabase('experience', experienceIndex, newState[experienceIndex])
-      
-      return newState
-    })
-  }
-
-  // Handle confirming add of new experience keyword
-  const handleConfirmExperienceKeywordAdd = () => {
-    const { text, experienceIndex } = addExperienceKeywordTooltip
-    setAddExperienceKeywordTooltip({ show: false, text: '', experienceIndex: -1, position: { x: 0, y: 0 } })
-    
-    // Clear selection
-    window.getSelection()?.removeAllRanges()
-
-    // Update local state immediately
-    setExperienceInputKeywords(prev => {
-      const newState = [...prev]
-      newState[experienceIndex] = [...newState[experienceIndex], text]
-      
-      // Update database with new keywords
-      updateKeywordsInDatabase('experience', experienceIndex, newState[experienceIndex])
-      
-      return newState
-    })
-  }
 
   // Handle confirming delete of generated text keyword
   const handleConfirmGeneratedKeywordDelete = () => {
     const { keyword, generatedIndex } = deleteGeneratedKeywordTooltip
     setDeleteGeneratedKeywordTooltip({ show: false, keyword: '', generatedIndex: -1, position: { x: 0, y: 0 } })
 
-    // Update local state immediately
-    setGeneratedTextKeywords(prev => {
-      const newState = [...prev]
-      newState[generatedIndex] = newState[generatedIndex].filter(k => k !== keyword)
-      
-      // Update database with new keywords
-      updateKeywordsInDatabase('generated', generatedIndex, newState[generatedIndex])
-      
-      return newState
-    })
+    // Update database only - local state handling removed (obsolete state variable)
+    // Note: The filtered keywords would have been: keywords.filter(k => k !== keyword)
+    // This functionality may need to be reimplemented with current state management
   }
 
   // Handle confirming add of new generated text keyword
@@ -1648,16 +1810,9 @@ Keywords Groups:
     // Clear selection
     window.getSelection()?.removeAllRanges()
 
-    // Update local state immediately
-    setGeneratedTextKeywords(prev => {
-      const newState = [...prev]
-      newState[generatedIndex] = [...newState[generatedIndex], text]
-      
-      // Update database with new keywords
-      updateKeywordsInDatabase('generated', generatedIndex, newState[generatedIndex])
-      
-      return newState
-    })
+    // Update database only - local state handling removed (obsolete state variable)
+    // Note: The new keywords array would have been: [...existingKeywords, text]
+    // This functionality may need to be reimplemented with current state management
   }
 
   // Close tooltips when clicking outside
@@ -1694,506 +1849,13 @@ Keywords Groups:
     }
   }, [showCustomizeError])
 
-  const handleSaveExperience = async (index: number) => {
-    const experienceKey = `generated_text_${index + 1}` as keyof JDData
-    const experienceValue = jdData[experienceKey]
-
-    setExperienceIsSaving(prev => {
-      const newState = [...prev]
-      newState[index] = true
-      return newState
-    })
-
-    setExperienceSaveMessages(prev => {
-      const newState = [...prev]
-      newState[index] = ''
-      return newState
-    })
-
-    try {
-      // Remove emojis from the experience value before saving
-      const cleanExperienceValue = removeEmojis(experienceValue || '')
-      
-      const response = await fetch('/api/jd2cv/save-aligned-experience-only', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: jdData.title,
-          company: jdData.company,
-          experienceIndex: index + 1,
-          experienceValue: cleanExperienceValue
-        })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.id && !currentPageId) {
-          setCurrentPageId(data.id)
-        }
-        setExperienceSaveMessages(prev => {
-          const newState = [...prev]
-          newState[index] = 'Saved successfully'
-          return newState
-        })
-      } else {
-        setExperienceSaveMessages(prev => {
-          const newState = [...prev]
-          newState[index] = 'Save failed'
-          return newState
-        })
-      }
-    } catch (error) {
-      setExperienceSaveMessages(prev => {
-        const newState = [...prev]
-        newState[index] = 'Save error'
-        return newState
-      })
-    } finally {
-      setExperienceIsSaving(prev => {
-        const newState = [...prev]
-        newState[index] = false
-        return newState
-      })
-      // Keep status message visible and remove height sync to prevent UI jitter
-    }
-  }
-
-  // Save aligned experience without keyword extraction (for Original tab)
-  const handleSaveAlignedExperienceOnly = async (index: number) => {
-    const experienceKey = `generated_text_${index + 1}` as keyof JDData
-    const experienceValue = jdData[experienceKey]
-
-    setExperienceIsSaving(prev => {
-      const newState = [...prev]
-      newState[index] = true
-      return newState
-    })
-
-    setExperienceSaveMessages(prev => {
-      const newState = [...prev]
-      newState[index] = ''
-      return newState
-    })
-
-    try {
-      // Remove emojis from the experience value before saving
-      const cleanExperienceValue = removeEmojis(experienceValue || '')
-      
-      // Use a simpler API that doesn't extract keywords
-      const response = await fetch('/api/jd2cv/save-aligned-experience-only', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: jdData.title,
-          company: jdData.company,
-          experienceIndex: index + 1,
-          experienceValue: cleanExperienceValue
-        })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.id && !currentPageId) {
-          setCurrentPageId(data.id)
-        }
-        setExperienceSaveMessages(prev => {
-          const newState = [...prev]
-          newState[index] = 'Saved successfully'
-          return newState
-        })
-        // Refresh keywords after successful save
-        setTimeout(() => loadKeywords(), 1000)
-      } else {
-        setExperienceSaveMessages(prev => {
-          const newState = [...prev]
-          newState[index] = 'Save failed'
-          return newState
-        })
-      }
-    } catch (error) {
-      setExperienceSaveMessages(prev => {
-        const newState = [...prev]
-        newState[index] = 'Save error'
-        return newState
-      })
-    } finally {
-      setExperienceIsSaving(prev => {
-        const newState = [...prev]
-        newState[index] = false
-        return newState
-      })
-      // Keep status message visible for better user feedback
-      // setTimeout removed to maintain persistent status display
-    }
-  }
-
-  // Generate keywords for aligned experience (for Highlight tab)
-  const handleGenerateAlignedExperienceKeywords = async (index: number) => {
-    const experienceKey = `generated_text_${index + 1}` as keyof JDData
-    const experienceValue = jdData[experienceKey]
-
-    if (!experienceValue || experienceValue.trim() === '') {
-      setExperienceSaveMessages(prev => {
-        const newState = [...prev]
-        newState[index] = 'No content to generate keywords from'
-        return newState
-      })
-      return
-    }
-
-    setExperienceIsSaving(prev => {
-      const newState = [...prev]
-      newState[index] = true
-      return newState
-    })
-
-    setExperienceSaveMessages(prev => {
-      const newState = [...prev]
-      newState[index] = 'Generating keywords...'
-      return newState
-    })
-
-    try {
-      const cleanExperienceValue = removeEmojis(experienceValue || '')
-      
-      const response = await fetch('/api/jd2cv/extract-keywords', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: cleanExperienceValue,
-          type: 'generated_experience',
-          model: selectedModel,
-          keywordCount: generatedTextKeywordCounts[index]
-        })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.keywords) {
-          setGeneratedTextKeywords(prev => {
-            const newState = [...prev]
-            newState[index] = data.keywords
-            return newState
-          })
-          setExperienceSaveMessages(prev => {
-            const newState = [...prev]
-            newState[index] = 'Keywords generated successfully'
-            return newState
-          })
-          
-          // Auto-switch to Highlight tab after successful keyword generation
-          setActiveAlignedExperienceSubTabs(prev => {
-            const newSubTabs = [...prev]
-            newSubTabs[index] = 1  // Switch to Highlight tab (index 1)
-            return newSubTabs
-          })
-        } else {
-          setExperienceSaveMessages(prev => {
-            const newState = [...prev]
-            newState[index] = 'Failed to generate keywords'
-            return newState
-          })
-        }
-      } else {
-        setExperienceSaveMessages(prev => {
-          const newState = [...prev]
-          newState[index] = 'Keyword generation failed'
-          return newState
-        })
-      }
-    } catch (error) {
-      setExperienceSaveMessages(prev => {
-        const newState = [...prev]
-        newState[index] = 'Keyword generation error'
-        return newState
-      })
-    } finally {
-      setExperienceIsSaving(prev => {
-        const newState = [...prev]
-        newState[index] = false
-        return newState
-      })
-    }
-  }
 
 
-  // Export generated text to Notion
-  const handleExportGeneratedText = async (index: number) => {
-    if (!currentPageId) return
-    
-    const experienceKey = `generated_text_${index + 1}` as keyof JDData
-    const experienceValue = jdData[experienceKey]
-    const keywords = generatedTextKeywords[index] || []
 
-    setGeneratedExporting(prev => {
-      const newState = [...prev]
-      newState[index] = true
-      return newState
-    })
 
-    try {
-      const response = await fetch('/api/jd2cv/export-generated-text-to-notion', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          pageId: currentPageId,
-          experienceIndex: index + 1,
-          experienceValue: experienceValue,
-          keywords: keywords
-        })
-      })
 
-      if (response.ok) {
-        console.log(`Generated text ${index + 1} exported to Notion successfully`)
-      } else {
-        console.error(`Failed to export generated text ${index + 1} to Notion`)
-      }
-    } catch (error) {
-      console.error(`Error exporting generated text ${index + 1} to Notion:`, error)
-    } finally {
-      setGeneratedExporting(prev => {
-        const newState = [...prev]
-        newState[index] = false
-        return newState
-      })
-    }
-  }
 
-  // Save input experience without keyword extraction (for Original tab)
-  const handleSaveInputExperienceOnly = async (index: number) => {
-    const inputExperienceKey = `your_experience_${index + 1}` as keyof JDData
-    const inputExperienceValue = experienceInputs[index]
 
-    // Also update the jdData with the current input
-    setJdData(prev => ({
-      ...prev,
-      [inputExperienceKey]: inputExperienceValue
-    }))
-
-    setInputExperienceSaving(prev => {
-      const newState = [...prev]
-      newState[index] = true
-      return newState
-    })
-
-    setInputExperienceMessages(prev => {
-      const newState = [...prev]
-      newState[index] = ''
-      return newState
-    })
-
-    try {
-      // Remove emojis from the input experience value before saving
-      const cleanInputExperienceValue = removeEmojis(inputExperienceValue || '')
-      
-      // Use a simpler API that doesn't extract keywords
-      const response = await fetch('/api/jd2cv/save-aligned-experience-only', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: jdData.title,
-          company: jdData.company,
-          experienceIndex: index + 1,
-          experienceValue: cleanInputExperienceValue
-        })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.id && !currentPageId) {
-          setCurrentPageId(data.id)
-        }
-        setInputExperienceMessages(prev => {
-          const newState = [...prev]
-          newState[index] = 'Saved successfully'
-          return newState
-        })
-        // Refresh keywords after successful save
-        setTimeout(() => loadKeywords(), 1000)
-      } else {
-        setInputExperienceMessages(prev => {
-          const newState = [...prev]
-          newState[index] = 'Save failed'
-          return newState
-        })
-      }
-    } catch (error) {
-      setInputExperienceMessages(prev => {
-        const newState = [...prev]
-        newState[index] = 'Save error'
-        return newState
-      })
-    } finally {
-      setInputExperienceSaving(prev => {
-        const newState = [...prev]
-        newState[index] = false
-        return newState
-      })
-      // Keep status message visible for better user feedback
-      // setTimeout removed to maintain persistent status display
-    }
-  }
-
-  // Generate keywords for input experience (for Highlight tab)
-  const handleGenerateInputExperienceKeywords = async (index: number) => {
-    const inputExperienceValue = experienceInputs[index]
-
-    if (!inputExperienceValue || inputExperienceValue.trim() === '') {
-      setInputExperienceMessages(prev => {
-        const newState = [...prev]
-        newState[index] = 'No content to generate keywords from'
-        return newState
-      })
-      return
-    }
-
-    setInputExperienceSaving(prev => {
-      const newState = [...prev]
-      newState[index] = true
-      return newState
-    })
-
-    setInputExperienceMessages(prev => {
-      const newState = [...prev]
-      newState[index] = 'Generating keywords...'
-      return newState
-    })
-
-    try {
-      const response = await fetch('/api/jd2cv/extract-keywords', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: inputExperienceValue,
-          type: 'experience',
-          model: selectedModel,
-          keywordCount: experienceKeywordCounts[index]
-        })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.keywords) {
-          setExperienceInputKeywords(prev => {
-            const newState = [...prev]
-            newState[index] = data.keywords
-            return newState
-          })
-          setInputExperienceMessages(prev => {
-            const newState = [...prev]
-            newState[index] = 'Keywords generated successfully'
-            return newState
-          })
-          
-          // Auto-switch to Highlight tab after successful keyword generation
-          setActiveExperienceSubTabs(prev => {
-            const newSubTabs = [...prev]
-            newSubTabs[index] = 1  // Switch to Highlight tab (index 1)
-            return newSubTabs
-          })
-        } else {
-          setInputExperienceMessages(prev => {
-            const newState = [...prev]
-            newState[index] = 'Failed to generate keywords'
-            return newState
-          })
-        }
-      } else {
-        setInputExperienceMessages(prev => {
-          const newState = [...prev]
-          newState[index] = 'Keyword generation failed'
-          return newState
-        })
-      }
-    } catch (error) {
-      setInputExperienceMessages(prev => {
-        const newState = [...prev]
-        newState[index] = 'Keyword generation error'
-        return newState
-      })
-    } finally {
-      setInputExperienceSaving(prev => {
-        const newState = [...prev]
-        newState[index] = false
-        return newState
-      })
-    }
-  }
-
-  // Generate keywords for generated experience text (for Highlight tab)
-  const handleGenerateGeneratedTextKeywords = async (index: number) => {
-    const num = index + 1
-    const generatedTextValue = jdData[`generated_text_${num}` as keyof JDData]
-    if (!generatedTextValue || generatedTextValue.trim() === '') {
-      setExperienceMessages(prev => {
-        const newState = [...prev]
-        newState[index] = 'No content to generate keywords from'
-        return newState
-      })
-      return
-    }
-    setExperienceIsSaving(prev => {
-      const newState = [...prev]
-      newState[index] = true
-      return newState
-    })
-    setExperienceMessages(prev => {
-      const newState = [...prev]
-      newState[index] = 'Generating keywords...'
-      return newState
-    })
-    try {
-      const response = await fetch('/api/jd2cv/extract-keywords', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: generatedTextValue,
-          type: 'generated_experience',
-          model: selectedModel,
-          keywordCount: generatedTextKeywordCounts[index]
-        })
-      })
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.keywords) {
-          setGeneratedTextKeywords(prev => {
-            const newState = [...prev]
-            newState[index] = data.keywords
-            return newState
-          })
-          setExperienceMessages(prev => {
-            const newState = [...prev]
-            newState[index] = 'Keywords generated successfully'
-            return newState
-          })
-        } else {
-          setExperienceMessages(prev => {
-            const newState = [...prev]
-            newState[index] = 'Failed to generate keywords'
-            return newState
-          })
-        }
-      } else {
-        setExperienceMessages(prev => {
-          const newState = [...prev]
-          newState[index] = 'Keyword generation failed'
-          return newState
-        })
-      }
-    } catch (error) {
-      setExperienceMessages(prev => {
-        const newState = [...prev]
-        newState[index] = 'Keyword generation error'
-        return newState
-      })
-    } finally {
-      setExperienceIsSaving(prev => {
-        const newState = [...prev]
-        newState[index] = false
-        return newState
-      })
-    }
-  }
 
   // Experience Hub functions
   const fetchExperienceData = async (companyName: CompanyName) => {
@@ -2345,71 +2007,6 @@ Keywords Groups:
     }
   }
 
-  // Generate customized experience based on keywords
-  const handleGenerateCustomizedExperience = async (companyName: CompanyName, experience: any) => {
-    // Validate required data
-    if (!jdData.keywords_from_sentences?.trim()) {
-      setCustomizeError('Missing keywords from job description. Please generate keywords first.')
-      setShowCustomizeError(true)
-      return
-    }
-
-    if (!jdData.title?.trim() || !jdData.company?.trim()) {
-      setCustomizeError('Missing job description title or company information.')
-      setShowCustomizeError(true)
-      return
-    }
-
-    if (!experience.experience?.trim() || !companyName) {
-      setCustomizeError('Missing required experience data. Please check the selected experience.')
-      setShowCustomizeError(true)
-      return
-    }
-
-    const experienceKey = `${companyName}-${experience.id}`
-    
-    try {
-      setIsGeneratingCustomized(prev => ({ ...prev, [experienceKey]: true }))
-      setCustomizeError('')
-      setShowCustomizeError(false)
-      
-      const response = await fetch('/api/experience-hub/generate-customized', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jdData: {
-            keywords_from_sentences: jdData.keywords_from_sentences,
-            title: jdData.title,
-            company: jdData.company
-          },
-          experienceData: {
-            experience: experience.experience,
-            company: companyName,
-            title: experience.title,
-            time: experience.time
-          },
-          model: selectedModel,
-          customPrompt: jd2cvPrompts.generate_customized_experience?.prompt
-        })
-      })
-
-      const data = await response.json()
-      
-      if (data.success) {
-        // Refresh the experience data to show the new record
-        await fetchExperienceData(companyName)
-      } else {
-        setCustomizeError(data.error || 'Failed to generate customized experience. Please try again.')
-        setShowCustomizeError(true)
-      }
-    } catch (error) {
-      console.error('Error generating customized experience:', error)
-      setCustomizeError('Failed to generate customized experience. Please try again later.')
-      setShowCustomizeError(true)
-    } finally {
-      setIsGeneratingCustomized(prev => ({ ...prev, [experienceKey]: false }))
-    }
-  }
 
   // Save experience to JD page
   const handleSaveToPage = async (companyName: CompanyName, experience: any) => {
@@ -2440,7 +2037,9 @@ Keywords Groups:
           jdTitle: jdData.title,
           jdCompany: jdData.company,
           experienceTitle: experience.title,
-          experienceContent: experience.experience
+          experienceContent: experience.experience,
+          companyKey: companyName,
+          saveToField: true
         })
       })
       
@@ -2462,136 +2061,182 @@ Keywords Groups:
     }
   }
 
-  const handleSaveInputExperience = async (index: number) => {
-    const inputExperienceKey = `your_experience_${index + 1}` as keyof JDData
-    const inputExperienceValue = experienceInputs[index]
+  // Generate customized experience
+  const handleGenerateCustomizedExperience = async (companyName: CompanyName, experience: any) => {
+    // Validate required data
+    if (!jdData.keywords_from_sentences?.trim()) {
+      setCustomizeError('Missing keywords from job description. Please generate keywords first.')
+      setShowCustomizeError(true)
+      return
+    }
+    
+    if (!experience.experience?.trim()) {
+      setCustomizeError('Missing experience content.')
+      setShowCustomizeError(true)
+      return
+    }
 
-    // Also update the jdData with the current input
-    setJdData(prev => ({
-      ...prev,
-      [inputExperienceKey]: inputExperienceValue
-    }))
+    if (!jdData.title?.trim() || !jdData.company?.trim()) {
+      setCustomizeError('Missing job description title or company information.')
+      setShowCustomizeError(true)
+      return
+    }
 
-    setInputExperienceSaving(prev => {
-      const newState = [...prev]
-      newState[index] = true
-      return newState
-    })
-
-    setInputExperienceMessages(prev => {
-      const newState = [...prev]
-      newState[index] = ''
-      return newState
-    })
-
+    const experienceKey = `${companyName}-${experience.id}`
+    
     try {
-      // Remove emojis from the input experience value before saving
-      const cleanInputExperienceValue = removeEmojis(inputExperienceValue || '')
+      setIsGeneratingCustomized(prev => ({ ...prev, [experienceKey]: true }))
+      setCustomizeError('')
+      setShowCustomizeError(false)
       
-      const response = await fetch('/api/jd2cv/save-input-experience', {
+      const response = await fetch('/api/experience-hub/generate-customized', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: jdData.title,
-          company: jdData.company,
-          experienceIndex: index + 1,
-          inputExperienceValue: cleanInputExperienceValue,
-          overwrite: true, // Add overwrite flag
+          jdData: {
+            title: jdData.title,
+            company: jdData.company,
+            keywords_from_sentences: jdData.keywords_from_sentences
+          },
+          experienceData: {
+            title: experience.title,
+            experience: experience.experience,
+            company: getCompanyDatabaseName(companyName),
+            time: experience.time
+          },
           model: selectedModel,
-          keywordCount: experienceKeywordCounts[index]
+          customPrompt: getLatestPrompt(selectedModel === 'gpt-4' ? 'generate_experience_gpt4' : 'generate_experience_deepseek')
         })
       })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.id && !currentPageId) {
-          setCurrentPageId(data.id)
-        }
-        // Update experience input keywords immediately with returned keywords
-        if (data.keywords && Array.isArray(data.keywords)) {
-          setExperienceInputKeywords(prev => {
-            const newState = [...prev]
-            newState[index] = data.keywords
-            return newState
-          })
-        }
-        setInputExperienceMessages(prev => {
-          const newState = [...prev]
-          newState[index] = 'Saved successfully'
-          return newState
-        })
-        // Refresh keywords after successful save
-        setTimeout(() => loadKeywords(), 1000)
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        // Show success feedback and refresh the experience data
+        console.log('Customized experience generated successfully:', data.notionId)
+        // Refresh the experience data for this company
+        await fetchExperienceData(companyName)
       } else {
-        setInputExperienceMessages(prev => {
-          const newState = [...prev]
-          newState[index] = 'Save failed'
-          return newState
-        })
+        setCustomizeError(data.error || 'Failed to generate customized experience.')
+        setShowCustomizeError(true)
       }
     } catch (error) {
-      setInputExperienceMessages(prev => {
-        const newState = [...prev]
-        newState[index] = 'Save error'
-        return newState
-      })
+      console.error('Error generating customized experience:', error)
+      setCustomizeError('Failed to generate customized experience. Please try again later.')
+      setShowCustomizeError(true)
     } finally {
-      setInputExperienceSaving(prev => {
-        const newState = [...prev]
-        newState[index] = false
-        return newState
-      })
-      // Keep status message visible for better user feedback
-      // setTimeout removed to maintain persistent status display
+      setIsGeneratingCustomized(prev => ({ ...prev, [experienceKey]: false }))
     }
   }
 
 
+
   return (
     <div className="max-w-6xl mx-auto space-y-6 px-2">
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex-shrink-0">
-          <h2 className="text-3xl font-bold text-gray-800 mb-2">JD2CV</h2>
-          <p className="text-gray-600">Transform job descriptions into tailored CV content</p>
+      <div className="flex items-start justify-between mb-8">
+        {/* Left 50%: Title and Description */}
+        <div className="w-1/2 flex-shrink-0 flex flex-col justify-between">
+          <h2 className="text-3xl font-bold text-gray-800">JD2CV</h2>
+          <div className="flex items-center gap-2 mt-8">
+            <span className="text-xs font-medium text-gray-700 w-20 flex-shrink-0">Powered by</span>
+            <select
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value as 'gpt-4' | 'deepseek')}
+              className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-xs bg-white w-24"
+            >
+              <option value="deepseek">DeepSeek</option>
+              <option value="gpt-4">GPT-4</option>
+            </select>
+          </div>
         </div>
         
-        <div className="flex-shrink-0 space-y-3">
+        {/* Right 50%: Search & Filter */}
+        <div className="w-1/2 flex-shrink-0 space-y-2">
           {/* Search Row */}
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-700 w-16">Search:</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-gray-700 w-16 flex-shrink-0">Search:</span>
             <input
               type="text"
               value={searchTitle}
               onChange={(e) => setSearchTitle(e.target.value)}
-              placeholder="Search by title..."
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 w-44 text-sm"
+              placeholder="Title..."
+              className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 w-24 text-xs"
             />
             <input
               type="text"
               value={searchCompany}
               onChange={(e) => setSearchCompany(e.target.value)}
-              placeholder="Search by company..."
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 w-44 text-sm"
+              placeholder="Company..."
+              className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 w-24 text-xs"
             />
-            <button
-              onClick={handleSearch}
-              disabled={isSearching || !searchTitle || !searchCompany}
-              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 text-sm font-medium transition-colors duration-200 min-w-[80px]"
-            >
-              {isSearching ? 'Searching...' : 'Search'}
-            </button>
+            <div className="flex-1 flex justify-end pr-2">
+              <button
+                onClick={handleSearch}
+                disabled={isSearching || !searchTitle || !searchCompany}
+                className="w-16 px-2 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 text-xs font-medium transition-colors duration-200"
+              >
+                {isSearching ? 'Searching...' : 'Search'}
+              </button>
+            </div>
           </div>
           
-          {/* Filter Row */}
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-700 w-16">Filter:</span>
+          {/* Pre-filter Row */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-gray-700 w-16 flex-shrink-0">Pre-filter:</span>
+            <select
+              value={filterApplicationStage}
+              onChange={(e) => handleApplicationStageChange(e.target.value)}
+              className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 w-24 text-xs disabled:bg-gray-100 disabled:text-gray-500"
+              disabled={!optionsLoaded}
+            >
+              <option value="">{optionsLoaded ? 'Stage...' : 'Loading...'}</option>
+              {availableApplicationStages.map((stage) => (
+                <option key={stage} value={stage}>
+                  {stage}
+                </option>
+              ))}
+            </select>
+            <select
+              value={filterRoleGroup}
+              onChange={(e) => handleRoleGroupChange(e.target.value)}
+              className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 w-24 text-xs disabled:bg-gray-100 disabled:text-gray-500"
+              disabled={!optionsLoaded}
+            >
+              <option value="">{optionsLoaded ? 'Role...' : 'Loading...'}</option>
+              {availableRoleGroups.map((roleGroup) => (
+                <option key={roleGroup} value={roleGroup}>
+                  {roleGroup}
+                </option>
+              ))}
+            </select>
+            <select
+              value={filterFirmType}
+              onChange={(e) => handleFirmTypeChange(e.target.value)}
+              className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 w-24 text-xs disabled:bg-gray-100 disabled:text-gray-500"
+              disabled={!optionsLoaded}
+            >
+              <option value="">{optionsLoaded ? 'Firm...' : 'Loading...'}</option>
+              {availableFirmTypes.map((firmType) => (
+                <option key={firmType} value={firmType}>
+                  {firmType}
+                </option>
+              ))}
+            </select>
+            <div className="flex-1 flex justify-end pr-2">
+              <div className="w-16"></div>
+            </div>
+          </div>
+          
+          {/* Final Row */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-gray-700 w-16 flex-shrink-0">Final:</span>
             <select
               value={filterTitle}
               onChange={(e) => handleTitleChange(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 w-44 text-sm disabled:bg-gray-100 disabled:text-gray-500"
+              className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 w-24 text-xs disabled:bg-gray-100 disabled:text-gray-500"
               disabled={!optionsLoaded}
             >
-              <option value="">{optionsLoaded ? 'Select title...' : 'Loading...'}</option>
+              <option value="">{optionsLoaded ? 'Title...' : 'Loading...'}</option>
               {availableTitles.map((title) => (
                 <option key={title} value={title}>
                   {title}
@@ -2601,53 +2246,39 @@ Keywords Groups:
             <select
               value={filterCompany}
               onChange={(e) => handleCompanyChange(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 w-44 text-sm disabled:bg-gray-100 disabled:text-gray-500"
+              className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 w-24 text-xs disabled:bg-gray-100 disabled:text-gray-500"
               disabled={!optionsLoaded}
             >
-              <option value="">{optionsLoaded ? 'Select company...' : 'Loading...'}</option>
+              <option value="">{optionsLoaded ? 'Company...' : 'Loading...'}</option>
               {availableCompanies.map((company) => (
                 <option key={company} value={company}>
                   {company}
                 </option>
               ))}
             </select>
-            <button
-              onClick={handleFilterConfirm}
-              disabled={isFiltering || !filterTitle || !filterCompany || !optionsLoaded}
-              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 text-sm font-medium transition-colors duration-200 min-w-[80px]"
-            >
-              {isFiltering ? 'Loading...' : 'Confirm'}
-            </button>
-            <button
-              onClick={handleClearFilter}
-              disabled={isClearing || isFiltering}
-              className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:opacity-50 text-sm font-medium transition-colors duration-200 min-w-[80px] shadow-sm hover:shadow-md"
-            >
-              {isClearing ? 'Clearing...' : 'Clear'}
-            </button>
-          </div>
-          
-          {/* Model Selection Row */}
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-700 w-16">Model:</span>
-            <select
-              value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value as 'gpt-4' | 'deepseek')}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 w-44 text-sm"
-            >
-              <option value="gpt-4">GPT-4</option>
-              <option value="deepseek">DeepSeek</option>
-            </select>
-            <div className="w-44"></div> {/* Spacer for alignment */}
-            <div className="min-w-[80px]"></div> {/* Spacer for alignment */}
-            <div className="min-w-[80px]"></div> {/* Spacer for alignment */}
+            <div className="flex-1 flex justify-end gap-2 pr-2">
+              <button
+                onClick={handleFilterConfirm}
+                disabled={isFiltering || !filterTitle || !filterCompany || !optionsLoaded}
+                className="w-16 px-2 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 text-xs font-medium transition-colors duration-200"
+              >
+                {isFiltering ? 'Loading...' : 'Confirm'}
+              </button>
+              <button
+                onClick={handleClearFilter}
+                disabled={isClearing || isFiltering}
+                className="w-16 px-2 py-1 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:opacity-50 text-xs font-medium transition-colors duration-200"
+              >
+                {isClearing ? 'Clearing...' : 'Clear'}
+              </button>
+            </div>
           </div>
           
           {/* Status Messages */}
           {(isSearching || isFiltering || isClearing) && (
             <div className="flex justify-end">
-              <div className="flex items-center gap-2 text-sm text-purple-600">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
+              <div className="flex items-center gap-2 text-xs text-purple-600">
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600"></div>
                 <span>
                   {isSearching ? 'Searching database...' : 
                    isFiltering ? 'Loading record...' : 
@@ -2659,24 +2290,24 @@ Keywords Groups:
         </div>
       </div>
 
-      {/* Job Description Input Section */}
+      {/* Job Description Section */}
       <div className="bg-white rounded-lg shadow-lg p-6">
-        <div className="flex items-center justify-between mb-8">
-          <h3 className="text-2xl font-semibold text-gray-800">Job Description Input</h3>
-          <div className="flex items-center space-x-2">
-            <div className={`w-3 h-3 rounded-full ${jdData.title ? 'bg-purple-500' : 'bg-gray-300'}`}></div>
-            <div className={`w-3 h-3 rounded-full ${jdData.company ? 'bg-purple-500' : 'bg-gray-300'}`}></div>
-            <div className={`w-3 h-3 rounded-full ${jdData.full_job_description ? 'bg-purple-500' : 'bg-gray-300'}`}></div>
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2M5 6h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z" />
+            </svg>
           </div>
+          <h3 className="text-xl font-semibold text-gray-800">Job Description</h3>
         </div>
         
         <div className="space-y-6 mb-8">
           {/* Title and Company Input with Operations */}
-          <div className="flex items-start justify-between gap-6">
+          <div className="flex justify-between gap-6">
             {/* Left: Input Area */}
             <div className="w-1/2 space-y-4">
               {/* Title Row */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-start gap-4">
                 <label className="text-sm font-medium text-gray-700 w-20 flex-shrink-0">
                   Title <span className="text-red-500">*</span>
                 </label>
@@ -2694,7 +2325,7 @@ Keywords Groups:
               </div>
               
               {/* Company Row */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-start gap-4">
                 <label className="text-sm font-medium text-gray-700 w-20 flex-shrink-0">
                   Company <span className="text-red-500">*</span>
                 </label>
@@ -2712,182 +2343,240 @@ Keywords Groups:
               </div>
             </div>
             
-            {/* Right: Operations Area */}
-            {currentPageId && (
-              <div className="w-1/2 space-y-2">
-                {/* First Row: Stars, PDF, Delete, Notion (Right Aligned) */}
-                <div className="flex items-center justify-end gap-2">
-                  {/* Match Score Stars */}
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
+            {/* Right: Operations Area - Tab Layout */}
+            <div className="w-1/2 flex flex-col">
+              {/* Tab Navigation */}
+              <div className="border-b border-gray-200 mb-2">
+                <nav className="flex space-x-1 -mb-px" role="tablist">
+                  {['Details', 'Status', 'PDF', 'More'].map((tabName, index) => {
+                    const isActive = activeOperationTab === index
+                    return (
                       <button
-                        key={star}
-                        onClick={() => handleMatchScoreSave(star)}
-                        disabled={isSavingMatchScore}
-                        className={`text-lg transition-colors duration-200 hover:scale-110 transform ${
-                          star <= matchScore 
-                            ? 'text-yellow-400 hover:text-yellow-500' 
-                            : 'text-gray-300 hover:text-yellow-300'
-                        } ${isSavingMatchScore ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                        title={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                        key={index}
+                        role="tab"
+                        aria-selected={isActive}
+                        tabIndex={isActive ? 0 : -1}
+                        onClick={() => setActiveOperationTab(index)}
+                        className={`px-3 py-2 rounded-t-lg font-medium text-xs transition-colors duration-200 focus:outline-none ${
+                          isActive 
+                            ? 'bg-purple-600 text-white' 
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
                       >
-                        ★
+                        {tabName}
                       </button>
-                    ))}
-                    {isSavingMatchScore && (
-                      <svg className="w-4 h-4 animate-spin text-purple-600 ml-1" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                    )}
+                    )
+                  })}
+                </nav>
+              </div>
+              
+              {/* Tab Content */}
+              <div className="bg-purple-50 border border-gray-200 rounded-lg p-3 h-[75px] overflow-y-auto">
+                {activeOperationTab === 0 && (
+                  /* Details Tab - Score + Comment */
+                  <div className="space-y-2 h-full">
+                    {/* Row 1: Score */}
+                    <div className="grid grid-cols-5 gap-2 items-center">
+                      <label className="col-span-1 text-xs font-medium text-gray-700">Score:</label>
+                      <div className="col-span-3 flex items-center gap-0.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            onClick={() => setTempMatchScore(star)}
+                            className={`w-4 h-4 text-sm transition-colors ${
+                              star <= tempMatchScore 
+                                ? 'text-purple-500 hover:text-purple-600' 
+                                : 'text-gray-300 hover:text-purple-300'
+                            }`}
+                          >
+                            ★
+                          </button>
+                        ))}
+                        {matchScore > 0 && <span className="ml-2 text-xs text-gray-600">({matchScore})</span>}
+                      </div>
+                      <button
+                        onClick={() => handleMatchScoreSave(tempMatchScore)}
+                        disabled={isSavingMatchScore || !currentPageId || tempMatchScore === matchScore}
+                        className="col-span-1 w-full px-2 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50 text-xs transition-colors"
+                      >
+                        {isSavingMatchScore ? 'Saving...' : 'Save'}
+                      </button>
+                    </div>
+                    {/* Row 2: Comment */}
+                    <div className="grid grid-cols-5 gap-2 items-center">
+                      <label className="col-span-1 text-xs font-medium text-gray-700">Comment:</label>
+                      <input
+                        type="text"
+                        value={tempComment}
+                        onChange={(e) => setTempComment(e.target.value)}
+                        placeholder="Add notes..."
+                        className="col-span-3 px-1.5 py-0.5 border border-gray-200 rounded-sm focus:outline-none focus:ring-1 focus:ring-purple-400 focus:border-purple-300 bg-white text-xs hover:border-gray-300 transition-colors"
+                      />
+                      <button
+                        onClick={() => handleCommentSave()}
+                        disabled={isSavingComment || !currentPageId || tempComment === jdData.comment}
+                        className="col-span-1 w-full px-2 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50 text-xs transition-colors"
+                      >
+                        {isSavingComment ? 'Saving...' : 'Save'}
+                      </button>
+                    </div>
                   </div>
-                  
-                  {/* PDF Button */}
-                  {jdData.cv_pdf && (
-                    <button
-                      onClick={() => window.open(jdData.cv_pdf, '_blank')}
-                      className="w-20 text-purple-600 hover:text-purple-700 text-sm font-medium flex items-center justify-center gap-1 px-2 py-1 rounded-md border border-purple-200 bg-white shadow-sm hover:shadow-md transition-shadow"
-                      title="Open CV PDF"
+                )}
+                
+                {activeOperationTab === 1 && (
+                  /* Status Tab - 3 Dropdowns + 1 Save Button */
+                  <div className="grid grid-cols-7 gap-2 items-center h-full">
+                    <select
+                      value={tempApplicationStage}
+                      onChange={(e) => setTempApplicationStage(e.target.value)}
+                      className="col-span-2 w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500 bg-white text-xs"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      PDF
+                      <option value="">Stage...</option>
+                      {availableApplicationStages.map((stage) => (
+                        <option key={stage} value={stage}>
+                          {stage}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={tempRoleGroup}
+                      onChange={(e) => setTempRoleGroup(e.target.value)}
+                      className="col-span-2 w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500 bg-white text-xs"
+                    >
+                      <option value="">Group...</option>
+                      {availableRoleGroups.map((role) => (
+                        <option key={role} value={role}>
+                          {role}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={tempFirmType}
+                      onChange={(e) => setTempFirmType(e.target.value)}
+                      className="col-span-2 w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500 bg-white text-xs"
+                    >
+                      <option value="">Type...</option>
+                      {availableFirmTypes.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={handleStatusSave}
+                      disabled={(isSavingApplicationStage || isSavingRoleGroup || isSavingFirmType) || !currentPageId || (tempApplicationStage === jdData.application_stage && tempRoleGroup === jdData.role_group && tempFirmType === jdData.firm_type)}
+                      className="col-span-1 w-full px-2 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50 text-xs transition-colors"
+                    >
+                      {(isSavingApplicationStage || isSavingRoleGroup || isSavingFirmType) ? 'Saving...' : 'Save'}
                     </button>
-                  )}
-                  
-                  <div className="relative">
-                    <button
-                      onClick={() => setDeleteTooltipShow(true)}
-                      disabled={isDeleting}
-                      className="w-20 text-purple-600 hover:text-purple-700 text-sm font-medium flex items-center justify-center gap-1 px-2 py-1 rounded-md border border-purple-200 bg-white shadow-sm hover:shadow-md transition-shadow disabled:opacity-50"
-                      title="Delete page"
-                    >
-                      {isDeleting ? (
-                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                      ) : (
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
+                  </div>
+                )}
+                
+                {activeOperationTab === 2 && (
+                  /* PDF Tab - Multi-row Layout */
+                  <div className="space-y-2 h-full">
+                    {/* Row 1: Current PDF */}
+                    <div className="grid grid-cols-5 gap-2 items-center">
+                      <label className="col-span-1 text-xs font-medium text-gray-700">PDF:</label>
+                      <div className="col-span-3">
+                        {jdData.cv_pdf ? (
+                          <a
+                            href={jdData.cv_pdf}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors inline-block"
+                          >
+                            View Current
+                          </a>
+                        ) : (
+                          <span className="text-xs text-gray-500">No PDF uploaded</span>
+                        )}
+                      </div>
+                      <div className="col-span-1">
+                        {/* Page link moved to More tab */}
+                      </div>
+                    </div>
+                    {/* Row 2: Upload */}
+                    <div className="grid grid-cols-5 gap-2 items-center">
+                      <label className="col-span-1 text-xs font-medium text-gray-700">Upload:</label>
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) handlePDFUpload(file)
+                        }}
+                        className="col-span-3 text-xs"
+                        disabled={isUploadingPDF || !currentPageId}
+                      />
+                      <div className="col-span-1 text-xs">
+                        {isUploadingPDF && <span className="text-purple-600">Uploading...</span>}
+                      </div>
+                    </div>
+                    {/* Row 3: Status */}
+                    <div className="text-xs">
+                      {uploadSuccess && (
+                        <span className={uploadSuccess.includes('success') ? 'text-green-600' : 'text-red-600'}>
+                          {uploadSuccess}
+                        </span>
                       )}
-                      Delete
-                    </button>
-                    
-                    {/* Delete confirmation tooltip */}
-                    {deleteTooltipShow && (
-                      <div className="absolute right-full mr-2 top-0 bg-purple-600 text-white px-3 py-2 rounded-md shadow-lg text-sm whitespace-nowrap z-50">
-                        <div className="flex items-center gap-2">
-                          <span>Confirm delete?</span>
-                          <button
-                            onClick={handleDeletePage}
-                            className="bg-white text-purple-600 px-2 py-1 rounded text-xs font-medium hover:bg-gray-100"
-                          >
-                            Yes
-                          </button>
-                          <button
-                            onClick={() => setDeleteTooltipShow(false)}
-                            className="bg-purple-500 text-white px-2 py-1 rounded text-xs font-medium hover:bg-purple-400"
-                          >
-                            No
-                          </button>
-                        </div>
-                        {/* Tooltip arrow pointing right */}
-                        <div className="absolute left-full top-1/2 transform -translate-y-1/2 w-0 h-0 border-l-8 border-l-purple-600 border-t-4 border-t-transparent border-b-4 border-b-transparent"></div>
+                    </div>
+                  </div>
+                )}
+                
+                {activeOperationTab === 3 && (
+                  /* More Tab - Horizontal Button Layout */
+                  <div className="flex gap-2 h-full items-center">
+                    {/* Button 1: View Page */}
+                    {currentPageId ? (
+                      <a
+                        href={`https://notion.so/${currentPageId.replace(/-/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 flex items-center justify-center px-2 py-2 text-purple-600 border border-purple-300 rounded hover:border-purple-400 hover:text-purple-700 transition-colors text-xs font-medium"
+                      >
+                        View Page
+                      </a>
+                    ) : (
+                      <div className="flex-1 flex items-center justify-center px-2 py-2 text-gray-400 border border-gray-200 rounded text-xs font-medium cursor-not-allowed">
+                        View Page
                       </div>
                     )}
+                    
+                    {/* Button 2: Delete Record */}
+                    {currentPageId ? (
+                      <button
+                        onClick={handleDeletePage}
+                        disabled={isDeleting}
+                        className="flex-1 flex items-center justify-center px-2 py-2 text-purple-600 border border-purple-300 rounded hover:border-purple-400 hover:text-purple-700 transition-colors text-xs font-medium disabled:opacity-50"
+                      >
+                        {isDeleting ? 'Deleting...' : 'Delete'}
+                      </button>
+                    ) : (
+                      <div className="flex-1 flex items-center justify-center px-2 py-2 text-gray-400 border border-gray-200 rounded text-xs font-medium cursor-not-allowed">
+                        Delete
+                      </div>
+                    )}
+                    
+                    {/* Button 3: Placeholder */}
+                    <div className="flex-1 flex items-center justify-center px-2 py-2 text-gray-300 border-2 border-dashed border-gray-200 rounded text-xs font-medium">
+                      Action 3
+                    </div>
+                    
+                    {/* Button 4: Placeholder */}
+                    <div className="flex-1 flex items-center justify-center px-2 py-2 text-gray-300 border-2 border-dashed border-gray-200 rounded text-xs font-medium">
+                      Action 4
+                    </div>
                   </div>
-                  
-                  <button
-                    onClick={() => {
-                      console.log('Current Page ID:', currentPageId)
-                      const notionUrl = `https://www.notion.so/${currentPageId.replace(/-/g, '')}`
-                      console.log('Opening Notion URL:', notionUrl)
-                      window.open(notionUrl, '_blank')
-                    }}
-                    className="w-20 text-purple-600 hover:text-purple-700 text-sm font-medium flex items-center justify-center gap-1 px-2 py-1 rounded-md border border-purple-200 bg-white shadow-sm hover:shadow-md transition-shadow"
-                    title="Open in Notion"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                    Notion
-                  </button>
-                </div>
-                
-                {/* Second Row: Dropdowns (Right Aligned, Equal Width) */}
-                <div className="flex items-center justify-end gap-2">
-                  {/* Application Stage Dropdown */}
-                  <select
-                    value={jdData.application_stage}
-                    onChange={(e) => handleApplicationStageSave(e.target.value)}
-                    disabled={isSavingApplicationStage}
-                    className="w-24 text-xs px-2 py-1 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white shadow-sm hover:shadow-md transition-shadow disabled:opacity-50"
-                    title="Application Stage"
-                  >
-                    <option value="">Stage</option>
-                    {applicationStageOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                  
-                  {/* Role Group Dropdown */}
-                  <select
-                    value={jdData.role_group}
-                    onChange={(e) => handleRoleGroupSave(e.target.value)}
-                    disabled={isSavingRoleGroup}
-                    className="w-24 text-xs px-2 py-1 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white shadow-sm hover:shadow-md transition-shadow disabled:opacity-50"
-                    title="Role Group"
-                  >
-                    <option value="">Role</option>
-                    {roleGroupOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                  
-                  {/* Firm Type Dropdown */}
-                  <select
-                    value={jdData.firm_type}
-                    onChange={(e) => handleFirmTypeSave(e.target.value)}
-                    disabled={isSavingFirmType}
-                    className="w-24 text-xs px-2 py-1 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white shadow-sm hover:shadow-md transition-shadow disabled:opacity-50"
-                    title="Firm Type"
-                  >
-                    <option value="">Firm</option>
-                    {firmTypeOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                {/* Third Row: Comment Input */}
-                <div className="flex items-center">
-                  <input
-                    type="text"
-                    value={jdData.comment}
-                    onChange={(e) => handleCommentInput(e.target.value)}
-                    onKeyDown={handleCommentEnter}
-                    placeholder="Add comment..."
-                    className="w-full text-sm px-3 py-1 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white shadow-sm hover:shadow-md transition-shadow"
-                    title="Press Enter to save immediately"
-                  />
-                </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
 
         <div className="mb-8">
           <label className="block text-sm font-medium text-gray-700 mb-4">
-            Full Job Description <span className="text-purple-600">*</span>
+            Full Job Description <span className="text-red-500">*</span>
           </label>
           
           {/* JD Tab Navigation */}
@@ -3018,18 +2707,8 @@ Keywords Groups:
             </div>
             <h3 className="text-xl font-semibold text-gray-800">Experience Hub</h3>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className={`w-3 h-3 rounded-full ${experienceData.stanleyhi.length > 0 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-            <div className={`w-3 h-3 rounded-full ${experienceData.savvy.length > 0 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-            <div className={`w-3 h-3 rounded-full ${experienceData.ncs.length > 0 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-          </div>
         </div>
         
-        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-6">
-          <p className="text-sm text-gray-600">
-            Manage your work experience and project records from different companies. Use the filters to view specific types of experience.
-          </p>
-        </div>
         
         {/* Company Tabs */}
         <div className="mb-6">
@@ -3220,20 +2899,20 @@ Keywords Groups:
                       <div className="flex justify-end mt-4 pt-3 border-t border-gray-100">
                         <div className="flex gap-2">
                           <button 
+                            onClick={() => handleGenerateCustomizedExperience(company.name, experience)}
+                            disabled={isGeneratingCustomized[`${company.name}-${experience.id}`] || !jdData.keywords_from_sentences?.trim() || !experience.experience?.trim()}
+                            className="w-36 px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-center"
+                            title={!jdData.keywords_from_sentences?.trim() ? 'Please generate keywords from JD first' : 'Generate customized version of this experience'}
+                          >
+                            {isGeneratingCustomized[`${company.name}-${experience.id}`] ? 'Generating...' : 'Generate Customized'}
+                          </button>
+                          <button 
                             onClick={() => handleSaveToPage(company.name, experience)}
                             disabled={isSavingToPage[`${company.name}-${experience.id}`] || !jdData.title?.trim() || !jdData.company?.trim()}
                             className="w-32 px-3 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-center"
                             title={(!jdData.title?.trim() || !jdData.company?.trim()) ? 'Please ensure JD title and company are available' : 'Save experience to current JD page'}
                           >
                             {isSavingToPage[`${company.name}-${experience.id}`] ? 'Saving...' : 'Save to Page'}
-                          </button>
-                          <button 
-                            onClick={() => handleGenerateCustomizedExperience(company.name, experience)}
-                            disabled={isGeneratingCustomized[`${company.name}-${experience.id}`] || !jdData.keywords_from_sentences?.trim()}
-                            className="w-60 px-3 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-center"
-                            title={!jdData.keywords_from_sentences?.trim() ? 'Please generate keywords first' : 'Generate customized work experience based on job requirements'}
-                          >
-                            {isGeneratingCustomized[`${company.name}-${experience.id}`] ? 'Generating...' : 'Generate Customized Experience'}
                           </button>
                           <button 
                             onClick={() => setEditingRecord(experience)}

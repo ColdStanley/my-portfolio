@@ -43,7 +43,7 @@ export default function DeleteConfirmTooltip({
     // Check if there's enough space to the right
     const spaceRight = window.innerWidth - triggerRect.right - 8
     
-    let top = triggerRect.top + (triggerRect.height / 2) - (tooltipHeight / 2)
+    const top = triggerRect.top + (triggerRect.height / 2) - (tooltipHeight / 2)
     let left = triggerRect.right + 8
     
     // If not enough space on the right, position to the left
