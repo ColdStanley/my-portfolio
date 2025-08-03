@@ -2219,7 +2219,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
             <div className="w-1/2 flex flex-col">
               {/* Tab Navigation */}
               <div className="mb-4">
-                <nav className="flex space-x-1 max-w-xs" role="tablist">
+                <nav className="flex justify-between" role="tablist">
                   {['Details', 'Status', 'PDF', 'More'].map((tabName, index) => {
                     const isActive = activeOperationTab === index
                     return (
@@ -2229,7 +2229,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                         aria-selected={isActive}
                         tabIndex={isActive ? 0 : -1}
                         onClick={() => setActiveOperationTab(index)}
-                        className={`flex-1 px-3 py-2 rounded-lg font-medium text-xs transition-all duration-300 focus:outline-none transform text-center ${
+                        className={`w-30 px-3 py-2 rounded-lg font-medium text-xs transition-all duration-300 focus:outline-none transform text-center ${
                           isActive 
                             ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-md scale-105 font-semibold' 
                             : 'border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 hover:border-purple-300'
@@ -2269,7 +2269,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                       <button
                         onClick={() => handleMatchScoreSave(tempMatchScore)}
                         disabled={isSavingMatchScore || !currentPageId || tempMatchScore === matchScore}
-                        className="col-span-1 w-full px-2 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50 text-xs transition-colors"
+                        className="col-span-1 w-full px-2 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50 text-xs transition-colors"
                       >
                         {isSavingMatchScore ? 'Saving...' : 'Save'}
                       </button>
