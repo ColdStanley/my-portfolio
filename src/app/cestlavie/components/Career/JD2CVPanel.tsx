@@ -2218,7 +2218,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
             {/* Right: Operations Area - Tab Layout */}
             <div className="w-1/2 flex flex-col">
               {/* Tab Navigation */}
-              <div className="mb-4">
+              <div className="mb-2.5">
                 <nav className="flex justify-between" role="tablist">
                   {['Details', 'Status', 'PDF', 'More'].map((tabName, index) => {
                     const isActive = activeOperationTab === index
@@ -2243,7 +2243,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
               </div>
               
               {/* Tab Content */}
-              <div className="bg-purple-50 border border-gray-200 rounded-lg p-3 h-[75px] overflow-y-auto shadow-inner">
+              <div className="bg-gray-100 border border-gray-200 rounded-lg p-3 h-[75px] overflow-y-auto shadow-inner">
                 {activeOperationTab === 0 && (
                   /* Details Tab - Score + Comment */
                   <div className="space-y-2 h-full">
