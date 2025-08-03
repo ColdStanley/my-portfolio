@@ -11,7 +11,9 @@ const getDatabaseId = (): string => {
 // Property name mapping for unified table (no company prefixes)
 const getPropertyNames = () => ({
   title: 'title',
-  role_group: 'role_group'
+  role_group: 'role_group',
+  target_role: 'target_role',
+  work_or_project: 'work_or_project'
 })
 
 // GET: Fetch field options for Title and Role Group
@@ -56,14 +58,30 @@ export async function GET(request: NextRequest) {
     if (properties[propertyNames.role_group] && properties[propertyNames.role_group].type === 'select') {
       roleGroupOptions = properties[propertyNames.role_group].select.options.map((option: any) => option.name)
     }
+    
+    // Extract target_role options
+    let targetRoleOptions: string[] = []
+    if (properties[propertyNames.target_role] && properties[propertyNames.target_role].type === 'select') {
+      targetRoleOptions = properties[propertyNames.target_role].select.options.map((option: any) => option.name)
+    }
+    
+    // Extract work_or_project options
+    let workOrProjectOptions: string[] = []
+    if (properties[propertyNames.work_or_project] && properties[propertyNames.work_or_project].type === 'select') {
+      workOrProjectOptions = properties[propertyNames.work_or_project].select.options.map((option: any) => option.name)
+    }
 
     console.log(`Title options for ${company}:`, titleOptions)
     console.log(`Role group options for ${company}:`, roleGroupOptions)
+    console.log(`Target role options for ${company}:`, targetRoleOptions)
+    console.log(`Work or project options for ${company}:`, workOrProjectOptions)
 
     return NextResponse.json({ 
       success: true, 
       title_options: titleOptions,
-      role_group_options: roleGroupOptions
+      role_group_options: roleGroupOptions,
+      target_role_options: targetRoleOptions,
+      work_or_project_options: workOrProjectOptions
     })
   } catch (error) {
     console.error('Error fetching field options:', error)

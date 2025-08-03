@@ -7,7 +7,8 @@
   "permissions": [
     "activeTab",
     "storage",
-    "notifications"
+    "notifications",
+    "scripting"
   ],
   
   "host_permissions": [
@@ -22,9 +23,15 @@
   
   "content_scripts": [
     {
-      "matches": ["https://www.linkedin.com/jobs/*"],
+      "matches": [
+        "https://www.linkedin.com/jobs/*",
+        "https://linkedin.com/jobs/*",
+        "https://www.linkedin.com/jobs/view/*",
+        "https://linkedin.com/jobs/view/*"
+      ],
       "js": ["scripts/linkedin-data-extractor.js"],
-      "run_at": "document_end"
+      "run_at": "document_end",
+      "all_frames": false
     }
   ],
   

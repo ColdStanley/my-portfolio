@@ -4,6 +4,8 @@
  */
 
 console.log('🔗 LinkedIn to Notion JD2CV Sync - Content Script Loaded');
+console.log('🔗 Current URL:', window.location.href);
+console.log('🔗 Page title:', document.title);
 
 // LinkedIn job data selectors based on analysis
 const LINKEDIN_SELECTORS = {

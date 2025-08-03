@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Communication Style
+
+**文本回答永远简明扼要（除非明确要求详细）、直击重点**
+
+- 优先使用最少的词汇传达核心信息
+- 避免冗余解释和包装语言
+- 直接回答问题，不添加不必要的前缀或后缀
+
 ## Development Commands
 
 ```bash

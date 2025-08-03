@@ -20,9 +20,9 @@ let currentJobData = null;
 /**
  * Update status display
  */
-function updateStatus(type, icon, message) {
+function updateStatus(type, message) {
   elements.status.className = `status ${type}`;
-  elements.status.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+  elements.status.textContent = message;
 }
 
 /**
@@ -69,38 +69,76 @@ async function loadConfiguration() {
  */
 async function testCurrentPage() {
   setButtonLoading(elements.testExtraction, true);
-  updateStatus('info', '🔍', 'Testing data extraction...');
+  updateStatus('info', 'Testing data extraction...');
 
   try {
     // Get current active tab
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
+    console.log('Current tab URL:', tab.url);
+    
     if (!tab.url.includes('linkedin.com/jobs')) {
-      updateStatus('error', '❌', 'Please navigate to a LinkedIn job page');
+      updateStatus('error', `Not a LinkedIn job page. Current URL: ${tab.url.substring(0, 50)}...`);
       return;
     }
 
-    // Send message to content script
-    const response = await chrome.tabs.sendMessage(tab.id, { 
-      action: 'EXTRACT_CURRENT_JOB' 
-    });
+    // Check if content script is loaded
+    try {
+      // Send message to content script
+      const response = await chrome.tabs.sendMessage(tab.id, { 
+        action: 'EXTRACT_CURRENT_JOB' 
+      });
+      
+      if (!response) {
+        throw new Error('No response from content script');
+      }
 
-    if (response.success && response.data) {
-      currentJobData = response.data;
-      elements.manualSync.disabled = false;
+      if (response.success && response.data) {
+        currentJobData = response.data;
+        elements.manualSync.disabled = false;
+        
+        updateStatus('ready', `Found: "${response.data.title}" at "${response.data.company}"`);
+        
+        console.log('Job data extracted:', response.data);
+      } else {
+        currentJobData = null;
+        elements.manualSync.disabled = true;
+        updateStatus('error', 'No job data found on current page');
+      }
+    } catch (contentScriptError) {
+      // Content script not loaded, try to inject it
+      updateStatus('info', 'Content script not loaded, injecting...');
       
-      updateStatus('ready', '✅', `Found: "${response.data.title}" at "${response.data.company}"`);
-      
-      console.log('✅ Job data extracted:', response.data);
-    } else {
-      currentJobData = null;
-      elements.manualSync.disabled = true;
-      updateStatus('error', '❌', 'No job data found on current page');
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ['scripts/linkedin-data-extractor.js']
+        });
+        
+        // Wait a moment for script to initialize
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Try again
+        const response = await chrome.tabs.sendMessage(tab.id, { 
+          action: 'EXTRACT_CURRENT_JOB' 
+        });
+        
+        if (response && response.success && response.data) {
+          currentJobData = response.data;
+          elements.manualSync.disabled = false;
+          updateStatus('ready', `Found: "${response.data.title}" at "${response.data.company}"`);
+        } else {
+          updateStatus('error', 'No job data found after script injection');
+        }
+      } catch (injectionError) {
+        console.error('Content script injection failed:', injectionError);
+        updateStatus('error', 'Failed to load content script. Please refresh the LinkedIn page and try again.');
+      }
     }
 
   } catch (error) {
     console.error('Error testing extraction:', error);
-    updateStatus('error', '❌', 'Error testing extraction: ' + error.message);
+    updateStatus('error', 'Error testing extraction: ' + error.message);
   } finally {
     setButtonLoading(elements.testExtraction, false);
   }
@@ -111,12 +149,12 @@ async function testCurrentPage() {
  */
 async function manualSyncJob() {
   if (!currentJobData) {
-    updateStatus('error', '❌', 'No job data available. Test extraction first.');
+    updateStatus('error', 'No job data available. Test extraction first.');
     return;
   }
 
   setButtonLoading(elements.manualSync, true);
-  updateStatus('info', '🔄', 'Syncing to Notion...');
+  updateStatus('info', 'Syncing to Notion...');
 
   try {
     const response = await chrome.runtime.sendMessage({
@@ -126,17 +164,17 @@ async function manualSyncJob() {
 
     if (response.success) {
       if (response.exists) {
-        updateStatus('ready', '⚠️', 'Job already exists in Notion');
+        updateStatus('ready', 'Job already exists in Notion');
       } else {
-        updateStatus('ready', '🎉', 'Successfully synced to Notion!');
+        updateStatus('ready', 'Successfully synced to Notion!');
       }
     } else {
-      updateStatus('error', '❌', 'Sync failed: ' + (response.error || 'Unknown error'));
+      updateStatus('error', 'Sync failed: ' + (response.error || 'Unknown error'));
     }
 
   } catch (error) {
     console.error('Error syncing job:', error);
-    updateStatus('error', '❌', 'Sync error: ' + error.message);
+    updateStatus('error', 'Sync error: ' + error.message);
   } finally {
     setButtonLoading(elements.manualSync, false);
   }
@@ -149,14 +187,14 @@ async function saveSettings() {
   const apiUrl = elements.apiUrl.value.trim();
   
   if (!apiUrl) {
-    updateStatus('error', '❌', 'API URL is required');
+    updateStatus('error', 'API URL is required');
     return;
   }
 
   try {
     new URL(apiUrl); // Validate URL format
   } catch (error) {
-    updateStatus('error', '❌', 'Invalid URL format');
+    updateStatus('error', 'Invalid URL format');
     return;
   }
 
@@ -169,14 +207,14 @@ async function saveSettings() {
     });
 
     if (response.success) {
-      updateStatus('ready', '✅', 'Settings saved successfully');
+      updateStatus('ready', 'Settings saved successfully');
     } else {
-      updateStatus('error', '❌', 'Failed to save settings');
+      updateStatus('error', 'Failed to save settings');
     }
 
   } catch (error) {
     console.error('Error saving settings:', error);
-    updateStatus('error', '❌', 'Error saving settings');
+    updateStatus('error', 'Error saving settings');
   } finally {
     setButtonLoading(elements.saveSettings, false);
   }
@@ -190,9 +228,9 @@ async function checkCurrentPage() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
     if (tab.url.includes('linkedin.com/jobs')) {
-      updateStatus('ready', '✅', 'LinkedIn job page detected');
+      updateStatus('ready', 'LinkedIn job page detected');
     } else {
-      updateStatus('info', 'ℹ️', 'Navigate to LinkedIn job page to use sync');
+      updateStatus('info', 'Navigate to LinkedIn job page to use sync');
     }
   } catch (error) {
     console.error('Error checking current page:', error);

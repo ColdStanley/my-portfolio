@@ -131,7 +131,7 @@ async function showNotification({ type, title, message }) {
   };
 
   try {
-    await chrome.notifications.create({
+    const notificationId = await chrome.notifications.create({
       type: 'basic',
       iconUrl: '../icons/linkedin-notion-48.png', // fallback to default icon
       title: `${iconMap[type] || ''} ${title}`,
@@ -139,9 +139,9 @@ async function showNotification({ type, title, message }) {
       requireInteraction: false
     });
 
-    // Auto-clear notification
+    // Auto-clear notification using the returned notification ID
     setTimeout(() => {
-      chrome.notifications.clear();
+      chrome.notifications.clear(notificationId);
     }, CONFIG.NOTIFICATION_DURATION);
     
   } catch (error) {

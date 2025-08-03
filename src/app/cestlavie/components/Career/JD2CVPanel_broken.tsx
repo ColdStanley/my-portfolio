@@ -14,7 +14,7 @@ interface JDData {
   comment: string
   role_group: string
   firm_type: string
-  cv_pdf?: string
+  cv_pdf: string
 }
 
 interface ExperienceRecord {
@@ -25,7 +25,7 @@ interface ExperienceRecord {
   role_group: string
   target_role: string
   time: string
-  work_or_project: 'work' | 'project'
+  work_or_experience: 'work' | 'project'
   comment: string
 }
 
@@ -72,21 +72,19 @@ function ExperienceForm({
   onCancel: () => void
 }) {
   const [formData, setFormData] = useState({
-    title: initialData?.title || '',
-    experience: initialData?.experience || '',
-    keywords: initialData?.keywords || [],
-    role_group: initialData?.role_group || '',
-    target_role: initialData?.target_role || '',
-    time: initialData?.time || '',
-    work_or_project: initialData?.work_or_project || 'work' as 'work' | 'project',
-    comment: initialData?.comment || ''
+    title: initialData?.title ?? '',
+    experience: initialData?.experience ?? '',
+    keywords: initialData?.keywords ?? [],
+    role_group: initialData?.role_group ?? '',
+    target_role: initialData?.target_role ?? '',
+    time: initialData?.time ?? '',
+    work_or_experience: initialData?.work_or_experience ?? 'work' as 'work' | 'project',
+    comment: initialData?.comment ?? ''
   })
   
   const [keywordInput, setKeywordInput] = useState('')
   const [titleOptions, setTitleOptions] = useState<string[]>([])
   const [roleGroupOptions, setRoleGroupOptions] = useState<string[]>([])
-  const [targetRoleOptions, setTargetRoleOptions] = useState<string[]>([])
-  const [workOrProjectOptions, setWorkOrProjectOptions] = useState<string[]>([])
   const [optionsLoading, setOptionsLoading] = useState(false)
   const [savingProgress, setSavingProgress] = useState({
     isActive: false,
@@ -113,8 +111,6 @@ function ExperienceForm({
           const data = await response.json()
           setTitleOptions(data.title_options || [])
           setRoleGroupOptions(data.role_group_options || [])
-          setTargetRoleOptions(data.target_role_options || [])
-          setWorkOrProjectOptions(data.work_or_project_options || [])
         }
       } catch (error) {
         console.error('Error fetching field options:', error)
@@ -241,29 +237,56 @@ function ExperienceForm({
       )}
       
       <form onSubmit={handleSubmit} className="space-y-4">
-      {/* First Row: Title and Time */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Title */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Title <span className="text-red-500">*</span>
+      {/* Title */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Title <span className="text-red-500">*</span>
+        </label>
+        <select
+          value={formData.title}
+          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+          required
+          disabled={optionsLoading}
+        >
+          <option value="">Select a title...</option>
+          {titleOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      </div>
+      
+      {/* Type */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+        <div className="flex gap-4">
+          <label className="flex items-center">
+            <input
+              type="radio"
+              value="work"
+              checked={formData.work_or_experience === 'work'}
+              onChange={(e) => setFormData(prev => ({ ...prev, work_or_experience: e.target.value as 'work' | 'project' }))}
+              className="mr-2"
+            />
+            Work
           </label>
-          <select
-            value={formData.title}
-            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-            required
-            disabled={optionsLoading}
-          >
-            <option value="">Select a title...</option>
-            {titleOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+          <label className="flex items-center">
+            <input
+              type="radio"
+              value="project"
+              checked={formData.work_or_experience === 'project'}
+              onChange={(e) => setFormData(prev => ({ ...prev, work_or_experience: e.target.value as 'work' | 'project' }))}
+              className="mr-2"
+            />
+            Project
+          </label>
         </div>
-        
+      </div>
+      
+      {/* Time, Role Group, Target Role, Keywords - Horizontal Row */}
+      <div className="grid grid-cols-4 gap-4">
         {/* Time */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
@@ -274,26 +297,6 @@ function ExperienceForm({
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             placeholder="2020 - 2021"
           />
-        </div>
-      </div>
-      
-      {/* Second Row: Type, Role Group, Target Role */}
-      <div className="grid grid-cols-3 gap-4">
-        {/* Type */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-          <select
-            value={formData.work_or_project}
-            onChange={(e) => setFormData(prev => ({ ...prev, work_or_project: e.target.value as 'work' | 'project' }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            <option value="">Select Type</option>
-            {workOrProjectOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
         </div>
         
         {/* Role Group */}
@@ -317,58 +320,64 @@ function ExperienceForm({
         {/* Target Role */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Target Role</label>
-          <select
-            value={formData.target_role}
-            onChange={(e) => setFormData(prev => ({ ...prev, target_role: e.target.value }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            <option value="">Select Target Role</option>
-            {targetRoleOptions.map((role) => (
-              <option key={role} value={role}>
-                {role}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-      
-      {/* Third Row: Keywords */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Keywords</label>
-        <div className="flex gap-2 mb-2">
           <input
             type="text"
-            value={keywordInput}
-            onChange={(e) => setKeywordInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addKeyword())}
-            className="flex-1 px-2 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-            placeholder="Add keyword"
+            value={formData.target_role}
+            onChange={(e) => setFormData(prev => ({ ...prev, target_role: e.target.value }))}
+            className="w-full px-2 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+            placeholder="Enter target role"
           />
-          <button
-            type="button"
-            onClick={addKeyword}
-            className="w-16 px-2 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 text-xs"
-          >
-            Add
-          </button>
         </div>
-        <div className="flex flex-wrap gap-1">
-          {formData.keywords.map((keyword, i) => (
-            <span key={i} className="inline-flex items-center bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">
-              {keyword}
-              <button
-                type="button"
-                onClick={() => removeKeyword(keyword)}
-                className="ml-1 text-purple-600 hover:text-purple-800"
-              >
-                ×
-              </button>
-            </span>
-          ))}
+        
+        {/* Keywords */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Keywords</label>
+          <div className="flex gap-2 mb-2">
+            <input
+              type="text"
+              value={keywordInput}
+              onChange={(e) => setKeywordInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addKeyword())}
+              className="flex-1 px-2 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+              placeholder="Add keyword"
+            />
+            <button
+              type="button"
+              onClick={addKeyword}
+              className="w-16 px-2 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 text-xs"
+            >
+              Add
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {formData.keywords.map((keyword, i) => (
+              <span key={i} className="inline-flex items-center bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">
+                {keyword}
+                <button
+                  type="button"
+                  onClick={() => removeKeyword(keyword)}
+                  className="ml-1 text-purple-600 hover:text-purple-800"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
         </div>
       </div>
       
-      {/* Fourth Row: Experience */}
+      {/* Comment */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Comment</label>
+        <textarea
+          value={formData.comment}
+          onChange={(e) => setFormData(prev => ({ ...prev, comment: e.target.value }))}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[80px]"
+          placeholder="Additional notes..."
+        />
+      </div>
+      
+      {/* Experience */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Experience <span className="text-red-500">*</span>
@@ -379,17 +388,6 @@ function ExperienceForm({
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[200px]"
           placeholder="Describe your experience in detail..."
           required
-        />
-      </div>
-      
-      {/* Fifth Row: Comment */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Comment</label>
-        <textarea
-          value={formData.comment}
-          onChange={(e) => setFormData(prev => ({ ...prev, comment: e.target.value }))}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[60px]"
-          placeholder="Additional notes..."
         />
       </div>
       
@@ -900,10 +898,10 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
   // Sync data to temporary states when jdData changes
   useEffect(() => {
     setTempMatchScore(matchScore)
-    setTempApplicationStage(jdData.application_stage)
-    setTempRoleGroup(jdData.role_group)
-    setTempFirmType(jdData.firm_type)
-    setTempComment(jdData.comment)
+    setTempApplicationStage(jdData.application_stage || '')
+    setTempRoleGroup(jdData.role_group || '')
+    setTempFirmType(jdData.firm_type || '')
+    setTempComment(jdData.comment || '')
   }, [jdData, matchScore])
 
   // Cleanup comment timeout on unmount
@@ -1300,16 +1298,16 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
         if (data.found) {
           // Fill all form fields with the found data
           setJdData({
-            title: data.record.title || '',
-            company: data.record.company || '',
-            full_job_description: data.record.full_job_description || '',
-            jd_key_sentences: data.record.jd_key_sentences || '',
-            keywords_from_sentences: data.record.keywords_from_sentences || '',
-            application_stage: data.record.application_stage || '',
-            comment: data.record.comment || '',
-            role_group: data.record.role_group || '',
-            firm_type: data.record.firm_type || '',
-            cv_pdf: data.record.cv_pdf || ''
+            title: data.record.title ?? '',
+            company: data.record.company ?? '',
+            full_job_description: data.record.full_job_description ?? '',
+            jd_key_sentences: data.record.jd_key_sentences ?? '',
+            keywords_from_sentences: data.record.keywords_from_sentences ?? '',
+            application_stage: data.record.application_stage ?? '',
+            comment: data.record.comment ?? '',
+            role_group: data.record.role_group ?? '',
+            firm_type: data.record.firm_type ?? '',
+            cv_pdf: data.record.cv_pdf ?? ''
           })
           
 
@@ -1358,16 +1356,16 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
         if (data.found) {
           // Fill all form fields with the found data
           setJdData(prev => ({
-            title: data.record.title || '',
-            company: data.record.company || '',
-            full_job_description: data.record.full_job_description || '',
-            jd_key_sentences: data.record.jd_key_sentences || '',
-            keywords_from_sentences: data.record.keywords_from_sentences || '',
-            application_stage: data.record.application_stage || '',
-            comment: data.record.comment || '',
-            role_group: data.record.role_group || '',
-            firm_type: data.record.firm_type || '',
-            cv_pdf: data.record.cv_pdf || ''
+            title: data.record.title ?? '',
+            company: data.record.company ?? '',
+            full_job_description: data.record.full_job_description ?? '',
+            jd_key_sentences: data.record.jd_key_sentences ?? '',
+            keywords_from_sentences: data.record.keywords_from_sentences ?? '',
+            application_stage: data.record.application_stage ?? '',
+            comment: data.record.comment ?? '',
+            role_group: data.record.role_group ?? '',
+            firm_type: data.record.firm_type ?? '',
+            cv_pdf: data.record.cv_pdf ?? ''
           }))
           
 
@@ -1429,6 +1427,9 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
         setActiveOperationTab(0)
         setTempMatchScore(0)
         setTempComment('')
+        setTempApplicationStage('')
+        setTempRoleGroup('')
+        setTempFirmType('')
         
         // Reset all filter states
         setFilterApplicationStage('')
@@ -1865,9 +1866,9 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
       // First filter by work/project type
       let typeMatch = false
       if (filters.work && filters.project) typeMatch = true
-      else if (!exp.work_or_project || exp.work_or_project === '') typeMatch = true
-      else if (filters.work && exp.work_or_project === 'work') typeMatch = true
-      else if (filters.project && exp.work_or_project === 'project') typeMatch = true
+      else if (!exp.work_or_experience || exp.work_or_experience === '') typeMatch = true
+      else if (filters.work && exp.work_or_experience === 'work') typeMatch = true
+      else if (filters.project && exp.work_or_experience === 'project') typeMatch = true
       
       if (!typeMatch) return false
       
@@ -1875,7 +1876,11 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
       if (targetRoleFilter === 'all') return true
       
       // Check if the experience has the selected target role
-      return exp.target_role === targetRoleFilter
+      if (exp.target_role && Array.isArray(exp.target_role)) {
+        return exp.target_role.includes(targetRoleFilter)
+      }
+      
+      return false
     })
     return filtered
   }
@@ -1886,8 +1891,12 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
     const targetRoles = new Set<string>()
     
     experiences.forEach(exp => {
-      if (exp.target_role && typeof exp.target_role === 'string') {
-        targetRoles.add(exp.target_role.trim())
+      if (exp.target_role && Array.isArray(exp.target_role)) {
+        exp.target_role.forEach(role => {
+          if (role && role.trim()) {
+            targetRoles.add(role.trim())
+          }
+        })
       }
     })
     
@@ -2081,9 +2090,8 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
       setIsGeneratingCustomized(prev => ({ ...prev, [experienceKey]: false }))
     }
   }
-
-
-
+  
+  // End of all functions
   return (
     <div className="max-w-6xl mx-auto space-y-6 px-2">
       <div className="flex items-start justify-between mb-8">
@@ -2091,15 +2099,28 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
         <div className="w-1/2 flex-shrink-0 flex flex-col justify-between">
           <h2 className="text-3xl font-bold text-gray-800">JD2CV</h2>
           <div className="flex items-center gap-2 mt-8">
-            <span className="text-xs font-medium text-gray-700 w-20 flex-shrink-0">Powered by</span>
-            <select
-              value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value as 'gpt-4' | 'deepseek')}
-              className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-xs bg-white w-24"
-            >
-              <option value="deepseek">DeepSeek</option>
-              <option value="gpt-4">GPT-4</option>
-            </select>
+            <div className="flex items-center gap-2">
+              <div className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-2 py-1 rounded-full text-xs font-medium shadow-md shadow-purple-500/30 flex items-center gap-1">
+                <svg className="w-3 h-3 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span>Powered by</span>
+              </div>
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-200 to-indigo-200 rounded-md p-[1px]">
+                  <div className="bg-white/90 backdrop-blur-sm rounded-md h-full"></div>
+                </div>
+                <select
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value as 'gpt-4' | 'deepseek')}
+                  className="relative z-10 px-2 py-1 bg-transparent border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400 focus:shadow-lg focus:shadow-purple-500/25 text-xs w-24 appearance-none cursor-pointer"
+                >
+                  <option value="deepseek">DeepSeek</option>
+                  <option value="gpt-4">GPT-4</option>
+                  </select>
+            </div>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -2107,48 +2128,83 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
         <div className="w-1/2 flex-shrink-0 space-y-2">
           {/* Search Row */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-gray-700 w-16 flex-shrink-0">Search:</span>
-            <input
-              type="text"
-              value={searchTitle}
-              onChange={(e) => setSearchTitle(e.target.value)}
-              placeholder="Title..."
-              className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 w-24 text-xs"
-            />
-            <input
-              type="text"
-              value={searchCompany}
-              onChange={(e) => setSearchCompany(e.target.value)}
-              placeholder="Company..."
-              className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 w-24 text-xs"
-            />
+            <div className="flex items-center gap-1">
+              <svg className="w-3 h-3 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <span className="text-xs font-medium text-gray-700 w-16 flex-shrink-0">Search:</span>
+            </div>
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-200 to-indigo-200 rounded-md p-[1px]">
+                <div className="bg-white/90 backdrop-blur-sm rounded-md h-full"></div>
+              </div>
+              <input
+                type="text"
+                value={searchTitle}
+                onChange={(e) => setSearchTitle(e.target.value)}
+                placeholder="Title..."
+                className="relative z-10 px-2 py-1 bg-transparent border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400 focus:shadow-lg focus:shadow-purple-500/25 w-24 text-xs placeholder:text-gray-400/60"
+              />
+            </div>
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-200 to-indigo-200 rounded-md p-[1px]">
+                <div className="bg-white/90 backdrop-blur-sm rounded-md h-full"></div>
+              </div>
+              <input
+                type="text"
+                value={searchCompany}
+                onChange={(e) => setSearchCompany(e.target.value)}
+                placeholder="Company..."
+                className="relative z-10 px-2 py-1 bg-transparent border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400 focus:shadow-lg focus:shadow-purple-500/25 w-24 text-xs placeholder:text-gray-400/60"
+              />
+            </div>
             <div className="flex-1 flex justify-end pr-2">
               <button
                 onClick={handleSearch}
                 disabled={isSearching || !searchTitle || !searchCompany}
-                className="w-16 px-2 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 text-xs font-medium transition-colors duration-200"
+                className="w-20 px-3 py-1 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded hover:from-purple-600 hover:to-indigo-600 hover:-translate-y-0.5 active:scale-95 transform transition-all duration-200 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium whitespace-nowrap text-center flex items-center justify-center gap-1"
+                title="Search for JD records by title and company in JD2CV database"
               >
-                {isSearching ? 'Searching...' : 'Search'}
+                {isSearching ? (
+                  <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <span>Search</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
           
           {/* Pre-filter Row */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-gray-700 w-16 flex-shrink-0">Pre-filter:</span>
-            <select
-              value={filterApplicationStage}
-              onChange={(e) => handleApplicationStageChange(e.target.value)}
-              className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 w-24 text-xs disabled:bg-gray-100 disabled:text-gray-500"
-              disabled={!optionsLoaded}
-            >
+            <div className="flex items-center gap-1">
+              <svg className="w-3 h-3 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              <span className="text-xs font-medium text-gray-700 w-16 flex-shrink-0">Pre-filter:</span>
+            </div>
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-200 to-indigo-200 rounded-md p-[1px]">
+                <div className="bg-white/90 backdrop-blur-sm rounded-md h-full"></div>
+              </div>
+              <select
+                value={filterApplicationStage}
+                onChange={(e) => handleApplicationStageChange(e.target.value)}
+                className="relative z-10 px-2 py-1 bg-transparent border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400 focus:shadow-lg focus:shadow-purple-500/25 w-24 text-xs disabled:bg-gray-100 disabled:text-gray-500 appearance-none cursor-pointer"
+                disabled={!optionsLoaded}
+              >
               <option value="">{optionsLoaded ? 'Stage...' : 'Loading...'}</option>
               {availableApplicationStages.map((stage) => (
                 <option key={stage} value={stage}>
                   {stage}
                 </option>
               ))}
-            </select>
+              </select>
+            </div>
             <select
               value={filterRoleGroup}
               onChange={(e) => handleRoleGroupChange(e.target.value)}
@@ -2161,20 +2217,26 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                   {roleGroup}
                 </option>
               ))}
-            </select>
-            <select
-              value={filterFirmType}
-              onChange={(e) => handleFirmTypeChange(e.target.value)}
-              className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 w-24 text-xs disabled:bg-gray-100 disabled:text-gray-500"
-              disabled={!optionsLoaded}
-            >
-              <option value="">{optionsLoaded ? 'Firm...' : 'Loading...'}</option>
-              {availableFirmTypes.map((firmType) => (
-                <option key={firmType} value={firmType}>
-                  {firmType}
-                </option>
-              ))}
-            </select>
+              </select>
+            </div>
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-200 to-indigo-200 rounded-md p-[1px]">
+                <div className="bg-white/90 backdrop-blur-sm rounded-md h-full"></div>
+              </div>
+              <select
+                value={filterFirmType}
+                onChange={(e) => handleFirmTypeChange(e.target.value)}
+                className="relative z-10 px-2 py-1 bg-transparent border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400 focus:shadow-lg focus:shadow-purple-500/25 w-24 text-xs disabled:bg-gray-100 disabled:text-gray-500 appearance-none cursor-pointer"
+                disabled={!optionsLoaded}
+              >
+                <option value="">{optionsLoaded ? 'Firm...' : 'Loading...'}</option>
+                {availableFirmTypes.map((firmType) => (
+                  <option key={firmType} value={firmType}>
+                    {firmType}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="flex-1 flex justify-end pr-2">
               <div className="w-16"></div>
             </div>
@@ -2182,47 +2244,82 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
           
           {/* Final Row */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-gray-700 w-16 flex-shrink-0">Final:</span>
-            <select
-              value={filterTitle}
-              onChange={(e) => handleTitleChange(e.target.value)}
-              className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 w-24 text-xs disabled:bg-gray-100 disabled:text-gray-500"
-              disabled={!optionsLoaded}
-            >
-              <option value="">{optionsLoaded ? 'Title...' : 'Loading...'}</option>
-              {availableTitles.map((title) => (
-                <option key={title} value={title}>
-                  {title}
-                </option>
-              ))}
-            </select>
-            <select
-              value={filterCompany}
-              onChange={(e) => handleCompanyChange(e.target.value)}
-              className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 w-24 text-xs disabled:bg-gray-100 disabled:text-gray-500"
-              disabled={!optionsLoaded}
-            >
-              <option value="">{optionsLoaded ? 'Company...' : 'Loading...'}</option>
-              {availableCompanies.map((company) => (
-                <option key={company} value={company}>
-                  {company}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-1">
+              <svg className="w-3 h-3 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-xs font-medium text-gray-700 w-16 flex-shrink-0">Final:</span>
+            </div>
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-200 to-indigo-200 rounded-md p-[1px]">
+                <div className="bg-white/90 backdrop-blur-sm rounded-md h-full"></div>
+              </div>
+              <select
+                value={filterTitle}
+                onChange={(e) => handleTitleChange(e.target.value)}
+                className="relative z-10 px-2 py-1 bg-transparent border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400 focus:shadow-lg focus:shadow-purple-500/25 w-24 text-xs disabled:bg-gray-100 disabled:text-gray-500 appearance-none cursor-pointer"
+                disabled={!optionsLoaded}
+              >
+                <option value="">{optionsLoaded ? 'Title...' : 'Loading...'}</option>
+                {availableTitles.map((title) => (
+                  <option key={title} value={title}>
+                    {title}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-200 to-indigo-200 rounded-md p-[1px]">
+                <div className="bg-white/90 backdrop-blur-sm rounded-md h-full"></div>
+              </div>
+              <select
+                value={filterCompany}
+                onChange={(e) => handleCompanyChange(e.target.value)}
+                className="relative z-10 px-2 py-1 bg-transparent border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400 focus:shadow-lg focus:shadow-purple-500/25 w-24 text-xs disabled:bg-gray-100 disabled:text-gray-500 appearance-none cursor-pointer"
+                disabled={!optionsLoaded}
+              >
+                <option value="">{optionsLoaded ? 'Company...' : 'Loading...'}</option>
+                {availableCompanies.map((company) => (
+                  <option key={company} value={company}>
+                    {company}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="flex-1 flex justify-end gap-2 pr-2">
               <button
                 onClick={handleFilterConfirm}
                 disabled={isFiltering || !filterTitle || !filterCompany || !optionsLoaded}
-                className="w-16 px-2 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 text-xs font-medium transition-colors duration-200"
+                className="w-20 px-3 py-1 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded hover:from-purple-600 hover:to-indigo-600 hover:-translate-y-0.5 active:scale-95 transform transition-all duration-200 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium whitespace-nowrap text-center flex items-center justify-center gap-1"
+                title="Confirm filter selection and load matching JD record from JD2CV database"
               >
-                {isFiltering ? 'Loading...' : 'Confirm'}
+                {isFiltering ? (
+                  <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Confirm</span>
+                  </>
+                )}
               </button>
               <button
                 onClick={handleClearFilter}
                 disabled={isClearing || isFiltering}
-                className="w-16 px-2 py-1 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:opacity-50 text-xs font-medium transition-colors duration-200"
+                className="w-20 px-3 py-1 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded hover:from-purple-600 hover:to-indigo-600 hover:-translate-y-0.5 active:scale-95 transform transition-all duration-200 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium whitespace-nowrap text-center flex items-center justify-center gap-1"
+                title="Clear all search and filter selections"
               >
-                {isClearing ? 'Clearing...' : 'Clear'}
+                {isClearing ? (
+                  <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    <span>Clear</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -2310,13 +2407,34 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                         aria-selected={isActive}
                         tabIndex={isActive ? 0 : -1}
                         onClick={() => setActiveOperationTab(index)}
-                        className={`px-3 py-2 rounded-t-lg font-medium text-xs transition-colors duration-200 focus:outline-none ${
+                        className={`px-3 py-2 rounded-t-lg font-medium text-xs transform transition-all duration-200 focus:outline-none flex items-center justify-center gap-1 ${
                           isActive 
-                            ? 'bg-purple-600 text-white' 
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            ? 'bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-md shadow-purple-500/40 ring-1 ring-purple-400/60 scale-105' 
+                            : 'bg-gradient-to-br from-gray-50 to-gray-100 text-gray-600 hover:from-purple-100 hover:to-indigo-100 hover:text-purple-700 hover:shadow-sm hover:shadow-purple-300/30 hover:ring-1 hover:ring-purple-200/40 hover:scale-105'
                         }`}
                       >
-                        {tabName}
+                        {index === 0 && (
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                        )}
+                        {index === 1 && (
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                        )}
+                        {index === 2 && (
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        )}
+                        {index === 3 && (
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        )}
+                        <span>{tabName}</span>
                       </button>
                     )
                   })}
@@ -2350,9 +2468,19 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                       <button
                         onClick={() => handleMatchScoreSave(tempMatchScore)}
                         disabled={isSavingMatchScore || !currentPageId || tempMatchScore === matchScore}
-                        className="col-span-1 w-full px-2 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50 text-xs transition-colors"
+                        className="col-span-1 w-full px-2 py-1 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded hover:from-purple-600 hover:to-indigo-600 hover:-translate-y-0.5 active:scale-95 transform transition-all duration-200 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 disabled:opacity-50 disabled:cursor-not-allowed text-xs flex items-center justify-center gap-1"
+                        title="Save match score to JD2CV database"
                       >
-                        {isSavingMatchScore ? 'Saving...' : 'Save'}
+                        {isSavingMatchScore ? (
+                          <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <>
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h8a2 2 0 002-2v-3m2-4H9m0 0V9a2 2 0 012-2h6a2 2 0 012 2v2M9 15v6" />
+                            </svg>
+                            <span>Save</span>
+                          </>
+                        )}
                       </button>
                     </div>
                     {/* Row 2: Comment */}
@@ -2368,9 +2496,19 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                       <button
                         onClick={() => handleCommentSave()}
                         disabled={isSavingComment || !currentPageId || tempComment === jdData.comment}
-                        className="col-span-1 w-full px-2 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50 text-xs transition-colors"
+                        className="col-span-1 w-full px-2 py-1 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded hover:from-purple-600 hover:to-indigo-600 hover:-translate-y-0.5 active:scale-95 transform transition-all duration-200 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 disabled:opacity-50 disabled:cursor-not-allowed text-xs flex items-center justify-center gap-1"
+                        title="Save comment to JD2CV database"
                       >
-                        {isSavingComment ? 'Saving...' : 'Save'}
+                        {isSavingComment ? (
+                          <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <>
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h8a2 2 0 002-2v-3m2-4H9m0 0V9a2 2 0 012-2h6a2 2 0 012 2v2M9 15v6" />
+                            </svg>
+                            <span>Save</span>
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>
@@ -2390,7 +2528,8 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                           {stage}
                         </option>
                       ))}
-                    </select>
+                      </select>
+            </div>
                     <select
                       value={tempRoleGroup}
                       onChange={(e) => setTempRoleGroup(e.target.value)}
@@ -2402,7 +2541,8 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                           {role}
                         </option>
                       ))}
-                    </select>
+                      </select>
+            </div>
                     <select
                       value={tempFirmType}
                       onChange={(e) => setTempFirmType(e.target.value)}
@@ -2414,13 +2554,24 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                           {type}
                         </option>
                       ))}
-                    </select>
+                      </select>
+            </div>
                     <button
                       onClick={handleStatusSave}
                       disabled={(isSavingApplicationStage || isSavingRoleGroup || isSavingFirmType) || !currentPageId || (tempApplicationStage === jdData.application_stage && tempRoleGroup === jdData.role_group && tempFirmType === jdData.firm_type)}
-                      className="col-span-1 w-full px-2 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50 text-xs transition-colors"
+                      className="col-span-1 w-full px-2 py-1 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded hover:from-purple-600 hover:to-indigo-600 hover:-translate-y-0.5 active:scale-95 transform transition-all duration-200 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 disabled:opacity-50 disabled:cursor-not-allowed text-xs flex items-center justify-center gap-1"
+                      title="Save status fields to JD2CV database"
                     >
-                      {(isSavingApplicationStage || isSavingRoleGroup || isSavingFirmType) ? 'Saving...' : 'Save'}
+                      {(isSavingApplicationStage || isSavingRoleGroup || isSavingFirmType) ? (
+                        <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <>
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h8a2 2 0 002-2v-3m2-4H9m0 0V9a2 2 0 012-2h6a2 2 0 012 2v2M9 15v6" />
+                          </svg>
+                          <span>Save</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 )}
@@ -2546,13 +2697,28 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                     aria-controls={`jd-panel-${index}`}
                     tabIndex={isActive ? 0 : -1}
                     onClick={() => setActiveJDTab(index)}
-                    className={`px-4 py-2 rounded-t-lg font-medium text-sm transition-colors duration-200 focus:outline-none ${
+                    className={`px-4 py-2 rounded-t-lg font-medium text-sm transform transition-all duration-200 focus:outline-none flex items-center justify-center gap-2 ${
                       isActive 
-                        ? 'bg-purple-600 text-white' 
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-lg shadow-purple-500/30 ring-2 ring-purple-400/50 hover:-translate-y-1' 
+                        : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-600 hover:from-purple-100 hover:to-indigo-100 hover:text-purple-700 hover:shadow-md hover:shadow-purple-400/20 hover:ring-1 hover:ring-purple-300/30 hover:-translate-y-1'
                     }`}
                   >
-                    {tabName}
+                    {index === 0 && (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    )}
+                    {index === 1 && (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    )}
+                    {index === 2 && (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                      </svg>
+                    )}
+                    <span>{tabName}</span>
                   </button>
                 )
               })}
@@ -2616,9 +2782,26 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
               <button
                 onClick={handleJDSubmit}
                 disabled={isSaving || !jdData.full_job_description.trim()}
-                className="w-[160px] px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md transition-shadow text-center text-sm"
+                className="w-[200px] px-3 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded hover:from-purple-600 hover:to-indigo-600 hover:-translate-y-0.5 active:scale-95 transform transition-all duration-200 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-center text-sm whitespace-nowrap flex items-center justify-center gap-1"
+                title="Save current JD data to JD2CV database"
               >
-                {isSaving ? 'Saving...' : jdSaveError ? 'Retry' : 'Save to Database'}
+                {isSaving ? (
+                  <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : jdSaveError ? (
+                  <>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>Retry</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h8a2 2 0 002-2v-3m2-4H9m0 0V9a2 2 0 012-2h6a2 2 0 012 2v2M9 15v6" />
+                    </svg>
+                    <span>Save</span>
+                  </>
+                )}
               </button>
             </div>
           ) : activeJDTab === 1 ? (
@@ -2627,9 +2810,29 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
               <button
                 onClick={handleGenerateKeySentencesFromJD}
                 disabled={isGeneratingKeySentences || !jdData.full_job_description.trim()}
-                className="w-[400px] px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md text-sm whitespace-nowrap text-center"
+                className="w-[200px] px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-md hover:from-purple-600 hover:to-indigo-600 hover:-translate-y-0.5 active:scale-95 transform transition-all duration-200 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm whitespace-nowrap text-center flex items-center justify-center gap-2"
+                title="Read job description, generate key sentences, and save to JD2CV database jd_key_sentences field"
               >
-                {isGeneratingKeySentences ? 'Generating...' : keySentencesError ? 'Retry' : 'Generate Key Sentences from Job Description'}
+                {isGeneratingKeySentences ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Generating...</span>
+                  </>
+                ) : keySentencesError ? (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>Retry</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span>Generate</span>
+                  </>
+                )}
               </button>
             </div>
           ) : (
@@ -2638,9 +2841,29 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
               <button
                 onClick={handleGenerateKeywordsFromSentences}
                 disabled={isGeneratingKeywords || !jdData.jd_key_sentences.trim()}
-                className="w-[400px] px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md text-sm whitespace-nowrap text-center"
+                className="w-[200px] px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-md hover:from-purple-600 hover:to-indigo-600 hover:-translate-y-0.5 active:scale-95 transform transition-all duration-200 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm whitespace-nowrap text-center flex items-center justify-center gap-2"
+                title="Read key sentences, generate keywords, and save to JD2CV database keywords_from_sentences field"
               >
-                {isGeneratingKeywords ? 'Generating...' : keywordsError ? 'Retry' : 'Generate Key Words from Key Sentences'}
+                {isGeneratingKeywords ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Generating...</span>
+                  </>
+                ) : keywordsError ? (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>Retry</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
+                    <span>Generate</span>
+                  </>
+                )}
               </button>
             </div>
           )}
@@ -2679,15 +2902,18 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                     setActiveExperienceHubTab(index)
                     fetchExperienceData(company.name)
                   }}
-                  className={`w-32 px-3 py-2 rounded-t-lg font-medium text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 whitespace-nowrap ${
+                  className={`w-32 px-3 py-2 rounded-t-lg font-medium text-sm transform transition-all duration-200 focus:outline-none flex items-center justify-center gap-2 ${
                     isActive 
-                      ? 'bg-purple-500 text-white shadow-md' 
+                      ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-md shadow-purple-500/30 ring-1 ring-purple-400/50 scale-102' 
                       : hasData
-                        ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                        ? 'bg-gradient-to-r from-purple-50 to-indigo-50 text-purple-700 hover:from-purple-100 hover:to-indigo-100 hover:scale-102 hover:shadow-sm hover:shadow-purple-300/20 hover:ring-1 hover:ring-purple-200/30'
+                        : 'bg-gradient-to-r from-gray-50 to-gray-100 text-gray-500 hover:from-gray-100 hover:to-gray-150 hover:scale-102'
                   }`}
                 >
-                  {company.displayName}
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  <span>{company.displayName}</span>
                 </button>
               )
             })}
@@ -2751,14 +2977,19 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                           {role}
                         </option>
                       ))}
-                    </select>
+                      </select>
+            </div>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowAddForm(company.name)}
-                  className="w-32 px-4 py-2 bg-purple-500 text-white text-sm rounded-lg hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 font-medium transition-all duration-200 whitespace-nowrap"
+                  className="w-20 px-3 py-1 text-xs bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded hover:from-purple-600 hover:to-indigo-600 hover:-translate-y-0.5 active:scale-95 transform transition-all duration-200 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 whitespace-nowrap text-center flex items-center justify-center gap-1"
+                  title="Add new experience record to Professional Experience database"
                 >
-                  Add Experience
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  <span>Add</span>
                 </button>
               </div>
               
@@ -2829,7 +3060,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                         <div className="flex-1">
                           <span className="font-bold text-gray-700 text-sm">Target Role:</span>{' '}
                           {experience.target_role ? (
-                            <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded mr-1">
+                            <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">
                               {experience.target_role}
                             </span>
                           ) : (
@@ -2852,30 +3083,56 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                           <button 
                             onClick={() => handleGenerateCustomizedExperience(company.name, experience)}
                             disabled={isGeneratingCustomized[`${company.name}-${experience.id}`] || !jdData.keywords_from_sentences?.trim() || !experience.experience?.trim()}
-                            className="w-36 px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-center"
-                            title={!jdData.keywords_from_sentences?.trim() ? 'Please generate keywords from JD first' : 'Generate customized version of this experience'}
+                            className="w-20 px-3 py-1 text-xs bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded hover:from-purple-600 hover:to-indigo-600 hover:-translate-y-0.5 active:scale-95 transform transition-all duration-200 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-center flex items-center justify-center gap-1"
+                            title={!jdData.keywords_from_sentences?.trim() ? 'Please generate keywords from JD first' : 'Read experience from Experience Hub database, generate AI-customized version using current JD keywords, and save new record to Professional Experience database'}
                           >
-                            {isGeneratingCustomized[`${company.name}-${experience.id}`] ? 'Generating...' : 'Generate Customized'}
+                            {isGeneratingCustomized[`${company.name}-${experience.id}`] ? (
+                              <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                              <>
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                                <span>Generate</span>
+                              </>
+                            )}
                           </button>
                           <button 
                             onClick={() => handleSaveToPage(company.name, experience)}
                             disabled={isSavingToPage[`${company.name}-${experience.id}`] || !jdData.title?.trim() || !jdData.company?.trim()}
-                            className="w-32 px-3 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-center"
+                            className="w-20 px-3 py-1 text-xs bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded hover:from-purple-600 hover:to-indigo-600 hover:-translate-y-0.5 active:scale-95 transform transition-all duration-200 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-center flex items-center justify-center gap-1"
                             title={(!jdData.title?.trim() || !jdData.company?.trim()) ? 'Please ensure JD title and company are available' : 'Save experience to current JD page'}
                           >
-                            {isSavingToPage[`${company.name}-${experience.id}`] ? 'Saving...' : 'Save to Page'}
+                            {isSavingToPage[`${company.name}-${experience.id}`] ? (
+                              <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                              <>
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h8a2 2 0 002-2v-3m2-4H9m0 0V9a2 2 0 012-2h6a2 2 0 012 2v2M9 15v6" />
+                                </svg>
+                                <span>Save</span>
+                              </>
+                            )}
                           </button>
                           <button 
                             onClick={() => setEditingRecord(experience)}
-                            className="w-20 px-3 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors duration-200"
+                            className="w-20 px-3 py-1 text-xs bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded hover:from-purple-600 hover:to-indigo-600 hover:-translate-y-0.5 active:scale-95 transform transition-all duration-200 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 whitespace-nowrap text-center flex items-center justify-center gap-1"
+                            title="Edit this experience record in Professional Experience database"
                           >
-                            Edit
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            <span>Edit</span>
                           </button>
                           <button 
                             onClick={() => deleteExperienceRecord(company.name, experience.id)}
-                            className="w-20 px-3 py-1 text-xs bg-purple-700 text-white rounded hover:bg-purple-800 transition-colors duration-200"
+                            className="w-20 px-3 py-1 text-xs bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded hover:from-purple-600 hover:to-indigo-600 hover:-translate-y-0.5 active:scale-95 transform transition-all duration-200 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 whitespace-nowrap text-center flex items-center justify-center gap-1"
+                            title="Archive this experience record in Professional Experience database"
                           >
-                            Delete
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            <span>Delete</span>
                           </button>
                         </div>
                       </div>

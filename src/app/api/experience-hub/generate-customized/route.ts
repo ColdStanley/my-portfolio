@@ -119,11 +119,9 @@ Keywords Groups:
           },
         },
         target_role: {
-          multi_select: [
-            {
-              name: jdData.title,
-            },
-          ],
+          select: {
+            name: jdData.title,
+          },
         },
         time: {
           rich_text: [
@@ -142,6 +140,17 @@ Keywords Groups:
               },
             },
           ],
+        },
+        keywords: {
+          multi_select: []
+        },
+        role_group: {
+          select: null
+        },
+        work_or_project: {
+          select: {
+            name: 'work'
+          }
         },
       },
     })

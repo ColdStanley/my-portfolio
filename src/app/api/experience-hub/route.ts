@@ -16,7 +16,7 @@ const getPropertyNames = () => ({
   role_group: 'role_group',
   target_role: 'target_role',
   time: 'time',
-  work_or_experience: 'work_or_experience',
+  work_or_project: 'work_or_project',
   comment: 'comment',
   company: 'company'
 })
@@ -73,8 +73,8 @@ export async function GET(request: NextRequest) {
       },
       sorts: [
         {
-          property: 'Name',
-          direction: 'descending'
+          property: 'company',
+          direction: 'ascending'
         }
       ]
     })
@@ -97,9 +97,9 @@ export async function GET(request: NextRequest) {
         experience: extractText(properties[propertyNames.experience]?.rich_text),
         keywords: extractMultiSelect(properties[propertyNames.keywords]?.multi_select),
         role_group: extractSelect(properties[propertyNames.role_group]?.select),
-        target_role: extractMultiSelect(properties[propertyNames.target_role]?.multi_select),
+        target_role: extractSelect(properties[propertyNames.target_role]?.select),
         time: extractText(properties[propertyNames.time]?.rich_text),
-        work_or_experience: extractSelect(properties[propertyNames.work_or_experience]?.select) as 'work' | 'project',
+        work_or_project: extractSelect(properties[propertyNames.work_or_project]?.select) as 'work' | 'project',
         comment: extractText(properties[propertyNames.comment]?.rich_text)
       }
       
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, experience, keywords, role_group, target_role, time, work_or_experience, comment } = body
+    const { title, experience, keywords, role_group, target_role, time, work_or_project, comment } = body
     
     const propertyNames = getPropertyNames()
     
@@ -160,14 +160,11 @@ export async function POST(request: NextRequest) {
     }
     
     if (title) {
-      // Set both Name (for display) and title field
-      properties.Name = {
-        title: [{ text: { content: title } }]
-      }
       properties[propertyNames.title] = {
         select: { name: title }
       }
     }
+    
     
     if (keywords && Array.isArray(keywords)) {
       properties[propertyNames.keywords] = {
@@ -181,9 +178,9 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    if (target_role && Array.isArray(target_role)) {
+    if (target_role) {
       properties[propertyNames.target_role] = {
-        multi_select: target_role.map(role => ({ name: role }))
+        select: { name: target_role }
       }
     }
     
@@ -193,9 +190,9 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    if (work_or_experience) {
-      properties[propertyNames.work_or_experience] = {
-        select: { name: work_or_experience }
+    if (work_or_project) {
+      properties[propertyNames.work_or_project] = {
+        select: { name: work_or_project }
       }
     }
     
@@ -224,14 +221,19 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { id, title, experience, keywords, role_group, target_role, time, work_or_experience, comment } = body
+    console.log('PUT request received with body:', JSON.stringify(body, null, 2))
+    
+    const { id, title, experience, keywords, role_group, target_role, time, work_or_project, comment } = body
     
     if (!id) {
+      console.log('PUT request missing ID')
       return NextResponse.json(
         { error: 'Record ID is required for update' },
         { status: 400 }
       )
     }
+    
+    console.log('PUT request updating record ID:', id)
     
     const propertyNames = getPropertyNames()
     
@@ -245,14 +247,11 @@ export async function PUT(request: NextRequest) {
     }
     
     if (title !== undefined) {
-      // Update both Name (for display) and title field
-      properties.Name = {
-        title: [{ text: { content: title || '' } }]
-      }
       properties[propertyNames.title] = {
         select: title ? { name: title } : null
       }
     }
+    
     
     if (keywords !== undefined && Array.isArray(keywords)) {
       properties[propertyNames.keywords] = {
@@ -266,9 +265,9 @@ export async function PUT(request: NextRequest) {
       }
     }
     
-    if (target_role !== undefined && Array.isArray(target_role)) {
+    if (target_role !== undefined) {
       properties[propertyNames.target_role] = {
-        multi_select: target_role.map(role => ({ name: role }))
+        select: target_role ? { name: target_role } : null
       }
     }
     
@@ -278,9 +277,9 @@ export async function PUT(request: NextRequest) {
       }
     }
     
-    if (work_or_experience !== undefined) {
-      properties[propertyNames.work_or_experience] = {
-        select: work_or_experience ? { name: work_or_experience } : null
+    if (work_or_project !== undefined) {
+      properties[propertyNames.work_or_project] = {
+        select: work_or_project ? { name: work_or_project } : null
       }
     }
     
@@ -290,10 +289,15 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    await notion.pages.update({
+    console.log('Properties to update:', JSON.stringify(properties, null, 2))
+    
+    const notionResponse = await notion.pages.update({
       page_id: id,
       properties
     })
+    
+    console.log('Notion update response:', JSON.stringify(notionResponse, null, 2))
+    console.log('PUT request successful for record ID:', id)
 
     return NextResponse.json({ success: true })
   } catch (error) {

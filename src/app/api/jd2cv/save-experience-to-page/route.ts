@@ -9,7 +9,7 @@ const notion = new Client({
 const getCompanyFieldName = (companyKey: string): string => {
   const fieldMapping: Record<string, string> = {
     'stanleyhi': 'stanleyhi',
-    'savvy': 'savvy',
+    'savvy': 'savvypro',
     'ncs': 'ncs',
     'icekredit': 'icekredit',
     'huawei': 'huawei',
@@ -130,41 +130,33 @@ export async function POST(request: NextRequest) {
       }
     ]
 
-    // Prepare operations array for parallel execution
-    const operations = []
-
+    // Execute operations sequentially to avoid conflicts
+    
     // 1. Always append experience content to the page
-    operations.push(
-      notion.blocks.children.append({
-        block_id: pageId,
-        children: contentBlocks
-      })
-    )
+    await notion.blocks.children.append({
+      block_id: pageId,
+      children: contentBlocks
+    })
 
     // 2. Optionally save to company field (overwrite strategy)
     if (saveToField && companyKey) {
       const fieldName = getCompanyFieldName(companyKey)
-      operations.push(
-        notion.pages.update({
-          page_id: pageId,
-          properties: {
-            [fieldName]: {
-              rich_text: [
-                {
-                  type: 'text',
-                  text: {
-                    content: experienceContent
-                  }
+      await notion.pages.update({
+        page_id: pageId,
+        properties: {
+          [fieldName]: {
+            rich_text: [
+              {
+                type: 'text',
+                text: {
+                  content: experienceContent
                 }
-              ]
-            }
+              }
+            ]
           }
-        })
-      )
+        }
+      })
     }
-
-    // Execute all operations in parallel
-    await Promise.all(operations)
 
     const fieldMessage = saveToField && companyKey 
       ? ` and ${getCompanyFieldName(companyKey)} field` 

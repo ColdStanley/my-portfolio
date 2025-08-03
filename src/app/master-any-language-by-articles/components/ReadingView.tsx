@@ -55,7 +55,8 @@ export default function ChineseEnglishReadingView({ language, nativeLanguage, ar
     triggerWordBounce,
     addPendingSentenceQuery,
     removePendingSentenceQuery,
-    triggerSentenceBounce
+    triggerSentenceBounce,
+    loadStoredData
   } = useLanguageReadingStore()
 
   const handleAINotesRefresh = useCallback(() => {
@@ -104,8 +105,15 @@ export default function ChineseEnglishReadingView({ language, nativeLanguage, ar
       }
     }
     
-    fetchArticleDetails()
-  }, [articleId, language])
+    const loadData = async () => {
+      await fetchArticleDetails()
+      // Load stored query data after article is loaded
+      console.log('Loading stored data for article:', articleId, 'language:', language)
+      await loadStoredData(articleId, language)
+    }
+    
+    loadData()
+  }, [articleId, language, loadStoredData])
 
   const findExistingQuery = (start: number, end: number) => {
     // Find existing word query
