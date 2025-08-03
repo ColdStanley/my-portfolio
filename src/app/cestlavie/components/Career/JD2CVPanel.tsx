@@ -475,7 +475,7 @@ export default function JD2CVPanel() {
     { name: 'ncs', displayName: 'NCS' },
     { name: 'icekredit', displayName: 'IceKredit' },
     { name: 'huawei', displayName: 'Huawei' },
-    { name: 'diebold', displayName: 'Diebold Nixdorf' },
+    { name: 'diebold', displayName: 'Diebold' },
     { name: 'fujixerox', displayName: 'Fuji Xerox' }
   ]
   
@@ -2218,8 +2218,8 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
             {/* Right: Operations Area - Tab Layout */}
             <div className="w-1/2 flex flex-col">
               {/* Tab Navigation */}
-              <div className="border-b border-gray-200 mb-2">
-                <nav className="flex space-x-1 -mb-px" role="tablist">
+              <div className="mb-4">
+                <nav className="flex space-x-1 max-w-xs" role="tablist">
                   {['Details', 'Status', 'PDF', 'More'].map((tabName, index) => {
                     const isActive = activeOperationTab === index
                     return (
@@ -2229,10 +2229,10 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                         aria-selected={isActive}
                         tabIndex={isActive ? 0 : -1}
                         onClick={() => setActiveOperationTab(index)}
-                        className={`px-3 py-2 rounded-t-lg font-medium text-xs transition-colors duration-200 focus:outline-none ${
+                        className={`flex-1 px-3 py-2 rounded-lg font-medium text-xs transition-all duration-300 focus:outline-none transform text-center ${
                           isActive 
-                            ? 'bg-purple-600 text-white' 
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-md scale-105 font-semibold' 
+                            : 'border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 hover:border-purple-300'
                         }`}
                       >
                         {tabName}
@@ -2243,7 +2243,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
               </div>
               
               {/* Tab Content */}
-              <div className="bg-purple-50 border border-gray-200 rounded-lg p-3 h-[75px] overflow-y-auto">
+              <div className="bg-purple-50 border border-gray-200 rounded-lg p-3 h-[75px] overflow-y-auto shadow-inner">
                 {activeOperationTab === 0 && (
                   /* Details Tab - Score + Comment */
                   <div className="space-y-2 h-full">
@@ -2452,8 +2452,8 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
           </label>
           
           {/* JD Tab Navigation */}
-          <div className="border-b border-gray-200 mb-4">
-            <nav className="flex space-x-1 -mb-px" role="tablist">
+          <div className="mb-4">
+            <nav className="flex justify-between" role="tablist">
               {['Job Description', 'Key Sentences', 'Key Words'].map((tabName, index) => {
                 const isActive = activeJDTab === index
                 return (
@@ -2465,10 +2465,10 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                     aria-controls={`jd-panel-${index}`}
                     tabIndex={isActive ? 0 : -1}
                     onClick={() => setActiveJDTab(index)}
-                    className={`px-4 py-2 rounded-t-lg font-medium text-sm transition-colors duration-200 focus:outline-none ${
+                    className={`w-80 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-300 focus:outline-none transform text-center ${
                       isActive 
-                        ? 'bg-purple-600 text-white' 
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-md scale-105 font-semibold' 
+                        : 'border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 hover:border-purple-300'
                     }`}
                   >
                     {tabName}
@@ -2479,7 +2479,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
           </div>
           
           {/* JD Tab Content */}
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-inner">
             {activeJDTab === 0 ? (
               // Original Tab - Editable textarea
               <textarea
@@ -2587,7 +2587,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
         
         {/* Company Tabs */}
         <div className="mb-6">
-          <nav className="flex space-x-1 overflow-x-auto scrollbar-hide" role="tablist">
+          <nav className="flex justify-between" role="tablist">
             {companies.map((company, index) => {
               const isActive = activeExperienceHubTab === index
               const hasData = experienceData[company.name].length > 0
@@ -2601,12 +2601,12 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                     setActiveExperienceHubTab(index)
                     fetchExperienceData(company.name)
                   }}
-                  className={`w-32 px-3 py-2 rounded-t-lg font-medium text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 whitespace-nowrap ${
+                  className={`w-32 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-300 focus:outline-none transform text-center whitespace-nowrap ${
                     isActive 
-                      ? 'bg-purple-500 text-white shadow-md' 
+                      ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-md scale-105 font-semibold' 
                       : hasData
-                        ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                        ? 'border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 hover:border-purple-300'
+                        : 'border border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100 hover:border-gray-300'
                   }`}
                 >
                   {company.displayName}
