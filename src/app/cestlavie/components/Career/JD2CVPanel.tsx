@@ -88,17 +88,7 @@ function ExperienceForm({
   const [targetRoleOptions, setTargetRoleOptions] = useState<string[]>([])
   const [workOrProjectOptions, setWorkOrProjectOptions] = useState<string[]>([])
   const [optionsLoading, setOptionsLoading] = useState(false)
-  const [savingProgress, setSavingProgress] = useState({
-    isActive: false,
-    currentStep: 0,
-    steps: [
-      'Validating form data...',
-      'Connecting to database...',
-      'Updating experience record...',
-      'Refreshing experience list...',
-      'Complete!'
-    ]
-  })
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   
   // Fetch field options when company changes
   useEffect(() => {
@@ -147,98 +137,25 @@ function ExperienceForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (formData.title.trim() && formData.experience.trim()) {
-      // Start progress indicator
-      setSavingProgress({ ...savingProgress, isActive: true, currentStep: 0 })
+      setSaveStatus('saving')
       
       try {
-        // Step 1: Validating form data
-        await new Promise(resolve => setTimeout(resolve, 500))
-        setSavingProgress(prev => ({ ...prev, currentStep: 1 }))
-        
-        // Step 2: Connecting to database
-        await new Promise(resolve => setTimeout(resolve, 300))
-        setSavingProgress(prev => ({ ...prev, currentStep: 2 }))
-        
-        // Step 3: Updating experience record (actual API call)
         await onSave(formData)
-        setSavingProgress(prev => ({ ...prev, currentStep: 3 }))
+        setSaveStatus('saved')
         
-        // Step 4: Refreshing experience list
-        await new Promise(resolve => setTimeout(resolve, 500))
-        setSavingProgress(prev => ({ ...prev, currentStep: 4 }))
-        
-        // Complete
-        await new Promise(resolve => setTimeout(resolve, 300))
-        
-        // Reset progress
-        setSavingProgress({ ...savingProgress, isActive: false, currentStep: 0 })
+        // Auto-close after 2 seconds
+        setTimeout(() => {
+          onCancel()
+        }, 2000)
       } catch (error) {
-        // Reset progress on error
-        setSavingProgress({ ...savingProgress, isActive: false, currentStep: 0 })
-        throw error
+        setSaveStatus('idle')
+        console.error('Save failed:', error)
       }
     }
   }
   
   return (
     <div className="relative">
-      {/* Progress Indicator Overlay */}
-      {savingProgress.isActive && (
-        <div className="absolute inset-0 bg-purple-50/90 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
-          <div className="bg-white rounded-lg shadow-xl border border-purple-200 p-6 w-96">
-            <div className="text-center mb-4">
-              <div className="w-8 h-8 bg-purple-600 rounded-full mx-auto mb-3 flex items-center justify-center">
-                <svg className="w-4 h-4 text-white animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-purple-800 mb-2">Saving Experience</h3>
-            </div>
-            
-            {/* Progress Steps */}
-            <div className="space-y-3 mb-4">
-              {savingProgress.steps.map((step, index) => (
-                <div key={index} className="flex items-center space-x-3">
-                  <div className={`w-4 h-4 rounded-full flex items-center justify-center ${
-                    index < savingProgress.currentStep
-                      ? 'bg-purple-600'
-                      : index === savingProgress.currentStep
-                        ? 'bg-purple-500 animate-pulse'
-                        : 'bg-purple-200'
-                  }`}>
-                    {index < savingProgress.currentStep ? (
-                      <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    ) : (
-                      <div className="w-2 h-2 bg-white rounded-full"></div>
-                    )}
-                  </div>
-                  <span className={`text-sm ${
-                    index <= savingProgress.currentStep
-                      ? 'text-purple-800 font-medium'
-                      : 'text-purple-400'
-                  }`}>
-                    {step}
-                  </span>
-                </div>
-              ))}
-            </div>
-            
-            {/* Progress Bar */}
-            <div className="w-full bg-purple-100 rounded-full h-2">
-              <div 
-                className="bg-purple-600 h-2 rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${(savingProgress.currentStep / (savingProgress.steps.length - 1)) * 100}%` }}
-              ></div>
-            </div>
-            <div className="text-center mt-2 text-sm text-purple-600 font-medium">
-              {Math.round((savingProgress.currentStep / (savingProgress.steps.length - 1)) * 100)}%
-            </div>
-          </div>
-        </div>
-      )}
       
       <form onSubmit={handleSubmit} className="space-y-4">
       {/* First Row: Title and Time */}
@@ -404,14 +321,16 @@ function ExperienceForm({
         </button>
         <button
           type="submit"
-          disabled={savingProgress.isActive}
+          disabled={saveStatus !== 'idle'}
           className={`w-24 px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
-            savingProgress.isActive
+            saveStatus === 'saving'
               ? 'bg-purple-300 text-purple-100 cursor-not-allowed'
-              : 'bg-purple-500 text-white hover:bg-purple-600'
+              : saveStatus === 'saved'
+                ? 'bg-green-500 text-white cursor-not-allowed'
+                : 'bg-purple-500 text-white hover:bg-purple-600'
           }`}
         >
-          {savingProgress.isActive ? 'Saving...' : 'Save'}
+          {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved ✓' : 'Save'}
         </button>
       </div>
     </form>
@@ -2126,7 +2045,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
               <button
                 onClick={handleSearch}
                 disabled={isSearching || !searchTitle || !searchCompany}
-                className="w-16 px-2 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 text-xs font-medium transition-colors duration-200"
+                className="w-16 px-2 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50 text-xs font-medium transition-colors"
               >
                 {isSearching ? 'Searching...' : 'Search'}
               </button>
@@ -2213,14 +2132,14 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
               <button
                 onClick={handleFilterConfirm}
                 disabled={isFiltering || !filterTitle || !filterCompany || !optionsLoaded}
-                className="w-16 px-2 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 text-xs font-medium transition-colors duration-200"
+                className="w-16 px-2 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50 text-xs font-medium transition-colors"
               >
                 {isFiltering ? 'Loading...' : 'Confirm'}
               </button>
               <button
                 onClick={handleClearFilter}
                 disabled={isClearing || isFiltering}
-                className="w-16 px-2 py-1 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:opacity-50 text-xs font-medium transition-colors duration-200"
+                className="w-16 px-2 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50 text-xs font-medium transition-colors"
               >
                 {isClearing ? 'Clearing...' : 'Clear'}
               </button>
@@ -2368,7 +2287,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                       <button
                         onClick={() => handleCommentSave()}
                         disabled={isSavingComment || !currentPageId || tempComment === jdData.comment}
-                        className="col-span-1 w-full px-2 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50 text-xs transition-colors"
+                        className="col-span-1 w-full px-2 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50 text-xs transition-colors"
                       >
                         {isSavingComment ? 'Saving...' : 'Save'}
                       </button>
@@ -2418,7 +2337,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                     <button
                       onClick={handleStatusSave}
                       disabled={(isSavingApplicationStage || isSavingRoleGroup || isSavingFirmType) || !currentPageId || (tempApplicationStage === jdData.application_stage && tempRoleGroup === jdData.role_group && tempFirmType === jdData.firm_type)}
-                      className="col-span-1 w-full px-2 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50 text-xs transition-colors"
+                      className="col-span-1 w-full px-2 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50 text-xs transition-colors"
                     >
                       {(isSavingApplicationStage || isSavingRoleGroup || isSavingFirmType) ? 'Saving...' : 'Save'}
                     </button>
@@ -2616,9 +2535,10 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
               <button
                 onClick={handleJDSubmit}
                 disabled={isSaving || !jdData.full_job_description.trim()}
-                className="w-[160px] px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md transition-shadow text-center text-sm"
+                className="w-32 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md transition-shadow text-center text-sm"
+                title="JD data → JD_records table → Saved record"
               >
-                {isSaving ? 'Saving...' : jdSaveError ? 'Retry' : 'Save to Database'}
+                {isSaving ? 'Saving...' : jdSaveError ? 'Retry' : 'Save'}
               </button>
             </div>
           ) : activeJDTab === 1 ? (
@@ -2627,9 +2547,10 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
               <button
                 onClick={handleGenerateKeySentencesFromJD}
                 disabled={isGeneratingKeySentences || !jdData.full_job_description.trim()}
-                className="w-[400px] px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md text-sm whitespace-nowrap text-center"
+                className="w-32 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md text-sm whitespace-nowrap text-center"
+                title="JD text → JD_records.key_sentences → Updated record"
               >
-                {isGeneratingKeySentences ? 'Generating...' : keySentencesError ? 'Retry' : 'Generate Key Sentences from Job Description'}
+                {isGeneratingKeySentences ? 'Generating...' : keySentencesError ? 'Retry' : 'Generate'}
               </button>
             </div>
           ) : (
@@ -2638,9 +2559,10 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
               <button
                 onClick={handleGenerateKeywordsFromSentences}
                 disabled={isGeneratingKeywords || !jdData.jd_key_sentences.trim()}
-                className="w-[400px] px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md text-sm whitespace-nowrap text-center"
+                className="w-32 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-medium transition-colors duration-200 shadow-sm hover:shadow-md text-sm whitespace-nowrap text-center"
+                title="Key sentences → JD_records.keywords → Updated record"
               >
-                {isGeneratingKeywords ? 'Generating...' : keywordsError ? 'Retry' : 'Generate Key Words from Key Sentences'}
+                {isGeneratingKeywords ? 'Generating...' : keywordsError ? 'Retry' : 'Generate'}
               </button>
             </div>
           )}
@@ -2758,7 +2680,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                   onClick={() => setShowAddForm(company.name)}
                   className="w-32 px-4 py-2 bg-purple-500 text-white text-sm rounded-lg hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 font-medium transition-all duration-200 whitespace-nowrap"
                 >
-                  Add Experience
+                  Add
                 </button>
               </div>
               
@@ -2852,28 +2774,28 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                           <button 
                             onClick={() => handleGenerateCustomizedExperience(company.name, experience)}
                             disabled={isGeneratingCustomized[`${company.name}-${experience.id}`] || !jdData.keywords_from_sentences?.trim() || !experience.experience?.trim()}
-                            className="w-36 px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-center"
-                            title={!jdData.keywords_from_sentences?.trim() ? 'Please generate keywords from JD first' : 'Generate customized version of this experience'}
+                            className="w-32 px-3 py-1 text-xs bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-center"
+                            title="JD + Experience → Professional Experience DB → Customized text"
                           >
-                            {isGeneratingCustomized[`${company.name}-${experience.id}`] ? 'Generating...' : 'Generate Customized'}
+                            {isGeneratingCustomized[`${company.name}-${experience.id}`] ? 'Generating...' : 'Generate'}
                           </button>
                           <button 
                             onClick={() => handleSaveToPage(company.name, experience)}
                             disabled={isSavingToPage[`${company.name}-${experience.id}`] || !jdData.title?.trim() || !jdData.company?.trim()}
-                            className="w-32 px-3 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-center"
-                            title={(!jdData.title?.trim() || !jdData.company?.trim()) ? 'Please ensure JD title and company are available' : 'Save experience to current JD page'}
+                            className="w-32 px-3 py-1 text-xs bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-center"
+                            title="Experience record → JD_records table → JD page display"
                           >
-                            {isSavingToPage[`${company.name}-${experience.id}`] ? 'Saving...' : 'Save to Page'}
+                            {isSavingToPage[`${company.name}-${experience.id}`] ? 'Saving...' : 'Save'}
                           </button>
                           <button 
                             onClick={() => setEditingRecord(experience)}
-                            className="w-20 px-3 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors duration-200"
+                            className="w-32 px-3 py-1 text-xs bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors duration-200"
                           >
                             Edit
                           </button>
                           <button 
                             onClick={() => deleteExperienceRecord(company.name, experience.id)}
-                            className="w-20 px-3 py-1 text-xs bg-purple-700 text-white rounded hover:bg-purple-800 transition-colors duration-200"
+                            className="w-32 px-3 py-1 text-xs bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors duration-200"
                           >
                             Delete
                           </button>
