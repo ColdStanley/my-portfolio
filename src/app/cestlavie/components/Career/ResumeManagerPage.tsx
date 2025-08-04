@@ -2,24 +2,20 @@
 
 import { useState } from 'react'
 import ResumeSubTabNav from './ResumeSubTabNav'
-import JDTrackerPanel from './JDTrackerPanel'
-import CVModuleVaultPanel from './CVModuleVaultPanel'
-import UserMatcherPanel from './UserMatcherPanel'
+import JD2CVPanel from './JD2CVPanel'
 
 const subTabs = [
-  'notion', 'cv-modules', 'user-matcher',
+  'jd2cv',
 ] as const
 
 type SubTabKey = typeof subTabs[number]
 
 export default function ResumeManagerPage() {
-  const [activeTab, setActiveTab] = useState<SubTabKey>('notion')
+  const [activeTab, setActiveTab] = useState<SubTabKey>('jd2cv')
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'user-matcher': return <UserMatcherPanel />
-      case 'notion': return <JDTrackerPanel />
-      case 'cv-modules': return <CVModuleVaultPanel />
+      case 'jd2cv': return <JD2CVPanel />
       default:
         return <div className="text-gray-500 text-sm">This section is under construction.</div>
     }

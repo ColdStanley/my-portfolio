@@ -1,10 +1,6 @@
 'use client'
 
 const otherTabs = [
-  { key: 'notion', label: '📊', title: 'JD Tracker' },
-  { key: 'cv-modules', label: '🧩', title: 'CV Module Vault' },
-  { key: 'user-matcher', label: '👤', title: 'Job Matcher' },
-  { key: 'figma-builder', label: '🎨', title: 'FigmaBuilder' },
   { key: 'jd2cv', label: '📝', title: 'JD2CV' },
 ]
 

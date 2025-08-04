@@ -22,8 +22,15 @@ export default function DashboardView() {
   const searchParams = useSearchParams()
   
   const [jdList, setJdList] = useState<JDRecord[]>([])
+  const [filteredJdList, setFilteredJdList] = useState<JDRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  
+  // Filter states
+  const [filterStage, setFilterStage] = useState('')
+  const [filterRole, setFilterRole] = useState('')
+  const [filterFirm, setFilterFirm] = useState('')
+  const [filterScore, setFilterScore] = useState('')
 
   // Fetch JD list on component mount
   useEffect(() => {
@@ -40,6 +47,7 @@ export default function DashboardView() {
       
       if (data.success) {
         setJdList(data.data)
+        setFilteredJdList(data.data)
       } else {
         setError(data.error || 'Failed to fetch JD list')
       }
@@ -60,6 +68,39 @@ export default function DashboardView() {
     params.set('company', jd.company)
     
     router.push(`/cestlavie?${params.toString()}`)
+  }
+
+  // Filter and sort logic
+  useEffect(() => {
+    let filtered = [...jdList]
+    
+    // Apply filters
+    if (filterStage) {
+      filtered = filtered.filter(jd => jd.application_stage === filterStage)
+    }
+    if (filterRole) {
+      filtered = filtered.filter(jd => jd.role_group === filterRole)
+    }
+    if (filterFirm) {
+      filtered = filtered.filter(jd => jd.firm_type === filterFirm)
+    }
+    if (filterScore) {
+      const [min, max] = filterScore.split('-').map(Number)
+      filtered = filtered.filter(jd => {
+        const score = jd.match_score || 0
+        return score >= min && score <= max
+      })
+    }
+    
+    // Apply default sorting (score high to low)
+    filtered.sort((a, b) => (b.match_score || 0) - (a.match_score || 0))
+    
+    setFilteredJdList(filtered)
+  }, [jdList, filterStage, filterRole, filterFirm, filterScore])
+
+  // Get unique values for filter options
+  const getUniqueValues = (field: keyof JDRecord) => {
+    return [...new Set(jdList.map(jd => jd[field]).filter(Boolean))]
   }
 
   // Render score with stars only (5-point scale)
@@ -173,14 +214,89 @@ export default function DashboardView() {
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-3">
-      <div className="mb-3">
-        <h3 className="text-lg font-semibold text-gray-800">JD Dashboard</h3>
-        <p className="text-gray-600 text-xs mt-0.5">
-          {jdList.length} job descriptions found
-        </p>
+      {/* Header with integrated filters */}
+      <div className="mb-4 flex items-start justify-between gap-4">
+        {/* Left: Title and Count */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800">JD Dashboard</h3>
+          <p className="text-gray-600 text-xs mt-0.5">
+            {filteredJdList.length} job descriptions found
+          </p>
+        </div>
+
+        {/* Right: Filters */}
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          {/* Filters */}
+          <span className="text-gray-700 font-medium">Filter:</span>
+          
+          {/* Stage Filter */}
+          <select
+            value={filterStage}
+            onChange={(e) => setFilterStage(e.target.value)}
+            className="border border-gray-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+          >
+            <option value="">Stage</option>
+            {getUniqueValues('application_stage').map(stage => (
+              <option key={stage} value={stage}>{stage}</option>
+            ))}
+          </select>
+
+          {/* Role Filter */}
+          <select
+            value={filterRole}
+            onChange={(e) => setFilterRole(e.target.value)}
+            className="border border-gray-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+          >
+            <option value="">Role</option>
+            {getUniqueValues('role_group').map(role => (
+              <option key={role} value={role}>{role}</option>
+            ))}
+          </select>
+
+          {/* Firm Filter */}
+          <select
+            value={filterFirm}
+            onChange={(e) => setFilterFirm(e.target.value)}
+            className="border border-gray-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+          >
+            <option value="">Firm</option>
+            {getUniqueValues('firm_type').map(firm => (
+              <option key={firm} value={firm}>{firm}</option>
+            ))}
+          </select>
+
+          {/* Score Filter */}
+          <select
+            value={filterScore}
+            onChange={(e) => setFilterScore(e.target.value)}
+            className="border border-gray-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+          >
+            <option value="">Score</option>
+            <option value="4-5">4-5分</option>
+            <option value="3-4">3-4分</option>
+            <option value="2-3">2-3分</option>
+            <option value="1-2">1-2分</option>
+            <option value="0-1">0-1分</option>
+          </select>
+
+          {/* Clear Filters */}
+          {(filterStage || filterRole || filterFirm || filterScore) && (
+            <button
+              onClick={() => {
+                setFilterStage('')
+                setFilterRole('')
+                setFilterFirm('')
+                setFilterScore('')
+              }}
+              className="px-2 py-1 text-purple-600 hover:text-purple-800 hover:bg-purple-100 rounded transition-colors ml-2"
+            >
+              Clear
+            </button>
+          )}
+        </div>
       </div>
 
-      {jdList.length === 0 ? (
+      {filteredJdList.length === 0 ? (
         <div className="text-center py-6">
           <p className="text-gray-500 text-sm">No job descriptions found.</p>
           <p className="text-gray-400 text-xs mt-0.5">
@@ -203,7 +319,7 @@ export default function DashboardView() {
               </tr>
             </thead>
             <tbody>
-              {jdList.map((jd, index) => (
+              {filteredJdList.map((jd, index) => (
                 <tr 
                   key={jd.id} 
                   className={`border-b hover:bg-purple-50 cursor-pointer ${

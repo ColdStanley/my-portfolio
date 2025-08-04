@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { DatabaseHelper, isValidLanguagePair } from '../../../master-any-language-by-articles/config/databaseConfig'
+import { v4 as uuidv4 } from 'uuid'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,24 +16,54 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Save to database without AI analysis
+    // Determine language pair based on language parameter
+    const languagePair = language === 'english' ? 'chinese-english' : 'chinese-french'
+    
+    if (!isValidLanguagePair(languagePair)) {
+      return NextResponse.json({ error: 'Invalid language pair' }, { status: 400 })
+    }
+
+    const tableName = DatabaseHelper.getArticlesTable(languagePair)
+    
+    // Create new analysis record
+    const newRecord = {
+      id: uuidv4(),
+      selected_text: wordText,
+      context_sentence: '',
+      analysis: '',
+      analysis_mode: analysisMode || 'mark',
+      user_notes: userNotes || '',
+      ai_notes: '',
+      start_offset: startOffset,
+      end_offset: endOffset,
+      query_type: queryType || 'manual_mark',
+      created_at: new Date().toISOString()
+    }
+
+    // Get current article to append to existing records
+    const { data: currentArticle, error: fetchError } = await supabase
+      .from(tableName)
+      .select('analysis_records')
+      .eq('id', articleId)
+      .single()
+
+    if (fetchError) {
+      console.error('Error fetching current article:', fetchError)
+      return NextResponse.json({ error: 'Article not found' }, { status: 404 })
+    }
+
+    // Append new record to existing records
+    const currentRecords = currentArticle.analysis_records || []
+    const updatedRecords = [...currentRecords, newRecord]
+
+    // Update with new records array
     const { data, error } = await supabase
-      .from('english_reading_word_queries')
-      .insert([{
-        article_id: articleId,
-        word_text: wordText,
-        definition: null,
-        part_of_speech: null,
-        root_form: null,
-        examples: [],
-        example_translation: null,
-        start_offset: startOffset,
-        end_offset: endOffset,
-        query_type: queryType || 'manual_mark',
-        user_notes: userNotes || '',
-        language: language,
-        analysis_mode: analysisMode || 'mark'
-      }])
+      .from(tableName)
+      .update({
+        analysis_records: updatedRecords,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', articleId)
       .select('*')
       .single()
 
@@ -44,7 +76,11 @@ export async function POST(req: NextRequest) {
       }, { status: 500 })
     }
 
-    return NextResponse.json(data)
+    return NextResponse.json({ 
+      success: true, 
+      record: newRecord,
+      article: data 
+    })
   } catch (error) {
     console.error('API error:', error)
     return NextResponse.json({ 

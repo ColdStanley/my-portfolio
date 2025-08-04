@@ -2,10 +2,6 @@
 
 import { useState } from 'react'
 import ResumeSubTabNav from './Career/ResumeSubTabNav'
-import JDTrackerPanel from './Career/JDTrackerPanel'
-import CVModuleVaultPanel from './Career/CVModuleVaultPanel'
-import UserMatcherPanel from './Career/UserMatcherPanel'
-import FigmaBuilderPanel from './Career/FigmaBuilderPanel'
 import JD2CVPanel from './Career/JD2CVPanel'
 import LifeSubTabNav from './Life/LifeSubTabNav'
 import StrategyPanel from './Life/StrategyPanel'
@@ -38,7 +34,7 @@ interface MainContentProps {
   onTasksUpdate?: (tasks: TaskRecord[]) => void
 }
 
-const careerSubTabs = ['user-matcher', 'notion', 'cv-modules', 'figma-builder', 'jd2cv'] as const
+const careerSubTabs = ['jd2cv'] as const
 const lifeSubTabs = ['strategy', 'plan', 'task', 'tbd'] as const
 type CareerSubTabKey = typeof careerSubTabs[number]
 type LifeSubTabKey = typeof lifeSubTabs[number]
@@ -49,10 +45,6 @@ export default function MainContent({ activeMainTab, onConfigClick, onTasksUpdat
 
   const renderCareerContent = () => {
     switch (activeCareerSubTab) {
-      case 'user-matcher': return <UserMatcherPanel />
-      case 'notion': return <JDTrackerPanel />
-      case 'cv-modules': return <CVModuleVaultPanel />
-      case 'figma-builder': return <FigmaBuilderPanel />
       case 'jd2cv': return <JD2CVPanel />
       default: return <div className="text-gray-500 text-sm">This section is under construction.</div>
     }
