@@ -1423,7 +1423,12 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
           company: '',
           full_job_description: '',
           jd_key_sentences: '',
-          keywords_from_sentences: ''
+          keywords_from_sentences: '',
+          application_stage: '',
+          comment: '',
+          role_group: '',
+          firm_type: '',
+          cv_pdf: ''
         })
         setJdSaved(false)
             setCurrentPageId('')
@@ -2132,8 +2137,8 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 px-2">
-      {/* Tab Navigation */}
-      <div className="bg-white rounded-lg shadow-sm">
+      {/* Tab Navigation - Fixed Position */}
+      <div className="sticky top-0 z-40 bg-white rounded-lg shadow-sm">
         <div className="flex border-b border-gray-200">
           <button
             onClick={() => handleViewChange('individual')}
@@ -2642,50 +2647,51 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
             </nav>
           </div>
           
-          {/* JD Tab Content */}
-          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-inner">
+          {/* JD Tab Content - Fixed Height */}
+          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-inner h-[450px]">
             {activeJDTab === 0 ? (
-              // Original Tab - Editable textarea
-              <textarea
-                value={jdData.full_job_description}
-                onChange={(e) => {
-                  setJdData(prev => ({ ...prev, full_job_description: e.target.value }))
-                  if (jdSaved) setJdSaved(false)
-                  if (jdSaveError) setJdSaveError(false)
-                  if (generateError) setGenerateError(false)
-                  // Auto-resize textarea
-                  const target = e.target as HTMLTextAreaElement
-                  target.style.height = 'auto'
-                  target.style.height = `${target.scrollHeight}px`
-                }}
-                className="w-full border-0 focus:outline-none resize-none overflow-hidden min-h-[150px] text-gray-700"
-                placeholder="Paste the complete job description here..."
-                style={{
-                  height: jdData.full_job_description ? 'auto' : '150px'
-                }}
-                onInput={(e) => {
-                  const target = e.target as HTMLTextAreaElement
-                  target.style.height = 'auto'
-                  target.style.height = `${target.scrollHeight}px`
-                }}
-                ref={(el) => {
-                  if (el && jdData.full_job_description) {
-                    setTimeout(() => {
-                      el.style.height = 'auto'
-                      el.style.height = `${el.scrollHeight}px`
-                    }, 0)
-                  }
-                }}
-              />
+              // Original Tab - Editable textarea with internal scrolling
+              <div className="relative h-full">
+                {/* Top gradient shadow */}
+                <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-white to-transparent pointer-events-none z-10 rounded-t-lg"></div>
+                {/* Bottom gradient shadow */}
+                <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-white to-transparent pointer-events-none z-10 rounded-b-lg"></div>
+                
+                <textarea
+                  value={jdData.full_job_description}
+                  onChange={(e) => {
+                    setJdData(prev => ({ ...prev, full_job_description: e.target.value }))
+                    if (jdSaved) setJdSaved(false)
+                    if (jdSaveError) setJdSaveError(false)
+                    if (generateError) setGenerateError(false)
+                  }}
+                  className="w-full h-full border-0 focus:outline-none resize-none text-gray-700 overflow-y-auto scrollbar-hide relative z-0"
+                  placeholder="Paste the complete job description here..."
+                />
+              </div>
             ) : activeJDTab === 1 ? (
               // Key Sentences Tab
-              <div className="text-gray-700 leading-relaxed min-h-[150px] whitespace-pre-line">
-                {jdData.jd_key_sentences || 'No key sentences generated yet.'}
+              <div className="relative h-full">
+                {/* Top gradient shadow */}
+                <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-white to-transparent pointer-events-none z-10 rounded-t-lg"></div>
+                {/* Bottom gradient shadow */}
+                <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-white to-transparent pointer-events-none z-10 rounded-b-lg"></div>
+                
+                <div className="text-gray-700 leading-relaxed whitespace-pre-line h-full overflow-y-auto scrollbar-hide relative z-0">
+                  {jdData.jd_key_sentences || 'No key sentences generated yet.'}
+                </div>
               </div>
             ) : (
               // Key Words Tab
-              <div className="text-gray-700 leading-relaxed min-h-[150px] whitespace-pre-line">
-                {jdData.keywords_from_sentences || 'No keywords generated yet.'}
+              <div className="relative h-full">
+                {/* Top gradient shadow */}
+                <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-white to-transparent pointer-events-none z-10 rounded-t-lg"></div>
+                {/* Bottom gradient shadow */}
+                <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-white to-transparent pointer-events-none z-10 rounded-b-lg"></div>
+                
+                <div className="text-gray-700 leading-relaxed whitespace-pre-line h-full overflow-y-auto scrollbar-hide relative z-0">
+                  {jdData.keywords_from_sentences || 'No keywords generated yet.'}
+                </div>
               </div>
             )}
           </div>

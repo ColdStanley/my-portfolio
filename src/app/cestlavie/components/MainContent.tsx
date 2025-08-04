@@ -81,7 +81,11 @@ export default function MainContent({ activeMainTab, onConfigClick, onTasksUpdat
         return (
           <>
             <ResumeSubTabNav activeTab={activeCareerSubTab} setActiveTab={setActiveCareerSubTab} />
-            <div className="flex-1 overflow-y-auto p-6">{renderCareerContent()}</div>
+            <div className="flex-1 p-6">
+              <div className="overflow-y-auto h-full">
+                {renderCareerContent()}
+              </div>
+            </div>
           </>
         )
       case 'study':

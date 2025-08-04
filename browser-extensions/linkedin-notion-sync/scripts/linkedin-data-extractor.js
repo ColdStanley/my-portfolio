@@ -17,13 +17,55 @@ const LINKEDIN_SELECTORS = {
 };
 
 /**
+ * Convert HTML content to formatted text preserving structure
+ */
+function htmlToFormattedText(element) {
+  if (!element) return '';
+  
+  // Clone the element to avoid modifying the original
+  const clone = element.cloneNode(true);
+  
+  // Replace HTML elements with appropriate text formatting
+  const replacements = [
+    { tag: 'br', replacement: '\n' },
+    { tag: 'p', replacement: '\n\n', closing: '\n' },
+    { tag: 'div', replacement: '\n', closing: '' },
+    { tag: 'li', replacement: '\n• ', closing: '' },
+    { tag: 'ul', replacement: '\n', closing: '\n' },
+    { tag: 'ol', replacement: '\n', closing: '\n' },
+    { tag: 'h1', replacement: '\n\n', closing: '\n' },
+    { tag: 'h2', replacement: '\n\n', closing: '\n' },
+    { tag: 'h3', replacement: '\n\n', closing: '\n' }
+  ];
+  
+  // Apply replacements
+  replacements.forEach(({ tag, replacement, closing = '' }) => {
+    const elements = clone.querySelectorAll(tag);
+    elements.forEach(el => {
+      if (tag === 'br') {
+        el.replaceWith(document.createTextNode(replacement));
+      } else {
+        const text = el.textContent;
+        el.replaceWith(document.createTextNode(replacement + text + closing));
+      }
+    });
+  });
+  
+  return clone.textContent
+    .replace(/\n\n\n+/g, '\n\n')  // Normalize multiple line breaks
+    .replace(/^\n+|\n+$/g, '')    // Remove leading/trailing line breaks
+    .trim();
+}
+
+/**
  * Extract job data from current LinkedIn page
  */
 function extractLinkedInJobData() {
   try {
     const jobTitle = document.querySelector(LINKEDIN_SELECTORS.JOB_TITLE)?.textContent?.trim() || '';
     const companyName = document.querySelector(LINKEDIN_SELECTORS.COMPANY_NAME)?.textContent?.trim() || '';
-    const jobDescription = document.querySelector(LINKEDIN_SELECTORS.JOB_DESCRIPTION)?.textContent?.trim() || '';
+    const jobDescriptionElement = document.querySelector(LINKEDIN_SELECTORS.JOB_DESCRIPTION);
+    const jobDescription = htmlToFormattedText(jobDescriptionElement);
     const location = document.querySelector(LINKEDIN_SELECTORS.LOCATION)?.textContent?.trim() || '';
     const currentUrl = window.location.href;
     const extractedAt = new Date().toISOString();
