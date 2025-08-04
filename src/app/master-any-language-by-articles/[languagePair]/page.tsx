@@ -32,17 +32,7 @@ const LANGUAGE_DISPLAY_NAMES: Record<string, string> = {
 export default function LanguagePairPage({ params }: LanguagePairProps) {
   const { languagePair } = use(params)
   
-  // Validate language combination
-  const combination = SUPPORTED_COMBINATIONS.find(combo => combo.code === languagePair)
-  
-  if (!combination) {
-    notFound()
-  }
-
-  const { native, learning } = combination
-  const currentLanguage = learning as Language
-  const uiTexts = getUITexts(currentLanguage)
-  
+  // All hooks must be called before any conditional returns
   const [articleId, setArticleId] = useState<number | null>(null)
   const [articleContent, setArticleContent] = useState<string>('')
   const [articleTitle, setArticleTitle] = useState<string>('')
@@ -52,6 +42,12 @@ export default function LanguagePairPage({ params }: LanguagePairProps) {
   
   const { loadStoredData } = useLanguageReadingStore()
   const { loadSentenceCards } = useChineseFrenchStore()
+  
+  // Validate language combination and derive values
+  const combination = SUPPORTED_COMBINATIONS.find(combo => combo.code === languagePair)
+  const { native, learning } = combination || { native: 'chinese', learning: 'english' }
+  const currentLanguage = learning as Language
+  const uiTexts = getUITexts(currentLanguage)
 
   // Detect mobile device
   useEffect(() => {
@@ -100,6 +96,11 @@ export default function LanguagePairPage({ params }: LanguagePairProps) {
     
     restoreLastArticle()
   }, [languagePair, loadSentenceCards, loadStoredData, currentLanguage, uiTexts.untitled])
+
+  // After all hooks, validate and conditionally return
+  if (!combination) {
+    notFound()
+  }
 
   const handleArticleSubmit = async (id: number, content: string, title?: string, fullData?: any) => {
     setArticleId(id)

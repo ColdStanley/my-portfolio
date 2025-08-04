@@ -282,7 +282,13 @@ export default function AIDialog({
           }
         }
       } else {
-        throw new Error('AI request failed')
+        const errorText = await response.text()
+        console.error('API Error Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText: errorText
+        })
+        throw new Error(`AI request failed: ${response.status} ${response.statusText} - ${errorText}`)
       }
     } catch (error) {
       console.error('Ask AI error:', error)

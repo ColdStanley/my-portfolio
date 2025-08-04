@@ -931,8 +931,8 @@ export default function ChineseEnglishReadingView({ language, nativeLanguage, ar
         onClose={() => setShowGlobalAIDialog(false)}
         queryData={{
           article_id: articleId,
-          word_text: '',
-          sentence_text: '',
+          word_text: 'Global AI Assistant',
+          sentence_text: 'Global AI Assistant',
           definition: 'Global AI Assistant',
           translation: 'Ask any question about your reading'
         }}

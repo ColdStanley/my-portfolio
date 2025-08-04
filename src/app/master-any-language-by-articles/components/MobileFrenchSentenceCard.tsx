@@ -164,47 +164,13 @@ export default function MobileFrenchSentenceCard({
   React.useEffect(() => {
     const loadExistingData = async () => {
       try {
-        // Queries API removed - phrase analysis moved to articles.analysis_records
-        console.log('MobileFrenchSentenceCard phrase queries API deprecated')
-        if (phrasesResponse.ok) {
-          const phrasesData = await phrasesResponse.json()
-          if (phrasesData && phrasesData.length > 0) {
-            setPhrasesAnalysis(phrasesData[0].analysis)
-          }
-        }
-
-        // Queries API removed - grammar analysis moved to articles.analysis_records
-        console.log('MobileFrenchSentenceCard grammar queries API deprecated')
-        if (grammarResponse.ok) {
-          const grammarData = await grammarResponse.json()
-          if (grammarData && grammarData.length > 0) {
-            setGrammarAnalysis(grammarData[0].analysis)
-          }
-        }
-
-        // Queries API removed - word queries moved to articles.analysis_records
-        console.log('MobileFrenchSentenceCard word queries API deprecated')
-        if (wordsResponse.ok) {
-          const wordsData = await wordsResponse.json()
-          if (wordsData && wordsData.length > 0) {
-            const savedWordQueries = wordsData.map((item: any) => {
-              // Extract word from formatted sentence_text: "sentence::word::actualword"
-              const sentenceText = item.sentence_text
-              const wordMatch = sentenceText.match(/::word::(.+)$/)
-              const word = wordMatch ? wordMatch[1] : sentenceText
-              
-              return {
-                id: item.id.toString(),
-                word: word,
-                response: item.analysis,
-                isStreaming: false,
-                timestamp: new Date(item.created_at).getTime(),
-                isExpanded: false
-              }
-            })
-            setWordQueries(savedWordQueries)
-          }
-        }
+        // APIs deprecated - data moved to articles.analysis_records
+        console.log('MobileFrenchSentenceCard APIs deprecated - data moved to unified structure')
+        
+        // Reset states since the old APIs are no longer available
+        setPhrasesAnalysis('')
+        setGrammarAnalysis('')
+        setWordQueries([])
       } catch (error) {
         console.error('Failed to load existing data:', error)
       }

@@ -71,6 +71,7 @@ export default function SmartTooltip({
   onClose,
   onCardCreated
 }: SmartTooltipProps) {
+  // ✅ All hooks must be called before any conditional returns
   const [selectedMode, setSelectedMode] = useState<AnalysisMode | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [streamContent, setStreamContent] = useState('')
@@ -403,7 +404,10 @@ export default function SmartTooltip({
     onClose()
   }
 
-  if (!isVisible) return null
+  // ✅ Conditional rendering instead of early return to avoid hooks rule violation
+  if (!isVisible) {
+    return null
+  }
 
   // Calculate arrow position - always points left to selected text
   const getArrowStyle = () => {
