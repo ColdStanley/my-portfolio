@@ -77,7 +77,7 @@ async function syncJobDataToNotion(jobData) {
       body: JSON.stringify({
         title: jobData.title,
         company: jobData.company,
-        full_job_description: jobData.full_job_description,
+        full_job_description: jobData.full_job_description?.replace(/\r\n/g, '\n').replace(/\r/g, '\n') || '',
         application_stage: jobData.application_stage,
         linkedin_url: jobData.linkedin_url,
         location: jobData.location,

@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import DashboardView from './DashboardView'
 import PromptManager, { PromptData } from '@/components/PromptManager'
 
 
@@ -72,14 +74,14 @@ function ExperienceForm({
   onCancel: () => void
 }) {
   const [formData, setFormData] = useState({
-    title: initialData?.title || '',
-    experience: initialData?.experience || '',
-    keywords: initialData?.keywords || [],
-    role_group: initialData?.role_group || '',
-    target_role: initialData?.target_role || '',
-    time: initialData?.time || '',
-    work_or_project: initialData?.work_or_project || 'work' as 'work' | 'project',
-    comment: initialData?.comment || ''
+    title: initialData?.title ?? '',
+    experience: initialData?.experience ?? '',
+    keywords: initialData?.keywords ?? [],
+    role_group: initialData?.role_group ?? '',
+    target_role: initialData?.target_role ?? '',
+    time: initialData?.time ?? '',
+    work_or_project: (initialData?.work_or_project ?? 'work') as 'work' | 'project',
+    comment: initialData?.comment ?? ''
   })
   
   const [keywordInput, setKeywordInput] = useState('')
@@ -344,6 +346,9 @@ function ExperienceForm({
 }
 
 export default function JD2CVPanel() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  
   const [jdData, setJdData] = useState<JDData>({
     title: '',
     company: '',
@@ -793,6 +798,76 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
   // Save all matched states
   const [isSavingAllMatched, setIsSavingAllMatched] = useState(false)
   const [saveAllProgress, setSaveAllProgress] = useState('')
+  
+  // View state - initialize from URL params
+  const [activeView, setActiveView] = useState<'individual' | 'dashboard'>(() => {
+    const viewParam = searchParams.get('view')
+    return viewParam === 'dashboard' ? 'dashboard' : 'individual'
+  })
+
+  // Handle URL parameters for JD data
+  useEffect(() => {
+    const jdId = searchParams.get('jdId')
+    const title = searchParams.get('title')
+    const company = searchParams.get('company')
+    const view = searchParams.get('view')
+    
+    // If coming from Dashboard with JD info, populate the form
+    if (view === 'individual' && jdId && title && company) {
+      setJdData(prev => ({
+        ...prev,
+        title: decodeURIComponent(title),
+        company: decodeURIComponent(company)
+      }))
+      setActiveView('individual')
+      
+      // Load full JD data from the database
+      loadJDData(jdId)
+    }
+  }, [searchParams])
+
+  // Load JD data from database by ID
+  const loadJDData = async (jdId: string) => {
+    try {
+      const response = await fetch(`/api/jd2cv/get?id=${jdId}`)
+      const data = await response.json()
+      
+      if (data.success && data.jd) {
+        setJdData({
+          title: data.jd.title || '',
+          company: data.jd.company || '',
+          full_job_description: data.jd.full_job_description || '',
+          jd_key_sentences: data.jd.jd_key_sentences || '',
+          keywords_from_sentences: data.jd.keywords_from_sentences || '',
+          application_stage: data.jd.application_stage || '',
+          comment: data.jd.comment || '',
+          role_group: data.jd.role_group || '',
+          firm_type: data.jd.firm_type || '',
+          cv_pdf: data.jd.cv_pdf || ''
+        })
+        setCurrentPageId(jdId)
+      }
+    } catch (error) {
+      console.error('Error loading JD data:', error)
+    }
+  }
+
+  // Handle view change with URL update
+  const handleViewChange = (view: 'individual' | 'dashboard') => {
+    setActiveView(view)
+    
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('view', view)
+    
+    // Remove JD-specific params when switching to dashboard
+    if (view === 'dashboard') {
+      params.delete('jdId')
+      params.delete('title')
+      params.delete('company')
+    }
+    
+    router.push(`/cestlavie?${params.toString()}`)
+  }
 
   // Auto-resize textarea function
   const autoResizeTextarea = (textarea: HTMLTextAreaElement) => {
@@ -2057,6 +2132,41 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 px-2">
+      {/* Tab Navigation */}
+      <div className="bg-white rounded-lg shadow-sm">
+        <div className="flex border-b border-gray-200">
+          <button
+            onClick={() => handleViewChange('individual')}
+            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors relative ${
+              activeView === 'individual'
+                ? 'text-purple-600'
+                : 'text-gray-700 hover:text-gray-900'
+            }`}
+          >
+            Individual View
+            {activeView === 'individual' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500"></div>
+            )}
+          </button>
+          <button
+            onClick={() => handleViewChange('dashboard')}
+            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors relative ${
+              activeView === 'dashboard'
+                ? 'text-purple-600'
+                : 'text-gray-700 hover:text-gray-900'
+            }`}
+          >
+            Dashboard View
+            {activeView === 'dashboard' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500"></div>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Conditional rendering based on active view */}
+      {activeView === 'individual' ? (
+        <>
       <div className="flex items-start justify-between mb-8">
         {/* Left 50%: Title and Description */}
         <div className="w-1/2 flex-shrink-0 flex flex-col justify-between">
@@ -2986,6 +3096,10 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
             </div>
           </div>
         </div>
+      )}
+        </>
+      ) : (
+        <DashboardView />
       )}
 
     </div>

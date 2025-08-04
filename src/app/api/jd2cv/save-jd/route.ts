@@ -81,12 +81,28 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // Preserve formatting - ensure line breaks and spacing are maintained
+    const preservedText = full_job_description
+      .replace(/\r\n/g, '\n')              // Windows换行符
+      .replace(/\r/g, '\n')                // Mac换行符
+      .replace(/\n\n\n+/g, '\n\n')         // 多重空行
+      .replace(/\t/g, '    ')              // 制表符转4空格
+      .replace(/\u00A0/g, ' ')             // 不间断空格转普通空格
+      .replace(/[•·]/g, '• ')              // 标准化项目符号
+      .replace(/—/g, '—')                  // 保留em破折号
+      .replace(/–/g, '–')                  // 保留en破折号
+      .replace(/<br\s*\/?>/gi, '\n')       // HTML换行转换
+      .replace(/<p>/gi, '\n')              // HTML段落转换
+      .replace(/<\/p>/gi, '')              // 移除结束段落标签
+      .replace(/\s*\n\s*/g, '\n')          // 清理行首尾空格
+      .trim()                              // 清理文本首尾空白
+
     // Split job description into chunks if needed
-    const jdPart1 = full_job_description.substring(0, 2000)
-    const jdPart2 = full_job_description.substring(2000, 4000)
-    const jdPart3 = full_job_description.substring(4000, 6000)
-    const jdPart4 = full_job_description.substring(6000, 8000)
-    const jdPart5 = full_job_description.substring(8000, 10000)
+    const jdPart1 = preservedText.substring(0, 2000)
+    const jdPart2 = preservedText.substring(2000, 4000)
+    const jdPart3 = preservedText.substring(4000, 6000)
+    const jdPart4 = preservedText.substring(6000, 8000)
+    const jdPart5 = preservedText.substring(8000, 10000)
 
     // Create the page with all parts
     const properties: any = {
