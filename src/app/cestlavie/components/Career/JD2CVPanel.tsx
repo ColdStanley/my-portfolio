@@ -158,8 +158,8 @@ function ExperienceForm({
     <div className="relative">
       
       <form onSubmit={handleSubmit} className="space-y-4">
-      {/* First Row: Title and Time */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* First Row: 6 Filter Boxes */}
+      <div className="grid grid-cols-6 gap-3">
         {/* Title */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -174,38 +174,6 @@ function ExperienceForm({
           >
             <option value="">Select a title...</option>
             {titleOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </div>
-        
-        {/* Time */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
-          <input
-            type="text"
-            value={formData.time}
-            onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-            placeholder="2020 - 2021"
-          />
-        </div>
-      </div>
-      
-      {/* Second Row: Type, Role Group, Target Role */}
-      <div className="grid grid-cols-3 gap-4">
-        {/* Type */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-          <select
-            value={formData.work_or_project}
-            onChange={(e) => setFormData(prev => ({ ...prev, work_or_project: e.target.value as 'work' | 'project' }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            <option value="">Select Type</option>
-            {workOrProjectOptions.map((option) => (
               <option key={option} value={option}>
                 {option}
               </option>
@@ -247,9 +215,51 @@ function ExperienceForm({
             ))}
           </select>
         </div>
+        
+        {/* Time */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+          <input
+            type="text"
+            value={formData.time}
+            onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            placeholder="2020 - 2021"
+          />
+        </div>
+        
+        {/* Work or Project */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Work/Project</label>
+          <select
+            value={formData.work_or_project}
+            onChange={(e) => setFormData(prev => ({ ...prev, work_or_project: e.target.value as 'work' | 'project' }))}  
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+          >
+            <option value="">Select Type</option>
+            {workOrProjectOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+        
+        {/* Comment */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Comment</label>
+          <input
+            type="text"
+            value={formData.comment}
+            onChange={(e) => setFormData(prev => ({ ...prev, comment: e.target.value }))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            placeholder="Additional notes..."
+          />
+        </div>
       </div>
       
-      {/* Third Row: Keywords */}
+      
+      {/* Second Row: Keywords */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Keywords</label>
         <div className="flex gap-2 mb-2">
@@ -299,16 +309,6 @@ function ExperienceForm({
         />
       </div>
       
-      {/* Fifth Row: Comment */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Comment</label>
-        <textarea
-          value={formData.comment}
-          onChange={(e) => setFormData(prev => ({ ...prev, comment: e.target.value }))}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[60px]"
-          placeholder="Additional notes..."
-        />
-      </div>
       
       {/* Actions */}
       <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
@@ -324,13 +324,18 @@ function ExperienceForm({
           disabled={saveStatus !== 'idle'}
           className={`w-24 px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
             saveStatus === 'saving'
-              ? 'bg-purple-300 text-purple-100 cursor-not-allowed'
+              ? 'bg-purple-400 text-white cursor-not-allowed'
               : saveStatus === 'saved'
-                ? 'bg-green-500 text-white cursor-not-allowed'
+                ? 'bg-purple-600 text-white cursor-not-allowed'
                 : 'bg-purple-500 text-white hover:bg-purple-600'
           }`}
         >
-          {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved ✓' : 'Save'}
+          {saveStatus === 'saving' ? (
+            <div className="flex items-center justify-center gap-2">
+              <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
+              <span>Saving...</span>
+            </div>
+          ) : saveStatus === 'saved' ? 'Saved ✓' : 'Save'}
         </button>
       </div>
     </form>
@@ -784,6 +789,10 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
   const [isSavingToPage, setIsSavingToPage] = useState<Record<string, boolean>>({})
   const [saveToPageError, setSaveToPageError] = useState<string>('')
   const [showSaveToPageError, setShowSaveToPageError] = useState(false)
+  
+  // Save all matched states
+  const [isSavingAllMatched, setIsSavingAllMatched] = useState(false)
+  const [saveAllProgress, setSaveAllProgress] = useState('')
 
   // Auto-resize textarea function
   const autoResizeTextarea = (textarea: HTMLTextAreaElement) => {
@@ -1908,8 +1917,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
         body: JSON.stringify({
           jdTitle: jdData.title,
           jdCompany: jdData.company,
-          experienceTitle: experience.title,
-          experienceContent: experience.experience,
+          experienceId: experience.id,
           companyKey: companyName,
           saveToField: true
         })
@@ -1998,6 +2006,50 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
       setShowCustomizeError(true)
     } finally {
       setIsGeneratingCustomized(prev => ({ ...prev, [experienceKey]: false }))
+    }
+  }
+
+  // Save all matched experiences
+  const handleSaveAllMatched = async () => {
+    if (!jdData.title?.trim() || !jdData.company?.trim()) {
+      setSaveToPageError('Missing job description title or company information.')
+      setShowSaveToPageError(true)
+      return
+    }
+
+    try {
+      setIsSavingAllMatched(true)
+      setSaveAllProgress('0/0')
+      setSaveToPageError('')
+      setShowSaveToPageError(false)
+      
+      const response = await fetch('/api/jd2cv/save-all-matched', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jdTitle: jdData.title,
+          jdCompany: jdData.company
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        // Show success feedback
+        setSaveAllProgress(`${data.processedCount}/${data.totalFound}`)
+        setTimeout(() => {
+          setSaveAllProgress('')
+        }, 2000)
+      } else {
+        setSaveToPageError(data.error || 'Failed to save matched experiences.')
+        setShowSaveToPageError(true)
+      }
+    } catch (error) {
+      console.error('Error saving all matched experiences:', error)
+      setSaveToPageError('Failed to save matched experiences. Please try again later.')
+      setShowSaveToPageError(true)
+    } finally {
+      setIsSavingAllMatched(false)
     }
   }
 
@@ -2134,7 +2186,11 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                 disabled={isFiltering || !filterTitle || !filterCompany || !optionsLoaded}
                 className="w-16 px-2 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50 text-xs font-medium transition-colors"
               >
-                {isFiltering ? 'Loading...' : 'Confirm'}
+                {isFiltering ? (
+                  <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent mx-auto"></div>
+                ) : (
+                  'Confirm'
+                )}
               </button>
               <button
                 onClick={handleClearFilter}
@@ -2146,15 +2202,13 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
             </div>
           </div>
           
-          {/* Status Messages */}
-          {(isSearching || isFiltering || isClearing) && (
+          {/* Status Messages - Only for Search and Clear, not Filtering */}
+          {(isSearching || isClearing) && (
             <div className="flex justify-end">
               <div className="flex items-center gap-2 text-xs text-purple-600">
                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600"></div>
                 <span>
-                  {isSearching ? 'Searching database...' : 
-                   isFiltering ? 'Loading record...' : 
-                   'Clearing form...'}
+                  {isSearching ? 'Searching database...' : 'Clearing form...'}
                 </span>
               </div>
             </div>
@@ -2582,6 +2636,20 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
             </div>
             <h3 className="text-xl font-semibold text-gray-800">Experience Hub</h3>
           </div>
+          <button
+            onClick={handleSaveAllMatched}
+            disabled={isSavingAllMatched || !jdData.title || !jdData.company}
+            className="px-6 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium whitespace-nowrap"
+          >
+            {isSavingAllMatched ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
+                <span>{saveAllProgress}</span>
+              </div>
+            ) : (
+              'Save All Matched'
+            )}
+          </button>
         </div>
         
         
@@ -2785,7 +2853,9 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                             className="w-32 px-3 py-1 text-xs bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-center"
                             title="Experience record → JD_records table → JD page display"
                           >
-                            {isSavingToPage[`${company.name}-${experience.id}`] ? 'Saving...' : 'Save'}
+                            {isSavingToPage[`${company.name}-${experience.id}`] ? (
+                              <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent mx-auto"></div>
+                            ) : 'Save'}
                           </button>
                           <button 
                             onClick={() => setEditingRecord(experience)}
