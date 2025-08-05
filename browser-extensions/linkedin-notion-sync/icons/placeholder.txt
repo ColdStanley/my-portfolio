@@ -1,0 +1,9 @@
+# Icon files needed:
+# - linkedin-notion-16.png (16x16 pixels)
+# - linkedin-notion-32.png (32x32 pixels) 
+# - linkedin-notion-48.png (48x48 pixels)
+# - linkedin-notion-128.png (128x128 pixels)
+
+# These should be LinkedIn + Notion themed icons
+# For now, you can use any 16x16, 32x32, 48x48, 128x128 PNG images
+# or temporarily remove the icons section from manifest.json
