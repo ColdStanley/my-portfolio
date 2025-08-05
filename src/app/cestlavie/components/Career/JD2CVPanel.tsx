@@ -17,6 +17,9 @@ interface JDData {
   role_group: string
   firm_type: string
   cv_pdf?: string
+  match_score?: number
+  created_time?: string
+  last_edited_time?: string
 }
 
 interface ExperienceRecord {
@@ -29,9 +32,172 @@ interface ExperienceRecord {
   time: string
   work_or_project: 'work' | 'project'
   comment: string
+  experienceId?: string
+  company?: string
+  startDate?: string
+  endDate?: string
+  bullets?: string[]
+  context?: string
+  industry?: string
+  skills?: string[]
+  achievements?: string[]
+  quantifiedResults?: string[]
+  similarity_score?: number
+  matching_keywords?: string[]
 }
 
 type CompanyName = 'stanleyhi' | 'savvy' | 'ncs' | 'icekredit' | 'huawei' | 'diebold' | 'fujixerox'
+
+// API Response Types
+interface ApiResponse<T = any> {
+  success: boolean
+  data?: T
+  error?: string
+  details?: string
+}
+
+interface KeySentencesResponse {
+  success: boolean
+  keySentences?: string
+  error?: string
+}
+
+interface KeywordsResponse {
+  success: boolean
+  keywords?: string
+  error?: string
+}
+
+interface SaveJDResponse {
+  success: boolean
+  id?: string
+  error?: string
+  details?: string
+}
+
+interface ExperienceListResponse {
+  success: boolean
+  data?: ExperienceRecord[]
+  error?: string
+}
+
+interface NotionPage {
+  id: string
+  title: string
+  company: string
+}
+
+interface JDSearchResponse {
+  success: boolean
+  data?: JDData[]
+  error?: string
+  total?: number
+}
+
+interface FieldOptionsResponse {
+  title_options?: string[]
+  role_group_options?: string[]
+  target_role_options?: string[]
+  work_or_project_options?: string[]
+}
+
+interface GenerateCustomizedResponse {
+  success: boolean
+  customized_experience?: string
+  error?: string
+}
+
+// Error handling utilities
+const handleApiError = (error: any, defaultMessage: string): string => {
+  if (error?.message) return error.message
+  if (typeof error === 'string') return error
+  return defaultMessage
+}
+
+const withErrorHandler = async <T>(
+  apiCall: () => Promise<Response>,
+  successHandler: (data: T) => void,
+  errorMessage: string = 'API call failed'
+): Promise<boolean> => {
+  try {
+    const response = await apiCall()
+    if (response.ok) {
+      const data: T = await response.json()
+      successHandler(data)
+      return true
+    } else {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.error || errorMessage)
+    }
+  } catch (error) {
+    process.env.NODE_ENV === 'development' && console.error('API Error:', error)
+    throw error
+  }
+}
+
+// Unified error display component
+const ErrorDisplay = ({ 
+  message, 
+  onRetry, 
+  retryLabel = "Retry" 
+}: { 
+  message: string
+  onRetry?: () => void
+  retryLabel?: string 
+}) => (
+  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
+    <p className="text-purple-600 text-sm mb-2">{message}</p>
+    {onRetry && (
+      <button 
+        onClick={onRetry}
+        className="w-24 px-4 py-2 bg-purple-500 text-white rounded-lg text-xs hover:bg-purple-600 whitespace-nowrap"
+      >
+        {retryLabel}
+      </button>
+    )}
+  </div>
+)
+
+// Data validation utilities
+const validateJDData = (data: Partial<JDData>): string[] => {
+  const errors: string[] = []
+  
+  if (!data.title?.trim()) {
+    errors.push('Job title is required')
+  }
+  
+  if (!data.company?.trim()) {
+    errors.push('Company name is required')
+  }
+  
+  if (!data.full_job_description?.trim()) {
+    errors.push('Job description is required')
+  } else if (data.full_job_description.length < 50) {
+    errors.push('Job description must be at least 50 characters')
+  }
+  
+  return errors
+}
+
+const validateExperienceData = (data: Partial<ExperienceRecord>): string[] => {
+  const errors: string[] = []
+  
+  if (!data.title?.trim()) {
+    errors.push('Experience title is required')
+  }
+  
+  if (!data.experience?.trim()) {
+    errors.push('Experience description is required')
+  } else if (data.experience.length < 10) {
+    errors.push('Experience description must be at least 10 characters')
+  }
+  
+  if (!data.role_group?.trim()) {
+    errors.push('Role group is required')
+  }
+  
+  return errors
+}
 
 // Company name mapping for database queries
 const getCompanyDatabaseName = (companyKey: CompanyName): string => {
@@ -102,7 +268,7 @@ function ExperienceForm({
         const databaseCompanyName = getCompanyDatabaseName(companyName)
         const response = await fetch(`/api/experience-hub/field-options?company=${encodeURIComponent(databaseCompanyName)}`)
         if (response.ok) {
-          const data = await response.json()
+          const data: FieldOptionsResponse = await response.json()
           setTitleOptions(data.title_options || [])
           setRoleGroupOptions(data.role_group_options || [])
           setTargetRoleOptions(data.target_role_options || [])
@@ -830,7 +996,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
   const loadJDData = async (jdId: string) => {
     try {
       const response = await fetch(`/api/jd2cv/get?id=${jdId}`)
-      const data = await response.json()
+      const data: ApiResponse<JDData> = await response.json()
       
       if (data.success && data.jd) {
         setJdData({
@@ -956,7 +1122,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
     try {
       const response = await fetch('/api/jd2cv/options')
       if (response.ok) {
-        const data = await response.json()
+        const data: ApiResponse<any> = await response.json()
         setAllTitles(data.titles || [])
         setAllCompanies(data.companies || [])
         setAvailableTitles(data.titles || [])
@@ -1112,7 +1278,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
       })
 
       if (response.ok) {
-        const data = await response.json()
+        const data: KeySentencesResponse = await response.json()
         if (data.success && data.keySentences) {
           setJdData(prev => ({ ...prev, jd_key_sentences: data.keySentences }))
           
@@ -1168,7 +1334,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
       })
 
       if (response.ok) {
-        const data = await response.json()
+        const data: KeywordsResponse = await response.json()
         if (data.success && data.keywords) {
           setJdData(prev => ({ ...prev, keywords_from_sentences: data.keywords }))
           
@@ -1970,7 +2136,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
 
 
   // Save experience to JD page
-  const handleSaveToPage = async (companyName: CompanyName, experience: any) => {
+  const handleSaveToPage = async (companyName: CompanyName, experience: ExperienceRecord) => {
     // Validate required data
     if (!jdData.title?.trim() || !jdData.company?.trim()) {
       setSaveToPageError('Missing job description title or company information.')
@@ -2022,7 +2188,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
   }
 
   // Generate customized experience
-  const handleGenerateCustomizedExperience = async (companyName: CompanyName, experience: any) => {
+  const handleGenerateCustomizedExperience = async (companyName: CompanyName, experience: ExperienceRecord) => {
     // Validate required data
     if (!jdData.keywords_from_sentences?.trim()) {
       setCustomizeError('Missing keywords from job description. Please generate keywords first.')
