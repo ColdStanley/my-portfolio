@@ -175,15 +175,13 @@ export default function ArticleReader({ article }: ArticleReaderProps) {
     <div className="flex flex-col min-h-full">
       {/* Article Header */}
       <div className="p-6 pb-4 border-b border-gray-200 bg-white flex-shrink-0">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">{article.title}</h1>
-        <div className="flex items-center gap-3 text-sm text-gray-500">
-          <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded font-medium">
-            Learning: {article.source_language.toUpperCase()}
-          </span>
-          <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded font-medium">
-            Native: {article.native_language.toUpperCase()}
-          </span>
-          <span>{new Date(article.created_at).toLocaleDateString()}</span>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">{article.title}</h1>
+          <div className="text-sm text-gray-500">
+            Learning: {article.source_language.toUpperCase()} | 
+            Native: {article.native_language.toUpperCase()} | 
+            {new Date(article.created_at).toLocaleDateString()}
+          </div>
         </div>
       </div>
 

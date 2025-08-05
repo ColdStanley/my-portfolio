@@ -70,21 +70,9 @@ interface ReadLinguaState {
 
 // Default prompt templates
 const DEFAULT_PROMPT_TEMPLATES: PromptTemplates = {
-  quick: 'Provide a quick, concise explanation of "{text}" in {nativeLang}. Focus on basic meaning and pronunciation if relevant. Keep it under 100 words.',
-  standard: `Provide a comprehensive explanation of "{text}" in {nativeLang}. Include:
-1. Meaning and translation
-2. Grammar structure (if applicable)  
-3. Usage examples
-4. Common contexts
-Keep it informative but accessible.`,
-  deep: `Provide an in-depth analysis of "{text}" in {nativeLang}. Include:
-1. Detailed meaning and nuances
-2. Etymology or origin
-3. Grammar and syntax analysis
-4. Cultural context and usage
-5. Similar expressions or alternatives
-6. Advanced usage examples
-Be thorough and educational.`,
+  quick: '简明扼要的方式讲解 "{text}" in {nativeLang}. 通过英文例句的方式来讲解。（不要开场白，直接讲内容）',
+  standard: '通过例句的方式讲解"{text}"，以便我能理解和掌握，确保我能灵活运用。 （不要开场白，直接讲内容）',
+  deep: '深度讲解一下"{text}"，以便我能彻底的完全的掌握。你可以从以下几个方面（当然也可以更多其他你认为重要的方面）：经典例句，使用场景，句子结构，语法点，甚至小测试。（不要开场白，直接讲内容）',
   ask_ai: `Context: "{text}" ({sourceLang} text)
 User question: {question}
 Please answer the user's question about this text in {nativeLang}. Be helpful and detailed.`

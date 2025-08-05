@@ -48,62 +48,50 @@ export default function TextSelectionToolbar({
 
   return (
     <div
-      className="fixed z-50 bg-white rounded-lg shadow-lg border border-gray-200 p-3"
+      className="fixed z-50 bg-white rounded-lg shadow-lg border border-gray-200 p-3 min-w-48"
       style={{
-        left: position.x - 150,
-        top: position.y - 60,
+        left: position.x,
+        top: position.y - 80,
         transform: 'translateX(-50%)'
       }}
     >
       {!showAskAI ? (
         <>
-          {/* Quick Buttons */}
-          <div className="flex gap-2 mb-3">
+          {/* Selected Text - Prominent Display */}
+          <div className="text-lg font-bold text-gray-900 mb-3 text-center">
+            "{selectedText}"
+          </div>
+          
+          {/* Action Buttons - 2x2 Grid */}
+          <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => handleQueryType('quick')}
               disabled={isSubmitting}
-              className="px-3 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300 text-white rounded font-medium whitespace-nowrap flex items-center gap-1 text-sm"
+              className="px-3 py-2 bg-white hover:bg-purple-50 disabled:bg-gray-100 text-purple-700 border border-purple-200 hover:border-purple-300 rounded-md font-medium text-xs shadow-sm transition-all"
             >
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd"/>
-              </svg>
               Quick
             </button>
             <button
               onClick={() => handleQueryType('standard')}
               disabled={isSubmitting}
-              className="px-3 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300 text-white rounded font-medium whitespace-nowrap flex items-center gap-1 text-sm"
+              className="px-3 py-2 bg-white hover:bg-purple-50 disabled:bg-gray-100 text-purple-700 border border-purple-200 hover:border-purple-300 rounded-md font-medium text-xs shadow-sm transition-all"
             >
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
               Standard
             </button>
             <button
               onClick={() => handleQueryType('deep')}
               disabled={isSubmitting}
-              className="px-3 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300 text-white rounded font-medium whitespace-nowrap flex items-center gap-1 text-sm"
+              className="px-3 py-2 bg-white hover:bg-purple-50 disabled:bg-gray-100 text-purple-700 border border-purple-200 hover:border-purple-300 rounded-md font-medium text-xs shadow-sm transition-all"
             >
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-              </svg>
               Deep
             </button>
             <button
               onClick={() => handleQueryType('ask_ai')}
               disabled={isSubmitting}
-              className="px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 text-white rounded font-medium whitespace-nowrap flex items-center gap-1 text-sm"
+              className="px-3 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300 text-white border border-purple-500 hover:border-purple-600 rounded-md font-medium text-xs shadow-sm transition-all"
             >
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd"/>
-              </svg>
               Ask AI
             </button>
-          </div>
-          
-          {/* Selected Text Preview */}
-          <div className="text-xs text-gray-500 max-w-xs truncate">
-            "{selectedText}"
           </div>
         </>
       ) : (

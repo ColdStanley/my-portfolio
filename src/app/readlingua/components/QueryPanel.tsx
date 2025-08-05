@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { marked } from 'marked'
 import { useReadLinguaStore } from '../store/useReadLinguaStore'
 import { queryApi } from '../utils/apiClient'
@@ -7,6 +8,7 @@ import { supabase } from '../utils/supabaseClient'
 
 export default function QueryPanel() {
   const { queries, selectedQuery, setSelectedQuery, setShowQueryPanel, removeQuery } = useReadLinguaStore()
+  const [isPlaying, setIsPlaying] = useState(false)
 
   const handleQueryClick = (query: any) => {
     setSelectedQuery(query)
@@ -84,6 +86,43 @@ export default function QueryPanel() {
     }
   }
 
+  const handlePlayPronunciation = async (text: string) => {
+    if (isPlaying) return
+    
+    setIsPlaying(true)
+    try {
+      const response = await fetch('/api/readlingua/text-to-speech', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      })
+      
+      if (response.ok) {
+        const audioBlob = await response.blob()
+        const audioUrl = URL.createObjectURL(audioBlob)
+        const audio = new Audio(audioUrl)
+        
+        audio.onended = () => {
+          setIsPlaying(false)
+          URL.revokeObjectURL(audioUrl)
+        }
+        
+        audio.onerror = () => {
+          setIsPlaying(false)
+          URL.revokeObjectURL(audioUrl)
+        }
+        
+        await audio.play()
+      } else {
+        console.error('Failed to get audio')
+        setIsPlaying(false)
+      }
+    } catch (error) {
+      console.error('Error playing pronunciation:', error)
+      setIsPlaying(false)
+    }
+  }
+
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Header */}
@@ -117,21 +156,21 @@ export default function QueryPanel() {
           <>
             {/* Quick Queries */}
             {queries.filter(q => q.query_type === 'quick').length > 0 && (
-              <div>
-                <div className="text-xs font-medium text-purple-700 mb-1">
-                  Quick ({queries.filter(q => q.query_type === 'quick').length})
+              <div className="flex items-start">
+                <div className="w-20 text-xs font-medium text-purple-700 flex-shrink-0 pt-1">
+                  Quick ({queries.filter(q => q.query_type === 'quick').length}):
                 </div>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1 flex-1">
                   {queries
                     .filter(q => q.query_type === 'quick' && q.selected_text)
                     .map((query) => (
                       <div
                         key={query.id}
                         onClick={() => handleQueryClick(query)}
-                        className={`group relative cursor-pointer px-2 py-1 rounded text-xs font-medium transition-colors ${
+                        className={`group relative cursor-pointer px-2 py-1 rounded text-xs font-medium transition-all shadow-md border-2 ${
                           selectedQuery?.id === query.id
-                            ? 'bg-purple-500 text-white'
-                            : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                            ? 'bg-purple-500 text-white shadow-lg border-purple-600'
+                            : 'bg-white text-purple-700 hover:shadow-lg border-purple-300 hover:border-purple-400'
                         }`}
                       >
                         <span className="block truncate max-w-24">
@@ -152,21 +191,21 @@ export default function QueryPanel() {
 
             {/* Standard Queries */}
             {queries.filter(q => q.query_type === 'standard').length > 0 && (
-              <div>
-                <div className="text-xs font-medium text-purple-800 mb-1">
-                  Standard ({queries.filter(q => q.query_type === 'standard').length})
+              <div className="flex items-start">
+                <div className="w-20 text-xs font-medium text-purple-800 flex-shrink-0 pt-1">
+                  Standard ({queries.filter(q => q.query_type === 'standard').length}):
                 </div>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1 flex-1">
                   {queries
                     .filter(q => q.query_type === 'standard' && q.selected_text)
                     .map((query) => (
                       <div
                         key={query.id}
                         onClick={() => handleQueryClick(query)}
-                        className={`group relative cursor-pointer px-2 py-1 rounded text-xs font-medium transition-colors ${
+                        className={`group relative cursor-pointer px-2 py-1 rounded text-xs font-medium transition-all shadow-md border-2 ${
                           selectedQuery?.id === query.id
-                            ? 'bg-purple-600 text-white'
-                            : 'bg-purple-200 text-purple-800 hover:bg-purple-300'
+                            ? 'bg-purple-500 text-white shadow-lg border-purple-600'
+                            : 'bg-white text-purple-700 hover:shadow-lg border-purple-300 hover:border-purple-400'
                         }`}
                       >
                         <span className="block truncate max-w-32">
@@ -187,21 +226,21 @@ export default function QueryPanel() {
 
             {/* Deep Queries */}
             {queries.filter(q => q.query_type === 'deep').length > 0 && (
-              <div>
-                <div className="text-xs font-medium text-purple-900 mb-1">
-                  Deep ({queries.filter(q => q.query_type === 'deep').length})
+              <div className="flex items-start">
+                <div className="w-20 text-xs font-medium text-purple-900 flex-shrink-0 pt-1">
+                  Deep ({queries.filter(q => q.query_type === 'deep').length}):
                 </div>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1 flex-1">
                   {queries
                     .filter(q => q.query_type === 'deep' && q.selected_text)
                     .map((query) => (
                       <div
                         key={query.id}
                         onClick={() => handleQueryClick(query)}
-                        className={`group relative cursor-pointer px-2 py-1 rounded text-xs font-medium transition-colors ${
+                        className={`group relative cursor-pointer px-2 py-1 rounded text-xs font-medium transition-all shadow-md border-2 ${
                           selectedQuery?.id === query.id
-                            ? 'bg-purple-700 text-white'
-                            : 'bg-purple-300 text-purple-900 hover:bg-purple-400 hover:text-white'
+                            ? 'bg-purple-500 text-white shadow-lg border-purple-600'
+                            : 'bg-white text-purple-700 hover:shadow-lg border-purple-300 hover:border-purple-400'
                         }`}
                       >
                         <span className="block truncate max-w-40">
@@ -239,25 +278,44 @@ export default function QueryPanel() {
               </svg>
             </button>
 
-            <div className="flex items-center gap-2 mb-1 pr-6">
-              <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${getQueryTypeColor(selectedQuery.query_type)}`}>
-                {getQueryTypeLabel(selectedQuery.query_type)}
-              </span>
-              <span className="text-[10px] text-gray-500">
-                {new Date(selectedQuery.created_at).toLocaleString([], { 
+            <div className="flex items-center justify-between pr-6">
+              {/* Left: Query Content with Speaker */}
+              <div className="flex items-center gap-2">
+                {selectedQuery.selected_text && (
+                  <>
+                    <div className="text-lg font-bold text-gray-900">
+                      "{selectedQuery.selected_text}"
+                    </div>
+                    <button
+                      onClick={() => handlePlayPronunciation(selectedQuery.selected_text!)}
+                      disabled={isPlaying}
+                      className="w-6 h-6 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-full flex items-center justify-center transition-colors disabled:opacity-50"
+                      title="Play pronunciation"
+                    >
+                      {isPlaying ? (
+                        <svg className="w-4 h-4 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.787L4.866 13.1a.5.5 0 00-.316-.1H2a1 1 0 01-1-1V8a1 1 0 011-1h2.55a.5.5 0 00.316-.1l3.517-3.687zm7.316 1.19a1 1 0 011.414 0 8.97 8.97 0 010 12.684 1 1 0 11-1.414-1.414 6.97 6.97 0 000-9.856 1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0 4.985 4.985 0 010 7.072 1 1 0 11-1.415-1.414 2.985 2.985 0 000-4.244 1 1 0 010-1.414z" clipRule="evenodd"/>
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.787L4.866 13.1a.5.5 0 00-.316-.1H2a1 1 0 01-1-1V8a1 1 0 011-1h2.55a.5.5 0 00.316-.1l3.517-3.687zm7.316 1.19a1 1 0 011.414 0 8.97 8.97 0 010 12.684 1 1 0 11-1.414-1.414 6.97 6.97 0 000-9.856 1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0 4.985 4.985 0 010 7.072 1 1 0 11-1.415-1.414 2.985 2.985 0 000-4.244 1 1 0 010-1.414z" clipRule="evenodd"/>
+                        </svg>
+                      )}
+                    </button>
+                  </>
+                )}
+              </div>
+              
+              {/* Right: Query Type and Time */}
+              <div className="text-xs text-gray-400 text-right">
+                {getQueryTypeLabel(selectedQuery.query_type)} | {new Date(selectedQuery.created_at).toLocaleString([], { 
                   month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
                 })}
-              </span>
+              </div>
             </div>
             
-            {selectedQuery.selected_text && (
-              <div className="text-xs font-medium text-gray-800 mb-1">
-                "{selectedQuery.selected_text}"
-              </div>
-            )}
-            
             {selectedQuery.user_question && (
-              <div className="text-xs text-purple-700 italic">
+              <div className="text-sm text-purple-700 italic mt-2">
                 Q: {selectedQuery.user_question}
               </div>
             )}
