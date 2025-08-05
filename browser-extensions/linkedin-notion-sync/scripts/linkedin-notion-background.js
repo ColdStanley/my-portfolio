@@ -7,8 +7,8 @@ console.log('🔄 LinkedIn to Notion Background Script - Service Worker Started'
 
 // Configuration
 const CONFIG = {
-  // Default to localhost for development, can be updated via popup settings
-  API_BASE_URL: 'http://localhost:3000',
+  // Default to your production URL, can be updated via popup settings
+  API_BASE_URL: 'https://your-vercel-app-url.vercel.app',
   ENDPOINTS: {
     SAVE_JD: '/api/jd2cv/save-jd',
     SEARCH_JD: '/api/jd2cv/search'

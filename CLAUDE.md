@@ -189,6 +189,43 @@ The codebase prioritizes rapid development with build-time flexibility:
 - **Minimal Visual Clutter**: Avoid unnecessary decorative elements
 - **Consistent Containers**: Use cards instead of complex nested layouts
 
+#### 4. Interface Navigation Pattern
+- **Tab-Based Navigation**: Prefer tabs over page navigation to reduce jumps
+- **Single-Page Experience**: Keep related functionality within one interface
+- **Minimal Navigation**: Avoid unnecessary route changes and redirects
+
+#### 5. Minimalist Design Philosophy
+- **Extreme Simplicity**: Remove all non-essential elements
+- **Essential-Only Features**: Only include features that directly serve user goals
+- **Clean Visual Hierarchy**: Clear information structure without decoration
+
+#### 6. Compact Layout Standards
+- **Space Efficiency**: Prioritize vertical space conservation
+- **Tight Spacing**: Use `p-4`, `gap-3`, `mb-4` for compact layouts
+- **Dense Information**: Present maximum information in minimum space
+- **Reduced Padding**: Use smaller padding values when appropriate
+
+#### 7. Button Icon Requirements (CRITICAL)
+- **Mandatory SVG Icons**: ALL buttons MUST include consistent SVG icons
+- **Icon Positioning**: Icons placed to the left of button text
+- **Standard Icon Set**: Use consistent icon style across all buttons
+- **Icon Size**: Uniform `w-4 h-4` or `w-5 h-5` for all button icons
+
+```tsx
+// ✅ Correct - Button with SVG icon
+<button className="w-32 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium whitespace-nowrap flex items-center gap-2">
+  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+    <path d="M10 12l-4-4h8l-4 4z"/>
+  </svg>
+  Save
+</button>
+
+// ❌ Wrong - Button without icon
+<button className="w-32 px-4 py-2 bg-purple-500 text-white rounded-lg">
+  Save
+</button>
+```
+
 ### Loading States
 - **Consistent Loading Animation**: Use circular spinner animation for ALL loading states across the application
 - **No Skeleton Loaders**: Avoid skeleton screens, bars, or other loading patterns

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 interface JDRecord {
@@ -31,6 +31,10 @@ export default function DashboardView() {
   const [filterRole, setFilterRole] = useState('')
   const [filterFirm, setFilterFirm] = useState('')
   const [filterScore, setFilterScore] = useState('')
+  
+  // Expand states
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
+  const [allExpanded, setAllExpanded] = useState(false)
 
   // Fetch JD list on component mount
   useEffect(() => {
@@ -101,6 +105,70 @@ export default function DashboardView() {
   // Get unique values for filter options
   const getUniqueValues = (field: keyof JDRecord) => {
     return [...new Set(jdList.map(jd => jd[field]).filter(Boolean))]
+  }
+
+  // Handle row expand/collapse
+  const toggleRowExpansion = (jdId: string) => {
+    const newExpandedRows = new Set(expandedRows)
+    if (newExpandedRows.has(jdId)) {
+      newExpandedRows.delete(jdId)
+    } else {
+      newExpandedRows.add(jdId)
+    }
+    setExpandedRows(newExpandedRows)
+  }
+
+  // Handle expand/collapse all
+  const toggleAllExpansion = () => {
+    if (allExpanded) {
+      setExpandedRows(new Set())
+      setAllExpanded(false)
+    } else {
+      const allIds = new Set(filteredJdList.map(jd => jd.id))
+      setExpandedRows(allIds)
+      setAllExpanded(true)
+    }
+  }
+
+  // Format keywords for display - horizontal groups
+  const formatKeywords = (keywords: string) => {
+    if (!keywords) return <div className="text-gray-500 text-xs">No keywords available</div>
+    
+    // Parse keywords into groups
+    const lines = keywords.split('\n').filter(line => line.trim())
+    const groups: { title: string; items: string[] }[] = []
+    let currentGroup: { title: string; items: string[] } | null = null
+    
+    lines.forEach(line => {
+      const trimmedLine = line.trim()
+      if (trimmedLine.startsWith('Group')) {
+        if (currentGroup) groups.push(currentGroup)
+        currentGroup = { title: trimmedLine, items: [] }
+      } else if (trimmedLine.match(/^\d+\./) && currentGroup) {
+        currentGroup.items.push(trimmedLine)
+      }
+    })
+    
+    if (currentGroup) groups.push(currentGroup)
+    
+    return (
+      <div className="grid grid-cols-3 gap-4">
+        {groups.map((group, groupIndex) => (
+          <div key={groupIndex} className="bg-purple-50 rounded-lg p-3">
+            <h5 className="font-semibold text-purple-700 text-xs mb-2 truncate" title={group.title}>
+              {group.title}
+            </h5>
+            <ul className="space-y-1">
+              {group.items.map((item, itemIndex) => (
+                <li key={itemIndex} className="text-xs text-gray-700 truncate" title={item}>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    )
   }
 
   // Render score with stars only (5-point scale)
@@ -296,6 +364,23 @@ export default function DashboardView() {
         </div>
       </div>
 
+      {/* Expand/Collapse All Controls */}
+      <div className="mb-3 flex justify-end">
+        <button
+          onClick={toggleAllExpansion}
+          className="w-28 px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-xs font-medium whitespace-nowrap flex items-center gap-1 justify-center"
+        >
+          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+            {allExpanded ? (
+              <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+            ) : (
+              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+            )}
+          </svg>
+          {allExpanded ? 'Collapse All' : 'Expand All'}
+        </button>
+      </div>
+
       {filteredJdList.length === 0 ? (
         <div className="text-center py-6">
           <p className="text-gray-500 text-sm">No job descriptions found.</p>
@@ -320,52 +405,76 @@ export default function DashboardView() {
             </thead>
             <tbody>
               {filteredJdList.map((jd, index) => (
-                <tr 
-                  key={jd.id} 
-                  className={`border-b hover:bg-purple-50 cursor-pointer ${
-                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                  }`}
-                  onDoubleClick={() => handleViewJD(jd)}
-                >
-                  <td className="px-2 py-1.5 text-xs font-medium text-gray-900">
-                    {jd.title || 'Untitled'}
-                  </td>
-                  <td className="px-2 py-1.5 text-xs text-gray-700">
-                    {jd.company || 'No company'}
-                  </td>
-                  <td className="px-2 py-1.5">
-                    {renderStatus(jd.application_stage)}
-                  </td>
-                  <td className="px-2 py-1.5">
-                    {renderStatus(jd.role_group)}
-                  </td>
-                  <td className="px-2 py-1.5">
-                    {renderStatus(jd.firm_type)}
-                  </td>
-                  <td className="px-2 py-1.5">
-                    {renderScore(jd.match_score)}
-                  </td>
-                  <td className="px-2 py-1.5 text-xs text-gray-700 max-w-32">
-                    {jd.comment ? (
-                      <span title={jd.comment}>
-                        {jd.comment.length > 25 ? jd.comment.substring(0, 25) + '...' : jd.comment}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="px-2 py-1.5 text-center">
-                    <button
-                      onClick={() => handleViewJD(jd)}
-                      className="text-purple-500 hover:text-purple-700 hover:bg-purple-50 rounded-full p-1 transition-colors"
-                      title="View JD details"
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <React.Fragment key={jd.id}>
+                  <tr 
+                    className={`border-b hover:bg-purple-50 cursor-pointer ${
+                      index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                    }`}
+                    onClick={() => toggleRowExpansion(jd.id)}
+                  >
+                    <td className="px-2 py-1.5 text-xs font-medium text-gray-900 flex items-center gap-1">
+                      <svg 
+                        className={`w-3 h-3 text-purple-500 transition-transform ${
+                          expandedRows.has(jd.id) ? 'rotate-90' : ''
+                        }`} 
+                        fill="currentColor" 
+                        viewBox="0 0 20 20"
+                      >
+                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                       </svg>
-                    </button>
-                  </td>
-                </tr>
+                      {jd.title || 'Untitled'}
+                    </td>
+                    <td className="px-2 py-1.5 text-xs text-gray-700">
+                      {jd.company || 'No company'}
+                    </td>
+                    <td className="px-2 py-1.5">
+                      {renderStatus(jd.application_stage)}
+                    </td>
+                    <td className="px-2 py-1.5">
+                      {renderStatus(jd.role_group)}
+                    </td>
+                    <td className="px-2 py-1.5">
+                      {renderStatus(jd.firm_type)}
+                    </td>
+                    <td className="px-2 py-1.5">
+                      {renderScore(jd.match_score)}
+                    </td>
+                    <td className="px-2 py-1.5 text-xs text-gray-700 max-w-32">
+                      {jd.comment ? (
+                        <span title={jd.comment}>
+                          {jd.comment.length > 25 ? jd.comment.substring(0, 25) + '...' : jd.comment}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-2 py-1.5 text-center">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleViewJD(jd)
+                        }}
+                        className="text-purple-500 hover:text-purple-700 hover:bg-purple-50 rounded-full p-1 transition-colors"
+                        title="View JD details"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                  
+                  {/* Expanded Keywords Row */}
+                  {expandedRows.has(jd.id) && (
+                    <tr className="bg-purple-50">
+                      <td colSpan={8} className="px-4 py-3">
+                        <div className="bg-white rounded-lg p-3 shadow-sm">
+                          {formatKeywords(jd.keywords_from_sentences)}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>
