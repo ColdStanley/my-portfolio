@@ -189,6 +189,11 @@ The codebase prioritizes rapid development with build-time flexibility:
 - **Minimal Visual Clutter**: Avoid unnecessary decorative elements
 - **Consistent Containers**: Use cards instead of complex nested layouts
 
+### Loading States
+- **Consistent Loading Animation**: Use circular spinner animation for ALL loading states across the application
+- **No Skeleton Loaders**: Avoid skeleton screens, bars, or other loading patterns
+- **Standard Implementation**: Use spinning circle with purple theme colors
+
 ### Forbidden Patterns
 - **Colors**: Never use blue, green, red, yellow, indigo, or dark purples (800+)
 - **Lines**: Avoid `border-t`, `border-b`, dividers - use cards and spacing instead  
@@ -231,4 +236,28 @@ The codebase prioritizes rapid development with build-time flexibility:
 - The application integrates multiple external APIs and requires proper environment variable configuration
 - Each module can be developed independently due to the modular architecture
 - State management is deliberately kept simple with Zustand to avoid over-engineering
+- **All state management use Zustand**: Replace all useState with Zustand stores, avoid React useState completely
 - The UI emphasizes responsive design with mobile-first approaches across all modules
+
+## Global Development Rules
+
+**CRITICAL - NEVER VIOLATE THESE RULES**:
+- **No Hard-coding**: Avoid hardcoded values, use constants and variables
+- **Purple-Only Color Scheme**: ALL colors must be purple variants - no blue, green, red, yellow, etc.
+- **No Emojis**: Never use emojis in any code, UI, or content
+- **Consistent Theming**: All components must follow the purple color hierarchy
+- **Answer based on code facts, not speculation**: When debugging, check actual code implementation rather than guessing possible causes
+
+## Component Size Guidelines
+
+**Recommended Component Line Counts**:
+- **Simple Components**: 50-100 lines (buttons, inputs, cards)
+- **Medium Components**: 100-200 lines (forms, list items, modals)
+- **Complex Components**: 200-300 lines (page-level components, complex interactions)
+
+**When exceeding 300 lines, consider refactoring**:
+- Extract sub-components
+- Move logic to custom hooks
+- Split into multiple files
+
+**Core principle**: Follow single responsibility principle rather than strict line limits.

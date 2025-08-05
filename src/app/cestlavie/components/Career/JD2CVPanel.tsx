@@ -161,11 +161,11 @@ function ExperienceForm({
       
       <form onSubmit={handleSubmit} className="space-y-4">
       {/* First Row: 6 Filter Boxes */}
-      <div className="grid grid-cols-6 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
         {/* Title */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Title <span className="text-red-500">*</span>
+            Title <span className="text-purple-500">*</span>
           </label>
           <select
             value={formData.title}
@@ -276,7 +276,7 @@ function ExperienceForm({
           <button
             type="button"
             onClick={addKeyword}
-            className="w-16 px-2 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 text-xs"
+            className="w-16 px-2 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 text-xs whitespace-nowrap"
           >
             Add
           </button>
@@ -300,7 +300,7 @@ function ExperienceForm({
       {/* Fourth Row: Experience */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Experience <span className="text-red-500">*</span>
+          Experience <span className="text-purple-500">*</span>
         </label>
         <textarea
           value={formData.experience}
@@ -1450,7 +1450,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
         // Reset match score
         setMatchScore(0)
         
-        console.log('Page deleted successfully')
+        process.env.NODE_ENV === 'development' && console.log('Page deleted successfully')
       } else {
         console.error('Failed to delete page')
       }
@@ -1478,7 +1478,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
       
       if (response.ok) {
         setMatchScore(score)
-        console.log('Match score saved successfully')
+        process.env.NODE_ENV === 'development' && console.log('Match score saved successfully')
       } else {
         console.error('Failed to save match score')
       }
@@ -2007,7 +2007,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
       
       if (data.success) {
         // Show success feedback (could be a toast or brief message)
-        console.log('Experience saved successfully:', data.message)
+        process.env.NODE_ENV === 'development' && console.log('Experience saved successfully:', data.message)
       } else {
         setSaveToPageError(data.error || 'Failed to save experience to page.')
         setShowSaveToPageError(true)
@@ -2073,7 +2073,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
       
       if (data.success) {
         // Show success feedback and refresh the experience data
-        console.log('Customized experience generated successfully:', data.notionId)
+        process.env.NODE_ENV === 'development' && console.log('Customized experience generated successfully:', data.notionId)
         // Refresh the experience data for this company
         await fetchExperienceData(companyName)
       } else {
@@ -2174,7 +2174,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
         <>
       <div className="flex items-start justify-between mb-8">
         {/* Left 50%: Title and Description */}
-        <div className="w-1/2 flex-shrink-0 flex flex-col justify-between">
+        <div className="w-full md:w-1/2 flex-shrink-0 flex flex-col justify-between">
           <h2 className="text-3xl font-bold text-gray-800">JD2CV</h2>
           <div className="flex items-center gap-2 mt-8">
             <span className="text-xs font-medium text-gray-700 w-20 flex-shrink-0">Powered by</span>
@@ -2321,7 +2321,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
           {(isSearching || isClearing) && (
             <div className="flex justify-end">
               <div className="flex items-center gap-2 text-xs text-purple-600">
-                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600"></div>
+                <div className="animate-spin rounded-full h-3 w-3 border-2 border-purple-600 border-t-transparent"></div>
                 <span>
                   {isSearching ? 'Searching database...' : 'Clearing form...'}
                 </span>
@@ -2350,7 +2350,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
               {/* Title Row */}
               <div className="flex items-start gap-4">
                 <label className="text-sm font-medium text-gray-700 w-20 flex-shrink-0">
-                  Title <span className="text-red-500">*</span>
+                  Title <span className="text-purple-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -2368,7 +2368,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
               {/* Company Row */}
               <div className="flex items-start gap-4">
                 <label className="text-sm font-medium text-gray-700 w-20 flex-shrink-0">
-                  Company <span className="text-red-500">*</span>
+                  Company <span className="text-purple-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -2385,7 +2385,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
             </div>
             
             {/* Right: Operations Area - Tab Layout */}
-            <div className="w-1/2 flex flex-col">
+            <div className="w-full md:w-1/2 flex flex-col">
               {/* Tab Navigation */}
               <div className="mb-2.5">
                 <nav className="flex justify-between" role="tablist">
@@ -2417,7 +2417,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                   /* Details Tab - Score + Comment */
                   <div className="space-y-2 h-full">
                     {/* Row 1: Score */}
-                    <div className="grid grid-cols-5 gap-2 items-center">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-2 items-center">
                       <label className="col-span-1 text-xs font-medium text-gray-700">Score:</label>
                       <div className="col-span-3 flex items-center gap-0.5">
                         {[1, 2, 3, 4, 5].map((star) => (
@@ -2444,7 +2444,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                       </button>
                     </div>
                     {/* Row 2: Comment */}
-                    <div className="grid grid-cols-5 gap-2 items-center">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-2 items-center">
                       <label className="col-span-1 text-xs font-medium text-gray-700">Comment:</label>
                       <input
                         type="text"
@@ -2517,7 +2517,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                   /* PDF Tab - Multi-row Layout */
                   <div className="space-y-2 h-full">
                     {/* Row 1: Current PDF */}
-                    <div className="grid grid-cols-5 gap-2 items-center">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-2 items-center">
                       <label className="col-span-1 text-xs font-medium text-gray-700">PDF:</label>
                       <div className="col-span-3">
                         {jdData.cv_pdf ? (
@@ -2538,7 +2538,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                       </div>
                     </div>
                     {/* Row 2: Upload */}
-                    <div className="grid grid-cols-5 gap-2 items-center">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-2 items-center">
                       <label className="col-span-1 text-xs font-medium text-gray-700">Upload:</label>
                       <input
                         type="file"
@@ -2557,7 +2557,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                     {/* Row 3: Status */}
                     <div className="text-xs">
                       {uploadSuccess && (
-                        <span className={uploadSuccess.includes('success') ? 'text-green-600' : 'text-red-600'}>
+                        <span className={uploadSuccess.includes('success') ? 'text-purple-600' : 'text-purple-600'}>
                           {uploadSuccess}
                         </span>
                       )}
@@ -2589,7 +2589,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
                       <button
                         onClick={handleDeletePage}
                         disabled={isDeleting}
-                        className="flex-1 flex items-center justify-center px-2 py-2 text-purple-600 border border-purple-300 rounded hover:border-purple-400 hover:text-purple-700 transition-colors text-xs font-medium disabled:opacity-50"
+                        className="w-32 flex items-center justify-center px-2 py-2 text-purple-600 border border-purple-300 rounded hover:border-purple-400 hover:text-purple-700 transition-colors text-xs font-medium disabled:opacity-50 whitespace-nowrap"
                       >
                         {isDeleting ? 'Deleting...' : 'Delete'}
                       </button>
@@ -2617,7 +2617,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
 
         <div className="mb-8">
           <label className="block text-sm font-medium text-gray-700 mb-4">
-            Full Job Description <span className="text-red-500">*</span>
+            Full Job Description <span className="text-purple-500">*</span>
           </label>
           
           {/* JD Tab Navigation */}
@@ -2755,7 +2755,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
           <button
             onClick={handleSaveAllMatched}
             disabled={isSavingAllMatched || !jdData.title || !jdData.company}
-            className="px-6 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium whitespace-nowrap"
+            className="w-32 px-6 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium whitespace-nowrap"
           >
             {isSavingAllMatched ? (
               <div className="flex items-center justify-center gap-2">
@@ -2872,7 +2872,7 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
               <div className="space-y-4 min-h-[400px] transition-all duration-300">
                 {loading ? (
                   <div className="flex items-center justify-center p-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-purple-500 border-t-transparent"></div>
                     <span className="ml-3 text-gray-600">Loading experiences...</span>
                   </div>
                 ) : filteredExperiences.length === 0 ? (
@@ -3045,20 +3045,20 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
           {/* Background overlay */}
           <div className="absolute inset-0 bg-black bg-opacity-25" onClick={() => setShowCustomizeError(false)}></div>
           {/* Modal content */}
-          <div className="relative bg-white rounded-lg shadow-xl border border-red-200 p-6 max-w-md w-full">
+          <div className="relative bg-white rounded-lg shadow-xl border border-purple-200 p-6 max-w-md w-full">
             <div className="flex items-center mb-4">
-              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-3">
-                <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-red-800">Generation Error</h3>
+              <h3 className="text-lg font-semibold text-purple-800">Generation Error</h3>
             </div>
             <p className="text-gray-700 mb-6">{customizeError}</p>
             <div className="flex justify-end">
               <button
                 onClick={() => setShowCustomizeError(false)}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors duration-200"
+                className="w-24 px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors duration-200 whitespace-nowrap"
               >
                 Close
               </button>
@@ -3082,20 +3082,20 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
           {/* Background overlay */}
           <div className="absolute inset-0 bg-black bg-opacity-25" onClick={() => setShowSaveToPageError(false)}></div>
           {/* Modal content */}
-          <div className="relative bg-white rounded-lg shadow-xl border border-red-200 p-6 max-w-md w-full">
+          <div className="relative bg-white rounded-lg shadow-xl border border-purple-200 p-6 max-w-md w-full">
             <div className="flex items-center mb-4">
-              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-3">
-                <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-red-800">Save Error</h3>
+              <h3 className="text-lg font-semibold text-purple-800">Save Error</h3>
             </div>
             <p className="text-gray-700 mb-6">{saveToPageError}</p>
             <div className="flex justify-end">
               <button
                 onClick={() => setShowSaveToPageError(false)}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors duration-200"
+                className="w-24 px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors duration-200 whitespace-nowrap"
               >
                 Close
               </button>

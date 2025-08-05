@@ -199,7 +199,7 @@ export default function DashboardView() {
   if (error) {
     return (
       <div className="bg-white rounded-lg shadow-lg p-3">
-        <div className="text-center text-red-600">
+        <div className="text-center text-purple-600">
           <p className="text-sm">{error}</p>
           <button 
             onClick={fetchJDList}
