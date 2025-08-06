@@ -7,27 +7,43 @@ import { supabase } from '../utils/supabaseClient'
 
 const LANGUAGE_OPTIONS = {
   source: [
-    { value: 'en', label: 'English' },
-    { value: 'fr', label: 'French' },
-    { value: 'ja', label: 'Japanese' },
-    { value: 'es', label: 'Spanish' },
-    { value: 'de', label: 'German' },
+    { value: 'english', label: 'English' },
+    { value: 'chinese', label: '中文' },
+    { value: 'french', label: 'Français' },
+    { value: 'japanese', label: '日本語' },
+    { value: 'korean', label: '한국어' },
+    { value: 'russian', label: 'Русский' },
+    { value: 'spanish', label: 'Español' },
+    { value: 'arabic', label: 'العربية' }
   ],
   native: [
-    { value: 'zh', label: 'Chinese' },
-    { value: 'en', label: 'English' },
-    { value: 'fr', label: 'French' },
-    { value: 'ja', label: 'Japanese' },
-    { value: 'es', label: 'Spanish' },
+    { value: 'chinese', label: '中文' },
+    { value: 'english', label: 'English' },
+    { value: 'french', label: 'Français' },
+    { value: 'japanese', label: '日本語' },
+    { value: 'korean', label: '한국어' },
+    { value: 'russian', label: 'Русский' },
+    { value: 'spanish', label: 'Español' },
+    { value: 'arabic', label: 'العربية' }
   ]
 }
 
-export default function UploadForm() {
+// Helper function to get available native languages based on source language
+const getAvailableNativeLanguages = (sourceLanguage: string) => {
+  return LANGUAGE_OPTIONS.native.filter(lang => lang.value !== sourceLanguage)
+}
+
+interface UploadFormProps {
+  defaultNativeLanguage?: string
+  defaultSourceLanguage?: string
+}
+
+export default function UploadForm({ defaultNativeLanguage = 'chinese', defaultSourceLanguage = 'english' }: UploadFormProps = {}) {
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    source_language: 'en',
-    native_language: 'zh'
+    source_language: defaultSourceLanguage,
+    native_language: defaultNativeLanguage
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { setSelectedArticle, setActiveTab } = useReadLinguaStore()
@@ -71,8 +87,8 @@ export default function UploadForm() {
       setFormData({
         title: '',
         content: '',
-        source_language: 'en',
-        native_language: 'zh'
+        source_language: 'english',
+        native_language: 'chinese'
       })
       
       alert('Article saved successfully!')
@@ -112,7 +128,20 @@ export default function UploadForm() {
             <select
               id="source_language"
               value={formData.source_language}
-              onChange={(e) => setFormData({ ...formData, source_language: e.target.value })}
+              onChange={(e) => {
+                const newSourceLanguage = e.target.value
+                const availableNativeLanguages = getAvailableNativeLanguages(newSourceLanguage)
+                // If current native language is same as new source language, change to first available
+                const newNativeLanguage = newSourceLanguage === formData.native_language 
+                  ? availableNativeLanguages[0]?.value || 'chinese'
+                  : formData.native_language
+                
+                setFormData({ 
+                  ...formData, 
+                  source_language: newSourceLanguage,
+                  native_language: newNativeLanguage
+                })
+              }}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
             >
               {LANGUAGE_OPTIONS.source.map(lang => (
@@ -130,7 +159,7 @@ export default function UploadForm() {
               onChange={(e) => setFormData({ ...formData, native_language: e.target.value })}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
             >
-              {LANGUAGE_OPTIONS.native.map(lang => (
+              {getAvailableNativeLanguages(formData.source_language).map(lang => (
                 <option key={lang.value} value={lang.value}>{lang.label}</option>
               ))}
             </select>

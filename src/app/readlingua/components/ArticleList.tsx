@@ -8,12 +8,14 @@ interface ArticleListProps {
 }
 
 const LANGUAGE_LABELS: Record<string, string> = {
-  en: 'English',
-  fr: 'French', 
-  ja: 'Japanese',
-  es: 'Spanish',
-  de: 'German',
-  zh: 'Chinese'
+  english: 'English',
+  chinese: '中文',
+  french: 'Français', 
+  japanese: '日本語',
+  korean: '한국어',
+  russian: 'Русский',
+  spanish: 'Español',
+  arabic: 'العربية'
 }
 
 export default function ArticleList({ articles, onArticleSelect }: ArticleListProps) {
@@ -30,40 +32,48 @@ export default function ArticleList({ articles, onArticleSelect }: ArticleListPr
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="space-y-2">
       {articles.map((article) => (
         <div
           key={article.id}
           onClick={() => onArticleSelect(article)}
-          className="bg-purple-50 rounded-lg p-4 cursor-pointer hover:bg-purple-100 transition-colors border border-purple-200"
+          className="p-4 cursor-pointer transition-all duration-200 rounded-lg border border-gray-100 hover:border-gray-200 hover:bg-gray-50"
+          style={{
+            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+          }}
         >
-          <div className="flex items-start justify-between mb-3">
-            <h3 className="font-medium text-gray-900 line-clamp-2 flex-1">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-semibold text-gray-900 text-lg">
               {article.title}
             </h3>
-            <svg className="w-5 h-5 text-purple-500 ml-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"/>
             </svg>
           </div>
           
-          <div className="flex items-center gap-2 mb-3">
-            <span className="px-2 py-1 bg-purple-200 text-purple-700 text-xs rounded font-medium">
-              {LANGUAGE_LABELS[article.source_language]}
+          <div className="flex items-center gap-3 text-sm text-gray-600 mb-2">
+            <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">
+              {LANGUAGE_LABELS[article.source_language] || article.source_language}
             </span>
-            <svg className="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
-            </svg>
-            <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded font-medium">
-              {LANGUAGE_LABELS[article.native_language]}
+            <span>→</span>
+            <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium">
+              {LANGUAGE_LABELS[article.native_language] || article.native_language}
             </span>
           </div>
           
-          <p className="text-sm text-gray-600 line-clamp-3 mb-3">
-            {article.content.substring(0, 120)}...
+          <p className="text-gray-600 text-sm line-clamp-2 mb-2">
+            {article.content.length > 100 
+              ? article.content.substring(0, 100) + '...' 
+              : article.content
+            }
           </p>
           
-          <div className="text-xs text-gray-500">
-            {new Date(article.created_at).toLocaleDateString()}
+          <div className="text-xs text-gray-400">
+            {new Date(article.created_at).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            })}
           </div>
         </div>
       ))}

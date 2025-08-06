@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useReadLinguaStore } from '../store/useReadLinguaStore'
 
 interface TextSelectionToolbarProps {
   position: { x: number; y: number }
@@ -18,6 +19,19 @@ export default function TextSelectionToolbar({
   const [showAskAI, setShowAskAI] = useState(false)
   const [userQuestion, setUserQuestion] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Check if text language supports pronunciation - use article language setting  
+  const supportsPronunciation = (text: string) => {
+    if (!text || text.length === 0) return false
+    
+    // Get current article from store context
+    const store = useReadLinguaStore.getState?.() || {}
+    const selectedArticle = store.selectedArticle
+    if (!selectedArticle) return false
+    
+    // Simple: if user selected English or French learning, show pronunciation button
+    return selectedArticle.source_language === 'english' || selectedArticle.source_language === 'french'
+  }
 
   const handleQueryType = async (queryType: string) => {
     if (queryType === 'ask_ai') {
@@ -57,9 +71,61 @@ export default function TextSelectionToolbar({
     >
       {!showAskAI ? (
         <>
-          {/* Selected Text - Prominent Display */}
-          <div className="text-lg font-bold text-gray-900 mb-3 text-center">
-            "{selectedText}"
+          {/* Selected Text - Prominent Display with pronunciation button */}
+          <div className="mb-3 text-center">
+            <div className="inline-flex items-start gap-1">
+              <span className="text-lg font-bold text-gray-900">
+                "{selectedText}"
+              </span>
+              {supportsPronunciation(selectedText) && (
+                <button
+                  onClick={async () => {
+                    try {
+                      const store = useReadLinguaStore.getState?.() || {}
+                      const selectedArticle = store.selectedArticle
+                      if (!selectedArticle) return
+                      
+                      const response = await fetch('/api/readlingua/text-to-speech', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                          text: selectedText,
+                          language: selectedArticle.source_language // Use article's language
+                        })
+                      })
+                      
+                      if (response.ok) {
+                        const audioBlob = await response.blob()
+                        const audioUrl = URL.createObjectURL(audioBlob)
+                        const audio = new Audio(audioUrl)
+                        
+                        audio.onended = () => {
+                          URL.revokeObjectURL(audioUrl)
+                        }
+                        
+                        audio.onerror = () => {
+                          URL.revokeObjectURL(audioUrl)
+                        }
+                        
+                        await audio.play()
+                      } else {
+                        const errorData = await response.json()
+                        console.error('Failed to get audio:', errorData.error)
+                        alert(errorData.error || 'Failed to generate pronunciation')
+                      }
+                    } catch (error) {
+                      console.error('Error playing pronunciation:', error)
+                    }
+                  }}
+                  className="w-4 h-4 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-full flex items-center justify-center transition-colors flex-shrink-0 mt-1"
+                  title="Play pronunciation"
+                >
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.787L4.866 13.1a.5.5 0 00-.316-.1H2a1 1 0 01-1-1V8a1 1 0 011-1h2.55a.5.5 0 00.316-.1l3.517-3.687zm7.316 1.19a1 1 0 011.414 0 8.97 8.97 0 010 12.684 1 1 0 11-1.414-1.414 6.97 6.97 0 000-9.856 1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0 4.985 4.985 0 010 7.072 1 1 0 11-1.415-1.414 2.985 2.985 0 000-4.244 1 1 0 010-1.414z" clipRule="evenodd"/>
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
           
           {/* Action Buttons - 2x2 Grid */}

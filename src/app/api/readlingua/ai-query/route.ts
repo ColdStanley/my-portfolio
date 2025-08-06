@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
     console.log('🔍 Calling AI with model:', modelConfig.name)
     console.log('📋 Final prompt:', prompt)
 
-    // Call AI API (DeepSeek or OpenAI)
+    // Call AI API with streaming (DeepSeek or OpenAI)
     const completion = await modelConfig.client.chat.completions.create({
       model: modelConfig.model,
       messages: [
@@ -142,23 +142,71 @@ export async function POST(request: NextRequest) {
       ],
       max_tokens: query_type === 'quick' ? 200 : query_type === 'deep' ? 800 : 500,
       temperature: 0.7,
+      stream: true,
     })
 
-    console.log('✅ AI response received')
+    console.log('✅ AI streaming response started')
 
-    const aiResponse = completion.choices[0]?.message?.content
+    // Create a ReadableStream for streaming response
+    const encoder = new TextEncoder()
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          let fullResponse = ''
+          
+          for await (const chunk of completion) {
+            const content = chunk.choices[0]?.delta?.content || ''
+            
+            if (content) {
+              fullResponse += content
+              
+              // Send chunk to client
+              const data = {
+                type: 'chunk',
+                content: content,
+                query_type,
+                selected_text,
+                user_question: query_type === 'ask_ai' ? user_question : undefined,
+                ai_model: ai_model,
+                model_name: modelConfig.name
+              }
+              
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
+            }
+          }
+          
+          // Send completion signal
+          const completionData = {
+            type: 'complete',
+            full_response: fullResponse.trim(),
+            query_type,
+            selected_text,
+            user_question: query_type === 'ask_ai' ? user_question : undefined,
+            ai_model: ai_model,
+            model_name: modelConfig.name
+          }
+          
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(completionData)}\n\n`))
+          controller.close()
+          
+        } catch (error) {
+          console.error('Streaming error:', error)
+          const errorData = {
+            type: 'error',
+            error: 'Failed to process AI query'
+          }
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(errorData)}\n\n`))
+          controller.close()
+        }
+      }
+    })
 
-    if (!aiResponse) {
-      return NextResponse.json({ error: 'No response from AI' }, { status: 500 })
-    }
-
-    return NextResponse.json({ 
-      ai_response: aiResponse.trim(),
-      query_type,
-      selected_text,
-      user_question: query_type === 'ask_ai' ? user_question : undefined,
-      ai_model: ai_model,
-      model_name: modelConfig.name
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
     })
 
   } catch (error) {

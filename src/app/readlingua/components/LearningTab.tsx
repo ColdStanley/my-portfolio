@@ -10,12 +10,23 @@ import ModelSelector from './ModelSelector'
 import PromptManager from './PromptManager'
 
 export default function LearningTab() {
-  const { selectedArticle, queries, setQueries, showQueryPanel, setShowPromptManager } = useReadLinguaStore()
+  const { selectedArticle, queries, setQueries, setSelectedQuery, showQueryPanel, setShowQueryPanel, setShowPromptManager } = useReadLinguaStore()
 
   useEffect(() => {
     if (selectedArticle) {
+      // Clear previous queries and selected query immediately
+      setQueries([])
+      setSelectedQuery(null)
+      
+      // Auto-show Query Panel when entering learning mode
+      setShowQueryPanel(true)
+      
       // Load queries for selected article
       loadQueries(selectedArticle.id)
+    } else {
+      // Clear queries when no article is selected
+      setQueries([])
+      setSelectedQuery(null)
     }
   }, [selectedArticle])
 
@@ -71,7 +82,6 @@ export default function LearningTab() {
       <div className="p-4 border-b border-gray-200 bg-purple-50 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h2 className="font-semibold text-gray-900">Learning Mode</h2>
             <ModelSelector />
           </div>
           <div className="flex items-center gap-2">
@@ -100,13 +110,13 @@ export default function LearningTab() {
       {/* Main Content */}
       <div className="flex flex-1 min-h-0">
         {/* Article Reader - Left Side */}
-        <div className={`transition-all duration-300 ${showQueryPanel ? 'w-2/5' : 'w-full'}`}>
+        <div className={`transition-all duration-300 ${showQueryPanel ? 'w-1/2' : 'w-full'}`}>
           <ArticleReader article={selectedArticle} />
         </div>
         
         {/* Query Panel - Right Side */}
         {showQueryPanel && (
-          <div className="w-3/5 border-l border-gray-200">
+          <div className="w-1/2 border-l border-gray-200">
             <QueryPanel />
           </div>
         )}

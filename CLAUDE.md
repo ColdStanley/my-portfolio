@@ -284,6 +284,7 @@ The codebase prioritizes rapid development with build-time flexibility:
 - **No Emojis**: Never use emojis in any code, UI, or content
 - **Consistent Theming**: All components must follow the purple color hierarchy
 - **Answer based on code facts, not speculation**: When debugging, check actual code implementation rather than guessing possible causes
+- **立体视觉 + 流畅动效 + 最少文案**: All UI components must feature 3D depth effects, smooth animations, and minimal text content
 
 ## Component Size Guidelines
 

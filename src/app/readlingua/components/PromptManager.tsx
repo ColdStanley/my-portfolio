@@ -19,11 +19,15 @@ const PLACEHOLDER_INFO = {
 
 export default function PromptManager() {
   const { 
-    promptTemplates, 
+    getCurrentPromptTemplates,
     setPromptTemplate, 
+    resetPromptTemplates,
     showPromptManager, 
-    setShowPromptManager 
+    setShowPromptManager,
+    selectedArticle
   } = useReadLinguaStore()
+  
+  const promptTemplates = getCurrentPromptTemplates()
   
   const [editingTemplate, setEditingTemplate] = useState<keyof PromptTemplates | null>(null)
   const [tempValue, setTempValue] = useState('')
@@ -64,7 +68,7 @@ export default function PromptManager() {
             </button>
           </div>
           <p className="text-sm text-gray-600 mt-1">
-            Customize AI prompts for each query type. Changes take effect immediately.
+            Customize AI prompts for each query type. Changes apply to current language pair ({selectedArticle ? `${selectedArticle.source_language}-${selectedArticle.native_language}` : 'english-chinese'}) only.
           </p>
         </div>
 
@@ -78,15 +82,30 @@ export default function PromptManager() {
                     {PROMPT_LABELS[type]}
                   </h3>
                   {editingTemplate !== type && (
-                    <button
-                      onClick={() => handleEdit(type)}
-                      className="w-20 px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white rounded font-medium whitespace-nowrap flex items-center gap-1 text-sm"
-                    >
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
-                      </svg>
-                      Edit
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEdit(type)}
+                        className="w-16 px-2 py-1 bg-purple-500 hover:bg-purple-600 text-white rounded font-medium whitespace-nowrap flex items-center gap-1 text-sm"
+                      >
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+                        </svg>
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm('Reset this prompt to default? This action cannot be undone.'))
+                            resetPromptTemplates()
+                        }}
+                        className="w-16 px-2 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded font-medium whitespace-nowrap flex items-center gap-1 text-sm"
+                        title="Reset to default"
+                      >
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd"/>
+                        </svg>
+                        Reset
+                      </button>
+                    </div>
                   )}
                 </div>
 
