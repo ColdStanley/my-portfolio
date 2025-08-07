@@ -2,16 +2,29 @@
 
 import { useState, useEffect } from 'react'
 import { marked } from 'marked'
-import { useReadLinguaStore } from '../store/useReadLinguaStore'
+import { useReadLinguaStore, QuizQuestion } from '../store/useReadLinguaStore'
 import { queryApi } from '../utils/apiClient'
 import { supabase } from '../utils/supabaseClient'
 
 export default function QueryPanel() {
-  const { queries, selectedQuery, setSelectedQuery, setShowQueryPanel, removeQuery } = useReadLinguaStore()
+  const { 
+    queries, 
+    selectedQuery, 
+    setSelectedQuery, 
+    setShowQueryPanel, 
+    removeQuery,
+    quizQuestions,
+    generateQuizQuestions,
+    submitQuizAnswer,
+    isGeneratingQuiz,
+    selectedArticle
+  } = useReadLinguaStore()
   const [isPlaying, setIsPlaying] = useState(false)
   const [activeTab, setActiveTab] = useState<'quick' | 'standard' | 'deep' | 'ask_ai' | 'quiz'>('quick')
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
   const [deleteMode, setDeleteMode] = useState<string | null>(null)
+  const [quizAnswers, setQuizAnswers] = useState<{ [key: string]: string }>({})
+  const [currentQuizAnswer, setCurrentQuizAnswer] = useState('')
 
   const handleQueryClick = (query: any) => {
     setSelectedQuery(query)
@@ -129,12 +142,16 @@ export default function QueryPanel() {
     return queries.filter(q => q.query_type === activeTab && q.selected_text)
   }
 
+  const getQuizCandidateCount = () => {
+    return queries.filter(q => q.query_type !== 'ask_ai' && q.selected_text && q.selected_text.trim()).length
+  }
+
   const tabs = [
     { id: 'quick' as const, label: 'Quick', count: getQueryCountByType('quick') },
     { id: 'standard' as const, label: 'Standard', count: getQueryCountByType('standard') },
     { id: 'deep' as const, label: 'Deep', count: getQueryCountByType('deep') },
     { id: 'ask_ai' as const, label: 'Ask AI', count: getQueryCountByType('ask_ai') },
-    { id: 'quiz' as const, label: 'Quiz', count: 0 },
+    { id: 'quiz' as const, label: 'Knowledge Quiz', count: getQuizCandidateCount() },
   ]
 
   const handleTabChange = (tabId: 'quick' | 'standard' | 'deep' | 'ask_ai' | 'quiz') => {
@@ -142,8 +159,11 @@ export default function QueryPanel() {
     
     // Auto-select first query in the new tab, or clear if no queries
     if (tabId === 'quiz') {
-      // Quiz tab has no queries, clear selection
+      // Quiz tab - clear query selection, generate quiz if needed
       setSelectedQuery(null)
+      if (quizQuestions.length === 0 && !isGeneratingQuiz && getQuizCandidateCount() > 0) {
+        generateQuizQuestions()
+      }
     } else {
       // Get first query of the new tab type
       const tabQueries = queries.filter(q => q.query_type === tabId && q.selected_text)
@@ -166,6 +186,32 @@ export default function QueryPanel() {
     
     // Simple: if user selected English or French learning, show pronunciation button
     return selectedArticle.source_language === 'english' || selectedArticle.source_language === 'french'
+  }
+
+  // Quiz functions
+  const handleQuizSubmit = (questionIndex: number) => {
+    const answer = quizAnswers[questionIndex] || ''
+    if (answer.trim()) {
+      submitQuizAnswer(questionIndex, answer.trim())
+      // Clear the answer after submission
+      setQuizAnswers(prev => ({
+        ...prev,
+        [questionIndex]: ''
+      }))
+    }
+  }
+
+  const handleQuizAnswerChange = (questionIndex: number, value: string) => {
+    setQuizAnswers(prev => ({
+      ...prev,
+      [questionIndex]: value
+    }))
+  }
+
+  const handleQuizQuestionClick = (question: QuizQuestion) => {
+    // Jump to original query
+    setSelectedQuery(question.originalQuery)
+    setActiveTab(question.originalQuery.query_type as any)
   }
 
   const handlePlayPronunciation = async (text: string) => {
@@ -259,26 +305,177 @@ export default function QueryPanel() {
         </div>
       </div>
 
-      {/* Tab Content - Tag Style List */}
-      <div className="flex-shrink-0 p-3 max-h-32 overflow-y-auto bg-gray-50/50">
-        {activeTab === 'quiz' ? (
-          /* Quiz Tab - Coming Soon */
-          <div className="text-center py-8">
-            <svg className="w-8 h-8 mx-auto text-gray-300 mb-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd"/>
-            </svg>
-            <p className="text-gray-500 text-sm">Coming Soon</p>
-            <p className="text-gray-400 text-xs mt-1">Quiz feature in development</p>
-          </div>
-        ) : getFilteredQueries().length === 0 ? (
-          /* Empty State */
-          <div className="text-center py-6">
-            <svg className="w-6 h-6 mx-auto text-gray-300 mb-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd"/>
-            </svg>
-            <p className="text-gray-500 text-sm">No {tabs.find(t => t.id === activeTab)?.label} queries yet</p>
-            <p className="text-gray-400 text-xs mt-1">Select text and try {tabs.find(t => t.id === activeTab)?.label} analysis</p>
-          </div>
+      {/* Tab Content */}
+      {activeTab === 'quiz' ? (
+        /* Knowledge Quiz Content */
+        <div className="flex-1 bg-gray-50 min-h-0 flex flex-col">
+          {isGeneratingQuiz ? (
+            /* Loading State */
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+              <p className="text-sm text-gray-600">Generating Quiz Questions...</p>
+              <p className="text-xs text-gray-400 mt-1">This may take a moment</p>
+            </div>
+          ) : quizQuestions.length === 0 ? (
+            /* Empty State */
+            getQuizCandidateCount() === 0 ? (
+              <div className="text-center py-8">
+                <svg className="w-8 h-8 mx-auto text-gray-300 mb-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd"/>
+                </svg>
+                <p className="text-gray-500 text-sm">No queries available for quiz</p>
+                <p className="text-gray-400 text-xs mt-1">Select text and analyze with Quick, Standard, or Deep modes first</p>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <button
+                  onClick={generateQuizQuestions}
+                  className="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium"
+                >
+                  Generate Quiz Questions
+                </button>
+                <p className="text-gray-400 text-xs mt-2">{getQuizCandidateCount()} queries available for quiz</p>
+              </div>
+            )
+          ) : (
+            /* Quiz Questions - Progressive Display */
+            <div className="flex-1 overflow-y-auto p-3 space-y-4">
+              {quizQuestions.map((question, index) => {
+                // Show question if it's answered or if it's the next unanswered question
+                const shouldShow = question.isAnswered || 
+                  index === 0 || 
+                  quizQuestions[index - 1]?.isAnswered
+                
+                if (!shouldShow) return null
+                
+                return (
+                  <div
+                    key={question.id}
+                    className="bg-white rounded-lg p-4 shadow-sm border border-gray-100"
+                  >
+                    {/* Question Header */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="text-sm text-gray-500 font-medium">
+                        Question {index + 1}/{quizQuestions.length}
+                      </div>
+                      <button
+                        onClick={() => handleQuizQuestionClick(question)}
+                        className="text-xs text-purple-600 hover:text-purple-800 hover:underline"
+                      >
+                        View original query →
+                      </button>
+                    </div>
+                    
+                    {/* Question Text */}
+                    <div
+                      className="text-base text-gray-900 mb-4 leading-relaxed cursor-pointer hover:bg-purple-50 p-2 rounded transition-colors"
+                      onClick={() => handleQuizQuestionClick(question)}
+                    >
+                      {question.question}
+                    </div>
+                    
+                    {/* Answer Input or Result */}
+                    {!question.isAnswered ? (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={quizAnswers[index] || ''}
+                          onChange={(e) => handleQuizAnswerChange(index, e.target.value)}
+                          placeholder="Type your answer..."
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              handleQuizSubmit(index)
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={() => handleQuizSubmit(index)}
+                          disabled={!quizAnswers[index]?.trim()}
+                          className="px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium whitespace-nowrap"
+                        >
+                          Submit
+                        </button>
+                      </div>
+                    ) : (
+                      /* Answer Result */
+                      <div className="space-y-3">
+                        {/* User Answer vs Correct Answer */}
+                        <div className={`p-3 rounded-lg flex items-center gap-2 ${
+                          question.isCorrect 
+                            ? 'bg-green-50 border border-green-200' 
+                            : 'bg-red-50 border border-red-200'
+                        }`}>
+                          {question.isCorrect ? (
+                            <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5 text-red-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
+                            </svg>
+                          )}
+                          
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-gray-900">
+                                Answer: {question.answer}
+                              </span>
+                              {supportsPronunciation(question.answer) && (
+                                <button
+                                  onClick={() => handlePlayPronunciation(question.answer)}
+                                  disabled={isPlaying}
+                                  className="w-5 h-5 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-full flex items-center justify-center transition-colors disabled:opacity-50"
+                                  title="Play pronunciation"
+                                >
+                                  {isPlaying ? (
+                                    <svg className="w-3 h-3 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.787L4.866 13.1a.5.5 0 00-.316-.1H2a1 1 0 01-1-1V8a1 1 0 011-1h2.55a.5.5 0 00.316-.1l3.517-3.687zm7.316 1.19a1 1 0 011.414 0 8.97 8.97 0 010 12.684 1 1 0 11-1.414-1.414 6.97 6.97 0 000-9.856 1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0 4.985 4.985 0 010 7.072 1 1 0 11-1.415-1.414 2.985 2.985 0 000-4.244 1 1 0 010-1.414z" clipRule="evenodd"/>
+                                    </svg>
+                                  ) : (
+                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.787L4.866 13.1a.5.5 0 00-.316-.1H2a1 1 0 01-1-1V8a1 1 0 011-1h2.55a.5.5 0 00.316-.1l3.517-3.687zm7.316 1.19a1 1 0 011.414 0 8.97 8.97 0 010 12.684 1 1 0 11-1.414-1.414 6.97 6.97 0 000-9.856 1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0 4.985 4.985 0 010 7.072 1 1 0 11-1.415-1.414 2.985 2.985 0 000-4.244 1 1 0 010-1.414z" clipRule="evenodd"/>
+                                    </svg>
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                            {!question.isCorrect && question.userAnswer && (
+                              <div className="text-sm text-gray-600 mt-1">
+                                Your answer: {question.userAnswer}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Explanation */}
+                        {question.explanation && (
+                          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="text-sm text-gray-700">
+                              <strong>Explanation:</strong> {question.explanation}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Regular Query Tab Content */
+        <div className="flex-shrink-0 p-3 max-h-32 overflow-y-auto bg-gray-50/50">
+          {getFilteredQueries().length === 0 ? (
+            /* Empty State */
+            <div className="text-center py-6">
+              <svg className="w-6 h-6 mx-auto text-gray-300 mb-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd"/>
+              </svg>
+              <p className="text-gray-500 text-sm">No {tabs.find(t => t.id === activeTab)?.label} queries yet</p>
+              <p className="text-gray-400 text-xs mt-1">Select text and try {tabs.find(t => t.id === activeTab)?.label} analysis</p>
+            </div>
         ) : (
           /* Tag Style Query List */
           <div className="flex flex-wrap gap-2">
@@ -322,10 +519,11 @@ export default function QueryPanel() {
             ))}
           </div>
         )}
-      </div>
+        </div>
+      )}
 
-      {/* Current Query Detail */}
-      {selectedQuery && (
+      {/* Current Query Detail - Only show for non-quiz tabs */}
+      {selectedQuery && activeTab !== 'quiz' && (
         <div className="flex-1 bg-gray-50 min-h-0 flex flex-col">
           {/* Query Info Header */}
           <div 

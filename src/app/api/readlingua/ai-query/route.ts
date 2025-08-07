@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
           content: prompt
         }
       ],
-      max_tokens: query_type === 'quick' ? 200 : query_type === 'deep' ? 800 : 500,
+      max_tokens: 800,
       temperature: 0.7,
       stream: true,
     })
