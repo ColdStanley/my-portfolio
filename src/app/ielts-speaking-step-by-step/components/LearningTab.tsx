@@ -28,9 +28,10 @@ export default function LearningTab() {
     { id: 1, name: 'Generate', description: 'Generate Question' },
     { id: 2, name: 'Analyze', description: 'Analyze Question' },
     { id: 3, name: 'Guide', description: 'Get Guidance' },
-    { id: 4, name: 'Suggest', description: 'Get Suggestions' }
-    // Expandable: { id: 5, name: 'Record', description: 'Record Answer' },
-    // { id: 6, name: 'Feedback', description: 'Get Feedback' }
+    { id: 4, name: 'Suggest', description: 'Get Framework' },
+    { id: 5, name: 'Practice', description: 'Voice Practice' },
+    { id: 6, name: 'Evaluate', description: 'Analyze Speech' },
+    { id: 7, name: 'Optimize', description: 'Optimize Speech' }
   ]
 
   // Load progress when component mounts or part changes

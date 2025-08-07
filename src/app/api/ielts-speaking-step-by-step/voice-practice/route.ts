@@ -2,24 +2,24 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/app/readlingua/utils/supabaseClient'
 
 export async function PUT(request: Request) {
-  console.log('=== Simple PUT /step-result API called ===')
+  console.log('=== Voice Practice API called ===')
   try {
     const body = await request.json()
     console.log('Request body:', body)
     
-    const { userId, part, step, result } = body
+    const { userId, part, transcript, duration, practiceCount } = body
     
-    if (!userId || !part || !step || !result) {
+    if (!userId || !part || !transcript) {
       console.log('Missing required fields')
       return NextResponse.json(
-        { error: 'Missing required fields: userId, part, step, result' },
+        { error: 'Missing required fields: userId, part, transcript' },
         { status: 400 }
       )
     }
 
     console.log('Fetching existing session...')
     
-    // 首先获取现有数据
+    // 获取现有数据
     const { data: existingData, error: fetchError } = await supabase
       .from('ielts_step_sessions')
       .select('step_results, current_step')
@@ -37,19 +37,16 @@ export async function PUT(request: Request) {
 
     console.log('Existing data:', existingData)
     
-    // 合并步骤结果
+    // 合并步骤结果 - Step 5 语音练习
     const currentResults = existingData?.step_results || {}
     const updatedResults = {
       ...currentResults,
-      [step.toString()]: {
-        content: result.content,
-        timestamp: result.timestamp || new Date().toISOString(),
-        prompt: result.prompt,
-        // Support additional fields for different step types
-        ...(result.duration && { duration: result.duration }),
-        ...(result.voice_practice && { voice_practice: result.voice_practice }),
-        ...(result.practice_count && { practice_count: result.practice_count }),
-        ...(result.band_level && { band_level: result.band_level }) // Step 7 optimization level
+      '5': {
+        content: transcript,
+        timestamp: new Date().toISOString(),
+        duration,
+        practice_count: practiceCount || 1,
+        voice_practice: true
       }
     }
 
@@ -57,7 +54,7 @@ export async function PUT(request: Request) {
     
     const newCurrentStep = Math.max(
       existingData?.current_step || 1,
-      parseInt(step) + 1
+      6 // Step 5 完成后进入 Step 6
     )
 
     console.log('New current step:', newCurrentStep)
@@ -70,7 +67,7 @@ export async function PUT(request: Request) {
         part: part,
         current_step: newCurrentStep,
         step_results: updatedResults,
-        is_completed: false
+        is_completed: newCurrentStep >= 8 // 7步完成后才算完成（为Step 8预留）
       })
       .select()
 
@@ -82,7 +79,7 @@ export async function PUT(request: Request) {
       )
     }
 
-    console.log('Success! Data saved:', data)
+    console.log('Success! Voice practice saved:', data)
     return NextResponse.json({ success: true, data })
 
   } catch (error) {

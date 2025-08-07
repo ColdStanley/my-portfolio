@@ -1,6 +1,32 @@
 import { NextResponse } from 'next/server'
+import OpenAI from 'openai'
 
-// Prompt 模板配置
+// OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+})
+
+// DeepSeek client (compatible with OpenAI API)
+const deepseek = new OpenAI({
+  apiKey: process.env.DEEPSEEK_API_KEY,
+  baseURL: 'https://api.deepseek.com'
+})
+
+// Model configurations
+const MODEL_CONFIGS = {
+  deepseek: {
+    client: deepseek,
+    model: 'deepseek-chat',
+    name: 'DeepSeek'
+  },
+  openai: {
+    client: openai,
+    model: 'gpt-4o-mini',
+    name: 'OpenAI GPT-4'
+  }
+}
+
+// Default prompt templates (kept for fallback)
 const PROMPT_TEMPLATES = {
   part1: {
     1: `Generate a natural IELTS Speaking Part 1 question about personal life, hobbies, daily activities, or familiar topics. 
@@ -200,8 +226,11 @@ Target Band 8+ performance with academic-level discourse skills.`
 
 export async function POST(request: Request) {
   try {
+    console.log('🤖 IELTS AI Generate API called')
     const body = await request.json()
-    const { part, step, previousSteps, userInput, aiModel } = body
+    console.log('📝 Request body:', body)
+    
+    const { part, step, previousSteps, userInput, aiModel, customPrompt } = body
 
     if (!part || !step) {
       return NextResponse.json(
@@ -210,18 +239,32 @@ export async function POST(request: Request) {
       )
     }
 
-    // 获取基础 prompt 模板
-    const basePrompt = PROMPT_TEMPLATES[part as keyof typeof PROMPT_TEMPLATES]?.[step as keyof typeof PROMPT_TEMPLATES.part1]
+    // Get model configuration
+    const modelConfig = MODEL_CONFIGS[aiModel as keyof typeof MODEL_CONFIGS] || MODEL_CONFIGS.deepseek
 
-    if (!basePrompt) {
-      return NextResponse.json(
-        { error: 'Invalid part or step' },
-        { status: 400 }
-      )
+    // Check API keys
+    console.log('🗝️ API Keys check:', {
+      openai: !!process.env.OPENAI_API_KEY,
+      deepseek: !!process.env.DEEPSEEK_API_KEY,
+      selectedModel: aiModel
+    })
+
+    // 使用自定义 prompt 或默认模板
+    let fullPrompt = customPrompt
+    
+    if (!fullPrompt) {
+      // 如果没有自定义 prompt，使用默认模板
+      const basePrompt = PROMPT_TEMPLATES[part as keyof typeof PROMPT_TEMPLATES]?.[step as keyof typeof PROMPT_TEMPLATES.part1]
+      
+      if (!basePrompt) {
+        return NextResponse.json(
+          { error: 'Invalid part or step' },
+          { status: 400 }
+        )
+      }
+      
+      fullPrompt = basePrompt
     }
-
-    // 构建完整 prompt
-    let fullPrompt = basePrompt
 
     // 替换前置内容占位符
     if (previousSteps && previousSteps.length > 0) {
@@ -240,12 +283,30 @@ export async function POST(request: Request) {
       fullPrompt += `\n\nAdditional context from student: ${userInput}`
     }
 
-    // 暂时返回 prompt 本身作为 mock 响应
-    // TODO: 集成真实 AI API (OpenAI/DeepSeek)
-    const mockResponse = await generateMockResponse(fullPrompt, part, step, aiModel || 'deepseek')
+    console.log('🔍 Calling AI with model:', modelConfig.name)
+    console.log('📋 Final prompt:', fullPrompt)
+
+    // Call AI API (OpenAI or DeepSeek)
+    const completion = await modelConfig.client.chat.completions.create({
+      model: modelConfig.model,
+      messages: [
+        {
+          role: "system",
+          content: `You are a helpful IELTS Speaking test preparation assistant. Generate clear, educational content for ${part.toUpperCase()} practice. Be practical and exam-focused.`
+        },
+        {
+          role: "user",
+          content: fullPrompt
+        }
+      ],
+    })
+
+    const aiResponse = completion.choices[0]?.message?.content || 'No response generated'
+
+    console.log('✅ AI Response received:', aiResponse.substring(0, 100) + '...')
 
     return NextResponse.json({
-      content: mockResponse,
+      content: aiResponse,
       timestamp: new Date().toISOString(),
       prompt: fullPrompt,
       aiModel: aiModel || 'deepseek'
@@ -253,39 +314,16 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error('AI generate error:', error)
+    
+    // Simple error handling - show user the error
+    let errorMessage = 'AI API call failed'
+    if (error instanceof Error) {
+      errorMessage = error.message
+    }
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: errorMessage },
       { status: 500 }
     )
   }
-}
-
-// 临时 mock 响应函数，后续替换为真实 AI API
-async function generateMockResponse(prompt: string, part: string, step: number, aiModel: string): Promise<string> {
-  // 模拟 API 延迟
-  await new Promise(resolve => setTimeout(resolve, 1000))
-
-  const mockResponses = {
-    part1: {
-      1: "What do you usually do in your free time? Do you prefer indoor or outdoor activities?",
-      2: "This question tests your ability to discuss personal preferences and habits. Key points: use present tense for habits, provide specific examples, speak for 1-2 minutes naturally.",
-      3: "Think about: What activities do you actually do? When do you have free time? Why do you prefer certain activities? What equipment or preparation do you need? How do these activities make you feel?",
-      4: "Framework: 'In my free time, I usually...' → 'I prefer [indoor/outdoor] because...' → 'For example, last weekend I...' → 'This makes me feel...' Use phrases like 'It depends on...', 'Generally speaking...', 'What I really enjoy is...'"
-    },
-    part2: {
-      1: "Describe a book that you enjoyed reading.\n\nYou should say:\n• what book it was\n• when and where you read it\n• why you chose to read it\n• and explain why you enjoyed reading it",
-      2: "This topic requires you to describe a specific book experience. Time allocation: 30s introduction, 1min covering bullet points, 30s explanation. Focus on storytelling, use past tenses, include sensory details and personal reflection.",
-      3: "Consider: What genre was it? Fiction or non-fiction? Where did you discover it? What drew you to pick it up? What was the reading experience like? How did it affect your thoughts or emotions? What made it memorable?",
-      4: "Structure: 'I'd like to talk about [book title]...' → Cover each bullet point with 2-3 sentences → Use descriptive language and personal anecdotes → End with reflection on impact. Advanced vocabulary: 'compelling', 'thought-provoking', 'captivating', 'insightful'."
-    },
-    part3: {
-      1: "How do you think reading habits have changed over the past decade?",
-      2: "This question requires analysis of social trends and changes over time. You need to compare past and present, discuss causes of change, and potentially speculate about future developments. Use formal academic language and complex sentence structures.",
-      3: "Consider different angles: Digital vs. physical books, attention spans, accessibility, social media influence, educational changes, generational differences, economic factors, global pandemic effects, technology advancement.",
-      4: "Structure: Present thesis → Compare past/present → Analyze causes → Consider implications → Conclude. Use academic language: 'It's evident that...', 'One significant factor is...', 'This trend can be attributed to...', 'The implications are far-reaching...'"
-    }
-  }
-
-  return mockResponses[part as keyof typeof mockResponses]?.[step as keyof typeof mockResponses.part1] || 
-         "Mock response not available for this configuration."
 }
