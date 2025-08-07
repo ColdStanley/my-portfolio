@@ -38,9 +38,10 @@ export default function ArticleReader({ article }: ArticleReaderProps) {
       
       if (rect) {
         setSelectedText(text)
+        // Use viewport coordinates directly for fixed positioning
         setSelectionPosition({
           x: rect.left + rect.width / 2,
-          y: rect.top - 10
+          y: rect.top
         })
         setShowToolbar(true)
       }

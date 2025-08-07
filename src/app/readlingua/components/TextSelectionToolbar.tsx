@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useReadLinguaStore } from '../store/useReadLinguaStore'
 
 interface TextSelectionToolbarProps {
@@ -60,13 +61,45 @@ export default function TextSelectionToolbar({
     }
   }
 
-  return (
+  // Calculate optimal tooltip position
+  const calculatePosition = () => {
+    const offsetX = 20  // Horizontal distance from selected text
+    const offsetY = 20  // Vertical distance from selected text
+    
+    // Position to bottom-right of selected text
+    let left = position.x + offsetX
+    let top = position.y + offsetY
+    
+    // Check if tooltip would go off-screen horizontally
+    const tooltipWidth = 192
+    if (left + tooltipWidth > window.innerWidth - 10) {
+      left = position.x - tooltipWidth - offsetX // Switch to bottom-left
+    }
+    
+    // Check if tooltip would go off-screen vertically
+    const tooltipHeight = showAskAI ? 140 : 100
+    if (top + tooltipHeight > window.innerHeight - 10) {
+      top = position.y - tooltipHeight - offsetY // Switch to top-right
+    }
+    
+    return { 
+      left: `${left}px`,
+      top: `${top}px`,
+      transform: 'none'
+    }
+  }
+
+  const tooltipStyle = calculatePosition()
+
+  console.log('Tooltip render - position:', position, 'calculated style:', JSON.stringify(tooltipStyle))
+  
+  const tooltipContent = (
     <div
-      className="fixed z-50 bg-white rounded-lg shadow-lg border border-gray-200 p-3 min-w-48"
+      className="fixed z-[9999] bg-white rounded-lg shadow-lg border border-gray-200 p-3 min-w-48"
       style={{
-        left: position.x,
-        top: position.y - 80,
-        transform: 'translateX(-50%)'
+        ...tooltipStyle,
+        position: 'fixed',
+        zIndex: 9999
       }}
     >
       {!showAskAI ? (
@@ -215,4 +248,6 @@ export default function TextSelectionToolbar({
       </button>
     </div>
   )
+  
+  return typeof document !== 'undefined' ? createPortal(tooltipContent, document.body) : null
 }
