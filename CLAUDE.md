@@ -299,3 +299,61 @@ The codebase prioritizes rapid development with build-time flexibility:
 - Split into multiple files
 
 **Core principle**: Follow single responsibility principle rather than strict line limits.
+
+## Reusable Components
+
+### MarkdownContent Component
+
+**Location**: `src/app/ielts-speaking-step-by-step/components/MarkdownContent.tsx`
+
+**Purpose**: Universal Markdown parsing and rendering component for AI-generated content display.
+
+**Technical Stack**:
+- **Library**: `marked` - lightweight Markdown parser
+- **Configuration**: 
+  - `breaks: true` - Convert line breaks to `<br>` tags
+  - `gfm: true` - GitHub Flavored Markdown support
+  - `sanitize: false` - Allow HTML (use with caution)
+- **Rendering**: `dangerouslySetInnerHTML` for direct HTML output
+- **Styling**: Tailwind `prose` classes with purple theme customization
+
+**Usage**:
+```typescript
+import MarkdownContent from './MarkdownContent'
+
+// Basic usage
+<MarkdownContent content={aiResponse} />
+
+// With custom styling
+<MarkdownContent 
+  content={aiResponse}
+  className="text-gray-800 leading-relaxed text-sm"
+/>
+```
+
+**Features**:
+- **Stream-compatible**: Works with both static and streaming content
+- **Error handling**: Fallback to simple line break replacement
+- **Theme integration**: Purple-themed prose styling
+- **Responsive**: `max-w-none` for flexible container sizing
+
+**Applications**:
+- AI response displays in Step components (Step 1,2,3,4,6,7)
+- Dashboard optimization results
+- Any AI-generated content that needs formatting
+
+**CSS Variables**:
+```css
+--tw-prose-body: #374151        /* Body text */
+--tw-prose-headings: #111827     /* Headings */
+--tw-prose-links: #7c3aed        /* Links (purple) */
+--tw-prose-bold: #111827         /* Bold text */
+--tw-prose-counters: #6b7280     /* List counters */
+--tw-prose-bullets: #d1d5db      /* List bullets */
+```
+
+**Replication for New Projects**:
+1. Copy the MarkdownContent component
+2. Adjust CSS variables for project theme
+3. Verify `marked` dependency is installed
+4. Import and use for any AI content display

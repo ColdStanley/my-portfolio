@@ -72,6 +72,8 @@ export async function POST(request: Request) {
         current_step: currentStep || 1,
         step_results: stepResults || {},
         is_completed: isCompleted || false
+      }, {
+        onConflict: 'user_id,part'  // 指定唯一约束字段
       })
       .select()
       .single()

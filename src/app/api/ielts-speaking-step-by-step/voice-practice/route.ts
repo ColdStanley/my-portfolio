@@ -68,6 +68,8 @@ export async function PUT(request: Request) {
         current_step: newCurrentStep,
         step_results: updatedResults,
         is_completed: newCurrentStep >= 8 // 7步完成后才算完成（为Step 8预留）
+      }, {
+        onConflict: 'user_id,part'  // 指定唯一约束字段
       })
       .select()
 

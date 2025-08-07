@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useIELTSStepStore, PartType, PromptTemplates } from '../store/useIELTSStepStore'
 import VoiceRecorder from './VoiceRecorder'
+import MarkdownContent from './MarkdownContent'
 
 interface StepComponentProps {
   part: PartType
@@ -25,7 +26,6 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
   const [isLoading, setIsLoading] = useState(false)
   const [prompt, setPrompt] = useState('')
   const [showPromptEditor, setShowPromptEditor] = useState(false)
-  const [userInput, setUserInput] = useState('')
   const [activeTab, setActiveTab] = useState('6') // For Step 7 Band level tabs
 
   // Initialize prompt from store on component mount and when part/step changes
@@ -34,6 +34,9 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
     if (step === 7) {
       // For Step 7, default to Band 6 prompt
       defaultPrompt = getPromptForStep(part, 'step7_band6')
+    } else if (step === 4) {
+      // For Step 4, default to Band 6 prompt
+      defaultPrompt = getPromptForStep(part, 'step4_band6')
     } else {
       defaultPrompt = getPromptForStep(part, step)
     }
@@ -49,18 +52,18 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
       }
     } else if (step === 4) {
       const step1Result = getStepResult(part, 1)
-      let context = ''
       if (step1Result?.content) {
-        context = `Question: ${step1Result.content}`
+        return `Question: ${step1Result.content}`
       }
-      // Add user input from Step 3 if available
-      if (userInput.trim()) {
-        context += `\n学生输入：${userInput.trim()}`
-      }
-      return context || null
+      return null
     } else if (step === 5) {
       const step1Result = getStepResult(part, 1)
-      const step4Result = getStepResult(part, 4)
+      // Check for any Step 4 band result (prefer the most recent one)
+      const step4_band6 = getStepResult(part, '4_band6' as any)
+      const step4_band7 = getStepResult(part, '4_band7' as any)
+      const step4_band8 = getStepResult(part, '4_band8' as any)
+      const step4Result = step4_band8 || step4_band7 || step4_band6 || getStepResult(part, 4)
+      
       let context = ''
       if (step1Result?.content) {
         context = `Question: ${step1Result.content}`
@@ -107,6 +110,10 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
       // For Step 7, save to Band 6 template by default
       const stepKey = 'step7_band6' as keyof PromptTemplates
       setPromptTemplate(part, stepKey, newPrompt)
+    } else if (step === 4) {
+      // For Step 4, save to Band 6 template by default
+      const stepKey = 'step4_band6' as keyof PromptTemplates
+      setPromptTemplate(part, stepKey, newPrompt)
     } else {
       const stepKey = `step${step}` as keyof PromptTemplates
       setPromptTemplate(part, stepKey, newPrompt)
@@ -122,9 +129,16 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
       
       // Step 7 使用特定的 Band 级别 prompt 和 step
       if (step === 7 && bandLevel) {
-        const stepKey = `step7_band${bandLevel}` as keyof PromptTemplates
-        effectivePrompt = getPromptForStep(part, stepKey as any)
+        const stepKey = `step7_band${bandLevel}`
+        effectivePrompt = getPromptForStep(part, stepKey)
         effectiveStep = `7_band${bandLevel}` as any // 使用不同的step标识
+      }
+      
+      // Step 4 使用特定的 Band 级别 prompt 和 step
+      if (step === 4 && bandLevel) {
+        const stepKey = `step4_band${bandLevel}`
+        effectivePrompt = getPromptForStep(part, stepKey)
+        effectiveStep = `4_band${bandLevel}` as any // 使用不同的step标识
       }
       
       // 构建完整的 prompt (系统上下文 + 用户自定义 prompt)
@@ -133,20 +147,20 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
         fullPrompt = `${systemContext}\n\n${effectivePrompt}`
       }
       
-      const response = await generateAIResponse(part, 7, userInput.trim() || undefined, fullPrompt)
+      const response = await generateAIResponse(part, step, undefined, fullPrompt)
       
-      // 保存结果到不同的step键
+      // 保存结果，Step 7 和 Step 4 包含 band 级别信息
       const resultData = {
         content: response,
         timestamp: new Date(),
         prompt: fullPrompt, // 保存完整的 prompt (包含系统上下文)
-        band_level: bandLevel
+        ...((step === 7 || step === 4) && bandLevel && { band_level: bandLevel })
       }
       
       await setStepResult(part, effectiveStep, resultData)
 
-      // Step 7: 自动切换到对应的Tab
-      if (step === 7 && bandLevel) {
+      // Step 7 和 Step 4: 自动切换到对应的Tab
+      if ((step === 7 || step === 4) && bandLevel) {
         setActiveTab(bandLevel)
       }
 
@@ -220,26 +234,106 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
           />
         </div>
 
-        {/* Right Panel - Reference Content */}
+        {/* Right Panel - Reference Content with Band Tabs */}
         <div className="flex-1 flex flex-col">
-          {systemContext ? (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-full overflow-y-auto">
-              <div className="mb-3">
-                <h4 className="text-base font-medium text-gray-900 mb-3">Reference</h4>
-              </div>
-              <div className="prose prose-sm max-w-none">
-                <div className="whitespace-pre-wrap text-gray-800 leading-relaxed text-sm">
-                  {systemContext}
+          {(() => {
+            const step1Result = getStepResult(part, 1)
+            const step4_band6 = getStepResult(part, '4_band6' as any)
+            const step4_band7 = getStepResult(part, '4_band7' as any)
+            const step4_band8 = getStepResult(part, '4_band8' as any)
+            
+            // Check if we have any Step 4 band results to show tabs
+            const hasBandResults = step4_band6 || step4_band7 || step4_band8
+            
+            if (!step1Result) {
+              return (
+                <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 p-8 h-full flex items-center justify-center">
+                  <div className="text-center text-gray-500">
+                    <p className="text-sm">Complete Step 1 to see reference content</p>
+                  </div>
+                </div>
+              )
+            }
+            
+            if (!hasBandResults) {
+              // Fallback to original single reference display if no band results
+              return (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-full overflow-y-auto">
+                  <div className="mb-3">
+                    <h4 className="text-base font-medium text-gray-900 mb-3">Reference</h4>
+                  </div>
+                  <MarkdownContent 
+                    content={`Question: ${step1Result.content}`}
+                    className="text-gray-800 leading-relaxed text-sm"
+                  />
+                </div>
+              )
+            }
+            
+            // Show tab-based reference with different band levels
+            return (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full overflow-hidden flex flex-col">
+                <div className="border-b border-gray-200 p-4">
+                  <h4 className="text-base font-medium text-gray-900">Framework Reference</h4>
+                </div>
+                
+                {/* Tab Headers */}
+                <div className="border-b border-gray-200">
+                  <div className="flex">
+                    {['6', '7', '8'].map((band) => {
+                      const bandResult = getStepResult(part, `4_band${band}` as any)
+                      const hasResult = !!bandResult
+                      const isActive = activeTab === band
+                      
+                      return (
+                        <button
+                          key={band}
+                          onClick={() => setActiveTab(band)}
+                          disabled={!hasResult}
+                          className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                            isActive
+                              ? 'border-purple-500 text-purple-600 bg-purple-50'
+                              : hasResult 
+                                ? 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                : 'border-transparent text-gray-400'
+                          }`}
+                        >
+                          Band {band}
+                          {hasResult && (
+                            <svg className="w-4 h-4 ml-1 inline text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                            </svg>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+                
+                {/* Tab Content */}
+                <div className="flex-1 overflow-y-auto p-4">
+                  {(() => {
+                    const currentBandResult = getStepResult(part, `4_band${activeTab}` as any)
+                    
+                    return currentBandResult ? (
+                      <MarkdownContent 
+                        content={`Question: ${step1Result.content}\n\n挖空框架：\n${currentBandResult.content}`}
+                        className="text-gray-800 leading-relaxed text-sm"
+                      />
+                    ) : (
+                      <div className="text-center text-gray-500 py-12">
+                        <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z" clipRule="evenodd"/>
+                        </svg>
+                        <h5 className="text-lg font-medium text-gray-900 mb-2">No Band {activeTab} Framework</h5>
+                        <p className="text-sm">Generate Band {activeTab} framework in Step 4 to see reference</p>
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
-            </div>
-          ) : (
-            <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 p-8 h-full flex items-center justify-center">
-              <div className="text-center text-gray-500">
-                <p className="text-sm">Complete previous steps to see reference content</p>
-              </div>
-            </div>
-          )}
+            )
+          })()}
         </div>
       </div>
     )
@@ -294,29 +388,18 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
           </div>
         )}
 
-        {/* User Input (for Step 3 and 4) - Step 6 doesn't need user input */}
-        {(step === 3 || step === 4) && (
-          <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Additional Input (Optional):
-            </label>
-            <textarea
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 text-sm"
-              rows={2}
-              placeholder="Enter your thoughts or additional information..."
-            />
-          </div>
-        )}
 
         {/* Action Buttons */}
-        {step === 7 ? (
-          /* Step 7 - Three Band Level Buttons */
+        {(step === 7 || step === 4) ? (
+          /* Step 7 and Step 4 - Three Band Level Buttons */
           <div className="space-y-2">
             {['6', '7', '8'].map((band) => {
-              const bandResult = getStepResult(part, `7_band${band}` as any)
+              const bandResult = getStepResult(part, `${step}_band${band}` as any)
               const hasResult = !!bandResult
+              const buttonText = step === 7 
+                ? (hasResult ? `Regenerate Band ${band}` : `Optimize to Band ${band}`)
+                : (hasResult ? `Regenerate Band ${band}` : `Framework Band ${band}`)
+              
               return (
                 <button
                   key={band}
@@ -347,7 +430,7 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
                           <path fillRule="evenodd" d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM8.5 7.5a.5.5 0 11-1 0 .5.5 0 011 0zM12.5 7.5a.5.5 0 11-1 0 .5.5 0 011 0zM16 14a2 2 0 01-2 2H6a2 2 0 01-2-2v-2.5L8.29 9.29a1 1 0 011.42 0L16 15.5V14z" clipRule="evenodd"/>
                         </svg>
                       )}
-                      {hasResult ? `Regenerate Band ${band}` : `Optimize to Band ${band}`}
+                      {buttonText}
                     </>
                   )}
                 </button>
@@ -384,18 +467,20 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
       {/* Right Panel - Content Display */}
       <div className="flex-1 flex flex-col">
 
-        {step === 7 ? (
-          /* Step 7 - Tab-based Band level results */
+        {(step === 7 || step === 4) ? (
+          /* Step 7 and Step 4 - Tab-based Band level results */
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full overflow-hidden flex flex-col">
             <div className="border-b border-gray-200 p-4">
-              <h4 className="text-base font-medium text-gray-900">Optimization Results</h4>
+              <h4 className="text-base font-medium text-gray-900">
+                {step === 7 ? 'Optimization Results' : 'Framework Results'}
+              </h4>
             </div>
             
             {/* Tab Headers */}
             <div className="border-b border-gray-200">
               <div className="flex">
                 {['6', '7', '8'].map((band) => {
-                  const bandResult = getStepResult(part, `7_band${band}` as any)
+                  const bandResult = getStepResult(part, `${step}_band${band}` as any)
                   const hasResult = !!bandResult
                   const isActive = activeTab === band
                   
@@ -424,21 +509,22 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
             {/* Tab Content */}
             <div className="flex-1 overflow-y-auto p-4">
               {(() => {
-                const currentBandResult = getStepResult(part, `7_band${activeTab}` as any)
+                const currentBandResult = getStepResult(part, `${step}_band${activeTab}` as any)
                 
                 return currentBandResult ? (
                   <div>
                     <div className="flex items-center justify-between mb-4">
-                      <h5 className="font-medium text-gray-900">Band {activeTab} Optimization</h5>
+                      <h5 className="font-medium text-gray-900">
+                        Band {activeTab} {step === 7 ? 'Optimization' : 'Framework'}
+                      </h5>
                       <span className="text-xs text-gray-500">
                         {new Date(currentBandResult.timestamp).toLocaleString()}
                       </span>
                     </div>
-                    <div className="prose prose-sm max-w-none">
-                      <div className="whitespace-pre-wrap text-gray-800 leading-relaxed text-sm">
-                        {currentBandResult.content}
-                      </div>
-                    </div>
+                    <MarkdownContent 
+                      content={currentBandResult.content}
+                      className="text-gray-800 leading-relaxed text-sm"
+                    />
                   </div>
                 ) : (
                   <div className="text-center text-gray-500 py-12">
@@ -446,7 +532,9 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
                       <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z" clipRule="evenodd"/>
                     </svg>
                     <h5 className="text-lg font-medium text-gray-900 mb-2">No Band {activeTab} Result Yet</h5>
-                    <p className="text-sm">Click "Optimize to Band {activeTab}" to generate optimization result</p>
+                    <p className="text-sm">
+                      Click "{step === 7 ? 'Optimize to' : 'Framework'} Band {activeTab}" to generate {step === 7 ? 'optimization' : 'framework'} result
+                    </p>
                   </div>
                 )
               })()}
@@ -462,11 +550,10 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
                   {stepResult.timestamp.toLocaleString()}
                 </span>
               </div>
-              <div className="prose prose-sm max-w-none">
-                <div className="whitespace-pre-wrap text-gray-800 leading-relaxed text-sm">
-                  {stepResult.content}
-                </div>
-              </div>
+              <MarkdownContent 
+                content={stepResult.content}
+                className="text-gray-800 leading-relaxed text-sm"
+              />
             </div>
           ) : (
             <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 p-8 h-full flex items-center justify-center">

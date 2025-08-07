@@ -71,6 +71,8 @@ export async function PUT(request: Request) {
         current_step: newCurrentStep,
         step_results: updatedResults,
         is_completed: false
+      }, {
+        onConflict: 'user_id,part'  // 指定唯一约束字段
       })
       .select()
 

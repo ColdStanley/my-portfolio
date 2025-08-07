@@ -19,7 +19,9 @@ export interface PromptTemplates {
   step1: string
   step2: string
   step3: string
-  step4: string
+  step4_band6: string
+  step4_band7: string
+  step4_band8: string
   step5: string
   step6: string
   step7_band6: string
@@ -74,7 +76,7 @@ interface IELTSStepStore {
   getCurrentPromptTemplates: (part: PartType) => PromptTemplates
   setPromptTemplate: (part: PartType, stepKey: keyof PromptTemplates, template: string) => void
   resetPromptTemplates: (part: PartType) => void
-  getPromptForStep: (part: PartType, step: number) => string
+  getPromptForStep: (part: PartType, step: number | string) => string
 }
 
 const initialPartProgress: PartProgress = {
@@ -117,6 +119,30 @@ const DEFAULT_PROMPT_TEMPLATES_MAP: PromptTemplatesByPart = {
 ❗请注意：不要生成答案；不要解释题目；只输出问题，引导学生思考即可。`,
     step4: `你是一位雅思口语老师，正在帮助学生构建回答思路。学生已经写下了关键词，但不知道怎么组织回答。
 请根据上述题目和学生输入，生成一组极简的"挖空回答框架"，帮助学生自行表达。
+
+要求：
+- 每行只保留句子主干结构，中间用 ______ 留空
+- 不生成答案，不提示内容，不举例
+- 总共输出 4–5 行，必须极简
+- 符合 IELTS Part 1 回答风格`,
+    step4_band6: `你是一位雅思口语老师，正在帮助学生构建回答思路。学生已经写下了关键词，但不知道怎么组织回答。
+请根据下面这道题和学生输入，生成一组极简"挖空回答框架"，该框架符合雅思口语6分标准，帮助学生自行表达。
+
+要求：
+- 每行只保留句子主干结构，中间用 ______ 留空
+- 不生成答案，不提示内容，不举例
+- 总共输出 4–5 行，必须极简
+- 符合 IELTS Part 1 回答风格`,
+    step4_band7: `你是一位雅思口语老师，正在帮助学生构建回答思路。学生已经写下了关键词，但不知道怎么组织回答。
+请根据下面这道题和学生输入，生成一组极简"挖空回答框架"，该框架符合雅思口语7分标准，帮助学生自行表达。
+
+要求：
+- 每行只保留句子主干结构，中间用 ______ 留空
+- 不生成答案，不提示内容，不举例
+- 总共输出 4–5 行，必须极简
+- 符合 IELTS Part 1 回答风格`,
+    step4_band8: `你是一位雅思口语老师，正在帮助学生构建回答思路。学生已经写下了关键词，但不知道怎么组织回答。
+请根据下面这道题和学生输入，生成一组极简"挖空回答框架"，该框架符合雅思口语8分标准，帮助学生自行表达。
 
 要求：
 - 每行只保留句子主干结构，中间用 ______ 留空
@@ -213,6 +239,30 @@ const DEFAULT_PROMPT_TEMPLATES_MAP: PromptTemplatesByPart = {
 ❗请注意：不要生成答案；不要解释题目；只输出问题，引导学生思考即可。`,
     step4: `你是一位雅思口语老师，正在帮助学生构建回答思路。学生已经写下了关键词，但不知道怎么组织回答。
 请根据上述题目和学生输入，生成一组极简的"挖空回答框架"，帮助学生自行表达。
+
+要求：
+- 每行只保留句子主干结构，中间用 ______ 留空
+- 不生成答案，不提示内容，不举例
+- 总共输出 4–5 行，必须极简
+- 符合 IELTS Part 2 回答风格`,
+    step4_band6: `你是一位雅思口语老师，正在帮助学生构建回答思路。学生已经写下了关键词，但不知道怎么组织回答。
+请根据下面这道题和学生输入，生成一组极简"挖空回答框架"，该框架符合雅思口语6分标准，帮助学生自行表达。
+
+要求：
+- 每行只保留句子主干结构，中间用 ______ 留空
+- 不生成答案，不提示内容，不举例
+- 总共输出 4–5 行，必须极简
+- 符合 IELTS Part 2 回答风格`,
+    step4_band7: `你是一位雅思口语老师，正在帮助学生构建回答思路。学生已经写下了关键词，但不知道怎么组织回答。
+请根据下面这道题和学生输入，生成一组极简"挖空回答框架"，该框架符合雅思口语7分标准，帮助学生自行表达。
+
+要求：
+- 每行只保留句子主干结构，中间用 ______ 留空
+- 不生成答案，不提示内容，不举例
+- 总共输出 4–5 行，必须极简
+- 符合 IELTS Part 2 回答风格`,
+    step4_band8: `你是一位雅思口语老师，正在帮助学生构建回答思路。学生已经写下了关键词，但不知道怎么组织回答。
+请根据下面这道题和学生输入，生成一组极简"挖空回答框架"，该框架符合雅思口语8分标准，帮助学生自行表达。
 
 要求：
 - 每行只保留句子主干结构，中间用 ______ 留空
@@ -377,12 +427,24 @@ const DEFAULT_PROMPT_TEMPLATES_MAP: PromptTemplatesByPart = {
 
 // LocalStorage key for prompt templates by part
 const IELTS_PROMPT_STORAGE_KEY = 'ielts_step_prompt_templates_by_part'
+const IELTS_PROMPT_VERSION_KEY = 'ielts_step_prompt_version'
+const CURRENT_PROMPT_VERSION = '1.3' // Fixed getPromptForStep type support
 
 // Load prompt templates by part from localStorage
 const loadPromptTemplatesByPartFromStorage = (): PromptTemplatesByPart => {
   if (typeof window === 'undefined') return DEFAULT_PROMPT_TEMPLATES_MAP
   
   try {
+    // Check version first
+    const storedVersion = localStorage.getItem(IELTS_PROMPT_VERSION_KEY)
+    if (storedVersion !== CURRENT_PROMPT_VERSION) {
+      console.log('IELTS prompt templates version mismatch, using defaults')
+      // Update version and save defaults
+      localStorage.setItem(IELTS_PROMPT_VERSION_KEY, CURRENT_PROMPT_VERSION)
+      savePromptTemplatesByPartToStorage(DEFAULT_PROMPT_TEMPLATES_MAP)
+      return DEFAULT_PROMPT_TEMPLATES_MAP
+    }
+    
     const stored = localStorage.getItem(IELTS_PROMPT_STORAGE_KEY)
     if (stored) {
       const parsed = JSON.parse(stored)
@@ -402,6 +464,9 @@ const loadPromptTemplatesByPartFromStorage = (): PromptTemplatesByPart => {
     console.warn('Failed to load IELTS prompt templates from localStorage:', error)
   }
   
+  // Set version and save defaults
+  localStorage.setItem(IELTS_PROMPT_VERSION_KEY, CURRENT_PROMPT_VERSION)
+  savePromptTemplatesByPartToStorage(DEFAULT_PROMPT_TEMPLATES_MAP)
   return DEFAULT_PROMPT_TEMPLATES_MAP
 }
 
@@ -411,6 +476,7 @@ const savePromptTemplatesByPartToStorage = (templates: PromptTemplatesByPart) =>
   
   try {
     localStorage.setItem(IELTS_PROMPT_STORAGE_KEY, JSON.stringify(templates))
+    localStorage.setItem(IELTS_PROMPT_VERSION_KEY, CURRENT_PROMPT_VERSION)
   } catch (error) {
     console.warn('Failed to save IELTS prompt templates to localStorage:', error)
   }
@@ -430,13 +496,6 @@ const getUserId = (): string => {
   // Check if there's an authenticated user
   // For now, use anonymous UUID stored in localStorage
   
-  // Force regenerate UUID for debugging (temporary)
-  const userId = generateUUID()
-  localStorage.setItem('ielts-anonymous-user-id', userId)
-  console.log('Generated new user ID:', userId)
-  return userId
-  
-  /* Original logic - will restore after debugging
   let userId = localStorage.getItem('ielts-anonymous-user-id')
   
   // Check if existing userId is valid UUID format
@@ -445,9 +504,11 @@ const getUserId = (): string => {
   if (!userId || !uuidRegex.test(userId)) {
     userId = generateUUID() // Generate proper UUID format
     localStorage.setItem('ielts-anonymous-user-id', userId)
+    console.log('Generated new user ID:', userId)
+  } else {
+    console.log('Using existing user ID:', userId)
   }
   return userId
-  */
 }
 
 export const useIELTSStepStore = create<IELTSStepStore>()(
@@ -676,15 +737,25 @@ export const useIELTSStepStore = create<IELTSStepStore>()(
         const state = get()
         const templates = state.promptTemplatesByPart[part] || DEFAULT_PROMPT_TEMPLATES_MAP[part]
         
-        // Handle step as string (for step7_band6, step7_band7, step7_band8)
+        // Handle step as string (for step4_band6, step7_band6, etc.)
         if (typeof step === 'string') {
           const stepKey = step as keyof PromptTemplates
-          return templates[stepKey] || `Default prompt for ${part} ${step}`
+          const result = templates[stepKey]
+          if (result) {
+            return result
+          }
+          console.warn(`Missing template for ${part} ${step}, using default`)
+          return DEFAULT_PROMPT_TEMPLATES_MAP[part][stepKey] || `Default prompt for ${part} ${step}`
         }
         
         // Handle regular numeric steps
         const stepKey = `step${step}` as keyof PromptTemplates
-        return templates[stepKey] || `Default prompt for ${part} step ${step}`
+        const result = templates[stepKey]
+        if (result) {
+          return result
+        }
+        console.warn(`Missing template for ${part} step ${step}, using default`)
+        return DEFAULT_PROMPT_TEMPLATES_MAP[part][stepKey] || `Default prompt for ${part} step ${step}`
       }
     }),
     {
