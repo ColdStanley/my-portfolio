@@ -261,23 +261,13 @@ export default function QueryPanel() {
 
   return (
     <div className="flex flex-col h-full min-h-0" onClick={handleClickOutside}>
-      {/* Header with Close Button */}
-      <div className="p-3 bg-white flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-900">Query History</h3>
-          <button
-            onClick={() => setShowQueryPanel(false)}
-            className="w-6 h-6 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-full flex items-center justify-center"
-          >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
-            </svg>
-          </button>
-        </div>
+      {/* Header */}
+      <div className="p-3 flex-shrink-0">
+        <h3 className="text-sm font-semibold text-gray-900">Query History</h3>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex-shrink-0 bg-white relative">
+      <div className="flex-shrink-0 relative">
         <div className="flex">
           {tabs.map((tab) => (
             <button
@@ -466,7 +456,7 @@ export default function QueryPanel() {
         </div>
       ) : (
         /* Regular Query Tab Content */
-        <div className="flex-shrink-0 p-3 max-h-32 overflow-y-auto bg-gray-50/50">
+        <div className="flex-shrink-0 p-3 max-h-64 overflow-y-auto bg-gray-50/50">
           {getFilteredQueries().length === 0 ? (
             /* Empty State */
             <div className="text-center py-6">
@@ -501,10 +491,10 @@ export default function QueryPanel() {
                 } ${
                   deleteMode === query.id ? 'animate-pulse' : ''
                 }`}
-                title={deleteMode === query.id ? 'Click X to delete' : `"${query.selected_text}" - Long press to delete`}
+                title={deleteMode === query.id ? 'Click X to delete' : `${query.selected_text} - Long press to delete`}
               >
                 <div className="flex items-center gap-1 max-w-xs">
-                  <span className="truncate">"{query.selected_text}"</span>
+                  <span className="truncate">{query.selected_text}</span>
                   {deleteMode === query.id && (
                     <button
                       onClick={(e) => handleDeleteConfirm(query.id, e)}
@@ -560,7 +550,7 @@ export default function QueryPanel() {
                 {selectedQuery.selected_text && (
                   <div className="flex items-start gap-1">
                     <div className="text-lg font-bold text-gray-900">
-                      "{selectedQuery.selected_text}"
+                      {selectedQuery.selected_text}
                     </div>
                     {supportsPronunciation(selectedQuery.selected_text) && (
                       <button

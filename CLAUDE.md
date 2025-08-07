@@ -128,32 +128,54 @@ The codebase prioritizes rapid development with build-time flexibility:
 
 ## UI Design Guidelines
 
-### Color Theme
-**CRITICAL**: This application uses a consistent light purple theme throughout all components and modules.
+### Modern Glass Design System
+**CRITICAL**: This application uses a modern glass morphism design with purple accents throughout all components and modules.
 
-**Color Hierarchy (Light Purple Preference)**:
-- **Primary Light**: `bg-purple-500`, `text-purple-500` (preferred for buttons)
-- **Primary Medium**: `bg-purple-600`, `text-purple-600` (secondary choice)
-- **Background Light**: `bg-purple-100`, `bg-purple-50` (preferred for cards/backgrounds)
-- **Text Light**: `text-purple-600`, `text-purple-500` (preferred for text)
-- **Hover States**: `hover:bg-purple-600` (from light to slightly darker)
-- **Focus States**: `focus:ring-purple-500`, `focus:border-purple-500`
-- **Borders**: `border-purple-200`, `border-purple-300`
+#### Background Standards
+- **Primary Background**: `bg-gradient-to-br from-slate-50 via-white to-purple-50/30` (微紫灰渐变)
+- **Alternative Background**: `bg-gradient-to-br from-gray-50 via-white to-purple-50/20` (更中性版本)
+- **Avoid**: 纯色背景、深色背景、过于鲜艳的渐变
 
-**AVOID**: Dark purples like `purple-800`, `purple-900` - too deep and heavy
+#### Container & Glass Effect Standards
+- **Main Containers**: `bg-white/90 backdrop-blur-md rounded-xl shadow-xl`
+- **Secondary Containers**: `bg-white/80 backdrop-blur-sm rounded-lg shadow-lg`
+- **Interactive Elements**: `bg-white/70 backdrop-blur-sm rounded-lg shadow-md`
+- **Hover Enhancement**: `hover:bg-white/60` (增加透明度)
 
-**Required Tailwind Classes**:
+#### Tab Navigation Pattern (标准设计)
 ```tsx
-// ✅ Preferred - Light purple theme
-<button className="bg-purple-500 hover:bg-purple-600 text-white">Submit</button>
-<div className="bg-purple-100 rounded-lg p-4">Card Content</div>
+// ✅ 正确的现代Tab设计 - 基于ReadLingua Dashboard/Learning tabs
+<div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl">
+  <div className="flex">
+    <button className={`flex-1 px-6 py-4 text-center font-medium whitespace-nowrap rounded-l-xl transition-all ${
+      isActive 
+        ? 'bg-purple-500 text-white shadow-lg'
+        : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
+    }`}>
+      <svg className="w-5 h-5 inline-block mr-2" fill="currentColor">...</svg>
+      Tab Name
+    </button>
+  </div>
+</div>
+```
 
-// ⚠️ Acceptable but not preferred - Medium purple
-<button className="bg-purple-600 hover:bg-purple-700 text-white">Submit</button>
+#### Color Theme
+- **Primary Active**: `bg-purple-500 text-white shadow-lg` (激活状态)
+- **Primary Hover**: `hover:bg-purple-600` 
+- **Secondary Text**: `text-gray-600 hover:text-gray-800`
+- **Interactive Hover**: `hover:bg-white/50`
+- **Accent Elements**: `text-purple-500`, `border-purple-500`
 
-// ❌ Wrong - Too dark or other colors
-<button className="bg-purple-800 hover:bg-purple-900 text-white">Submit</button>
-<button className="bg-blue-500 hover:bg-blue-600 text-white">Submit</button>
+#### Shadow System (立体感层次)
+```css
+/* Level 1 - 基础阴影 */
+box-shadow: '0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(139, 92, 246, 0.05)'
+
+/* Level 2 - 中等阴影 */  
+box-shadow: '0 4px 15px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(139, 92, 246, 0.1)'
+
+/* Level 3 - 强阴影 */
+box-shadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 10px rgba(139, 92, 246, 0.1)'
 ```
 
 ### Layout Design Principles
@@ -232,10 +254,52 @@ The codebase prioritizes rapid development with build-time flexibility:
 - **Standard Implementation**: Use spinning circle with purple theme colors
 
 ### Forbidden Patterns
+- **Old Design**: Never use solid borders, heavy dividers, or flat card designs
 - **Colors**: Never use blue, green, red, yellow, indigo, or dark purples (800+)
-- **Lines**: Avoid `border-t`, `border-b`, dividers - use cards and spacing instead  
+- **Backgrounds**: Avoid pure solid colors - always use gradient backgrounds
+- **Containers**: Never use opaque backgrounds - always use glass effect with backdrop-blur
 - **Button Issues**: No variable widths, no text wrapping, no misaligned buttons
 - **Heavy Styling**: No thick borders, heavy shadows, complex gradients
+
+### Glass Morphism Requirements
+- **CRITICAL**: ALL new components must use glass morphism design
+- **Mandatory**: `backdrop-blur-md` or `backdrop-blur-sm` for all containers
+- **Required**: Semi-transparent backgrounds `bg-white/90`, `bg-white/80`, etc.
+- **Essential**: Gradient backgrounds for all page-level containers
+
+### Independent Floating Glass Cards Architecture
+- **Core Principle**: 每个组件都是独立浮动的glass卡片
+- **No Wrapper Containers**: 避免使用大的背景容器包裹多个组件
+- **Individual Glass Effects**: 每个功能区域都有自己独立的glass背景和阴影
+- **Layout Freedom**: 组件可以全屏显示，不受统一容器约束
+- **Visual Hierarchy**: 通过不同的glass透明度和阴影强度区分层次
+
+#### Implementation Pattern
+```tsx
+// ✅ 正确 - 独立浮动glass卡片
+<div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
+  {/* Header - 独立glass卡片 */}
+  <div className="bg-white/95 backdrop-blur-md shadow-lg">
+    Header Content
+  </div>
+  
+  {/* Content Areas - 各自独立glass卡片 */}
+  <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg">
+    Article Content
+  </div>
+  
+  <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg">
+    Query Panel
+  </div>
+</div>
+
+// ❌ 错误 - 统一大容器包裹
+<div className="bg-white rounded-lg shadow-sm">
+  <Header />
+  <Article />
+  <QueryPanel />
+</div>
+```
 
 ## Content & Text Guidelines
 

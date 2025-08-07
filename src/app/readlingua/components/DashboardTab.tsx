@@ -22,7 +22,7 @@ export default function DashboardTab() {
   useEffect(() => {
     // Load articles from Supabase
     loadArticles()
-  }, [])
+  }, [nativeLanguage, learningLanguage])
 
   const loadArticles = async () => {
     try {
@@ -51,14 +51,20 @@ export default function DashboardTab() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
       {/* Header */}
-      <div className="px-6 py-4 bg-white/80 backdrop-blur-sm border-b border-purple-100">
+      <div className="px-6 py-6 bg-white/90 backdrop-blur-md shadow-lg"
+        style={{
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 10px rgba(139, 92, 246, 0.1)'
+        }}>
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
           
           {/* Language Selector */}
-          <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-xl shadow-sm border border-purple-100">
+          <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-xl shadow-lg"
+            style={{
+              boxShadow: '0 4px 15px rgba(139, 92, 246, 0.15), 0 2px 8px rgba(139, 92, 246, 0.1)'
+            }}>
             <span className="text-xs text-gray-500 font-medium">From:</span>
             <div className="flex items-center gap-2">
               <FlagIcon language={learningLanguage} size={16} />
@@ -110,12 +116,12 @@ export default function DashboardTab() {
           
           {/* Browse Articles */}
           <div 
-            className="group bg-white rounded-2xl shadow-lg hover:shadow-xl border border-purple-100 transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1"
+            className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 min-h-[500px]"
             style={{
-              boxShadow: '0 10px 30px rgba(139, 92, 246, 0.1), 0 4px 15px rgba(139, 92, 246, 0.05)'
+              boxShadow: '0 15px 35px rgba(139, 92, 246, 0.15), 0 6px 20px rgba(139, 92, 246, 0.08)'
             }}
           >
-            <div className="p-6">
+            <div className="p-6 h-full flex flex-col">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                   <svg className="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
@@ -128,7 +134,7 @@ export default function DashboardTab() {
                 </div>
               </div>
               
-              <div className="max-h-80 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto">
                 <ArticleList 
                   articles={filteredArticles}
                   onArticleSelect={handleArticleSelect}
@@ -139,9 +145,9 @@ export default function DashboardTab() {
 
           {/* Add New Article */}
           <div 
-            className="group bg-white rounded-2xl shadow-lg hover:shadow-xl border border-purple-100 transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1"
+            className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 min-h-[500px]"
             style={{
-              boxShadow: '0 10px 30px rgba(139, 92, 246, 0.1), 0 4px 15px rgba(139, 92, 246, 0.05)'
+              boxShadow: '0 15px 35px rgba(139, 92, 246, 0.15), 0 6px 20px rgba(139, 92, 246, 0.08)'
             }}
           >
             <div className="p-6">

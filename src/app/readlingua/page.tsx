@@ -9,17 +9,17 @@ export default function ReadLinguaPage() {
   const { activeTab, setActiveTab } = useReadLinguaStore()
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
+      {/* Tab Navigation - Fixed at top for all tabs */}
       <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Tab Navigation */}
-        <div className="bg-white rounded-lg shadow-sm mb-6">
-          <div className="flex border-b border-gray-200">
+        <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl mb-6">
+          <div className="flex">
             <button
               onClick={() => setActiveTab('dashboard')}
-              className={`flex-1 px-6 py-4 text-center font-medium whitespace-nowrap ${
+              className={`flex-1 px-6 py-4 text-center font-medium whitespace-nowrap rounded-l-xl transition-all ${
                 activeTab === 'dashboard'
-                  ? 'border-b-2 border-purple-500 text-purple-600 bg-purple-50'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'bg-purple-500 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
               }`}
             >
               <svg className="w-5 h-5 inline-block mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -29,10 +29,10 @@ export default function ReadLinguaPage() {
             </button>
             <button
               onClick={() => setActiveTab('learning')}
-              className={`flex-1 px-6 py-4 text-center font-medium whitespace-nowrap ${
+              className={`flex-1 px-6 py-4 text-center font-medium whitespace-nowrap rounded-r-xl transition-all ${
                 activeTab === 'learning'
-                  ? 'border-b-2 border-purple-500 text-purple-600 bg-purple-50'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'bg-purple-500 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
               }`}
             >
               <svg className="w-5 h-5 inline-block mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -42,13 +42,15 @@ export default function ReadLinguaPage() {
             </button>
           </div>
         </div>
-
-        {/* Tab Content */}
-        <div className="bg-white rounded-lg shadow-sm">
-          {activeTab === 'dashboard' && <DashboardTab />}
-          {activeTab === 'learning' && <LearningTab />}
-        </div>
       </div>
+
+      {/* Tab Content */}
+      {activeTab === 'dashboard' && (
+        <div className="max-w-7xl mx-auto px-4">
+          <DashboardTab />
+        </div>
+      )}
+      {activeTab === 'learning' && <LearningTab />}
     </div>
   )
 }

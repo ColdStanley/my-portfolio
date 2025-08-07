@@ -291,8 +291,8 @@ export default function ArticleReader({ article }: ArticleReaderProps) {
 
   return (
     <div className="flex flex-col min-h-full">
-      {/* Article Header - Aligned with QueryPanel header + tabs */}
-      <div className="bg-white flex-shrink-0">
+      {/* Article Header */}
+      <div className="flex-shrink-0">
         {/* Article Title Section */}
         <div className="p-6 pb-4">
           <h1 className="text-2xl font-bold text-gray-900 mb-1">{article.title}</h1>
@@ -314,8 +314,8 @@ export default function ArticleReader({ article }: ArticleReaderProps) {
             <span>{new Date(article.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
           </div>
         </div>
-        {/* Spacer to match QueryPanel height */}
-        <div className="h-[23px] border-b border-gray-200"></div>
+        {/* Spacer */}
+        <div className="h-[23px] border-b border-gray-200/30"></div>
       </div>
 
       {/* Article Content */}

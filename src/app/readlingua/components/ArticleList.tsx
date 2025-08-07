@@ -37,9 +37,15 @@ export default function ArticleList({ articles, onArticleSelect }: ArticleListPr
         <div
           key={article.id}
           onClick={() => onArticleSelect(article)}
-          className="p-4 cursor-pointer transition-all duration-200 rounded-lg border border-gray-100 hover:border-gray-200 hover:bg-gray-50"
+          className="p-4 cursor-pointer transition-all duration-200 rounded-lg hover:bg-purple-50"
           style={{
-            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+            boxShadow: '0 2px 8px rgba(139, 92, 246, 0.08), 0 1px 4px rgba(139, 92, 246, 0.05)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 4px 15px rgba(139, 92, 246, 0.15), 0 2px 8px rgba(139, 92, 246, 0.1)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.08), 0 1px 4px rgba(139, 92, 246, 0.05)'
           }}
         >
           <div className="flex items-center justify-between mb-2">

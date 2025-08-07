@@ -6,8 +6,8 @@ import { queryApi } from '../utils/apiClient'
 import { supabase } from '../utils/supabaseClient'
 import ArticleReader from './ArticleReader'
 import QueryPanel from './QueryPanel'
-import ModelSelector from './ModelSelector'
 import PromptManager from './PromptManager'
+import SettingsPanel from './SettingsPanel'
 
 export default function LearningTab() {
   const { selectedArticle, queries, setQueries, setSelectedQuery, showQueryPanel, setShowQueryPanel, setShowPromptManager } = useReadLinguaStore()
@@ -77,47 +77,31 @@ export default function LearningTab() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Model Selector Header */}
-      <div className="p-4 border-b border-gray-200 bg-purple-50 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <ModelSelector />
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowPromptManager(true)}
-              className="w-8 h-8 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-full flex items-center justify-center"
-              title="Prompt Manager"
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd"/>
-              </svg>
-            </button>
-            <button
-              onClick={() => useReadLinguaStore.getState().setActiveTab('dashboard')}
-              className="w-24 px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium whitespace-nowrap flex items-center gap-1"
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd"/>
-              </svg>
-              Back
-            </button>
-          </div>
-        </div>
-      </div>
+    <div>
+      {/* Settings Panel - Bottom Right */}
+      <SettingsPanel />
 
       {/* Main Content */}
-      <div className="flex flex-1 min-h-0">
+      <div className="flex flex-1 min-h-0 max-w-7xl mx-auto px-4 w-full gap-6">
         {/* Article Reader - Left Side */}
         <div className={`transition-all duration-300 ${showQueryPanel ? 'w-1/2' : 'w-full'}`}>
-          <ArticleReader article={selectedArticle} />
+          <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl h-full"
+            style={{
+              boxShadow: '0 8px 32px rgba(139, 92, 246, 0.15), 0 4px 16px rgba(0, 0, 0, 0.1)'
+            }}>
+            <ArticleReader article={selectedArticle} />
+          </div>
         </div>
         
         {/* Query Panel - Right Side */}
         {showQueryPanel && (
-          <div className="w-1/2 border-l border-gray-200">
-            <QueryPanel />
+          <div className="w-1/2">
+            <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl h-full"
+              style={{
+                boxShadow: '0 8px 32px rgba(139, 92, 246, 0.15), 0 4px 16px rgba(0, 0, 0, 0.1)'
+              }}>
+              <QueryPanel />
+            </div>
           </div>
         )}
       </div>

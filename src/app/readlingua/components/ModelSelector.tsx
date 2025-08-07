@@ -8,7 +8,10 @@ export default function ModelSelector() {
   return (
     <div className="flex items-center gap-2">
       <span className="text-sm text-gray-600">AI Model:</span>
-      <div className="flex rounded-lg border border-gray-200 bg-white">
+      <div className="flex rounded-lg bg-white/80 backdrop-blur-sm shadow-md"
+        style={{
+          boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(139, 92, 246, 0.1)'
+        }}>
         <button
           onClick={() => setSelectedAiModel('deepseek')}
           className={`px-3 py-1 text-sm font-medium rounded-l-lg whitespace-nowrap flex items-center gap-1 ${
