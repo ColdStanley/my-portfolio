@@ -24,7 +24,7 @@ JD2CV是一个AI驱动的简历匹配和优化系统，目前功能完整但存�
 **目标**: 拆分为更小、更易维护的组件
 **计划**:
 - [ ] 提取ExperienceForm为独立组件
-- [ ] 提取JDSearchPanel为独立组件  
+- [x] ~~提取JDSearchPanel为独立组件~~ (已删除搜索功能)  
 - [ ] 提取MatchingResultsDisplay为独立组件
 - [ ] 提取PromptManagement为独立组件
 - [ ] 创建shared hooks管理状态逻辑

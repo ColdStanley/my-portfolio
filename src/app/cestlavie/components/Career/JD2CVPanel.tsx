@@ -295,10 +295,12 @@ function ExperienceForm({
   }
   
   const removeKeyword = (keyword: string) => {
-    setFormData(prev => ({
-      ...prev,
-      keywords: prev.keywords.filter(k => k !== keyword)
-    }))
+    if (confirm(`Delete keyword "${keyword}"?`)) {
+      setFormData(prev => ({
+        ...prev,
+        keywords: prev.keywords.filter(k => k !== keyword)
+      }))
+    }
   }
 
   
@@ -863,40 +865,8 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
 
 
 
-  // Experience keyword tooltip states
-  const [deleteExperienceKeywordTooltip, setDeleteExperienceKeywordTooltip] = useState<{
-    show: boolean
-    keyword: string
-    experienceIndex: number
-    position: { x: number; y: number }
-  }>({ show: false, keyword: '', experienceIndex: -1, position: { x: 0, y: 0 } })
-  
-  const [addExperienceKeywordTooltip, setAddExperienceKeywordTooltip] = useState<{
-    show: boolean
-    text: string
-    experienceIndex: number
-    position: { x: number; y: number }
-  }>({ show: false, text: '', experienceIndex: -1, position: { x: 0, y: 0 } })
-
-  // Generated text keyword tooltip states
-  const [deleteGeneratedKeywordTooltip, setDeleteGeneratedKeywordTooltip] = useState<{
-    show: boolean
-    keyword: string
-    generatedIndex: number
-    position: { x: number; y: number }
-  }>({ show: false, keyword: '', generatedIndex: -1, position: { x: 0, y: 0 } })
-  
-  const [addGeneratedKeywordTooltip, setAddGeneratedKeywordTooltip] = useState<{
-    show: boolean
-    text: string
-    generatedIndex: number
-    position: { x: number; y: number }
-  }>({ show: false, text: '', generatedIndex: -1, position: { x: 0, y: 0 } })
   
   // Search states
-  const [searchTitle, setSearchTitle] = useState('')
-  const [searchCompany, setSearchCompany] = useState('')
-  const [isSearching, setIsSearching] = useState(false)
 
 
   // Highlight keywords in text
@@ -910,10 +880,10 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
         const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
         const regex = new RegExp(`\\b${escapedKeyword}\\b`, 'gi')
         
-        // Clickable highlighted keywords - same purple style as JD highlights
+        // Simple highlighted keywords - read-only display
         highlightedText = highlightedText.replace(
           regex, 
-          `<span class="inline-block px-2 py-1 rounded-lg bg-purple-100/20 text-purple-800 backdrop-blur-xs shadow-sm cursor-pointer hover:bg-purple-200/30 transition-colors" data-keyword="${keyword.replace(/"/g, '&quot;')}">${keyword}</span>`
+          `<span class="inline-block px-2 py-1 rounded-lg bg-purple-100/20 text-purple-800 backdrop-blur-xs shadow-sm">${keyword}</span>`
         )
       }
     })
@@ -1448,63 +1418,6 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
 
 
 
-  const handleSearch = async () => {
-    if (!searchTitle || !searchCompany) {
-      return
-    }
-
-    setIsSearching(true)
-    try {
-      const response = await fetch('/api/jd2cv/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: searchTitle,
-          company: searchCompany
-        })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.found) {
-          // Fill all form fields with the found data
-          setJdData({
-            title: data.record.title || '',
-            company: data.record.company || '',
-            full_job_description: data.record.full_job_description || '',
-            jd_key_sentences: data.record.jd_key_sentences || '',
-            keywords_from_sentences: data.record.keywords_from_sentences || '',
-            application_stage: data.record.application_stage || '',
-            comment: data.record.comment || '',
-            role_group: data.record.role_group || '',
-            firm_type: data.record.firm_type || '',
-            cv_pdf: data.record.cv_pdf || ''
-          })
-          
-
-          // Set states to show the data is loaded
-          setJdSaved(true)
-          if (data.record.id) {
-            setCurrentPageId(data.record.id)
-          }
-          
-          
-          
-          // Keep default tab as Job Description
-          // setActiveJDTab(0) // Default is already 0
-          
-          // Set match score if available (including 0)
-          if (typeof data.record.match_score === 'number') {
-            setMatchScore(data.record.match_score)
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Search error:', error)
-    } finally {
-      setIsSearching(false)
-    }
-  }
 
   const handleFilterConfirm = async () => {
     if (!filterTitle || !filterCompany) {
@@ -1927,28 +1840,6 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
 
 
 
-  // Handle confirming delete of generated text keyword
-  const handleConfirmGeneratedKeywordDelete = () => {
-    const { keyword, generatedIndex } = deleteGeneratedKeywordTooltip
-    setDeleteGeneratedKeywordTooltip({ show: false, keyword: '', generatedIndex: -1, position: { x: 0, y: 0 } })
-
-    // Update database only - local state handling removed (obsolete state variable)
-    // Note: The filtered keywords would have been: keywords.filter(k => k !== keyword)
-    // This functionality may need to be reimplemented with current state management
-  }
-
-  // Handle confirming add of new generated text keyword
-  const handleConfirmGeneratedKeywordAdd = () => {
-    const { text, generatedIndex } = addGeneratedKeywordTooltip
-    setAddGeneratedKeywordTooltip({ show: false, text: '', generatedIndex: -1, position: { x: 0, y: 0 } })
-    
-    // Clear selection
-    window.getSelection()?.removeAllRanges()
-
-    // Update database only - local state handling removed (obsolete state variable)
-    // Note: The new keywords array would have been: [...existingKeywords, text]
-    // This functionality may need to be reimplemented with current state management
-  }
 
   // Close tooltips when clicking outside
   useEffect(() => {
@@ -1957,18 +1848,14 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
       if (!target.closest('.fixed.z-50')) {
         setDeleteTooltip({ show: false, sentence: '', position: { x: 0, y: 0 } })
         setAddTooltip({ show: false, text: '', position: { x: 0, y: 0 } })
-        setDeleteExperienceKeywordTooltip({ show: false, keyword: '', experienceIndex: -1, position: { x: 0, y: 0 } })
-        setAddExperienceKeywordTooltip({ show: false, text: '', experienceIndex: -1, position: { x: 0, y: 0 } })
-        setDeleteGeneratedKeywordTooltip({ show: false, keyword: '', generatedIndex: -1, position: { x: 0, y: 0 } })
-        setAddGeneratedKeywordTooltip({ show: false, text: '', generatedIndex: -1, position: { x: 0, y: 0 } })
       }
     }
 
-    if (deleteExperienceKeywordTooltip.show || addExperienceKeywordTooltip.show || deleteGeneratedKeywordTooltip.show || addGeneratedKeywordTooltip.show) {
+    if (deleteTooltip.show || addTooltip.show) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [deleteExperienceKeywordTooltip.show, addExperienceKeywordTooltip.show, deleteGeneratedKeywordTooltip.show, addGeneratedKeywordTooltip.show])
+  }, [deleteTooltip.show, addTooltip.show])
 
   // Handle escape key for error modal
   useEffect(() => {
@@ -2357,34 +2244,6 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
         
         {/* Right 50%: Search & Filter */}
         <div className="w-1/2 flex-shrink-0 space-y-2">
-          {/* Search Row */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-gray-700 w-16 flex-shrink-0">Search:</span>
-            <input
-              type="text"
-              value={searchTitle}
-              onChange={(e) => setSearchTitle(e.target.value)}
-              placeholder="Title..."
-              className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 w-24 text-xs"
-            />
-            <input
-              type="text"
-              value={searchCompany}
-              onChange={(e) => setSearchCompany(e.target.value)}
-              placeholder="Company..."
-              className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 w-24 text-xs"
-            />
-            <div className="flex-1 flex justify-end pr-2">
-              <button
-                onClick={handleSearch}
-                disabled={isSearching || !searchTitle || !searchCompany}
-                className="w-16 px-2 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50 text-xs font-medium transition-colors"
-              >
-                {isSearching ? 'Searching...' : 'Search'}
-              </button>
-            </div>
-          </div>
-          
           {/* Pre-filter Row */}
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-gray-700 w-16 flex-shrink-0">Pre-filter:</span>
@@ -2483,14 +2342,12 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
             </div>
           </div>
           
-          {/* Status Messages - Only for Search and Clear, not Filtering */}
-          {(isSearching || isClearing) && (
+          {/* Status Messages - Only for Clear, not Filtering */}
+          {isClearing && (
             <div className="flex justify-end">
               <div className="flex items-center gap-2 text-xs text-purple-600">
                 <div className="animate-spin rounded-full h-3 w-3 border-2 border-purple-600 border-t-transparent"></div>
-                <span>
-                  {isSearching ? 'Searching database...' : 'Clearing form...'}
-                </span>
+                <span>Clearing form...</span>
               </div>
             </div>
           )}
