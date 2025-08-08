@@ -91,7 +91,6 @@ export default function TextSelectionToolbar({
 
   const tooltipStyle = calculatePosition()
 
-  console.log('Tooltip render - position:', position, 'calculated style:', JSON.stringify(tooltipStyle))
   
   const tooltipContent = (
     <div

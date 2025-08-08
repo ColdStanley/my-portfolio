@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { marked } from 'marked'
 import { X } from 'lucide-react'
 import { useReadLinguaStore } from '../store/useReadLinguaStore'
@@ -51,7 +52,7 @@ export default function AIResponseFloatingPanel({
 
   const handleClose = () => {
     setIsAnimating(false)
-    setTimeout(onClose, 200) // Wait for animation to complete
+    setTimeout(onClose, 200) // Wait for exit animation to complete
   }
 
   const parseMarkdownResponse = (text: string) => {
@@ -90,11 +91,11 @@ export default function AIResponseFloatingPanel({
 
   if (!isVisible) return null
 
-  return (
+  const panelContent = (
     <>
       {/* Backdrop */}
       <div 
-        className={`fixed inset-0 z-40 transition-opacity duration-200 ${
+        className={`fixed inset-0 z-[10000] transition-opacity duration-300 bg-black/20 ${
           isAnimating ? 'opacity-100' : 'opacity-0'
         }`}
         onClick={handleClose}
@@ -102,18 +103,20 @@ export default function AIResponseFloatingPanel({
       
       {/* Floating Panel */}
       <div 
-        className={`fixed z-50 bg-white rounded-xl shadow-2xl border border-gray-200 transform transition-all duration-200 flex flex-col ${
-          isAnimating 
-            ? 'opacity-100 scale-100 translate-x-0 translate-y-0' 
-            : 'opacity-0 scale-95 translate-x-2 translate-y-2'
+        className={`fixed bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col ${
+          isAnimating ? 'ai-panel-enter' : 'ai-panel-exit'
         }`}
         style={{
+          position: 'fixed',
           left: '50%',
           top: '50%',
-          transform: `translate(-50%, -50%) ${isAnimating ? 'scale(1)' : 'scale(0.95)'}`,
-          width: 'min(700px, 90vw)',
-          height: 'min(600px, 85vh)',
-          maxHeight: '85vh',
+          width: Math.min(700, window.innerWidth * 0.9) + 'px',
+          height: Math.min(600, window.innerHeight * 0.85) + 'px',
+          maxHeight: window.innerHeight * 0.85 + 'px',
+          marginLeft: -Math.min(700, window.innerWidth * 0.9) / 2 + 'px',
+          marginTop: -Math.min(600, window.innerHeight * 0.85) / 2 + 'px',
+          zIndex: 2147483647,
+          boxSizing: 'border-box'
         }}
       >
         {/* Header */}
@@ -230,7 +233,49 @@ export default function AIResponseFloatingPanel({
             margin-bottom: 0.5rem;
           }
         `}</style>
+
+        {/* Refined Sci-Fi Animation Styles */}
+        <style jsx>{`
+          :global(.ai-panel-enter) {
+            animation: scaleIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+          }
+          
+          :global(.ai-panel-exit) {
+            animation: scaleOut 0.2s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+          }
+          
+          @keyframes scaleIn {
+            0% { 
+              opacity: 0;
+              transform: scale(0.8);
+              box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.4);
+            }
+            60% {
+              transform: scale(1.02);
+              box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+            }
+            100% { 
+              opacity: 1;
+              transform: scale(1);
+              box-shadow: 0 8px 32px rgba(139, 92, 246, 0.15);
+            }
+          }
+          
+          @keyframes scaleOut {
+            0% { 
+              opacity: 1;
+              transform: scale(1);
+            }
+            100% { 
+              opacity: 0;
+              transform: scale(0.9);
+              box-shadow: 0 0 0 rgba(139, 92, 246, 0);
+            }
+          }
+        `}</style>
       </div>
     </>
   )
+  
+  return typeof document !== 'undefined' ? createPortal(panelContent, document.body) : null
 }

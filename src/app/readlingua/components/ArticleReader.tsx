@@ -201,16 +201,12 @@ export default function ArticleReader({ article }: ArticleReaderProps) {
     
     // Parse Markdown to HTML
     try {
-      console.log('Original content:', content.substring(0, 200) + '...')
-      
       // Configure marked options for better rendering
       content = marked.parse(content, {
         breaks: true,        // Convert line breaks to <br>
         gfm: true,          // GitHub Flavored Markdown
         sanitize: false,    // Don't sanitize HTML (we'll handle it)
       })
-      
-      console.log('Parsed content:', content.substring(0, 200) + '...')
     } catch (error) {
       console.warn('Markdown parsing failed, using plain text:', error)
       // Fallback: convert line breaks manually if markdown parsing fails

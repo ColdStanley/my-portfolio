@@ -85,7 +85,7 @@ export default function LearningTab() {
       <div className="flex flex-1 min-h-0 max-w-7xl mx-auto px-4 w-full gap-6">
         {/* Article Reader - Left Side */}
         <div className={`transition-all duration-300 ${showQueryPanel ? 'w-1/2' : 'w-full'}`}>
-          <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl h-full"
+          <div className="bg-white/95 rounded-xl shadow-xl h-full"
             style={{
               boxShadow: '0 8px 32px rgba(139, 92, 246, 0.15), 0 4px 16px rgba(0, 0, 0, 0.1)'
             }}>
@@ -96,7 +96,7 @@ export default function LearningTab() {
         {/* Query Panel - Right Side */}
         {showQueryPanel && (
           <div className="w-1/2">
-            <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl h-full"
+            <div className="bg-white/95 rounded-xl shadow-xl h-full"
               style={{
                 boxShadow: '0 8px 32px rgba(139, 92, 246, 0.15), 0 4px 16px rgba(0, 0, 0, 0.1)'
               }}>

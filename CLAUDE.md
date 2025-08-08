@@ -421,3 +421,50 @@ import MarkdownContent from './MarkdownContent'
 2. Adjust CSS variables for project theme
 3. Verify `marked` dependency is installed
 4. Import and use for any AI content display
+
+## ReadLingua Known Issues
+
+### Tooltip Position Issues (未解决)
+
+**问题描述**:
+- TextSelectionToolbar和AIResponseFloatingPanel存在定位问题
+- 即使使用Portal渲染到document.body，仍受父容器影响
+
+**具体表现**:
+1. **TextSelectionToolbar**: 修复前固定在页面左上角，修复后通过Portal正常跟随选中文本
+2. **AIResponseFloatingPanel**: 只在Article部分居中，而非整个屏幕居中，右侧被query history遮挡
+
+**已尝试解决方案**:
+- 使用`createPortal(content, document.body)`渲染到body
+- 设置高z-index值 (z-[9999])
+- 强制设置`position: fixed`
+
+**推测根因**:
+- CSS层叠上下文影响fixed定位计算
+- 父容器的transform、perspective等CSS属性创建新的定位上下文
+- z-index层级冲突
+
+**临时状态**: TextSelectionToolbar已修复，AIResponseFloatingPanel部分修复但未完全解决
+
+**最终解决方案**: 移除LearningTab中的`backdrop-blur-md`属性，改用`bg-white/95`
+
+### Fixed定位问题预防规则 (CRITICAL)
+
+**永远禁止的CSS组合**:
+- 任何包含Portal/Modal的组件路径上禁用：
+  - `backdrop-filter` / `backdrop-blur-*`  
+  - `filter`属性
+  - `transform`属性
+  - `perspective`属性
+  - `will-change: transform`
+  - `contain`属性
+
+**检查规则**:
+1. 新增Modal/Portal组件时，必须检查完整DOM路径
+2. 使用`position: fixed`前必须确认无包含块创建者
+3. glass效果用阴影和透明度替代，避免backdrop-filter
+
+**替代方案**:
+- `backdrop-blur-md` → `bg-white/95` + `shadow-xl`
+- glass效果通过多层阴影实现立体感
+- Portal组件必须渲染到document.body避免继承影响

@@ -25,6 +25,9 @@ export default function QueryPanel() {
   const [deleteMode, setDeleteMode] = useState<string | null>(null)
   const [quizAnswers, setQuizAnswers] = useState<{ [key: string]: string }>({})
   const [currentQuizAnswer, setCurrentQuizAnswer] = useState('')
+  const [quizTimers, setQuizTimers] = useState<{ [key: string]: number }>({}) // Remaining time for each question
+  const [activeTimers, setActiveTimers] = useState<{ [key: string]: NodeJS.Timeout }>({}) // Timer refs
+  const [visibleQuestionIndex, setVisibleQuestionIndex] = useState(0) // Control which questions to show
 
   const handleQueryClick = (query: any) => {
     setSelectedQuery(query)
@@ -189,9 +192,61 @@ export default function QueryPanel() {
   }
 
   // Quiz functions
+  const startQuizTimer = (questionIndex: number) => {
+    // Clear existing timer if any
+    if (activeTimers[questionIndex]) {
+      clearInterval(activeTimers[questionIndex])
+    }
+
+    // Initialize timer at 30 seconds
+    setQuizTimers(prev => ({ ...prev, [questionIndex]: 30 }))
+
+    // Start countdown
+    const timer = setInterval(() => {
+      setQuizTimers(prev => {
+        const currentTime = prev[questionIndex]
+        if (currentTime <= 1) {
+          // Time's up - auto submit as incorrect
+          clearInterval(timer)
+          setActiveTimers(prev => {
+            const newTimers = { ...prev }
+            delete newTimers[questionIndex]
+            return newTimers
+          })
+          // Schedule submission for next tick to avoid render-during-render
+          setTimeout(() => {
+            submitQuizAnswer(questionIndex, '') // Submit empty answer (incorrect)
+          }, 0)
+          return { ...prev, [questionIndex]: 0 }
+        }
+        return { ...prev, [questionIndex]: currentTime - 1 }
+      })
+    }, 1000)
+
+    // Store timer reference
+    setActiveTimers(prev => ({ ...prev, [questionIndex]: timer }))
+  }
+
+  const clearQuizTimer = (questionIndex: number) => {
+    if (activeTimers[questionIndex]) {
+      clearInterval(activeTimers[questionIndex])
+      setActiveTimers(prev => {
+        const newTimers = { ...prev }
+        delete newTimers[questionIndex]
+        return newTimers
+      })
+      setQuizTimers(prev => {
+        const newTimers = { ...prev }
+        delete newTimers[questionIndex]
+        return newTimers
+      })
+    }
+  }
+
   const handleQuizSubmit = (questionIndex: number) => {
     const answer = quizAnswers[questionIndex] || ''
     if (answer.trim()) {
+      clearQuizTimer(questionIndex)
       submitQuizAnswer(questionIndex, answer.trim())
       // Clear the answer after submission
       setQuizAnswers(prev => ({
@@ -213,6 +268,27 @@ export default function QueryPanel() {
     setSelectedQuery(question.originalQuery)
     setActiveTab(question.originalQuery.query_type as any)
   }
+
+  // Clean up timers on unmount or tab change
+  useEffect(() => {
+    return () => {
+      // Clear all active timers on unmount
+      Object.values(activeTimers).forEach(timer => {
+        if (timer) clearInterval(timer)
+      })
+    }
+  }, [])
+
+  useEffect(() => {
+    // Clear timers when switching away from quiz tab
+    if (activeTab !== 'quiz') {
+      Object.values(activeTimers).forEach(timer => {
+        if (timer) clearInterval(timer)
+      })
+      setActiveTimers({})
+      setQuizTimers({})
+    }
+  }, [activeTab])
 
   const handlePlayPronunciation = async (text: string) => {
     if (isPlaying) return
@@ -329,12 +405,25 @@ export default function QueryPanel() {
             )
           ) : (
             /* Quiz Questions - Progressive Display */
-            <div className="flex-1 overflow-y-auto p-3 space-y-4">
-              {quizQuestions.map((question, index) => {
-                // Show question if it's answered or if it's the next unanswered question
-                const shouldShow = question.isAnswered || 
-                  index === 0 || 
-                  quizQuestions[index - 1]?.isAnswered
+            <div className="flex-1 overflow-y-auto">
+              {/* Progress Bar */}
+              <div className="px-4 py-3 bg-white border-b border-gray-100">
+                <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                  <span>Progress</span>
+                  <span>{quizQuestions.filter(q => q.isAnswered).length} of {quizQuestions.length} completed</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-purple-500 h-2 rounded-full transition-all duration-300" 
+                    style={{width: `${(quizQuestions.filter(q => q.isAnswered).length / quizQuestions.length) * 100}%`}} 
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 space-y-4">
+                {quizQuestions.map((question, index) => {
+                // Show question if it's within visible range
+                const shouldShow = index <= visibleQuestionIndex
                 
                 if (!shouldShow) return null
                 
@@ -348,12 +437,25 @@ export default function QueryPanel() {
                       <div className="text-sm text-gray-500 font-medium">
                         Question {index + 1}/{quizQuestions.length}
                       </div>
-                      <button
-                        onClick={() => handleQuizQuestionClick(question)}
-                        className="text-xs text-purple-600 hover:text-purple-800 hover:underline"
-                      >
-                        View original query →
-                      </button>
+                      <div className="flex items-center gap-3">
+                        {/* Timer Progress Bar */}
+                        {!question.isAnswered && (
+                          <div className="w-24 bg-gray-200 rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full transition-all duration-1000 ${
+                                (quizTimers[index] || 30) <= 5 ? 'bg-red-500' : 'bg-purple-500'
+                              }`}
+                              style={{width: `${((quizTimers[index] || 30) / 30) * 100}%`}}
+                            />
+                          </div>
+                        )}
+                        <button
+                          onClick={() => handleQuizQuestionClick(question)}
+                          className="text-xs text-purple-600 hover:text-purple-800 hover:underline"
+                        >
+                          View original query →
+                        </button>
+                      </div>
                     </div>
                     
                     {/* Question Text */}
@@ -367,50 +469,46 @@ export default function QueryPanel() {
                     {/* Answer Input or Result */}
                     {!question.isAnswered ? (
                       <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={quizAnswers[index] || ''}
-                          onChange={(e) => handleQuizAnswerChange(index, e.target.value)}
-                          placeholder="Type your answer..."
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              handleQuizSubmit(index)
-                            }
-                          }}
-                        />
-                        <button
-                          onClick={() => handleQuizSubmit(index)}
-                          disabled={!quizAnswers[index]?.trim()}
-                          className="px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium whitespace-nowrap"
-                        >
-                          Submit
-                        </button>
+                          <input
+                            type="text"
+                            value={quizAnswers[index] || ''}
+                            onChange={(e) => handleQuizAnswerChange(index, e.target.value)}
+                            placeholder="Type your answer..."
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                handleQuizSubmit(index)
+                              }
+                            }}
+                            onFocus={() => {
+                              // Start timer when user focuses on input
+                              if (!activeTimers[index]) {
+                                startQuizTimer(index)
+                              }
+                            }}
+                            autoFocus={shouldShow && !question.isAnswered && index === visibleQuestionIndex}
+                          />
+                          <button
+                            onClick={() => handleQuizSubmit(index)}
+                            disabled={!quizAnswers[index]?.trim()}
+                            className="px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium whitespace-nowrap"
+                          >
+                            Submit
+                          </button>
                       </div>
                     ) : (
                       /* Answer Result */
-                      <div className="space-y-3">
-                        {/* User Answer vs Correct Answer */}
-                        <div className={`p-3 rounded-lg flex items-center gap-2 ${
+                      <div className="space-y-3 answer-reveal">
+                        {/* Correct Answer */}
+                        <div className={`p-3 rounded-lg ${
                           question.isCorrect 
-                            ? 'bg-green-50 border border-green-200' 
-                            : 'bg-red-50 border border-red-200'
+                            ? 'bg-purple-100 text-purple-700' 
+                            : 'bg-purple-50 text-purple-600'
                         }`}>
-                          {question.isCorrect ? (
-                            <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                            </svg>
-                          ) : (
-                            <svg className="w-5 h-5 text-red-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
-                            </svg>
-                          )}
-                          
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-gray-900">
-                                Answer: {question.answer}
-                              </span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">
+                              Answer: {question.answer}
+                            </span>
                               {supportsPronunciation(question.answer) && (
                                 <button
                                   onClick={() => handlePlayPronunciation(question.answer)}
@@ -429,28 +527,41 @@ export default function QueryPanel() {
                                   )}
                                 </button>
                               )}
-                            </div>
-                            {!question.isCorrect && question.userAnswer && (
-                              <div className="text-sm text-gray-600 mt-1">
-                                Your answer: {question.userAnswer}
-                              </div>
-                            )}
                           </div>
+                          {!question.isCorrect && question.userAnswer && (
+                            <div className="text-sm opacity-75 mt-1">
+                              Your answer: {question.userAnswer}
+                            </div>
+                          )}
                         </div>
                         
                         {/* Explanation */}
                         {question.explanation && (
-                          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                            <div className="text-sm text-gray-700">
-                              <strong>Explanation:</strong> {question.explanation}
-                            </div>
+                          <div className="text-sm text-gray-700 leading-relaxed">
+                            {question.explanation}
+                          </div>
+                        )}
+
+                        {/* Next Question Button */}
+                        {question.isAnswered && index < quizQuestions.length - 1 && index === visibleQuestionIndex && (
+                          <div className="flex justify-end mt-3">
+                            <button
+                              onClick={() => setVisibleQuestionIndex(prev => prev + 1)}
+                              className="px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded text-xs font-medium whitespace-nowrap flex items-center gap-1.5"
+                            >
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
+                              </svg>
+                              Next
+                            </button>
                           </div>
                         )}
                       </div>
                     )}
                   </div>
                 )
-              })}
+                })}
+              </div>
             </div>
           )}
         </div>
@@ -661,6 +772,22 @@ export default function QueryPanel() {
             }
             
             /* Clean, minimal styling for Notion-style layout */
+            
+            /* Quiz Animation Styles */
+            :global(.answer-reveal) {
+              animation: fadeInSlide 0.3s ease-out;
+            }
+            
+            @keyframes fadeInSlide {
+              from {
+                opacity: 0;
+                transform: translateY(10px);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
           `}</style>
         </div>
       )}
