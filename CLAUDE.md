@@ -349,6 +349,7 @@ box-shadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 10px rgba(139, 92, 246, 0.1)'
 - **Consistent Theming**: All components must follow the purple color hierarchy
 - **Answer based on code facts, not speculation**: When debugging, check actual code implementation rather than guessing possible causes
 - **立体视觉 + 流畅动效 + 最少文案**: All UI components must feature 3D depth effects, smooth animations, and minimal text content
+- **State Preservation Rule (CRITICAL)**: NEVER use `window.location.reload()` or full page refreshes after user actions (save, delete, update). Always use targeted data refresh functions to maintain UI state, selected tabs, form data, and user context. Page refreshes reset all React state and destroy user workflow continuity.
 
 ## Component Size Guidelines
 

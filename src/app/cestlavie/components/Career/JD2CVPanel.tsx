@@ -916,6 +916,8 @@ Return only the enhanced experience as 1–3 bullet points. Do not explain your 
   // Delete states
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteTooltipShow, setDeleteTooltipShow] = useState(false)
+  const [deleteTooltip, setDeleteTooltip] = useState({ show: false, sentence: '', position: { x: 0, y: 0 } })
+  const [addTooltip, setAddTooltip] = useState({ show: false, text: '', position: { x: 0, y: 0 } })
   
   // Match score states
   const [matchScore, setMatchScore] = useState<number>(0)

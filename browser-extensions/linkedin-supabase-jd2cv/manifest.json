@@ -1,0 +1,58 @@
+{
+  "manifest_version": 3,
+  "name": "LinkedIn JD2CV Supabase Sync",
+  "version": "2.0.0",
+  "description": "Automatically sync LinkedIn job postings to your JD2CV Supabase database",
+
+  "permissions": [
+    "activeTab",
+    "storage",
+    "notifications",
+    "scripting"
+  ],
+
+  "host_permissions": [
+    "https://www.linkedin.com/*",
+    "http://localhost:3000/*",
+    "https://*.vercel.app/*"
+  ],
+
+  "background": {
+    "service_worker": "scripts/linkedin-supabase-background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.linkedin.com/jobs/*",
+        "https://linkedin.com/jobs/*",
+        "https://www.linkedin.com/jobs/view/*",
+        "https://linkedin.com/jobs/view/*"
+      ],
+      "js": ["scripts/linkedin-data-extractor.js"],
+      "run_at": "document_end",
+      "all_frames": false
+    }
+  ],
+
+  "action": {
+    "default_popup": "popup/linkedin-sync-popup.html"
+  },
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "icons/icon16.png",
+        "icons/icon48.png",
+        "icons/icon128.png"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
