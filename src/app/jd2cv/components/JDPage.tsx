@@ -14,9 +14,10 @@ import { extractBullets, generateModuleTitle } from '@/shared/utils'
 
 interface JDPageProps {
   user: { id: string }
+  globalLoading?: boolean
 }
 
-export default function JDPage({ user }: JDPageProps) {
+export default function JDPage({ user, globalLoading = false }: JDPageProps) {
   const [jds, setJds] = useState<JDRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddPopover, setShowAddPopover] = useState(false)
@@ -24,7 +25,7 @@ export default function JDPage({ user }: JDPageProps) {
   const [deleteJD, setDeleteJD] = useState<JDRecord | null>(null)
   const [deleteButtonRef, setDeleteButtonRef] = useState<HTMLElement | null>(null)
   
-  // Final CV automation states
+  // Auto CV automation states
   const [finalCVState, setFinalCVState] = useState({
     isProcessing: false,
     progress: 0,
@@ -325,7 +326,7 @@ export default function JDPage({ user }: JDPageProps) {
     setSortOrder('')
   }
 
-  // Handle Final CV automation
+  // Handle Auto CV automation
   const handleFinalCV = async (jd: JDRecord, e: React.MouseEvent) => {
     e.stopPropagation()
     
@@ -338,7 +339,7 @@ export default function JDPage({ user }: JDPageProps) {
     // Check prerequisites
     const pdfSetupData = localStorage.getItem(`oneclick-pdf-data-${user.id}`)
     if (!pdfSetupData) {
-      alert('Please configure PDF Setup first in the Workspace tab before using Final CV automation.')
+      alert('Please configure PDF Setup first in the Workspace tab before using Auto CV automation.')
       return
     }
 
@@ -385,7 +386,7 @@ export default function JDPage({ user }: JDPageProps) {
       
     } catch (error: any) {
       console.error('❌ [Final CV] Workflow failed:', error)
-      alert(`Final CV automation failed: ${error.message || 'Unknown error'}`)
+      alert(`Auto CV automation failed: ${error.message || 'Unknown error'}`)
       
       // Reset state and close tooltip
       setFinalCVState({
@@ -750,12 +751,18 @@ export default function JDPage({ user }: JDPageProps) {
     return groups
   }
 
-  if (loading) {
+  // 隐藏局部loading当全局loading时
+  if (loading && !globalLoading) {
     return (
       <div className="flex justify-center items-center py-16">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
       </div>
     )
+  }
+  
+  // 全局loading时不显示任何内容
+  if (globalLoading) {
+    return null
   }
 
   return (
@@ -960,7 +967,7 @@ export default function JDPage({ user }: JDPageProps) {
             const keywordGroups = groupKeywords(keywords)
             
             return (
-              <div key={jd.id} className="jd-card bg-white/90 backdrop-blur-md rounded-xl shadow-xl overflow-hidden">
+              <div key={jd.id} id={`jd-card-${jd.id}`} className="jd-card bg-white/90 backdrop-blur-md rounded-xl shadow-xl overflow-hidden">
                 {/* Optimized 2-Row Layout */}
                 <div className="p-4 relative">
                   <div className="flex items-start">
@@ -983,9 +990,7 @@ export default function JDPage({ user }: JDPageProps) {
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
                           ) : (
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                            </svg>
+                            <span className="text-xs font-medium">Next Step</span>
                           )}
                         </button>
                         
@@ -1005,7 +1010,7 @@ export default function JDPage({ user }: JDPageProps) {
                               ? 'View Progress'
                               : finalCVState.isProcessing && finalCVState.processingJDId !== jd.id
                               ? 'Another JD is being processed...'
-                              : 'Generate Final CV automatically'
+                              : 'Generate Auto CV automatically'
                           }
                         >
                           {/* Button Content */}
@@ -1014,7 +1019,7 @@ export default function JDPage({ user }: JDPageProps) {
                               ? 'View'
                               : finalCVState.isProcessing && finalCVState.processingJDId !== jd.id
                               ? 'Wait'
-                              : 'Final CV'
+                              : 'Auto CV'
                             }
                           </span>
                         </button>
@@ -1265,7 +1270,7 @@ export default function JDPage({ user }: JDPageProps) {
         />
       )}
 
-      {/* Final CV Progress Tooltip */}
+      {/* Auto CV Progress Tooltip */}
       {showProgressTooltip && (
         <ProgressTooltip
           isOpen={showProgressTooltip}

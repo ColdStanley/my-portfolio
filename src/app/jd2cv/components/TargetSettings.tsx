@@ -57,13 +57,12 @@ export default function TargetSettings({ targets, onUpdate, isOpen, onClose }: T
             <input
               type="number"
               min="1"
-              max="50"
               value={localTargets.dailyNewJD}
               onChange={(e) => setLocalTargets(prev => ({ 
                 ...prev, 
                 dailyNewJD: Math.max(1, parseInt(e.target.value) || 1)
               }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-mono"
             />
           </div>
 
@@ -74,13 +73,12 @@ export default function TargetSettings({ targets, onUpdate, isOpen, onClose }: T
             <input
               type="number"
               min="1"
-              max="20"
               value={localTargets.dailyApplications}
               onChange={(e) => setLocalTargets(prev => ({ 
                 ...prev, 
                 dailyApplications: Math.max(1, parseInt(e.target.value) || 1)
               }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-mono"
             />
           </div>
 
@@ -91,13 +89,12 @@ export default function TargetSettings({ targets, onUpdate, isOpen, onClose }: T
             <input
               type="number"
               min="1"
-              max="100"
               value={localTargets.weeklyApplications}
               onChange={(e) => setLocalTargets(prev => ({ 
                 ...prev, 
                 weeklyApplications: Math.max(1, parseInt(e.target.value) || 1)
               }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-mono"
             />
           </div>
 
@@ -108,13 +105,12 @@ export default function TargetSettings({ targets, onUpdate, isOpen, onClose }: T
             <input
               type="number"
               min="1"
-              max="200"
               value={localTargets.monthlyApplications}
               onChange={(e) => setLocalTargets(prev => ({ 
                 ...prev, 
                 monthlyApplications: Math.max(1, parseInt(e.target.value) || 1)
               }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-mono"
             />
           </div>
         </div>

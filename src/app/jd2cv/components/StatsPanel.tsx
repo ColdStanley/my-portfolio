@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import CircularProgress from './CircularProgress'
+import React from 'react'
 import TargetSettings from './TargetSettings'
 import { useJDStats } from '../hooks/useJDStats'
 import { JDRecord } from '@/shared/types'
@@ -14,7 +14,7 @@ export default function StatsPanel({ jds }: StatsPanelProps) {
 
   const statItems = [
     {
-      label: 'Today New JD',
+      label: 'New',
       value: stats.todayNewJD,
       target: targets.dailyNewJD,
       icon: (
@@ -24,7 +24,7 @@ export default function StatsPanel({ jds }: StatsPanelProps) {
       )
     },
     {
-      label: 'Today Applied',
+      label: 'Applied',
       value: stats.todayApplications,
       target: targets.dailyApplications,
       icon: (
@@ -34,7 +34,7 @@ export default function StatsPanel({ jds }: StatsPanelProps) {
       )
     },
     {
-      label: 'Week Applied',
+      label: 'Week',
       value: stats.weeklyApplications,
       target: targets.weeklyApplications,
       icon: (
@@ -44,7 +44,7 @@ export default function StatsPanel({ jds }: StatsPanelProps) {
       )
     },
     {
-      label: 'Month Applied',
+      label: 'Month',
       value: stats.monthlyApplications,
       target: targets.monthlyApplications,
       icon: (
@@ -57,12 +57,15 @@ export default function StatsPanel({ jds }: StatsPanelProps) {
 
   return (
     <>
-      <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-lg p-4 mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-800">Progress Dashboard</h3>
+      <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl shadow-purple-500/10 border border-purple-200/60 p-4 mb-6 relative">
+        {/* Glass effect overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-purple-50/30 rounded-xl pointer-events-none" />
+        
+        <div className="flex justify-between items-center mb-4 relative z-10">
+          <h3 className="text-lg font-semibold text-gray-800 tracking-tight">Progress Dashboard</h3>
           <button
             onClick={() => setShowSettings(true)}
-            className="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+            className="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50/80 hover:shadow-lg hover:shadow-purple-500/20 rounded-lg transition-all duration-200"
             title="Settings"
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -71,41 +74,77 @@ export default function StatsPanel({ jds }: StatsPanelProps) {
           </button>
         </div>
         
-        {/* 1x4 Horizontal Layout */}
-        <div className="grid grid-cols-4 gap-4">
-          {statItems.map((item, index) => (
-            <div key={index} className="bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-gray-100/60 shadow-sm">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="text-purple-500">
-                    {item.icon}
+        {/* 1x4 Tech Compact Layout */}
+        <div className="grid grid-cols-4 gap-3 relative z-10">
+          {statItems.map((item, index) => {
+            const progress = Math.min((item.value / item.target) * 100, 100)
+            const completionLevel = item.value >= item.target ? 3 : item.value >= item.target * 0.7 ? 2 : item.value >= item.target * 0.3 ? 1 : 0
+            
+            return (
+              <div 
+                key={index} 
+                className="bg-gradient-to-br from-white/80 to-purple-50/60 backdrop-blur-sm rounded-lg border border-purple-200/50 shadow-lg shadow-purple-500/10 hover:shadow-xl hover:shadow-purple-500/20 transition-all duration-300 relative overflow-hidden group"
+              >
+                {/* Inner glass effect */}
+                <div className="absolute inset-0 bg-gradient-to-t from-purple-100/20 to-white/10 pointer-events-none" />
+                
+                <div className="px-3 py-2 relative z-10">
+                  {/* Header with icon and label */}
+                  <div className="flex items-center gap-1 mb-2">
+                    <div className="text-purple-500 group-hover:text-purple-600 transition-colors">
+                      {React.cloneElement(item.icon as React.ReactElement, { className: 'w-3 h-3' })}
+                    </div>
+                    <span className="text-xs font-medium text-gray-600 tracking-tight truncate">
+                      {item.label.replace(' ', '').toUpperCase()}
+                    </span>
                   </div>
-                  <span className="text-xs font-medium text-gray-600">{item.label}</span>
+                  
+                  {/* Progress bar */}
+                  <div className="relative h-1.5 bg-gradient-to-r from-purple-100 to-purple-50 rounded-full mb-2 overflow-hidden">
+                    <div 
+                      className="absolute left-0 top-0 h-full bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 rounded-full shadow-sm shadow-purple-500/30 transition-all duration-500"
+                      style={{ width: `${progress}%` }}
+                    />
+                    {/* Glow effect */}
+                    <div 
+                      className="absolute left-0 top-0 h-full bg-gradient-to-r from-purple-400/50 to-purple-600/50 rounded-full blur-sm transition-all duration-500"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  
+                  {/* Stats and LED indicators */}
+                  <div className="flex items-center justify-between">
+                    <div className="font-mono text-sm font-bold text-gray-800 tracking-tight">
+                      <span className="text-purple-600">{item.value}</span>
+                      <span className="text-gray-400">/</span>
+                      <span>{item.target}</span>
+                    </div>
+                    
+                    {/* 3-dot LED indicator */}
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3].map((level) => (
+                        <div
+                          key={level}
+                          className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                            completionLevel >= level
+                              ? 'bg-purple-500 shadow-sm shadow-purple-500/50'
+                              : 'bg-purple-200'
+                          } ${completionLevel === level ? 'animate-pulse' : ''}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Percentage */}
+                  <div className="text-center mt-1">
+                    <span className="text-xs font-medium text-purple-600 font-mono tracking-tight">
+                      {Math.round(progress)}%
+                    </span>
+                  </div>
                 </div>
-                <CircularProgress 
-                  value={item.value} 
-                  target={item.target} 
-                  size={32} 
-                  strokeWidth={2}
-                />
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-gray-800">
-                  {item.value} / {item.target}
-                </span>
-                <span className={`text-xs font-medium ${
-                  item.value >= item.target 
-                    ? 'text-green-600' 
-                    : item.value >= item.target * 0.7 
-                      ? 'text-purple-600' 
-                      : 'text-gray-500'
-                }`}>
-                  {item.value >= item.target ? 'Complete' : 
-                   item.value >= item.target * 0.7 ? 'On Track' : 'Behind'}
-                </span>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
 

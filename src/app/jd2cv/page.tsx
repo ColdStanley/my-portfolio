@@ -14,6 +14,29 @@ import DeleteTooltip from './components/DeleteTooltip'
 
 export default function JD2CV() {
   const [activeTab, setActiveTab] = useState(0)
+  const { selectedJD } = useWorkspaceStore()
+  
+  // 自动滚动到选中的JD
+  const scrollToSelectedJD = () => {
+    setTimeout(() => {
+      if (selectedJD) {
+        const element = document.getElementById(`jd-card-${selectedJD.id}`)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    }, 100)
+  }
+  
+  const handleTabChange = (index) => {
+    setActiveTab(index)
+    if (index === 0) { // Dashboard tab
+      scrollToSelectedJD()
+    }
+    if (showIntroAnimation) skipIntroAnimation()
+  }
   const { user, loading } = useCurrentUser()
   const router = useRouter()
   
@@ -247,11 +270,8 @@ export default function JD2CV() {
                   <button
                     key={tab.id}
                     id={index === 2 ? 'tab-workspace' : undefined}
-                    onClick={() => {
-                      setActiveTab(index)
-                      if (showIntroAnimation) skipIntroAnimation()
-                    }}
-                    className={`flex-1 px-3 py-3 sm:px-6 sm:py-4 text-center font-medium transition-all text-sm sm:text-base relative ${
+                    onClick={() => handleTabChange(index)}
+                    className={`flex-1 px-3 py-3 sm:px-6 sm:py-4 text-center font-medium transition-all duration-300 transform hover:scale-105 text-sm sm:text-base relative ${
                       index === 0 ? 'rounded-l-xl' : index === 2 ? 'rounded-r-xl' : 'rounded-none'
                     } ${
                       isActive 
@@ -296,9 +316,9 @@ export default function JD2CV() {
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-[180px] pb-6">
         {/* Tab Content */}
         <div className="space-y-6">
-          {activeTab === 0 && <JDPage user={user} />}
+          {activeTab === 0 && <JDPage user={user} globalLoading={loading} />}
           {activeTab === 1 && <CVLibraryContent user={user} />}
-          {activeTab === 2 && <WorkspaceContent />}
+          {activeTab === 2 && <WorkspaceContent globalLoading={loading} />}
         </div>
       </div>
 
@@ -309,7 +329,7 @@ export default function JD2CV() {
 }
 
 // Workspace Tab Content
-function WorkspaceContent() {
+function WorkspaceContent({ globalLoading = false }) {
   const router = useRouter()
   const { 
     selectedJD, 
@@ -375,7 +395,7 @@ function WorkspaceContent() {
       })
       
       if (experienceModules.length === 0) {
-        alert('Please send some experiences to PDF first using "Send to One Click PDF" buttons')
+        alert('Please send some experiences to PDF first using "Send to Quick PDF" buttons')
         return
       }
       
@@ -480,6 +500,9 @@ function WorkspaceContent() {
               .map(line => line.trim())
               .filter(line => line.length > 0)
               .map(line => line.replace(/^\d+\.\s*/, '')) // Remove numbering like "1. "
+            
+          } else if (Array.isArray(result.data.keySentences)) {
+            keySentences = result.data.keySentences
           }
         } catch (e) {
           console.error('Error parsing key sentences:', e)
@@ -545,7 +568,7 @@ function WorkspaceContent() {
           <JDAnalysisSection 
             selectedJD={selectedJD}
             jdAnalysis={jdAnalysis}
-            isLoading={jdAnalysisLoading}
+            isLoading={jdAnalysisLoading && !globalLoading}
             onAnalyze={analyzeJD}
             onQuickPDF={handleQuickPDFClick}
             hasQuickPDFData={hasQuickPDFData}
@@ -751,14 +774,16 @@ function JDAnalysisSection({
 
       {/* Key Sentences */}
       {jdAnalysis && jdAnalysis.keySentences && Array.isArray(jdAnalysis.keySentences) && jdAnalysis.keySentences.length > 0 && (
-        <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6 animate-in slide-in-from-bottom-4 duration-500">
+        <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Key Sentences</h3>
           <div className="bg-purple-50 rounded-lg p-4">
-            <ul className="text-sm text-gray-700 space-y-2">
+            <ul className="text-sm space-y-2">
               {jdAnalysis.keySentences.map((sentence, index) => (
-                <li key={index} className="flex items-start gap-2 animate-in fade-in duration-300" style={{ animationDelay: `${index * 100}ms` }}>
-                  <span className="text-purple-500 mt-1 text-xs">•</span>
-                  <span>{sentence}</span>
+                <li key={index} className="flex items-start gap-2">
+                  <span className="text-purple-600 mt-1 text-xs font-bold">•</span>
+                  <span className="text-gray-800 flex-1 leading-relaxed">
+                    {sentence}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -768,17 +793,20 @@ function JDAnalysisSection({
 
       {/* Keywords */}
       {jdAnalysis && jdAnalysis.keywords && (
-        <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6 animate-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '200ms' }}>
+        <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Keywords</h3>
           <div className="bg-purple-50 rounded-lg p-4">
             {jdAnalysis.keywords.groups && jdAnalysis.keywords.groups.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
                 {jdAnalysis.keywords.groups.map((group, groupIndex) => (
-                  <div key={groupIndex} className="bg-white rounded p-3 animate-in fade-in duration-300" style={{ animationDelay: `${300 + groupIndex * 150}ms` }}>
+                  <div key={groupIndex} className="bg-white rounded p-3">
                     <div className="flex flex-wrap gap-2">
                       {group.map((keyword, keywordIndex) => (
-                        <span key={keywordIndex} className="px-2 py-1 bg-purple-200 text-purple-800 rounded text-sm animate-in scale-in duration-200" style={{ animationDelay: `${400 + groupIndex * 150 + keywordIndex * 50}ms` }}>
-                          {keyword}
+                        <span 
+                          key={keywordIndex} 
+                          className="px-3 py-1.5 bg-purple-200 text-purple-900 rounded-md text-sm font-semibold border border-purple-300"
+                        >
+                          {keyword || '[EMPTY KEYWORD]'}
                         </span>
                       ))}
                     </div>
@@ -788,8 +816,11 @@ function JDAnalysisSection({
             ) : jdAnalysis.keywords.flat && jdAnalysis.keywords.flat.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {jdAnalysis.keywords.flat.map((keyword, index) => (
-                  <span key={index} className="px-2 py-1 bg-purple-200 text-purple-800 rounded text-sm animate-in scale-in duration-200" style={{ animationDelay: `${index * 50}ms` }}>
-                    {keyword}
+                  <span 
+                    key={index} 
+                    className="px-3 py-1.5 bg-purple-200 text-purple-900 rounded-md text-sm font-semibold border border-purple-300"
+                  >
+                    {keyword || '[EMPTY KEYWORD]'}
                   </span>
                 ))}
               </div>
@@ -834,7 +865,7 @@ disabled={!hasQuickPDFData || isGeneratingQuickPDF}
             <path d="M6 6h8v2H6V6zm0 4h8v2H6v-2z"/>
           </svg>
           <span className="relative z-10">
-            {isGeneratingQuickPDF ? `${quickPDFProgress}%` : 'One Click PDF'}
+            {isGeneratingQuickPDF ? `${quickPDFProgress}%` : 'Quick PDF'}
           </span>
         </button>
       </div>
@@ -1332,7 +1363,7 @@ function CVOptimizationSection({ selectedJD, selectedExperiences, jdKeywords, ad
                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
                     </svg>
-                    <span>Batch Send to One Click PDF ({optimizedCount})</span>
+                    <span>Batch Send to Quick PDF ({optimizedCount})</span>
                   </>
                 )}
               </div>
@@ -1424,11 +1455,11 @@ function ExperienceOptimizationCard({ experience, jdKeywords, selectedJD, index,
         console.log('Successfully sent to CV Builder:', result.id)
       } else {
         console.error('Send failed:', result.error) // 调试日志
-        alert(result.error || 'Failed to send to One Click PDF')
+        alert(result.error || 'Failed to send to Quick PDF')
       }
     } catch (error: any) {
       console.error('Send to One Click PDF error:', error)
-      alert('Failed to send to One Click PDF. Please try again.')
+      alert('Failed to send to Quick PDF. Please try again.')
     } finally {
       setIsSending(false)
     }
@@ -1593,11 +1624,11 @@ function ExperienceOptimizationCard({ experience, jdKeywords, selectedJD, index,
         console.log('Successfully sent to CV Builder:', result.id)
       } else {
         console.error('Send failed:', result.error) // 调试日志
-        alert(result.error || 'Failed to send to One Click PDF')
+        alert(result.error || 'Failed to send to Quick PDF')
       }
     } catch (error: any) {
       console.error('Send to One Click PDF error:', error)
-      alert('Failed to send to One Click PDF. Please try again.')
+      alert('Failed to send to Quick PDF. Please try again.')
     } finally {
       setIsSending(false)
     }
@@ -1729,7 +1760,7 @@ function ExperienceOptimizationCard({ experience, jdKeywords, selectedJD, index,
                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
-                Send to One Click PDF
+                Send to Quick PDF
               </>
             )}
           </button>
@@ -1824,7 +1855,7 @@ function ExperienceOptimizationCard({ experience, jdKeywords, selectedJD, index,
                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
                       </svg>
-                      Send to One Click PDF
+                      Send to Quick PDF
                     </>
                   )}
                 </button>
