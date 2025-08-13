@@ -352,6 +352,9 @@ function WorkspaceContent() {
     setQuickPDFProgress(0)
     
     try {
+      // Clear previous experiences from PDF modules, keep setup data
+      setPdfModules([])
+      
       // Get PDF config from localStorage
       const storedConfig = localStorage.getItem(`oneclick-pdf-data-${user?.id}`)
       if (!storedConfig) {
@@ -400,10 +403,17 @@ function WorkspaceContent() {
       
       // Download PDF
       const blob = await response.blob()
+      
+      // Create filename with JD info
+      const safeName = (config.personalInfo.fullName || 'CV').replace(/[^a-zA-Z0-9\s]/g, '')
+      const safeCompany = selectedJD ? selectedJD.company.replace(/[^a-zA-Z0-9\s]/g, '') : 'Company'
+      const safeTitle = selectedJD ? selectedJD.title.replace(/[^a-zA-Z0-9\s]/g, '') : 'Position'
+      const fileName = `${safeName} - ${safeCompany} - ${safeTitle}.pdf`
+      
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${config.personalInfo.fullName.replace(/[^a-zA-Z0-9]/g, '_')}_CV.pdf`
+      a.download = fileName
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)

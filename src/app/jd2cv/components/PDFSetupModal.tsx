@@ -73,6 +73,12 @@ export default function PDFSetupModal({ isOpen, onClose, onSave }: PDFSetupModal
   const [newSkill, setNewSkill] = useState('')
   const [newLanguage, setNewLanguage] = useState('')
   const [newCertificate, setNewCertificate] = useState('')
+  const [newEducation, setNewEducation] = useState({
+    degree: '',
+    institution: '',
+    year: '',
+    gpa: ''
+  })
   const [hasLoadedConfig, setHasLoadedConfig] = useState(false)
 
   // Load existing config only on first open
@@ -165,6 +171,39 @@ export default function PDFSetupModal({ isOpen, onClose, onSave }: PDFSetupModal
         ...defaultPersonalInfo,
         ...prev.personalInfo,
         [field]: (prev.personalInfo?.[field] || []).filter((_, i) => i !== index)
+      }
+    }))
+  }
+
+  const addEducation = () => {
+    if (newEducation.degree.trim() && newEducation.institution.trim() && newEducation.year.trim()) {
+      setConfig(prev => ({
+        ...prev,
+        personalInfo: {
+          ...defaultPersonalInfo,
+          ...prev.personalInfo,
+          education: [
+            ...(prev.personalInfo?.education || []),
+            {
+              degree: newEducation.degree.trim(),
+              institution: newEducation.institution.trim(),
+              year: newEducation.year.trim(),
+              gpa: newEducation.gpa.trim() || undefined
+            }
+          ]
+        }
+      }))
+      setNewEducation({ degree: '', institution: '', year: '', gpa: '' })
+    }
+  }
+
+  const removeEducation = (index: number) => {
+    setConfig(prev => ({
+      ...prev,
+      personalInfo: {
+        ...defaultPersonalInfo,
+        ...prev.personalInfo,
+        education: (prev.personalInfo?.education || []).filter((_, i) => i !== index)
       }
     }))
   }
@@ -441,6 +480,72 @@ export default function PDFSetupModal({ isOpen, onClose, onSave }: PDFSetupModal
                   <span className="flex-1 text-sm">{cert}</span>
                   <button
                     onClick={() => removeArrayItem('certificates', index)}
+                    className="w-6 h-6 bg-red-100 hover:bg-red-200 text-red-600 rounded flex items-center justify-center text-xs transition-colors"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Education */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 shadow-md">
+            <h3 className="font-medium text-gray-800 mb-4">Education</h3>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <input
+                  type="text"
+                  value={newEducation.degree}
+                  onChange={(e) => setNewEducation(prev => ({ ...prev, degree: e.target.value }))}
+                  placeholder="Degree (e.g., Bachelor of Science)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
+                  value={newEducation.institution}
+                  onChange={(e) => setNewEducation(prev => ({ ...prev, institution: e.target.value }))}
+                  placeholder="Institution"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
+                  value={newEducation.year}
+                  onChange={(e) => setNewEducation(prev => ({ ...prev, year: e.target.value }))}
+                  placeholder="Year (e.g., 2020)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newEducation.gpa}
+                  onChange={(e) => setNewEducation(prev => ({ ...prev, gpa: e.target.value }))}
+                  placeholder="GPA (optional)"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+                <button
+                  onClick={addEducation}
+                  disabled={!newEducation.degree.trim() || !newEducation.institution.trim() || !newEducation.year.trim()}
+                  className="w-16 px-3 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              {(config.personalInfo?.education || []).map((edu, index) => (
+                <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex-1">
+                    <div className="font-medium text-sm">{edu.degree}</div>
+                    <div className="text-xs text-gray-600">{edu.institution} • {edu.year}{edu.gpa ? ` • GPA: ${edu.gpa}` : ''}</div>
+                  </div>
+                  <button
+                    onClick={() => removeEducation(index)}
                     className="w-6 h-6 bg-red-100 hover:bg-red-200 text-red-600 rounded flex items-center justify-center text-xs transition-colors"
                   >
                     ×
