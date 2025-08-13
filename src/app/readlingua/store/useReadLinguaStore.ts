@@ -75,14 +75,20 @@ interface ReadLinguaState {
   resetPromptTemplates: () => void
   
   // Quiz
-  quizQuestions: QuizQuestion[]
-  setQuizQuestions: (questions: QuizQuestion[]) => void
+  fillInQuestions: QuizQuestion[]
+  dictationQuestions: QuizQuestion[]
+  setFillInQuestions: (questions: QuizQuestion[]) => void
+  setDictationQuestions: (questions: QuizQuestion[]) => void
   currentQuizIndex: number
   setCurrentQuizIndex: (index: number) => void
   isGeneratingQuiz: boolean
   setIsGeneratingQuiz: (generating: boolean) => void
+  quizMode: 'fill-in' | 'dictation'
+  setQuizMode: (mode: 'fill-in' | 'dictation') => void
   generateQuizQuestions: () => void
+  generateDictationQuestions: () => void
   submitQuizAnswer: (index: number, answer: string) => void
+  getCurrentQuestions: () => QuizQuestion[]
   
   // UI states
   isLoading: boolean
@@ -1024,16 +1030,29 @@ export const useReadLinguaStore = create<ReadLinguaState>((set) => ({
   }),
   
   // Quiz
-  quizQuestions: [],
-  setQuizQuestions: (questions) => set({ quizQuestions: questions }),
+  fillInQuestions: [],
+  dictationQuestions: [],
+  setFillInQuestions: (questions) => set({ fillInQuestions: questions }),
+  setDictationQuestions: (questions) => set({ dictationQuestions: questions }),
   currentQuizIndex: 0,
   setCurrentQuizIndex: (index) => set({ currentQuizIndex: index }),
   isGeneratingQuiz: false,
   setIsGeneratingQuiz: (generating) => set({ isGeneratingQuiz: generating }),
+  quizMode: 'fill-in',
+  setQuizMode: (mode) => set({ quizMode: mode }),
+  
+  getCurrentQuestions: () => {
+    const state = useReadLinguaStore.getState()
+    return state.quizMode === 'dictation' ? state.dictationQuestions : state.fillInQuestions
+  },
   
   generateQuizQuestions: () => {
     const state = useReadLinguaStore.getState()
+    
     if (!state.selectedArticle) return
+    
+    // Prevent multiple concurrent generations
+    if (state.isGeneratingQuiz) return
     
     // Filter queries for quiz (exclude ask_ai, must have selected_text and ai_response)
     const quizCandidates = state.queries.filter(q => 
@@ -1046,15 +1065,15 @@ export const useReadLinguaStore = create<ReadLinguaState>((set) => ({
     
     if (quizCandidates.length === 0) return
     
-    set({ isGeneratingQuiz: true, quizQuestions: [], currentQuizIndex: 0 })
+    set({ isGeneratingQuiz: true, fillInQuestions: [], currentQuizIndex: 0 })
     
     try {
       // Extract quiz from existing ai_response
       const extractQuizFromResponse = (aiResponse: string) => {
         // Look for Question:, Answer:, Explanation: pattern
-        const questionMatch = aiResponse.match(/Question:\s*(.+?)(?=Answer:|$)/s)
-        const answerMatch = aiResponse.match(/Answer:\s*(.+?)(?=Explanation:|$)/s)  
-        const explanationMatch = aiResponse.match(/Explanation:\s*(.+?)$/s)
+        const questionMatch = aiResponse.match(/Question:\s*(.+?)(?=Answer:|$)/)
+        const answerMatch = aiResponse.match(/Answer:\s*(.+?)(?=Explanation:|$)/)  
+        const explanationMatch = aiResponse.match(/Explanation:\s*(.+?)$/)
         
         return {
           question: questionMatch?.[1]?.trim(),
@@ -1088,26 +1107,90 @@ export const useReadLinguaStore = create<ReadLinguaState>((set) => ({
         .sort(() => 0.5 - Math.random()) // Randomize
         .slice(0, 15) // Take up to 15 questions
       
-      set({ quizQuestions, isGeneratingQuiz: false })
+      set({ fillInQuestions: quizQuestions })
       
     } catch (error) {
       console.error('Error processing quiz questions:', error)
+    } finally {
+      // Ensure isGeneratingQuiz is always reset
+      set({ isGeneratingQuiz: false })
+    }
+  },
+  
+  generateDictationQuestions: () => {
+    const state = useReadLinguaStore.getState()
+    if (!state.selectedArticle) return
+    
+    // Prevent multiple concurrent generations
+    if (state.isGeneratingQuiz) return
+    
+    // Check if article supports pronunciation (English or French)
+    const supportsPronunciation = ['english', 'french'].includes(state.selectedArticle.source_language)
+    if (!supportsPronunciation) return
+    
+    // Filter queries for dictation (exclude ask_ai, must have selected_text)
+    const dictationCandidates = state.queries.filter((q: Query) => 
+      q.query_type !== 'ask_ai' && 
+      q.selected_text && 
+      q.selected_text.trim()
+    )
+    
+    if (dictationCandidates.length === 0) return
+    
+    set({ isGeneratingQuiz: true, dictationQuestions: [], currentQuizIndex: 0 })
+    
+    try {
+      // Create dictation questions using selected_text as answer
+      const dictationQuestions = dictationCandidates
+        .map((query: Query, index: number) => ({
+          id: `dictation-${query.id}-${index}`,
+          question: `Listen and type what you hear:`, // Standard question for all dictation
+          answer: query.selected_text!.trim(),
+          explanation: '', // No explanation needed for dictation
+          originalQuery: query,
+          userAnswer: undefined,
+          isCorrect: undefined,
+          isAnswered: false
+        }))
+        .sort(() => 0.5 - Math.random()) // Randomize
+        .slice(0, 15) // Take up to 15 questions
+      
+      set({ dictationQuestions: dictationQuestions })
+      
+    } catch (error) {
+      console.error('Error processing dictation questions:', error)
+    } finally {
+      // Ensure isGeneratingQuiz is always reset
       set({ isGeneratingQuiz: false })
     }
   },
   
   submitQuizAnswer: (index, answer) => set((state) => {
-    const updatedQuestions = [...state.quizQuestions]
+    const currentQuestions = state.quizMode === 'dictation' ? state.dictationQuestions : state.fillInQuestions
+    const updatedQuestions = [...currentQuestions]
     const question = updatedQuestions[index]
     
     if (question) {
       question.userAnswer = answer.trim()
-      question.isCorrect = answer.trim().toLowerCase() === question.answer.toLowerCase()
+      // For dictation mode, require exact match (case-insensitive)
+      // For fill-in mode, use existing logic
+      if (state.quizMode === 'dictation') {
+        question.isCorrect = answer.trim().toLowerCase() === question.answer.toLowerCase()
+      } else {
+        question.isCorrect = answer.trim().toLowerCase() === question.answer.toLowerCase()
+      }
       question.isAnswered = true
       
-      return { 
-        quizQuestions: updatedQuestions,
-        currentQuizIndex: Math.min(index + 1, state.quizQuestions.length - 1)
+      if (state.quizMode === 'dictation') {
+        return { 
+          dictationQuestions: updatedQuestions,
+          currentQuizIndex: Math.min(index + 1, updatedQuestions.length - 1)
+        }
+      } else {
+        return { 
+          fillInQuestions: updatedQuestions,
+          currentQuizIndex: Math.min(index + 1, updatedQuestions.length - 1)
+        }
       }
     }
     

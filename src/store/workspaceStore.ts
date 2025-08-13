@@ -1,35 +1,6 @@
 import { create } from 'zustand'
-
-interface JDRecord {
-  id: string
-  title: string
-  company: string
-  full_job_description: string
-  jd_key_sentences: string
-  keywords_from_sentences: string
-  application_stage: string
-  role_group: string
-  firm_type: string
-  comment: string
-  match_score: number
-  user_id: string
-  created_at: string
-}
-
-interface ExperienceRecord {
-  id: string
-  user_id: string
-  jd_id: string | null
-  company: string
-  title: string
-  experience: string
-  keywords: string[]
-  role_group: string | null
-  work_or_project: string | null
-  time: string | null
-  comment: string | null
-  created_at: string
-}
+import { persist, createJSONStorage } from 'zustand/middleware'
+import { JDRecord, ExperienceRecord, JDAnalysis } from '../shared/types'
 
 interface WorkspaceState {
   // Selected data for workspace
@@ -37,8 +8,7 @@ interface WorkspaceState {
   selectedExperiences: ExperienceRecord[]
   
   // JD Analysis results
-  jdKeySentences: string
-  jdKeywords: string
+  jdAnalysis: JDAnalysis | null
   jdAnalysisLoading: boolean
   
   // CV Optimization results
@@ -59,7 +29,7 @@ interface WorkspaceState {
   removeSelectedExperience: (experienceId: string) => void
   
   // JD Analysis actions
-  setJDAnalysis: (keySentences: string, keywords: string) => void
+  setJDAnalysis: (analysis: JDAnalysis) => void
   setJDAnalysisLoading: (loading: boolean) => void
   
   // CV Optimization actions
@@ -75,6 +45,12 @@ interface WorkspaceState {
   resetWorkspace: () => void
   resetJDAnalysis: () => void
   resetOptimizedExperiences: () => void
+  
+  // Data sync and validation
+  validateSelectedJD: () => boolean
+  validateSelectedExperiences: () => boolean
+  syncJDData: (latestJD: JDRecord) => void
+  syncExperienceData: (latestExperiences: ExperienceRecord[]) => void
 }
 
 // Parse time and extract end year for sorting
@@ -102,19 +78,28 @@ const sortExperiences = (experiences: ExperienceRecord[]): ExperienceRecord[] =>
   })
 }
 
-export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
+export const useWorkspaceStore = create<WorkspaceState>()(
+  persist(
+    (set, get) => ({
   // Initial state
   selectedJD: null,
   selectedExperiences: [],
-  jdKeySentences: '',
-  jdKeywords: '',
+  jdAnalysis: null,
   jdAnalysisLoading: false,
   optimizedExperiences: {},
   
   // JD/CV Selection actions
   setSelectedJD: (jd) => {
+    const currentJD = get().selectedJD
     set({ selectedJD: jd })
-    // Reset JD analysis when JD changes
+    
+    // If JD actually changed, reset related data
+    if (currentJD?.id !== jd?.id) {
+      get().resetJDAnalysis()
+      get().resetOptimizedExperiences()
+    }
+    
+    // Reset JD analysis when JD is cleared
     if (jd === null) {
       get().resetJDAnalysis()
     }
@@ -148,11 +133,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   },
   
   // JD Analysis actions
-  setJDAnalysis: (keySentences, keywords) => {
-    set({ 
-      jdKeySentences: keySentences, 
-      jdKeywords: keywords 
-    })
+  setJDAnalysis: (analysis) => {
+    set({ jdAnalysis: analysis })
   },
   
   setJDAnalysisLoading: (loading) => {
@@ -221,8 +203,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     set({
       selectedJD: null,
       selectedExperiences: [],
-      jdKeySentences: '',
-      jdKeywords: '',
+      jdAnalysis: null,
       jdAnalysisLoading: false,
       optimizedExperiences: {}
     })
@@ -230,13 +211,92 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   
   resetJDAnalysis: () => {
     set({
-      jdKeySentences: '',
-      jdKeywords: '',
+      jdAnalysis: null,
       jdAnalysisLoading: false
     })
   },
   
   resetOptimizedExperiences: () => {
     set({ optimizedExperiences: {} })
+  },
+  
+  // Data validation methods
+  validateSelectedJD: () => {
+    const { selectedJD } = get()
+    return !!(selectedJD && selectedJD.id && selectedJD.title && selectedJD.company)
+  },
+  
+  validateSelectedExperiences: () => {
+    const { selectedExperiences } = get()
+    return selectedExperiences.length > 0 && selectedExperiences.every(exp => 
+      exp.id && exp.company && exp.title && exp.experience
+    )
+  },
+  
+  // Data sync methods to handle external updates
+  syncJDData: (latestJD) => {
+    const { selectedJD } = get()
+    if (selectedJD && selectedJD.id === latestJD.id) {
+      // Update selected JD with latest data
+      set({ selectedJD: latestJD })
+      
+      // Check if JD analysis is still valid
+      if (latestJD.jd_key_sentences !== selectedJD.jd_key_sentences || 
+          latestJD.keywords_from_sentences !== selectedJD.keywords_from_sentences) {
+        // JD analysis changed, reset optimization results
+        get().resetOptimizedExperiences()
+      }
+    }
+  },
+  
+  syncExperienceData: (latestExperiences) => {
+    const { selectedExperiences } = get()
+    let hasChanges = false
+    const updatedExperiences = selectedExperiences.map(selected => {
+      const latest = latestExperiences.find(exp => exp.id === selected.id)
+      if (latest && JSON.stringify(latest) !== JSON.stringify(selected)) {
+        hasChanges = true
+        return latest
+      }
+      return selected
+    }).filter(exp => latestExperiences.some(latest => latest.id === exp.id)) // Remove deleted experiences
+    
+    if (hasChanges || updatedExperiences.length !== selectedExperiences.length) {
+      set({ selectedExperiences: sortExperiences(updatedExperiences) })
+      
+      // Reset optimization results for changed experiences
+      if (hasChanges) {
+        const optimized = { ...get().optimizedExperiences }
+        let shouldResetOptimization = false
+        
+        selectedExperiences.forEach(oldExp => {
+          const newExp = updatedExperiences.find(exp => exp.id === oldExp.id)
+          if (newExp && newExp.experience !== oldExp.experience) {
+            // Experience content changed, remove optimization
+            delete optimized[oldExp.id]
+            shouldResetOptimization = true
+          }
+        })
+        
+        if (shouldResetOptimization) {
+          set({ optimizedExperiences: optimized })
+        }
+      }
+    }
   }
-}))
+}),
+    {
+      name: 'jd2cv-workspace-storage',
+      storage: createJSONStorage(() => localStorage),
+      // Only persist selection states, not temporary states like loading
+      partialize: (state) => ({
+        selectedJD: state.selectedJD,
+        selectedExperiences: state.selectedExperiences,
+        // Don't persist optimization results as they can become stale
+        // Don't persist loading states
+      }),
+      // Version to handle future schema changes
+      version: 1,
+    }
+  )
+)

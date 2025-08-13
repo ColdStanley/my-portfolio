@@ -248,13 +248,13 @@ export async function PUT(request: NextRequest) {
         user_id: userId,
         jd_id: jdId || null,
         company: originalExp.company,
-        title: jdTitle || originalExp.title,
+        title: originalExp.title,
         experience: optimizedContent,
         keywords: userKeywords || [],
         role_group: originalExp.role_group,
         work_or_project: originalExp.work_or_project,
         time: originalExp.time,
-        comment: jdCompany || `Optimized from experience ${originalExperienceId}`
+        comment: jdTitle && jdCompany ? `${jdCompany} - ${jdTitle}` : null
       }])
       .select()
       .single()
