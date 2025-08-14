@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { createClient } from '@supabase/supabase-js'
 import { JDRecord, CreateJDRequest, APPLICATION_STAGES } from '@/shared/types'
 import { useWorkspaceStore } from '@/store/workspaceStore'
+import { useJDFilterStore } from '@/store/useJDFilterStore'
 import InlineEditField from './InlineEditField'
 import AddJDPopover from './AddJDPopover'
 import ViewJDTooltip from './ViewJDTooltip'
@@ -34,18 +35,11 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
   })
   const [showProgressTooltip, setShowProgressTooltip] = useState(false)
   
-  // Filter and Sort states
-  const [filters, setFilters] = useState({
-    stage: '',
-    role: '',
-    firm: '',
-    score: '',
-    time: ''
-  })
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | ''>('')
-  
   // Workspace store for Select functionality
   const { selectedJD, setSelectedJD } = useWorkspaceStore()
+  
+  // Global filter store
+  const { filters, sortOrder, handleFilterChange, handleSortChange, clearFilters } = useJDFilterStore()
 
   // Load JDs on mount and setup realtime subscription
   useEffect(() => {
@@ -509,36 +503,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
     return filteredJDs
   }
 
-  // Handle filter changes
-  const handleFilterChange = (field: string, value: string) => {
-    setFilters(prev => ({
-      ...prev,
-      [field]: value
-    }))
-  }
-
-  // Handle sort change
-  const handleSortChange = () => {
-    if (sortOrder === '') {
-      setSortOrder('desc')
-    } else if (sortOrder === 'desc') {
-      setSortOrder('asc')
-    } else {
-      setSortOrder('')
-    }
-  }
-
-  // Clear all filters
-  const clearFilters = () => {
-    setFilters({
-      stage: '',
-      role: '',
-      firm: '',
-      score: '',
-      time: ''
-    })
-    setSortOrder('')
-  }
+  // Filter and sort functions now come from useJDFilterStore
 
   // Handle Auto CV automation
   const handleFinalCV = async (jd: JDRecord, e: React.MouseEvent) => {
@@ -1024,18 +989,23 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
           
           {/* Toolbar */}
           <div className="flex gap-3 flex-wrap">
-            <button
-              onClick={() => setShowAddPopover(true)}
-              className="w-32 px-6 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-              </svg>
-              Add
-            </button>
+            {(() => {
+              const hasFilters = filters.stage || filters.role || filters.firm || filters.score || filters.time || sortOrder
+              
+              return (
+                <>
+                  <button
+                    onClick={() => setShowAddPopover(true)}
+                    className="w-32 px-6 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                    </svg>
+                    Add
+                  </button>
 
-            {/* Filter Dropdowns */}
-            <div className="flex gap-2">
+                  {/* Filter Dropdowns */}
+                  <div className="flex gap-2">
               {/* Stage Filter */}
               <div className="relative">
                 <select
@@ -1130,42 +1100,48 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
-              </div>
-            </div>
+                  </div>
+                  </div>
 
-            {/* Sort Button */}
-            <button
-              onClick={handleSortChange}
-              className={`w-32 px-6 py-2 rounded-lg font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-2 ${
-                sortOrder 
-                  ? 'bg-purple-500 hover:bg-purple-600 text-white' 
-                  : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-              }`}
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                {sortOrder === 'asc' ? (
-                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                ) : sortOrder === 'desc' ? (
-                  <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
-                ) : (
-                  <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 8a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 12a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
-                )}
-              </svg>
-              {sortOrder === 'asc' ? 'Score ↑' : sortOrder === 'desc' ? 'Score ↓' : 'Sort'}
-            </button>
+                  {/* Sort Button */}
+                  <button
+                    onClick={handleSortChange}
+                    className={`w-32 px-6 py-2 rounded-lg font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-2 ${
+                      sortOrder 
+                        ? 'bg-purple-500 hover:bg-purple-600 text-white' 
+                        : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      {sortOrder === 'asc' ? (
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                      ) : sortOrder === 'desc' ? (
+                        <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+                      ) : (
+                        <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 8a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 12a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
+                      )}
+                    </svg>
+                    {sortOrder === 'asc' ? 'Score ↑' : sortOrder === 'desc' ? 'Score ↓' : 'Sort'}
+                  </button>
 
-            {/* Clear Filters Button */}
-            {(filters.stage || filters.role || filters.firm || filters.score || filters.time || sortOrder) && (
-              <button
-                onClick={clearFilters}
-                className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg text-sm font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-                Clear
-              </button>
-            )}
+                  {/* Clear Filters Button - Fixed Position */}
+                  <button
+                    onClick={clearFilters}
+                    disabled={!hasFilters}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-2 ${
+                      hasFilters
+                        ? 'bg-purple-100 hover:bg-purple-200 text-purple-600 cursor-pointer'
+                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                    Clear
+                  </button>
+                </>
+              )
+            })()}
           </div>
         </div>
       </div>

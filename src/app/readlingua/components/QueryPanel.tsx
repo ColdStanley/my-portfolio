@@ -181,7 +181,7 @@ export default function QueryPanel() {
 
   const getFilteredQueries = () => {
     if (activeTab === 'quiz') return []
-    return queries.filter(q => q.query_type === activeTab && q.selected_text)
+    return queries.filter(q => q.query_type === activeTab && (q.selected_text || q.query_type === 'ask_ai'))
   }
 
 
@@ -824,7 +824,9 @@ export default function QueryPanel() {
                 title={deleteMode === query.id ? 'Click X to delete' : `${query.selected_text} - Long press to delete`}
               >
                 <div className="flex items-center gap-1 max-w-xs">
-                  <span className="truncate">{query.selected_text}</span>
+                  <span className="truncate">
+                    {query.selected_text || (query.query_type === 'ask_ai' && query.user_question ? `Ask: ${query.user_question}` : 'No content')}
+                  </span>
                   {deleteMode === query.id && (
                     <button
                       onClick={(e) => handleDeleteConfirm(query.id, e)}
@@ -877,7 +879,7 @@ export default function QueryPanel() {
             <div className="flex items-center justify-between pr-6">
               {/* Left: Query Content with Speaker at end */}
               <div className="flex items-start">
-                {selectedQuery.selected_text && (
+                {selectedQuery.selected_text ? (
                   <div className="flex items-start gap-1">
                     <div className="text-lg font-bold text-gray-900">
                       {selectedQuery.selected_text}
@@ -901,7 +903,12 @@ export default function QueryPanel() {
                       </button>
                     )}
                   </div>
-                )}
+                ) : selectedQuery.query_type === 'ask_ai' && selectedQuery.user_question ? (
+                  // Show user question for Ask AI queries without selected text
+                  <div className="text-lg font-bold text-gray-900">
+                    Ask AI: {selectedQuery.user_question}
+                  </div>
+                ) : null}
               </div>
               
               {/* Right: Query Type and Time */}

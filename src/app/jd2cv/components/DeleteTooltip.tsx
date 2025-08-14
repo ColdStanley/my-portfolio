@@ -79,7 +79,7 @@ export default function DeleteTooltip({
               onConfirm()
               onClose()
             }}
-            className="px-2 py-1 text-xs bg-red-500 hover:bg-red-600 text-white rounded transition-colors"
+            className="px-2 py-1 text-xs bg-purple-500 hover:bg-purple-600 text-white rounded transition-colors"
           >
             Yes
           </button>

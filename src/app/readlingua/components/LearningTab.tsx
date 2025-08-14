@@ -18,17 +18,71 @@ export default function LearningTab() {
     queryType: '',
     aiResponse: '',
     isLoading: false,
-    hasError: false
+    hasError: false,
+    selectedText: '',
+    userQuestion: ''
   })
+  const [isPlaying, setIsPlaying] = useState(false)
 
   const handleShowFloatingPanel = (data: {
     queryType: string
     aiResponse: string
     isLoading: boolean
     hasError: boolean
+    selectedText?: string
+    userQuestion?: string
   }) => {
-    setFloatingPanelData(data)
+    setFloatingPanelData({
+      queryType: data.queryType,
+      aiResponse: data.aiResponse,
+      isLoading: data.isLoading,
+      hasError: data.hasError,
+      selectedText: data.selectedText || '',
+      userQuestion: data.userQuestion || ''
+    })
     setShowFloatingPanel(true)
+  }
+
+  const handlePlayPronunciation = async (text: string) => {
+    if (isPlaying || !selectedArticle) return
+    
+    setIsPlaying(true)
+    try {
+      const response = await fetch('/api/readlingua/text-to-speech', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          text,
+          language: selectedArticle.source_language
+        })
+      })
+      
+      if (response.ok) {
+        const audioBlob = await response.blob()
+        const audioUrl = URL.createObjectURL(audioBlob)
+        const audio = new Audio(audioUrl)
+        
+        audio.onended = () => {
+          setIsPlaying(false)
+          URL.revokeObjectURL(audioUrl)
+        }
+        
+        audio.onerror = () => {
+          setIsPlaying(false)
+          URL.revokeObjectURL(audioUrl)
+        }
+        
+        await audio.play()
+      } else {
+        const errorData = await response.json()
+        console.error('Failed to get audio:', errorData.error)
+        alert(errorData.error || 'Failed to generate pronunciation')
+        setIsPlaying(false)
+      }
+    } catch (error) {
+      console.error('Error playing pronunciation:', error)
+      setIsPlaying(false)
+    }
   }
 
   useEffect(() => {
@@ -108,11 +162,15 @@ export default function LearningTab() {
       {/* AI Response Floating Panel */}
       {showFloatingPanel && (
         <AIResponseFloatingPanel 
+          isVisible={showFloatingPanel}
+          selectedText={floatingPanelData.selectedText || floatingPanelData.userQuestion || ''}
           queryType={floatingPanelData.queryType}
           aiResponse={floatingPanelData.aiResponse}
           isLoading={floatingPanelData.isLoading}
           hasError={floatingPanelData.hasError}
           onClose={() => setShowFloatingPanel(false)}
+          onPlayPronunciation={handlePlayPronunciation}
+          isPlaying={isPlaying}
         />
       )}
 
