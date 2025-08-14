@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useIELTSStepStore, PartType, PromptTemplates } from '../store/useIELTSStepStore'
 import VoiceRecorder from './VoiceRecorder'
 import MarkdownContent from './MarkdownContent'
+import Part1Step1Component from './Part1Step1Component'
+import FloatingPromptManager from './FloatingPromptManager'
 
 interface StepComponentProps {
   part: PartType
@@ -12,6 +14,10 @@ interface StepComponentProps {
 }
 
 export default function StepComponent({ part, step, onStepComplete }: StepComponentProps) {
+  // Use specialized component for Part1 Step1
+  if (part === 'part1' && step === 1) {
+    return <Part1Step1Component onStepComplete={onStepComplete} />
+  }
   const { 
     getStepResult, 
     setStepResult, 
@@ -24,24 +30,8 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
   } = useIELTSStepStore()
   
   const [isLoading, setIsLoading] = useState(false)
-  const [prompt, setPrompt] = useState('')
-  const [showPromptEditor, setShowPromptEditor] = useState(false)
   const [activeTab, setActiveTab] = useState('6') // For Step 7 Band level tabs
 
-  // Initialize prompt from store on component mount and when part/step changes
-  useEffect(() => {
-    let defaultPrompt
-    if (step === 7) {
-      // For Step 7, default to Band 6 prompt
-      defaultPrompt = getPromptForStep(part, 'step7_band6')
-    } else if (step === 4) {
-      // For Step 4, default to Band 6 prompt
-      defaultPrompt = getPromptForStep(part, 'step4_band6')
-    } else {
-      defaultPrompt = getPromptForStep(part, step)
-    }
-    setPrompt(defaultPrompt)
-  }, [part, step, getPromptForStep])
   
   // Get system context for Step 2, 3, 4, 5, 6, and 7
   const getSystemContext = () => {
@@ -103,28 +93,12 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
   // 获取当前步骤的结果
   const stepResult = getStepResult(part, step)
 
-  // Save prompt to store when user modifies it
-  const handlePromptChange = (newPrompt: string) => {
-    setPrompt(newPrompt)
-    if (step === 7) {
-      // For Step 7, save to Band 6 template by default
-      const stepKey = 'step7_band6' as keyof PromptTemplates
-      setPromptTemplate(part, stepKey, newPrompt)
-    } else if (step === 4) {
-      // For Step 4, save to Band 6 template by default
-      const stepKey = 'step4_band6' as keyof PromptTemplates
-      setPromptTemplate(part, stepKey, newPrompt)
-    } else {
-      const stepKey = `step${step}` as keyof PromptTemplates
-      setPromptTemplate(part, stepKey, newPrompt)
-    }
-  }
 
   // 处理 AI 调用
   const handleAICall = async (bandLevel?: string) => {
     setIsLoading(true)
     try {
-      let effectivePrompt = prompt
+      let effectivePrompt = ''
       let effectiveStep = step
       
       // Step 7 使用特定的 Band 级别 prompt 和 step
@@ -135,10 +109,15 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
       }
       
       // Step 4 使用特定的 Band 级别 prompt 和 step
-      if (step === 4 && bandLevel) {
+      else if (step === 4 && bandLevel) {
         const stepKey = `step4_band${bandLevel}`
         effectivePrompt = getPromptForStep(part, stepKey)
         effectiveStep = `4_band${bandLevel}` as any // 使用不同的step标识
+      }
+      
+      // 其他步骤使用常规 prompt
+      else {
+        effectivePrompt = getPromptForStep(part, step)
       }
       
       // 构建完整的 prompt (系统上下文 + 用户自定义 prompt)
@@ -221,11 +200,12 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
     return (
       <div className="flex gap-4 h-full">
         {/* Left Panel - Voice Recorder */}
-        <div className="w-1/3 bg-purple-50 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">
+        <div className="w-1/3 bg-white/80 backdrop-blur-sm rounded-lg shadow-lg shadow-purple-500/10 p-6">
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">
               {getStepTitle()}
             </h3>
+            <p className="text-sm text-gray-600">Record your speaking practice</p>
           </div>
           
           <VoiceRecorder 
@@ -292,7 +272,7 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
                           disabled={!hasResult}
                           className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                             isActive
-                              ? 'border-purple-500 text-purple-600 bg-purple-50'
+                              ? 'border-purple-500 text-purple-600 bg-white'
                               : hasResult 
                                 ? 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 : 'border-transparent text-gray-400'
@@ -344,49 +324,22 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
     <div className="flex gap-4 h-full">
       
       {/* Left Panel - Controls */}
-      <div className="w-1/3 bg-purple-50 rounded-lg p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold text-gray-900">
+      <div className="w-1/3 bg-white/80 backdrop-blur-sm rounded-lg shadow-lg shadow-purple-500/10 p-4">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-gray-800">
             {getStepTitle()}
           </h3>
-          <button
-            onClick={() => setShowPromptEditor(!showPromptEditor)}
-            className="w-7 h-7 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-full flex items-center justify-center"
-            title="Edit Prompt"
-          >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
-            </svg>
-          </button>
         </div>
 
-        {/* System Context (Step 2, 3, 4, 6, 7 默认显示，不显示标签) */}
+        {/* System Context */}
         {systemContext && (step === 2 || step === 3 || step === 4 || step === 6 || step === 7) && (
-          <div className="mb-3">
-            <div className="px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm text-gray-600 whitespace-pre-wrap">
+          <div className="mb-4">
+            <div className="px-4 py-3 bg-gray-50 rounded-lg text-sm text-gray-700 whitespace-pre-wrap">
               {systemContext}
             </div>
           </div>
         )}
 
-        {/* Prompt Editor */}
-        {showPromptEditor && (
-          <div className="mb-3 space-y-3">
-            {/* User Editable Prompt */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Custom Prompt:
-              </label>
-              <textarea
-                value={prompt}
-                onChange={(e) => handlePromptChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 text-sm"
-                rows={step === 3 || step === 4 || step === 6 || step === 7 ? 12 : 6}
-                placeholder="Enter custom prompt..."
-              />
-            </div>
-          </div>
-        )}
 
 
         {/* Action Buttons */}
@@ -405,10 +358,10 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
                   key={band}
                   onClick={() => handleAICall(band)}
                   disabled={isLoading}
-                  className={`w-full px-4 py-2 rounded-lg font-medium whitespace-nowrap flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`w-full px-4 py-2 rounded-lg font-medium whitespace-nowrap flex items-center justify-center gap-2 transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed ${
                     hasResult 
-                      ? 'bg-purple-600 hover:bg-purple-700 text-white' 
-                      : 'bg-purple-500 hover:bg-purple-600 text-white'
+                      ? 'bg-purple-600 text-white hover:-translate-y-0.5' 
+                      : 'bg-purple-500 text-white hover:-translate-y-0.5'
                   }`}
                 >
                   {isLoading ? (
@@ -441,8 +394,8 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
           /* Regular Steps - Single Button */
           <button
             onClick={() => handleAICall()}
-            disabled={isLoading || !prompt.trim()}
-            className="w-full px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium whitespace-nowrap flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isLoading}
+            className="w-full px-4 py-2 bg-purple-500 text-white rounded-lg font-medium whitespace-nowrap flex items-center justify-center gap-2 transition-all duration-300 ease-out hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             {isLoading ? (
               <>
@@ -490,7 +443,7 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
                       onClick={() => setActiveTab(band)}
                       className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
                         isActive
-                          ? 'border-purple-500 text-purple-600 bg-purple-50'
+                          ? 'border-purple-500 text-purple-600 bg-white'
                           : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                       }`}
                     >
@@ -543,31 +496,37 @@ export default function StepComponent({ part, step, onStepComplete }: StepCompon
         ) : (
           /* Regular Steps - Single Result Display */
           stepResult ? (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-full overflow-y-auto">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-base font-medium text-gray-900">Response</h4>
-                <span className="text-xs text-gray-500">
+            <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg shadow-purple-500/10 p-6 h-full overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-lg font-semibold text-gray-800">Response</h4>
+                <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
                   {stepResult.timestamp.toLocaleString()}
                 </span>
               </div>
               <MarkdownContent 
                 content={stepResult.content}
-                className="text-gray-800 leading-relaxed text-sm"
+                className="text-gray-800 leading-relaxed"
               />
             </div>
           ) : (
-            <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 p-8 h-full flex items-center justify-center">
+            <div className="bg-white/60 backdrop-blur-sm rounded-lg shadow-lg shadow-purple-500/5 p-8 h-full flex items-center justify-center">
               <div className="text-center text-gray-500">
-                <svg className="w-12 h-12 mx-auto mb-2 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z" clipRule="evenodd"/>
-                </svg>
-                <p className="text-sm">Click the button to generate AI response</p>
+                <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-purple-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z" clipRule="evenodd"/>
+                  </svg>
+                </div>
+                <p className="text-sm font-medium">Ready to generate</p>
+                <p className="text-xs text-gray-400 mt-1">Click the button to create AI response</p>
               </div>
             </div>
           )
         )}
 
       </div>
+      
+      {/* Floating Prompt Manager */}
+      <FloatingPromptManager part={part} step={step} />
     </div>
   )
 }

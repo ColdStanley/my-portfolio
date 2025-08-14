@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import puppeteer from 'puppeteer'
+import { put } from '@vercel/blob'
 
 interface PDFGenerationRequest {
   config: {
@@ -36,6 +37,8 @@ interface PDFGenerationRequest {
     content: string
     isOptimized: boolean
   }>
+  jdId?: string
+  userId?: string
 }
 
 function generateComprehensiveHTML(data: PDFGenerationRequest): string {
@@ -59,7 +62,7 @@ function generateComprehensiveHTML(data: PDFGenerationRequest): string {
   <style>
     @page {
       size: ${config.format};
-      margin: 18mm 16mm;
+      margin: 0.4in 0.55in;
     }
     
     * {
@@ -67,266 +70,361 @@ function generateComprehensiveHTML(data: PDFGenerationRequest): string {
     }
     
     html, body {
-      font: 11.5pt/1.45 system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+      font: 11pt/1.4 system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
       color: #111;
       margin: 0;
       padding: 0;
     }
     
     h1 {
-      font-size: 22pt;
-      margin: 0 0 2mm;
-      letter-spacing: .2px;
+      font-size: 17pt;
+      margin: 0;
       font-weight: 700;
+      color: #111;
     }
     
     h2 {
-      font-size: 12pt;
-      margin: 8mm 0 3mm;
-      border-bottom: 1px solid #e5e5e5;
-      padding-bottom: 2mm;
-      text-transform: uppercase;
-      letter-spacing: .6px;
+      font-size: 11pt;
+      margin: 12px 0 6px;
       font-weight: 700;
+      color: #111;
       break-after: avoid-page;
     }
     
     .section {
+      margin-bottom: 12px;
+    }
+    
+    .section.no-break {
       page-break-inside: avoid;
     }
     
-    /* Header Layout */
+    /* Header Layout - Left Name, Right Contact Info */
     .header {
       display: flex;
-      align-items: flex-end;
       justify-content: space-between;
-      gap: 10mm;
-      margin-bottom: 6mm;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #333;
     }
     
     .header .name {
-      flex: 1;
+      font-size: 17pt;
+      font-weight: 700;
+      color: #111;
+      text-align: left;
     }
     
     .header .contacts {
       text-align: right;
-      font-size: 10pt;
-      line-height: 1.4;
-      color: #444;
     }
     
-    .header .contacts a {
-      color: #444;
-      text-decoration: none;
+    .header .contact-line {
+      font-size: 10pt;
+      color: #666;
+      margin-bottom: 3px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .contact-icon {
+      width: 12px;
+      height: 12px;
+      fill: #333;
     }
     
     /* Two Column Layout */
     .grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 6mm;
+      gap: 20px;
+      margin-bottom: 12px;
     }
     
-    /* Summary & Skills */
-    .summary ul, .skills ul {
-      margin: 0;
-      padding: 0;
-      list-style: none;
+    /* Skills - North American Format */
+    .skills-content {
+      font-size: 10.5pt;
+      line-height: 1.5;
     }
     
-    .summary li, .skills li {
-      margin: 0 0 2mm;
-    }
-    
-    .chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px 6px;
-    }
-    
-    .chip {
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      padding: 2px 6px;
-      font-size: 10pt;
-      color: #333;
+    .skills-line {
+      margin-bottom: 4px;
     }
     
     /* Education & Certifications */
-    .edu, .certs {
-      margin-top: 2mm;
-    }
-    
-    .edu-item, .cert-item {
-      margin: 0 0 2mm;
+    .edu-item {
+      margin-bottom: 8px;
       break-inside: avoid;
     }
     
-    .meta {
-      color: #555;
-      font-size: 10pt;
+    .edu-header {
+      font-size: 11pt;
+      margin-bottom: 2px;
     }
     
-    /* Experience */
+    .edu-degree {
+      font-weight: 700;
+      display: inline;
+    }
+    
+    .edu-institution {
+      font-weight: normal;
+      display: inline;
+    }
+    
+    .edu-meta {
+      color: #666;
+      font-size: 10pt;
+      line-height: 1.2;
+    }
+    
+    .cert-item {
+      margin-bottom: 3px;
+      font-size: 10.5pt;
+      line-height: 1.3;
+    }
+    
+    /* Experience - North American Standard */
     .exp {
       page-break-inside: avoid;
-      margin: 0 0 6mm;
+      margin-bottom: 12px;
       break-inside: avoid;
     }
     
-    .exp-hd {
+    .exp-header {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      gap: 6mm;
+      font-size: 11pt;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: #111;
     }
     
-    .exp-left {
-      font-weight: 600;
+    .exp-title {
+      font-weight: 700;
     }
     
-    .exp-left .role {
-      font-weight: 600;
-    }
-    
-    .exp-left .company {
-      font-weight: 600;
-    }
-    
-    .exp-right {
-      color: #555;
+    .exp-time {
+      color: #666;
       font-size: 10pt;
+      font-weight: normal;
       white-space: nowrap;
     }
     
     .exp-bullets {
-      margin: 1.5mm 0 0;
-      padding: 0 0 0 4.5mm;
+      margin: 0;
+      padding-left: 14px;
       list-style: none;
     }
     
     .exp-bullets li {
-      margin: 0 0 2mm;
+      margin-bottom: 4px;
+      font-size: 10.5pt;
+      line-height: 1.4;
+      position: relative;
     }
     
     .exp-bullets li::before {
-      content: "• ";
-      margin-left: -4.5mm;
+      content: "•";
+      position: absolute;
+      left: -14px;
+      color: #111;
     }
     
-    /* Experience section container */
-    .experience-section {
-      margin-top: 2mm;
+    /* Summary */
+    .summary ul {
+      margin: 0;
+      padding-left: 14px;
+      list-style: none;
     }
     
-    .experience-section .section {
-      break-inside: auto;
+    .summary li {
+      margin-bottom: 4px;
+      font-size: 10.5pt;
+      line-height: 1.4;
+      position: relative;
+    }
+    
+    .summary li::before {
+      content: "•";
+      position: absolute;
+      left: -14px;
+      color: #111;
     }
   </style>
 </head>
 <body>
   ${config.includePersonalInfo ? `
-  <!-- Header -->
+  <!-- Header - Left Name, Right Contact Info -->
   <div class="header">
-    <div class="name">
-      <h1>${personalInfo.fullName}</h1>
-    </div>
+    <div class="name">${personalInfo.fullName}</div>
     <div class="contacts">
-      <div>
-        ${[personalInfo.email, personalInfo.phone, personalInfo.location].filter(item => item).join(' · ')}
+      ${[personalInfo.email, personalInfo.phone, personalInfo.location].filter(item => item).length > 0 ? `
+      <div class="contact-line">
+        ${personalInfo.email ? `
+        <div class="contact-item">
+          <svg class="contact-icon" viewBox="0 0 24 24">
+            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.89 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+          </svg>
+          ${personalInfo.email}
+        </div>
+        ` : ''}
+        ${personalInfo.phone ? `
+        <div class="contact-item">
+          <svg class="contact-icon" viewBox="0 0 24 24">
+            <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+          </svg>
+          ${personalInfo.phone}
+        </div>
+        ` : ''}
+        ${personalInfo.location ? `
+        <div class="contact-item">
+          <svg class="contact-icon" viewBox="0 0 24 24">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+          </svg>
+          ${personalInfo.location}
+        </div>
+        ` : ''}
       </div>
-      ${personalInfo.linkedin || personalInfo.website ? `<div>
-        ${[personalInfo.linkedin, personalInfo.website].filter(item => item).join(' · ')}
-      </div>` : ''}
+      ` : ''}
+      ${[personalInfo.linkedin, personalInfo.website].filter(item => item).length > 0 ? `
+      <div class="contact-line">
+        ${personalInfo.linkedin ? `
+        <div class="contact-item">
+          <svg class="contact-icon" viewBox="0 0 24 24">
+            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+          </svg>
+          ${personalInfo.linkedin}
+        </div>
+        ` : ''}
+        ${personalInfo.website ? `
+        <div class="contact-item">
+          <svg class="contact-icon" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+          </svg>
+          ${personalInfo.website}
+        </div>
+        ` : ''}
+      </div>
+      ` : ''}
     </div>
   </div>
   ` : ''}
 
   ${(validSummary.length > 0 || validTechnicalSkills.length > 0 || validLanguages.length > 0) ? `
-  <!-- Summary and Skills Row -->
+  <!-- Summary and Skills - Two Column -->
   <div class="grid-2">
-    <div class="summary section">
+    <div class="section no-break">
       ${validSummary.length > 0 ? `
         <h2>Professional Summary</h2>
-        <ul>
-          ${validSummary.map(item => `<li>${item}</li>`).join('')}
-        </ul>
+        <div class="summary">
+          <ul>
+            ${validSummary.map(item => `<li>${item}</li>`).join('')}
+          </ul>
+        </div>
       ` : ''}
     </div>
     
-    <div class="skills section">
+    <div class="section no-break">
       ${(validTechnicalSkills.length > 0 || validLanguages.length > 0) ? `
         <h2>Skills</h2>
-        <div class="chips">
-          ${validTechnicalSkills.map(skill => `<span class="chip">${skill}</span>`).join('')}
-          ${validLanguages.map(lang => `<span class="chip">${lang}</span>`).join('')}
+        ${validTechnicalSkills.length > 0 ? `
+        <div class="skills-content">
+          ${(() => {
+            const skillsPerLine = 5;
+            const lines = [];
+            for (let i = 0; i < validTechnicalSkills.length; i += skillsPerLine) {
+              lines.push(validTechnicalSkills.slice(i, i + skillsPerLine).join(' · '));
+            }
+            return lines.map(line => `<div class="skills-line">${line}</div>`).join('');
+          })()}
         </div>
+        ` : ''}
+        ${validLanguages.length > 0 ? `
+        <div style="margin-top: 8px;">
+          <h3 style="font-size: 10pt; font-weight: 600; margin-bottom: 4px; color: #111;">Languages</h3>
+          <div class="skills-content">
+            ${(() => {
+              const skillsPerLine = 5;
+              const lines = [];
+              for (let i = 0; i < validLanguages.length; i += skillsPerLine) {
+                lines.push(validLanguages.slice(i, i + skillsPerLine).join(' · '));
+              }
+              return lines.map(line => `<div class="skills-line">${line}</div>`).join('');
+            })()}
+          </div>
+        </div>
+        ` : ''}
       ` : ''}
     </div>
   </div>
   ` : ''}
 
   ${(validEducation.length > 0 || validCertificates.length > 0) ? `
-  <!-- Education and Certifications Row -->
+  <!-- Education and Certifications - Two Column -->
   <div class="grid-2">
-    <div class="section">
+    <div class="section no-break">
       ${validEducation.length > 0 ? `
         <h2>Education</h2>
-        <div class="edu">
-          ${validEducation.map(edu => `
-            <div class="edu-item">
-              <div><strong>${edu.degree}</strong> — ${edu.institution}</div>
-              <div class="meta">${edu.year}${edu.gpa ? ` · GPA: ${edu.gpa}` : ''}</div>
+        ${validEducation.map(edu => `
+          <div class="edu-item">
+            <div class="edu-header">
+              <span class="edu-degree">${edu.degree}</span> — <span class="edu-institution">${edu.institution}</span>
             </div>
-          `).join('')}
-        </div>
+            <div class="edu-meta">${edu.year}${edu.gpa ? ` · GPA: ${edu.gpa}` : ''}</div>
+          </div>
+        `).join('')}
       ` : ''}
     </div>
     
-    <div class="section">
+    <div class="section no-break">
       ${validCertificates.length > 0 ? `
         <h2>Certifications</h2>
-        <div class="certs">
-          ${validCertificates.map(cert => `<div class="cert-item">${cert}</div>`).join('')}
-        </div>
+        ${validCertificates.map(cert => `<div class="cert-item">${cert}</div>`).join('')}
       ` : ''}
     </div>
   </div>
   ` : ''}
 
   ${validExperiences.length > 0 ? `
-  <!-- Experience Section -->
-  <div class="experience-section">
-    <div class="section">
-      <h2>Professional Experience</h2>
-      ${validExperiences.map(exp => {
-        // Extract company, role, and time from title (format: company · title · time)
-        const titleParts = exp.title.split(' · ')
-        const company = titleParts[0] || 'Unknown Company'
-        const role = titleParts[1] || exp.title
-        const time = titleParts[2] || 'Present'
-        
-        // Convert content to bullet points
-        const bullets = exp.content.split('\n').filter(line => line.trim()).map(line => {
-          // Remove existing bullet points if any
-          return line.replace(/^[•·\-\*]\s*/, '').trim()
-        }).filter(line => line.length > 0)
-        
-        return `
-        <div class="exp">
-          <div class="exp-hd">
-            <div class="exp-left">
-              <span class="company">${company}</span> · <span class="role">${role}</span>
-            </div>
-            <div class="exp-right">${time}</div>
-          </div>
-          <ul class="exp-bullets">
-            ${bullets.map(bullet => `<li>${bullet}</li>`).join('')}
-          </ul>
+  <!-- Experience Section - North American Standard -->
+  <div class="section">
+    <h2>Professional Experience</h2>
+    ${validExperiences.map(exp => {
+      // Extract company, role, and time from title (format: company · title · time)
+      const titleParts = exp.title.split(' · ')
+      const company = titleParts[0] || 'Unknown Company'
+      const role = titleParts[1] || exp.title
+      const time = titleParts[2] || 'Present'
+      
+      // Convert content to bullet points
+      const bullets = exp.content.split('\n').filter(line => line.trim()).map(line => {
+        // Remove existing bullet points if any
+        return line.replace(/^[•·\-\*]\s*/, '').trim()
+      }).filter(line => line.length > 0)
+      
+      return `
+      <div class="exp">
+        <div class="exp-header">
+          <div class="exp-title">${company} — ${role}</div>
+          <div class="exp-time">${time}</div>
         </div>
-        `
-      }).join('')}
-    </div>
+        <ul class="exp-bullets">
+          ${bullets.map(bullet => `<li>${bullet}</li>`).join('')}
+        </ul>
+      </div>
+      `
+    }).join('')}
   </div>
   ` : ''}
 </body>
@@ -336,7 +434,7 @@ function generateComprehensiveHTML(data: PDFGenerationRequest): string {
 export async function POST(request: NextRequest) {
   try {
     const body: PDFGenerationRequest = await request.json()
-    const { config, experienceModules } = body
+    const { config, experienceModules, jdId, userId } = body
 
     if (!config.personalInfo.fullName) {
       return NextResponse.json(
@@ -390,6 +488,49 @@ export async function POST(request: NextRequest) {
           },
           { status: 413 }
         )
+      }
+
+      // If jdId and userId are provided, upload PDF to Vercel Blob and update JD record
+      if (jdId && userId) {
+        try {
+          // Generate filename
+          const safeName = (config.personalInfo.fullName || 'CV').replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')
+          const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '')
+          const filename = `${safeName}_CV_${timestamp}.pdf`
+
+          // Upload to Vercel Blob
+          const blob = await put(filename, pdf, {
+            access: 'public',
+            contentType: 'application/pdf'
+          })
+
+          // Update JD record with PDF info
+          const updateResponse = await fetch(new URL(`/api/jds/${jdId}`, request.url).toString(), {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: userId,
+              field: 'cv_pdf_url',
+              value: blob.url
+            })
+          })
+
+          if (updateResponse.ok) {
+            // Also update filename
+            await fetch(new URL(`/api/jds/${jdId}`, request.url).toString(), {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                user_id: userId,
+                field: 'cv_pdf_filename',
+                value: filename
+              })
+            })
+          }
+        } catch (uploadError) {
+          console.error('PDF upload error:', uploadError)
+          // Continue with download even if upload fails
+        }
       }
 
       return new NextResponse(pdf, {

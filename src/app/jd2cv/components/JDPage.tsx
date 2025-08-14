@@ -39,7 +39,8 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
     stage: '',
     role: '',
     firm: '',
-    score: ''
+    score: '',
+    time: ''
   })
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | ''>('')
   
@@ -154,16 +155,109 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
 
   const handleDeleteJD = async (jd: JDRecord) => {
     try {
-      const response = await fetch(`/api/jds/${jd.id}?user_id=${user.id}`, {
-        method: 'DELETE'
-      })
+      // Find the JD card and delete button elements
+      const jdCard = document.getElementById(`jd-card-${jd.id}`)
+      const deleteButton = deleteButtonRef
+      
+      if (jdCard && deleteButton) {
+        // Create flying animation before deletion
+        const cardRect = jdCard.getBoundingClientRect()
+        const buttonRect = deleteButton.getBoundingClientRect()
+        
+        // Create flying clone of the entire JD card
+        const clone = jdCard.cloneNode(true) as HTMLElement
+        clone.style.position = 'fixed'
+        clone.style.zIndex = '9999'
+        clone.style.pointerEvents = 'none'
+        clone.style.left = `${cardRect.left}px`
+        clone.style.top = `${cardRect.top}px`
+        clone.style.width = `${cardRect.width}px`
+        clone.style.height = `${cardRect.height}px`
+        clone.style.transform = 'scale(1) rotate(0deg)'
+        clone.style.opacity = '0.95'
+        clone.style.boxShadow = '0 20px 60px rgba(239, 68, 68, 0.4), 0 8px 30px rgba(0, 0, 0, 0.2)'
+        clone.style.borderRadius = '12px'
+        clone.style.transition = 'all 1400ms cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+        document.body.appendChild(clone)
+        
+        // Start continuous rotation animation (reverse direction like remove)
+        let rotationAngle = 0
+        const rotationInterval = setInterval(() => {
+          rotationAngle -= 12 // Faster reverse rotation for deletion
+          if (clone.parentNode) {
+            const currentTransform = clone.style.transform
+            const scaleMatch = currentTransform.match(/scale\(([^)]+)\)/)
+            const currentScale = scaleMatch ? scaleMatch[1] : '1'
+            clone.style.transform = `scale(${currentScale}) rotate(${rotationAngle}deg)`
+          }
+        }, 16) // 60fps smooth rotation
+        
+        // Animate to delete button position
+        setTimeout(() => {
+          clone.style.left = `${buttonRect.left + buttonRect.width / 2 - cardRect.width / 2}px`
+          clone.style.top = `${buttonRect.top + buttonRect.height / 2 - cardRect.height / 2}px`
+          clone.style.width = `${cardRect.width * 0.1}px`
+          clone.style.height = `${cardRect.height * 0.1}px`
+          const currentRotation = rotationAngle
+          clone.style.transform = `scale(0.05) rotate(${currentRotation}deg)`
+          clone.style.opacity = '0.1'
+          clone.style.boxShadow = '0 8px 25px rgba(239, 68, 68, 0.6), 0 4px 15px rgba(0, 0, 0, 0.3)'
+        }, 50)
+        
+        // Final fade out phase
+        setTimeout(() => {
+          clone.style.opacity = '0'
+          const currentRotation = rotationAngle
+          clone.style.transform = `scale(0.01) rotate(${currentRotation}deg)`
+        }, 1000)
+        
+        // Clean up rotation interval
+        setTimeout(() => {
+          clearInterval(rotationInterval)
+        }, 1400)
+        
+        // Clean up clone
+        setTimeout(() => {
+          if (clone.parentNode) {
+            clone.parentNode.removeChild(clone)
+          }
+        }, 1400)
+        
+        // Hide original card immediately
+        jdCard.style.opacity = '0'
+        jdCard.style.transform = 'scale(0.95)'
+        jdCard.style.transition = 'all 300ms ease-out'
+        
+        // Wait for animation to complete before actual deletion
+        setTimeout(async () => {
+          const response = await fetch(`/api/jds/${jd.id}?user_id=${user.id}`, {
+            method: 'DELETE'
+          })
 
-      const result = await response.json()
-      if (result.success) {
-        setJds(prev => prev.filter(j => j.id !== jd.id))
-        setDeleteJD(null)
+          const result = await response.json()
+          if (result.success) {
+            setJds(prev => prev.filter(j => j.id !== jd.id))
+            setDeleteJD(null)
+          } else {
+            // Restore card if deletion failed
+            jdCard.style.opacity = '1'
+            jdCard.style.transform = 'scale(1)'
+            throw new Error(result.error || 'Delete failed')
+          }
+        }, 1400)
       } else {
-        throw new Error(result.error || 'Delete failed')
+        // Fallback: direct deletion without animation
+        const response = await fetch(`/api/jds/${jd.id}?user_id=${user.id}`, {
+          method: 'DELETE'
+        })
+
+        const result = await response.json()
+        if (result.success) {
+          setJds(prev => prev.filter(j => j.id !== jd.id))
+          setDeleteJD(null)
+        } else {
+          throw new Error(result.error || 'Delete failed')
+        }
       }
     } catch (error) {
       console.error('Error deleting JD:', error)
@@ -177,14 +271,91 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
 
   const handleSelectForWorkspace = (jd: JDRecord, e?: React.MouseEvent) => {
     e?.stopPropagation() // Prevent any parent click handlers
+    const button = e?.target as HTMLElement
+    const actualButton = button?.closest('button') as HTMLElement
+    
     if (selectedJD?.id === jd.id) {
-      setSelectedJD(null) // 取消选择
-    } else {
-      setSelectedJD(jd) // 选择新记录
+      // Removing from workspace - reverse flying animation
+      setSelectedJD(null)
       
-      // Enhanced flying animation effect - arrow button only
-      const button = e?.target as HTMLElement
-      const actualButton = button?.closest('button') as HTMLElement
+      if (actualButton) {
+        const buttonRect = actualButton.getBoundingClientRect()
+        const tabElement = document.getElementById('tab-workspace')
+        
+        if (tabElement) {
+          const tabRect = tabElement.getBoundingClientRect()
+          
+          // Create flying clone starting from tab position
+          const clone = actualButton.cloneNode(true) as HTMLElement
+          clone.style.position = 'fixed'
+          clone.style.zIndex = '9999'
+          clone.style.pointerEvents = 'none'
+          clone.style.left = `${tabRect.left + tabRect.width / 2 - buttonRect.width / 2}px`
+          clone.style.top = `${tabRect.top + tabRect.height / 2 - buttonRect.height / 2}px`
+          clone.style.width = `${buttonRect.width}px`
+          clone.style.height = `${buttonRect.height}px`
+          clone.style.transform = 'scale(0.3) rotate(0deg)'
+          clone.style.opacity = '0.3'
+          clone.style.boxShadow = '0 8px 25px rgba(139, 92, 246, 0.6), 0 4px 15px rgba(0, 0, 0, 0.3)'
+          clone.style.borderRadius = '8px'
+          clone.style.transition = 'all 1400ms cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+          
+          // Update button text to show "Next Step" in clone
+          const textSpan = clone.querySelector('span')
+          if (textSpan) {
+            textSpan.textContent = 'Next Step'
+          }
+          
+          document.body.appendChild(clone)
+          
+          // Start continuous rotation animation (reverse direction)
+          let rotationAngle = 0
+          const rotationInterval = setInterval(() => {
+            rotationAngle -= 8 // Reverse rotation
+            if (clone.parentNode) {
+              const currentTransform = clone.style.transform
+              const scaleMatch = currentTransform.match(/scale\(([^)]+)\)/)
+              const currentScale = scaleMatch ? scaleMatch[1] : '1'
+              clone.style.transform = `scale(${currentScale}) rotate(${rotationAngle}deg)`
+            }
+          }, 16) // 60fps smooth rotation
+          
+          // Animate back to button position
+          setTimeout(() => {
+            clone.style.left = `${buttonRect.left}px`
+            clone.style.top = `${buttonRect.top}px`
+            clone.style.width = `${buttonRect.width}px`
+            clone.style.height = `${buttonRect.height}px`
+            const currentRotation = rotationAngle
+            clone.style.transform = `scale(1) rotate(${currentRotation}deg)`
+            clone.style.opacity = '0.95'
+            clone.style.boxShadow = '0 20px 60px rgba(139, 92, 246, 0.4), 0 8px 30px rgba(0, 0, 0, 0.2)'
+          }, 50)
+          
+          // Final fade out phase
+          setTimeout(() => {
+            clone.style.opacity = '0'
+            const currentRotation = rotationAngle
+            clone.style.transform = `scale(0.02) rotate(${currentRotation}deg)`
+          }, 1000)
+          
+          // Clean up rotation interval
+          setTimeout(() => {
+            clearInterval(rotationInterval)
+          }, 1400)
+          
+          // Clean up
+          setTimeout(() => {
+            if (clone.parentNode) {
+              clone.parentNode.removeChild(clone)
+            }
+          }, 1400)
+        }
+      }
+    } else {
+      // Adding to workspace - original flying animation
+      setSelectedJD(jd)
+      
       if (actualButton) {
         const buttonRect = actualButton.getBoundingClientRect()
         const tabElement = document.getElementById('tab-workspace')
@@ -204,6 +375,13 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
           clone.style.boxShadow = '0 20px 60px rgba(139, 92, 246, 0.4), 0 8px 30px rgba(0, 0, 0, 0.2)'
           clone.style.borderRadius = '8px'
           clone.style.transition = 'all 1400ms cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+          
+          // Update button text to show "In Workspace" in clone
+          const textSpan = clone.querySelector('span')
+          if (textSpan) {
+            textSpan.textContent = 'In Workspace'
+          }
+          
           document.body.appendChild(clone)
           
           // Start continuous rotation animation
@@ -276,12 +454,47 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
   // Filter and sort JDs
   const getFilteredAndSortedJDs = () => {
     let filteredJDs = jds.filter(jd => {
-      return (
+      // Existing filters
+      const passesExistingFilters = (
         (!filters.stage || jd.application_stage === filters.stage) &&
         (!filters.role || jd.role_group === filters.role) &&
         (!filters.firm || jd.firm_type === filters.firm) &&
         (!filters.score || jd.match_score?.toString() === filters.score)
       )
+
+      // Time filter
+      if (!filters.time) return passesExistingFilters
+
+      const createdAt = new Date(jd.created_at)
+      const now = new Date()
+      
+      switch (filters.time) {
+        case 'yesterday': {
+          const yesterday = new Date(now)
+          yesterday.setDate(now.getDate() - 1)
+          yesterday.setHours(0, 0, 0, 0)
+          const today = new Date(now)
+          today.setHours(0, 0, 0, 0)
+          return passesExistingFilters && createdAt >= yesterday && createdAt < today
+        }
+        case 'past3days': {
+          const threeDaysAgo = new Date(now)
+          threeDaysAgo.setDate(now.getDate() - 3)
+          return passesExistingFilters && createdAt >= threeDaysAgo
+        }
+        case 'past7days': {
+          const sevenDaysAgo = new Date(now)
+          sevenDaysAgo.setDate(now.getDate() - 7)
+          return passesExistingFilters && createdAt >= sevenDaysAgo
+        }
+        case 'past30days': {
+          const thirtyDaysAgo = new Date(now)
+          thirtyDaysAgo.setDate(now.getDate() - 30)
+          return passesExistingFilters && createdAt >= thirtyDaysAgo
+        }
+        default:
+          return passesExistingFilters
+      }
     })
 
     // Apply sorting by score
@@ -321,7 +534,8 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
       stage: '',
       role: '',
       firm: '',
-      score: ''
+      score: '',
+      time: ''
     })
     setSortOrder('')
   }
@@ -433,6 +647,25 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
     return result
   }
 
+  // Parse time and extract end year for sorting
+  const getEndYear = (timeString: string | null): number => {
+    if (!timeString) return 0
+    // Handle "Present", "Current", etc.
+    if (timeString.toLowerCase().includes('present') || 
+        timeString.toLowerCase().includes('current')) {
+      return new Date().getFullYear()
+    }
+    
+    // Extract year from formats like "2020-2023", "Jan 2020 - Dec 2023", etc.
+    const yearMatches = timeString.match(/\d{4}/g)
+    if (yearMatches && yearMatches.length > 0) {
+      // Return the last (most recent) year found
+      return parseInt(yearMatches[yearMatches.length - 1])
+    }
+    
+    return 0
+  }
+
   // Step 2: Import Starred Experiences
   const step2_ImportStarred = async () => {
     setFinalCVState(prev => ({ ...prev, progress: 25, currentStep: 'Importing starred...' }))
@@ -457,10 +690,14 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
     const result = await response.json()
     const allExperiences = result.data || []
     
-    // Filter to only starred experiences
+    // Filter to only starred experiences and sort by work experience time (most recent first)
     const starredExperiences = allExperiences
       .filter((exp: any) => starredIds.includes(exp.id))
-      .sort((a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+      .sort((a: any, b: any) => {
+        const endYearA = getEndYear(a.time)
+        const endYearB = getEndYear(b.time)
+        return endYearB - endYearA // Descending order (most recent first)
+      })
     
     setFinalCVState(prev => ({ ...prev, progress: 40 }))
     
@@ -573,7 +810,9 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         config,
-        experienceModules
+        experienceModules,
+        jdId: jd.id,
+        userId: user.id
       })
     })
     
@@ -775,7 +1014,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
             <p className="text-sm text-gray-600 mt-1">
               {(() => {
                 const filteredCount = getFilteredAndSortedJDs().length
-                const hasFilters = filters.stage || filters.role || filters.firm || filters.score || sortOrder
+                const hasFilters = filters.stage || filters.role || filters.firm || filters.score || filters.time || sortOrder
                 return hasFilters 
                   ? `${filteredCount} of ${jds.length} job descriptions`
                   : `${jds.length} job descriptions`
@@ -872,6 +1111,26 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                   </svg>
                 </div>
               </div>
+
+              {/* Time Filter */}
+              <div className="relative">
+                <select
+                  value={filters.time}
+                  onChange={(e) => handleFilterChange('time', e.target.value)}
+                  className="w-32 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 appearance-none cursor-pointer"
+                >
+                  <option value="">All Time</option>
+                  <option value="yesterday">Yesterday</option>
+                  <option value="past3days">Past 3 days</option>
+                  <option value="past7days">Past week</option>
+                  <option value="past30days">Past month</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
             </div>
 
             {/* Sort Button */}
@@ -896,7 +1155,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
             </button>
 
             {/* Clear Filters Button */}
-            {(filters.stage || filters.role || filters.firm || filters.score || sortOrder) && (
+            {(filters.stage || filters.role || filters.firm || filters.score || filters.time || sortOrder) && (
               <button
                 onClick={clearFilters}
                 className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg text-sm font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-2"
@@ -986,9 +1245,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                           title={selectedJD?.id === jd.id ? 'Selected for Workspace' : 'Select for Workspace'}
                         >
                           {selectedJD?.id === jd.id ? (
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
+                            <span className="text-xs font-medium">In Workspace</span>
                           ) : (
                             <span className="text-xs font-medium">Next Step</span>
                           )}

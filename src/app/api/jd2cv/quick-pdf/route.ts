@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import puppeteer from 'puppeteer'
+import { put } from '@vercel/blob'
 
 interface QuickPDFData {
   fullName: string
@@ -390,7 +391,7 @@ function generateHTML(pdfData: QuickPDFData, modules: CVModule[]): string {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { pdfData, modules, format = 'A4' } = body
+    const { pdfData, modules, format = 'A4', jdId, userId } = body
 
     if (!pdfData || !pdfData.fullName) {
       return NextResponse.json(
@@ -426,6 +427,49 @@ export async function POST(request: NextRequest) {
       })
 
       await browser.close()
+
+      // If jdId and userId are provided, upload PDF to Vercel Blob and update JD record
+      if (jdId && userId) {
+        try {
+          // Generate filename
+          const safeName = pdfData.fullName.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')
+          const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '')
+          const filename = `${safeName}_CV_${timestamp}.pdf`
+
+          // Upload to Vercel Blob
+          const blob = await put(filename, pdf, {
+            access: 'public',
+            contentType: 'application/pdf'
+          })
+
+          // Update JD record with PDF info
+          const updateResponse = await fetch(new URL(`/api/jds/${jdId}`, request.url).toString(), {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: userId,
+              field: 'cv_pdf_url',
+              value: blob.url
+            })
+          })
+
+          if (updateResponse.ok) {
+            // Also update filename
+            await fetch(new URL(`/api/jds/${jdId}`, request.url).toString(), {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                user_id: userId,
+                field: 'cv_pdf_filename',
+                value: filename
+              })
+            })
+          }
+        } catch (uploadError) {
+          console.error('PDF upload error:', uploadError)
+          // Continue with download even if upload fails
+        }
+      }
 
       return new NextResponse(pdf, {
         status: 200,

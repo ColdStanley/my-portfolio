@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useReadLinguaStore } from '../store/useReadLinguaStore'
 import { queryApi } from '../utils/apiClient'
 import { supabase } from '../utils/supabaseClient'
@@ -8,9 +8,28 @@ import ArticleReader from './ArticleReader'
 import QueryPanel from './QueryPanel'
 import PromptManager from './PromptManager'
 import SettingsPanel from './SettingsPanel'
+import AskAISearchBox from './AskAISearchBox'
+import AIResponseFloatingPanel from './AIResponseFloatingPanel'
 
 export default function LearningTab() {
   const { selectedArticle, queries, setQueries, setSelectedQuery, showQueryPanel, setShowQueryPanel, setShowPromptManager } = useReadLinguaStore()
+  const [showFloatingPanel, setShowFloatingPanel] = useState(false)
+  const [floatingPanelData, setFloatingPanelData] = useState({
+    queryType: '',
+    aiResponse: '',
+    isLoading: false,
+    hasError: false
+  })
+
+  const handleShowFloatingPanel = (data: {
+    queryType: string
+    aiResponse: string
+    isLoading: boolean
+    hasError: boolean
+  }) => {
+    setFloatingPanelData(data)
+    setShowFloatingPanel(true)
+  }
 
   useEffect(() => {
     if (selectedArticle) {
@@ -78,8 +97,24 @@ export default function LearningTab() {
 
   return (
     <div>
+      {/* Ask AI Search Box - Bottom Right */}
+      <AskAISearchBox 
+        onShowFloatingPanel={handleShowFloatingPanel}
+      />
+
       {/* Settings Panel - Bottom Right */}
       <SettingsPanel />
+
+      {/* AI Response Floating Panel */}
+      {showFloatingPanel && (
+        <AIResponseFloatingPanel 
+          queryType={floatingPanelData.queryType}
+          aiResponse={floatingPanelData.aiResponse}
+          isLoading={floatingPanelData.isLoading}
+          hasError={floatingPanelData.hasError}
+          onClose={() => setShowFloatingPanel(false)}
+        />
+      )}
 
       {/* Main Content */}
       <div className="flex flex-1 min-h-0 max-w-7xl mx-auto px-4 w-full gap-6">

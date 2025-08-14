@@ -410,7 +410,9 @@ function WorkspaceContent({ globalLoading = false }) {
         },
         body: JSON.stringify({
           config,
-          experienceModules
+          experienceModules,
+          jdId: selectedJD?.id,
+          userId: user?.id
         })
       })
       

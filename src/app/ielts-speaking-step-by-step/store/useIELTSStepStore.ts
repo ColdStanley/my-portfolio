@@ -4,6 +4,62 @@ import { persist } from 'zustand/middleware'
 export type PartType = 'part1' | 'part2' | 'part3'
 export type TabType = 'dashboard' | 'learning'
 
+// Category data for Part 1 question generation
+export interface CategoryItem {
+  id: string
+  label: string
+  placeholder: string
+}
+
+export interface Category {
+  id: string
+  label: string
+  items: CategoryItem[]
+}
+
+// Part 1 Categories
+export const PART1_CATEGORIES: Category[] = [
+  {
+    id: 'topic',
+    label: 'Topic',
+    items: [
+      { id: 'people', label: 'People', placeholder: 'people' },
+      { id: 'places', label: 'Places', placeholder: 'places' },
+      { id: 'objects', label: 'Objects', placeholder: 'objects' },
+      { id: 'activities', label: 'Activities', placeholder: 'activities' },
+      { id: 'experiences', label: 'Experiences', placeholder: 'experiences' },
+      { id: 'daily-life', label: 'Daily Life', placeholder: 'daily-life' }
+    ]
+  },
+  {
+    id: 'function',
+    label: 'Function',
+    items: [
+      { id: 'habit', label: 'Habit', placeholder: 'habit' },
+      { id: 'experience', label: 'Experience', placeholder: 'experience' },
+      { id: 'preference', label: 'Preference', placeholder: 'preference' },
+      { id: 'opinion', label: 'Opinion', placeholder: 'opinion' },
+      { id: 'comparison', label: 'Comparison', placeholder: 'comparison' }
+    ]
+  },
+  {
+    id: 'time',
+    label: 'Time',
+    items: [
+      { id: 'current', label: 'Current', placeholder: 'current' },
+      { id: 'past', label: 'Past', placeholder: 'past' },
+      { id: 'change', label: 'Change', placeholder: 'change' },
+      { id: 'future', label: 'Future', placeholder: 'future' }
+    ]
+  }
+]
+
+// Category selection state
+export interface CategorySelection {
+  categoryId: string
+  itemId: string
+}
+
 interface StepResult {
   content: string
   timestamp: Date
@@ -46,9 +102,15 @@ interface IELTSStepStore {
   activeTab: TabType
   activePart: PartType
   selectedAiModel: 'deepseek' | 'openai'
+  isPracticeExpanded: boolean
   setActiveTab: (tab: TabType) => void
   setActivePart: (part: PartType) => void
   setSelectedAiModel: (model: 'deepseek' | 'openai') => void
+  togglePracticeExpanded: () => void
+  
+  // Category Selection State (for Part 1 Step 1)
+  categorySelection: CategorySelection | null
+  setCategorySelection: (selection: CategorySelection | null) => void
   
   // Progress State
   progress: Record<PartType, PartProgress>
@@ -88,7 +150,11 @@ const initialPartProgress: PartProgress = {
 // Default prompt templates for each part and step
 const DEFAULT_PROMPT_TEMPLATES_MAP: PromptTemplatesByPart = {
   part1: {
-    step1: "Generate a diverse set of IELTS Speaking Part 1 questions about common topics like work, study, hobbies, hometown, family, etc. Provide 8-10 questions that are commonly asked.",
+    step1: `你是一名雅思口语考官，请根据以下典型类型生成一道雅思口语 Part 1 题目。
+要求：
+1. 题目必须自然、地道，符合雅思口语真实考试的 Part 1 风格；
+2. 问句长度适中（8–15 个英文单词），不使用生僻表达；
+3. 不要输出任何解释或额外信息，只输出题目本身。`,
     step2: `请从以下五个角度分析这道 IELTS Speaking Part 1 题目，帮助考生理解题目结构与答题要求：
 
 分析角度如下：
@@ -518,9 +584,15 @@ export const useIELTSStepStore = create<IELTSStepStore>()(
       activeTab: 'dashboard',
       activePart: 'part1',
       selectedAiModel: 'deepseek',
+      isPracticeExpanded: false,
       setActiveTab: (tab) => set({ activeTab: tab }),
       setActivePart: (part) => set({ activePart: part }),
       setSelectedAiModel: (model) => set({ selectedAiModel: model }),
+      togglePracticeExpanded: () => set((state) => ({ isPracticeExpanded: !state.isPracticeExpanded })),
+      
+      // Category Selection State
+      categorySelection: null,
+      setCategorySelection: (selection) => set({ categorySelection: selection }),
       
       // Progress State
       progress: {
@@ -764,7 +836,9 @@ export const useIELTSStepStore = create<IELTSStepStore>()(
         progress: state.progress, 
         activePart: state.activePart,
         selectedAiModel: state.selectedAiModel,
-        promptTemplatesByPart: state.promptTemplatesByPart
+        isPracticeExpanded: state.isPracticeExpanded,
+        promptTemplatesByPart: state.promptTemplatesByPart,
+        categorySelection: state.categorySelection
       })
     }
   )

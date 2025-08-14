@@ -160,11 +160,12 @@ The codebase prioritizes rapid development with build-time flexibility:
 ```
 
 #### Color Theme
-- **Primary Active**: `bg-purple-500 text-white shadow-lg` (激活状态)
-- **Primary Hover**: `hover:bg-purple-600` 
-- **Secondary Text**: `text-gray-600 hover:text-gray-800`
-- **Interactive Hover**: `hover:bg-white/50`
-- **Accent Elements**: `text-purple-500`, `border-purple-500`
+- **Purple Reserve**: 只在特别重要的地方使用紫色，如主要CTA按钮、当前激活的关键功能
+- **Primary Active**: `bg-purple-500 text-white` (特别重要的激活状态)
+- **Secondary Active**: `bg-gray-100 text-gray-800` (一般激活状态)
+- **Primary Text**: `text-gray-600 hover:text-gray-800` (主要文本)
+- **Interactive Hover**: `hover:bg-gray-50` (悬浮状态)
+- **Notion-style Hierarchy**: 参照Notion页面层级缩进设计，浅灰为主，紫色点缀
 
 #### Shadow System (立体感层次)
 ```css

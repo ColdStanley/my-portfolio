@@ -61,38 +61,33 @@ export default function DeleteTooltip({
       <div 
         ref={tooltipRef}
         style={getTooltipPosition()}
-        className="absolute bg-white/95 backdrop-blur-md rounded-lg shadow-lg border border-gray-200 p-3 pointer-events-auto min-w-48"
+        className="absolute bg-white/95 backdrop-blur-md rounded-lg shadow-xl p-3 pointer-events-auto"
       >
-        {/* Content */}
-        <div className="space-y-3">
-          <div className="text-sm text-gray-700">
-            Delete <span className="font-medium text-gray-900">{title}</span>?
-          </div>
-          
-          {/* Actions */}
-          <div className="flex gap-2">
-            <button
-              onClick={onClose}
-              className="flex-1 px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded font-medium transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => {
-                onConfirm()
-                onClose()
-              }}
-              className="flex-1 px-3 py-1.5 text-xs bg-red-500 hover:bg-red-600 text-white rounded font-medium transition-colors"
-            >
-              Delete
-            </button>
-          </div>
+        {/* Minimal Content */}
+        <div className="text-xs text-gray-600 mb-2 whitespace-nowrap">Delete?</div>
+        
+        {/* Minimal Actions */}
+        <div className="flex gap-1">
+          <button
+            onClick={onClose}
+            className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded transition-colors"
+          >
+            No
+          </button>
+          <button
+            onClick={() => {
+              onConfirm()
+              onClose()
+            }}
+            className="px-2 py-1 text-xs bg-red-500 hover:bg-red-600 text-white rounded transition-colors"
+          >
+            Yes
+          </button>
         </div>
 
-        {/* Arrow */}
+        {/* Simple Arrow */}
         <div className="absolute top-full left-1/2 transform -translate-x-1/2">
-          <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white/95"></div>
-          <div className="absolute -top-px left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-200"></div>
+          <div className="w-0 h-0 border-l-3 border-r-3 border-t-3 border-transparent border-t-white/95"></div>
         </div>
       </div>
     </div>

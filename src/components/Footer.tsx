@@ -38,7 +38,7 @@ export default function Footer() {
 
   return (
     <footer className="w-full border-t border-gray-200 dark:border-gray-700 bg-gradient-to-t from-white to-purple-50 dark:from-black dark:to-gray-900 mt-16">
-      <div className="max-w-7xl mx-auto px-6 py-10 flex flex-col gap-10">
+      <div className="max-w-7xl mx-auto px-6 py-10 flex flex-col gap-10 md:ml-64">
         {/* 三栏内容区域 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
           {/* 左栏 */}

@@ -12,8 +12,6 @@ export const PROJECT_CONFIG = {
     JOB_APPLICATION: 'job-application',
     JD2CV: 'jd2cv',
     NOTION_WRITER: 'notion-writer',
-    FRENOTES: 'frenotes',
-    LUEUR: 'lueur',
     ENGLISH_READING: 'english-reading'
   } as const,
 
@@ -26,8 +24,6 @@ export const PROJECT_CONFIG = {
     '/job-application': 'job-application',
     '/jd2cv': 'jd2cv',
     '/notion-writer': 'notion-writer',
-    '/frenotes': 'frenotes',
-    '/lueur': 'lueur',
     '/ielts-reading': 'english-reading'
   } as const,
 
