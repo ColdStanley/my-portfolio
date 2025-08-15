@@ -9,9 +9,6 @@ import TaskListView from './TaskListView'
 import TaskCompletionModal from './TaskCompletionModal'
 import RenderBlock from '@/components/notion/RenderBlock'
 import { getCurrentTorontoTime, extractTimeOnly, extractDateOnly } from '../../utils/timezone'
-import StrategyPanel from './StrategyPanel'
-import PlanPanel from './PlanPanel'
-import TBDPanel from './TBDPanel'
 
 interface TaskFormData {
   title: string
@@ -75,10 +72,9 @@ interface TaskRecord {
 
 interface TaskPanelOptimizedProps {
   onTasksUpdate?: (tasks: TaskRecord[]) => void
-  activeTab?: string
 }
 
-export default function TaskPanelOptimized({ onTasksUpdate, activeTab: externalActiveTab }: TaskPanelOptimizedProps) {
+export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimizedProps) {
   const [state, actions] = useTaskReducer()
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null)
   const [mobileActiveTab, setMobileActiveTab] = useState<'calendar' | 'tasks'>('tasks')
@@ -636,24 +632,12 @@ export default function TaskPanelOptimized({ onTasksUpdate, activeTab: externalA
     )
   }
 
-  // 如果activeTab是Life子导航（strategy/plan/tbd），直接渲染对应组件
-  // 注意：当activeTab是'task'或'life'时，继续执行下面的Task管理界面
-  if (externalActiveTab === 'strategy') {
-    return <StrategyPanel />
-  }
-  
-  if (externalActiveTab === 'plan') {
-    return <PlanPanel />
-  }
-  
-  if (externalActiveTab === 'tbd') {
-    return <TBDPanel />
-  }
 
   return (
     <TaskErrorBoundary>
-      <div className="p-3 md:p-6">
-
+      <div className="w-full py-8 space-y-6">
+        <div className="px-3 md:px-6">
+        
         {/* Mobile Layout with Tab Switching */}
         <div className="md:hidden mb-6">
           {/* Mobile Tab Navigation */}
@@ -1013,6 +997,7 @@ export default function TaskPanelOptimized({ onTasksUpdate, activeTab: externalA
             onClose={() => setToast(null)}
           />
         )}
+        </div>
       </div>
     </TaskErrorBoundary>
   )

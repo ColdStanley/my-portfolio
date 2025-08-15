@@ -25,6 +25,9 @@ import { useSimplifiedAuth } from '@/hooks/useSimplifiedAuth'
 import Sidebar from './components/Sidebar'
 import TaskPanelOptimized from './components/Life/TaskPanelOptimized'
 import NotionConfigModal from './components/NotionConfigModal'
+import StrategyPanel from './components/Life/StrategyPanel'
+import PlanPanel from './components/Life/PlanPanel'
+import TBDPanel from './components/Life/TBDPanel'
 
 export default function CestLaViePage() {
   const [activeTab, setActiveTab] = useState('life')
@@ -129,9 +132,12 @@ export default function CestLaViePage() {
         
         {/* 主内容区域 - 全屏布局 */}
         <div className="flex-1">
-          {/* 直接渲染Task内容，移除MainContent层 */}
-          {(activeTab === 'life' || ['strategy', 'plan', 'task', 'tbd'].includes(activeTab)) && (
-            <TaskPanelOptimized onTasksUpdate={setTasks} activeTab={activeTab} />
+          {/* Life子导航路由逻辑 */}
+          {activeTab === 'strategy' && <StrategyPanel />}
+          {activeTab === 'plan' && <PlanPanel />}
+          {activeTab === 'tbd' && <TBDPanel />}
+          {(activeTab === 'life' || activeTab === 'task') && (
+            <TaskPanelOptimized onTasksUpdate={setTasks} />
           )}
           
           {activeTab === 'career' && (
