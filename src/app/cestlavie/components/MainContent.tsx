@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import LifeSubTabNav from './Life/LifeSubTabNav'
 import StrategyPanel from './Life/StrategyPanel'
 import PlanPanel from './Life/PlanPanel'
 import TaskPanelOptimized from './Life/TaskPanelOptimized'
@@ -36,7 +35,10 @@ const lifeSubTabs = ['strategy', 'plan', 'task', 'tbd'] as const
 type LifeSubTabKey = typeof lifeSubTabs[number]
 
 export default function MainContent({ activeMainTab, onConfigClick, onTasksUpdate }: MainContentProps) {
-  const [activeLifeSubTab, setActiveLifeSubTab] = useState<LifeSubTabKey>('task')
+  // Determine if we're in life mode and which sub-tab is active
+  const isLifeSubTab = lifeSubTabs.includes(activeMainTab as LifeSubTabKey)
+  const effectiveMainTab = isLifeSubTab ? 'life' : activeMainTab
+  const activeLifeSubTab = isLifeSubTab ? (activeMainTab as LifeSubTabKey) : 'task'
 
   const renderCareerContent = () => {
     return (
@@ -61,13 +63,10 @@ export default function MainContent({ activeMainTab, onConfigClick, onTasksUpdat
   }
 
   const renderContent = () => {
-    switch (activeMainTab) {
+    switch (effectiveMainTab) {
       case 'life':
         return (
-          <>
-            <LifeSubTabNav activeTab={activeLifeSubTab} setActiveTab={setActiveLifeSubTab} onConfigClick={onConfigClick} />
-            <div className="flex-1 overflow-y-auto p-6">{renderLifeContent()}</div>
-          </>
+          <div className="flex-1 overflow-y-auto p-6">{renderLifeContent()}</div>
         )
       case 'career':
         return renderCareerContent()

@@ -127,9 +127,9 @@ export default function CestLaViePage() {
           tasks={tasks}
         />
         
-        {/* 主内容区域 - 为固定侧边栏留出空间 */}
-        <div className="flex-1 overflow-hidden md:overflow-auto md:ml-64">
-          <div className="h-full overflow-y-auto md:overflow-visible main-content-scroll">
+        {/* 主内容区域 - 全屏布局 */}
+        <div className="flex-1 overflow-hidden">
+          <div className="h-full overflow-y-auto main-content-scroll">
             <MainContent 
               activeMainTab={activeTab} 
               onConfigClick={() => setShowConfigModal(true)}

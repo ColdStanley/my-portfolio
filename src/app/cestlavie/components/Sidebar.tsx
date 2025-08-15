@@ -36,10 +36,18 @@ const tabs = [
   { key: 'study', label: 'Study', icon: '📚' },
 ]
 
-export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMobileMenuOpen, tasks = [] }: SidebarProps) {
+const lifeSubTabs = [
+  { key: 'strategy', label: 'Strategy', icon: '🎯' },
+  { key: 'plan', label: 'Plan', icon: '📋' },
+  { key: 'task', label: 'Task', icon: '✅' },
+  { key: 'tbd', label: 'TBD', icon: '🔮' },
+]
+
+export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMobileMenuOpen, onConfigClick, tasks = [] }: SidebarProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isHoverOpen, setIsHoverOpen] = useState(false)
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null)
+  const [lifeExpanded, setLifeExpanded] = useState(false)
 
   const handleTabClick = (tabKey: string) => {
     setActiveTab(tabKey)
@@ -49,13 +57,36 @@ export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMo
     }
   }
 
+  const handleLifeClick = () => {
+    // 切换Life展开状态
+    setLifeExpanded(!lifeExpanded)
+    // 如果当前不在life相关页面，则切换到life
+    if (!activeTab.startsWith('life') && !['strategy', 'plan', 'task', 'tbd'].includes(activeTab)) {
+      setActiveTab('life')
+    }
+  }
+
+  const handleLifeSubTabClick = (subTabKey: string) => {
+    setActiveTab(subTabKey)
+    // 移动端点击后关闭菜单
+    if (setMobileMenuOpen) {
+      setMobileMenuOpen(false)
+    }
+  }
+
   // Notion-style handlers
   const handleClick = () => {
+    // 清除任何现有的定时器
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout)
+      setHoverTimeout(null)
+    }
     setSidebarOpen(true)
-    setIsHoverOpen(false)
+    setIsHoverOpen(false) // 点击模式，不会自动关闭
   }
 
   const handleHoverEnter = () => {
+    // 清除任何现有的定时器
     if (hoverTimeout) {
       clearTimeout(hoverTimeout)
       setHoverTimeout(null)
@@ -65,24 +96,42 @@ export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMo
   }
 
   const handleHoverLeave = () => {
-    const timeout = setTimeout(() => {
-      if (isHoverOpen) {
+    // 只在悬浮模式下设置定时器
+    if (isHoverOpen) {
+      const timeout = setTimeout(() => {
         setSidebarOpen(false)
         setIsHoverOpen(false)
-      }
-    }, 500)
-    setHoverTimeout(timeout)
+      }, 1500) // 增加到1.5秒
+      setHoverTimeout(timeout)
+    }
   }
 
   const handleClickOutside = () => {
+    // 清除定时器并关闭
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout)
+      setHoverTimeout(null)
+    }
     setSidebarOpen(false)
     setIsHoverOpen(false)
   }
 
-  const handleSidebarHover = () => {
+  const handleSidebarEnter = () => {
+    // 鼠标进入侧边栏，立即清除关闭定时器
     if (hoverTimeout) {
       clearTimeout(hoverTimeout)
       setHoverTimeout(null)
+    }
+  }
+
+  const handleSidebarLeave = () => {
+    // 只有在悬浮模式下才设置关闭定时器
+    if (isHoverOpen) {
+      const timeout = setTimeout(() => {
+        setSidebarOpen(false)
+        setIsHoverOpen(false)
+      }, 800)
+      setHoverTimeout(timeout)
     }
   }
 
@@ -108,11 +157,18 @@ export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMo
     }
   }, [hoverTimeout])
 
+  // Auto-expand Life when activeTab is a life sub-tab
+  useEffect(() => {
+    if (['strategy', 'plan', 'task', 'tbd'].includes(activeTab)) {
+      setLifeExpanded(true)
+    }
+  }, [activeTab])
+
   return (
     <>
       {/* Left Edge Hover Zone for Notion-style trigger */}
       <div 
-        className="hidden md:block fixed top-0 left-0 w-8 h-full z-40"
+        className="hidden md:block fixed top-0 left-0 w-12 h-full z-40"
         onMouseEnter={handleHoverEnter}
         onMouseLeave={handleHoverLeave}
       />
@@ -147,8 +203,8 @@ export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMo
             ? 'cubic-bezier(0.34, 1.56, 0.64, 1)' 
             : 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
         }}
-        onMouseEnter={handleSidebarHover}
-        onMouseLeave={handleHoverLeave}
+        onMouseEnter={handleSidebarEnter}
+        onMouseLeave={handleSidebarLeave}
       >
         {/* Header with Close Button */}
         <div className="flex justify-between items-center p-4 border-b border-gray-100">
@@ -161,23 +217,87 @@ export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMo
         </div>
         
         {/* Navigation Content */}
-        <div className="p-3">
-          <div className="space-y-1">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => handleTabClick(tab.key)}
-                className={`w-full px-3 py-2 text-left text-sm transition-colors rounded-md flex items-center gap-2 ${
-                  activeTab === tab.key
-                    ? 'bg-purple-50 text-purple-700'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
-                }`}
-              >
-                <span className="text-base">{tab.icon}</span>
-                {tab.label}
-              </button>
-            ))}
+        <div className="p-3 flex flex-col h-full">
+          <div className="space-y-1 flex-1">
+            {tabs.map((tab) => {
+              if (tab.key === 'life') {
+                return (
+                  <div key={tab.key}>
+                    {/* Life按钮 - 可展开 */}
+                    <button
+                      onClick={handleLifeClick}
+                      className={`w-full px-3 py-2 text-left text-sm transition-colors rounded-md flex items-center justify-between ${
+                        activeTab === tab.key || ['strategy', 'plan', 'task', 'tbd'].includes(activeTab)
+                          ? 'bg-purple-50 text-purple-700'
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">{tab.icon}</span>
+                        {tab.label}
+                      </div>
+                      <svg 
+                        className={`w-3 h-3 transition-transform duration-200 ${lifeExpanded ? 'rotate-90' : ''}`} 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                    
+                    {/* Life子导航 - 展开时显示 */}
+                    {lifeExpanded && (
+                      <div className="pl-6 space-y-1 mt-1">
+                        {lifeSubTabs.map((subTab) => (
+                          <button
+                            key={subTab.key}
+                            onClick={() => handleLifeSubTabClick(subTab.key)}
+                            className={`w-full px-2 py-1.5 text-left text-sm transition-colors rounded-md flex items-center gap-2 ${
+                              activeTab === subTab.key
+                                ? 'bg-gray-100 text-gray-800'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
+                            }`}
+                          >
+                            <span className="text-sm">{subTab.icon}</span>
+                            {subTab.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              } else {
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => handleTabClick(tab.key)}
+                    className={`w-full px-3 py-2 text-left text-sm transition-colors rounded-md flex items-center gap-2 ${
+                      activeTab === tab.key
+                        ? 'bg-purple-50 text-purple-700'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
+                    }`}
+                  >
+                    <span className="text-base">{tab.icon}</span>
+                    {tab.label}
+                  </button>
+                )
+              }
+            })}
           </div>
+          
+          {/* Configuration button at bottom */}
+          {onConfigClick && (
+            <div className="border-t border-gray-100 pt-3 mt-3">
+              <button
+                onClick={onConfigClick}
+                className="w-full px-3 py-2 text-left text-sm transition-colors rounded-md flex items-center gap-2 text-gray-600 hover:bg-yellow-50 hover:text-yellow-700"
+              >
+                <span className="text-base">⚙️</span>
+                Configuration
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -201,6 +321,22 @@ export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMo
                 <span>{tab.label}</span>
               </button>
             ))}
+            
+            {/* Mobile Configuration button */}
+            {onConfigClick && (
+              <button
+                onClick={() => {
+                  onConfigClick()
+                  if (setMobileMenuOpen) {
+                    setMobileMenuOpen(false)
+                  }
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200 min-w-[160px] text-gray-600 hover:bg-yellow-50 hover:text-yellow-700"
+              >
+                <span className="text-xl">⚙️</span>
+                <span>Configuration</span>
+              </button>
+            )}
           </div>
         </nav>
       </div>

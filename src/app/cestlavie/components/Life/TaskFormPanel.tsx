@@ -216,7 +216,7 @@ export default function TaskFormPanel({
         className={`fixed top-0 left-0 h-full z-40 md:block hidden transition-opacity duration-300 ${
           isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
-        style={{ width: 'calc(100vw - 384px)' }}
+        style={{ width: 'calc(100vw - 480px)' }}
         onClick={onClose}
       ></div>
       
@@ -228,11 +228,13 @@ export default function TaskFormPanel({
         onClick={onClose}
       ></div>
       
-      {/* Form panel */}
-      <div className={`fixed top-0 right-0 h-full w-full md:w-96 bg-white shadow-2xl z-50 md:border-l border-purple-200 flex flex-col
-        transition-transform duration-300 ease-out ${
-          isOpen ? 'transform translate-x-0' : 'transform translate-x-full'
-        }`}>
+      {/* Form panel - 480px width */}
+      <div 
+        className={`fixed top-0 right-0 h-full w-full md:w-[480px] bg-white shadow-2xl z-50 md:border-l border-purple-200 flex flex-col
+          transition-transform duration-300 ease-out ${
+            isOpen ? 'transform translate-x-0' : 'transform translate-x-full'
+          }`}
+      >
         <div className="p-4 border-b border-purple-200 flex items-center justify-between">
           <h4 className="text-lg font-semibold text-purple-900">
             {task ? 'Edit Task' : 'New Task'}

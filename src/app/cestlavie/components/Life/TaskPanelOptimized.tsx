@@ -77,6 +77,7 @@ interface TaskPanelOptimizedProps {
 export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimizedProps) {
   const [state, actions] = useTaskReducer()
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null)
+  const [mobileActiveTab, setMobileActiveTab] = useState<'calendar' | 'tasks'>('tasks')
   
   // Memoized filtered data to prevent unnecessary recalculations
   const filteredTasks = useMemo(() => {
@@ -647,178 +648,217 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
           </div>
         </div>
 
-        {/* Mobile Priority Layout: Calendar -> Tasks -> Other */}
-        <div className="md:hidden space-y-4">
+        {/* Mobile Layout with Tab Switching */}
+        <div className="md:hidden">
+          {/* Mobile Tab Navigation */}
+          <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 mb-4">
+            <div className="flex">
+              <button
+                onClick={() => setMobileActiveTab('calendar')}
+                className={`flex-1 px-4 py-3 text-center font-medium transition-all duration-300 rounded-l-xl ${
+                  mobileActiveTab === 'calendar'
+                    ? 'bg-purple-500 text-white shadow-lg'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
+                }`}
+              >
+                <span className="text-base mr-2">📅</span>
+                Calendar
+              </button>
+              <button
+                onClick={() => setMobileActiveTab('tasks')}
+                className={`flex-1 px-4 py-3 text-center font-medium transition-all duration-300 rounded-r-xl ${
+                  mobileActiveTab === 'tasks'
+                    ? 'bg-purple-500 text-white shadow-lg'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
+                }`}
+              >
+                <span className="text-base mr-2">✅</span>
+                Tasks
+              </button>
+            </div>
+          </div>
 
-          {/* 1. Calendar Section (Mobile First) */}
-          <div>
-            <h3 className="text-lg font-semibold text-purple-500 mb-3">📅 Calendar</h3>
-            <div className="bg-white rounded-lg border border-purple-200">
-              <TaskCalendarView
+          {/* Mobile Tab Content */}
+          {mobileActiveTab === 'calendar' && (
+            <div className="space-y-4">
+              <div className="bg-white rounded-lg border border-purple-200">
+                <TaskCalendarView
+                  tasks={filteredTasks}
+                  currentMonth={state.currentMonth}
+                  selectedDate={state.selectedDate}
+                  onDateSelect={actions.setSelectedDate}
+                  onMonthChange={actions.setCurrentMonth}
+                  selectedPlanFilter={state.selectedPlanFilter}
+                  onTaskClick={(task) => actions.openFormPanel(task)}
+                  onTaskDelete={handleDeleteTask}
+                  formatTimeRange={formatTimeRange}
+                  getPriorityColor={getPriorityColor}
+                  hasTimeConflicts={(task) => hasTimeConflicts(task, state.tasks)}
+                  compact={true}
+                />
+              </div>
+
+              {/* Quick Stats */}
+              <div className="bg-white rounded-lg border border-purple-200 p-4">
+                <h4 className="text-md font-semibold text-purple-500 mb-3">📈 Quick Stats</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-purple-900">
+                      {filteredTasks.filter(task => {
+                        if (!task.start_date) return false
+                        const taskDate = extractDateOnly(task.start_date)
+                        const today = new Date().toISOString().split('T')[0]
+                        return taskDate === today
+                      }).length}
+                    </div>
+                    <div className="text-xs text-gray-600">Today</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-purple-900">{thisWeekTasks.length}</div>
+                    <div className="text-xs text-gray-600">This Week</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-purple-900">{thisMonthTasks.length}</div>
+                    <div className="text-xs text-gray-600">This Month</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-purple-600">
+                      {filteredTasks.filter(task => task.status === 'Completed').length}
+                    </div>
+                    <div className="text-xs text-gray-600">Completed</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {mobileActiveTab === 'tasks' && (
+            <div className="space-y-4">
+              {/* Mobile Filters */}
+              <div className="bg-white rounded-lg border border-purple-200 p-4">
+                <h4 className="text-md font-semibold text-purple-500 mb-3">🔧 Filters</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-purple-700 mb-1">Status</label>
+                    <select
+                      value={state.selectedStatus}
+                      onChange={(e) => actions.setSelectedStatus(e.target.value)}
+                      className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      <option value="all">All Status</option>
+                      {state.statusOptions.map(status => (
+                        <option key={status} value={status}>{status}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-purple-700 mb-1">Priority</label>
+                    <select
+                      value={state.selectedQuadrant}
+                      onChange={(e) => actions.setSelectedQuadrant(e.target.value)}
+                      className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      <option value="all">All Priorities</option>
+                      {state.priorityOptions.map(priority => (
+                        <option key={priority} value={priority}>{priority}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-purple-700 mb-1">Plan</label>
+                    <select
+                      value={state.selectedPlanFilter}
+                      onChange={(e) => actions.setSelectedPlanFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      <option value="all">All Plans</option>
+                      <option value="none">No Plan</option>
+                      {state.planOptions.map(plan => (
+                        <option key={plan.id} value={plan.id}>{plan.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tasks Header with New Task Button */}
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-purple-500">
+                  {state.selectedDate ? `Tasks for ${new Date(state.selectedDate).toLocaleDateString()}` : 'All Tasks'}
+                </h3>
+                <button
+                  onClick={() => actions.openFormPanel()}
+                  className="px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors flex items-center gap-1"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  New
+                </button>
+              </div>
+
+              {/* Task List */}
+              <TaskListView
                 tasks={filteredTasks}
-                currentMonth={state.currentMonth}
                 selectedDate={state.selectedDate}
-                onDateSelect={actions.setSelectedDate}
-                onMonthChange={actions.setCurrentMonth}
-                selectedPlanFilter={state.selectedPlanFilter}
                 onTaskClick={(task) => actions.openFormPanel(task)}
                 onTaskDelete={handleDeleteTask}
+                onTaskComplete={(task) => actions.openCompletionModal(task)}
+                onTaskStart={handleTaskStart}
+                onTaskEnd={handleTaskEnd}
+                onRecordTime={handleRecordTime}
+                onTaskCopy={handleTaskCopy}
+                onCreateTask={(date) => {
+                  actions.setSelectedDate(date)
+                  actions.openFormPanel()
+                }}
                 formatTimeRange={formatTimeRange}
                 getPriorityColor={getPriorityColor}
                 hasTimeConflicts={(task) => hasTimeConflicts(task, state.tasks)}
-                compact={true}
+                planOptions={state.planOptions}
+                strategyOptions={state.strategyOptions}
               />
             </div>
-          </div>
-
-          {/* 3. Tasks Section (Mobile Third) */}
-          <div>
-            <h3 className="text-lg font-semibold text-purple-500 mb-3">✅ Tasks</h3>
-            <TaskListView
-              tasks={filteredTasks}
-              selectedDate={state.selectedDate}
-              onTaskClick={(task) => actions.openFormPanel(task)}
-              onTaskDelete={handleDeleteTask}
-              onTaskComplete={(task) => actions.openCompletionModal(task)}
-              onTaskStart={handleTaskStart}
-              onTaskEnd={handleTaskEnd}
-              onRecordTime={handleRecordTime}
-              onTaskCopy={handleTaskCopy}
-              onCreateTask={(date) => {
-                actions.setSelectedDate(date)
-                actions.openFormPanel()
-              }}
-              formatTimeRange={formatTimeRange}
-              getPriorityColor={getPriorityColor}
-              hasTimeConflicts={(task) => hasTimeConflicts(task, state.tasks)}
-              planOptions={state.planOptions}
-              strategyOptions={state.strategyOptions}
-            />
-          </div>
-
-          {/* 4. Additional Controls (Mobile Last) */}
-          <div>
-            <h3 className="text-lg font-semibold text-purple-500 mb-3">🔧 Filters & Stats</h3>
-            
-            {/* Filters */}
-            <div className="space-y-3 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-purple-700 mb-1">Status Filter</label>
-                <select
-                  value={state.selectedStatus}
-                  onChange={(e) => actions.setSelectedStatus(e.target.value)}
-                  className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="all">All Status</option>
-                  {state.statusOptions.map(status => (
-                    <option key={status} value={status}>{status}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-purple-700 mb-1">Priority Filter</label>
-                <select
-                  value={state.selectedQuadrant}
-                  onChange={(e) => actions.setSelectedQuadrant(e.target.value)}
-                  className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="all">All Priorities</option>
-                  {state.priorityOptions.map(priority => (
-                    <option key={priority} value={priority}>{priority}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-purple-700 mb-1">Plan Filter</label>
-                <select
-                  value={state.selectedPlanFilter}
-                  onChange={(e) => actions.setSelectedPlanFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="all">All Plans</option>
-                  <option value="none">No Plan</option>
-                  {state.planOptions.map(plan => (
-                    <option key={plan.id} value={plan.id}>{plan.title}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Quick Stats */}
-            <div className="bg-white rounded-lg border border-purple-200 p-4">
-              <h4 className="text-md font-semibold text-purple-500 mb-3">📈 Quick Stats</h4>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="text-center">
-                  <div className="text-lg font-bold text-purple-900">
-                    {filteredTasks.filter(task => {
-                      if (!task.start_date) return false
-                      const taskDate = extractDateOnly(task.start_date)
-                      const today = new Date().toISOString().split('T')[0]
-                      return taskDate === today
-                    }).length}
-                  </div>
-                  <div className="text-xs text-gray-600">Today</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-purple-900">{thisWeekTasks.length}</div>
-                  <div className="text-xs text-gray-600">This Week</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-purple-900">{thisMonthTasks.length}</div>
-                  <div className="text-xs text-gray-600">This Month</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-purple-600">
-                    {filteredTasks.filter(task => task.status === 'Completed').length}
-                  </div>
-                  <div className="text-xs text-gray-600">Completed</div>
-                </div>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
 
-        {/* Desktop Layout */}
-        <div className="hidden md:block space-y-6">
-
-          {/* Filters Section */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-purple-700 mb-1">Status Filter</label>
+        {/* Desktop Layout - 40:60 Split */}
+        <div className="hidden md:block">
+          {/* Top Controls Bar */}
+          <div className="flex items-center gap-4 mb-6">
+            {/* Task Management Title */}
+            <h2 className="text-xl font-semibold text-purple-500">Task Management</h2>
+            
+            {/* Compact Filters */}
+            <div className="flex items-center gap-3">
               <select
                 value={state.selectedStatus}
                 onChange={(e) => actions.setSelectedStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm w-32"
               >
                 <option value="all">All Status</option>
                 {state.statusOptions.map(status => (
                   <option key={status} value={status}>{status}</option>
                 ))}
               </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-purple-700 mb-1">Priority Filter</label>
+              
               <select
                 value={state.selectedQuadrant}
                 onChange={(e) => actions.setSelectedQuadrant(e.target.value)}
-                className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm w-36"
               >
                 <option value="all">All Priorities</option>
                 {state.priorityOptions.map(priority => (
                   <option key={priority} value={priority}>{priority}</option>
                 ))}
               </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-purple-700 mb-1">Plan Filter</label>
+              
               <select
                 value={state.selectedPlanFilter}
                 onChange={(e) => actions.setSelectedPlanFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm w-32"
               >
                 <option value="all">All Plans</option>
                 <option value="none">No Plan</option>
@@ -826,90 +866,118 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
                   <option key={plan.id} value={plan.id}>{plan.title}</option>
                 ))}
               </select>
+              
+              {/* Refresh Button */}
+              <button
+                onClick={handleRefresh}
+                disabled={state.isRefreshing}
+                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors flex items-center gap-1 text-sm"
+              >
+                <svg className={`w-4 h-4 ${state.isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh
+              </button>
+            </div>
+
+            {/* Add New Task Button */}
+            <div className="ml-auto">
+              <button
+                onClick={() => actions.openFormPanel()}
+                className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Add New Task
+              </button>
             </div>
           </div>
 
-          {/* Main Content Layout - Task-Centric Design */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Calendar & Stats */}
-          <div className="space-y-6">
-            {/* Compact Calendar */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-purple-500">Calendar Overview</h3>
-              <div className="bg-white rounded-lg border border-purple-200">
-                <TaskCalendarView
-                tasks={filteredTasks}
-                currentMonth={state.currentMonth}
-                selectedDate={state.selectedDate}
-                onDateSelect={actions.setSelectedDate}
-                onMonthChange={actions.setCurrentMonth}
-                selectedPlanFilter={state.selectedPlanFilter}
-                onTaskClick={(task) => actions.openFormPanel(task)}
-                onTaskDelete={handleDeleteTask}
-                formatTimeRange={formatTimeRange}
-                getPriorityColor={getPriorityColor}
-                hasTimeConflicts={(task) => hasTimeConflicts(task, state.tasks)}
-                compact={true}
-              />
+          {/* Main Split Layout: Calendar (40%) | TaskList (60%) */}
+          <div className="flex gap-6 h-[calc(100vh-20rem)]">
+            {/* Left: Calendar Section - 40% */}
+            <div className="w-2/5 flex flex-col space-y-6">
+              {/* Calendar */}
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-purple-500 mb-3">Calendar Overview</h3>
+                <div className="bg-white rounded-lg border border-purple-200 h-full">
+                  <TaskCalendarView
+                    tasks={filteredTasks}
+                    currentMonth={state.currentMonth}
+                    selectedDate={state.selectedDate}
+                    onDateSelect={actions.setSelectedDate}
+                    onMonthChange={actions.setCurrentMonth}
+                    selectedPlanFilter={state.selectedPlanFilter}
+                    onTaskClick={(task) => actions.openFormPanel(task)}
+                    onTaskDelete={handleDeleteTask}
+                    formatTimeRange={formatTimeRange}
+                    getPriorityColor={getPriorityColor}
+                    hasTimeConflicts={(task) => hasTimeConflicts(task, state.tasks)}
+                    compact={false}
+                  />
+                </div>
+              </div>
+
+              {/* Quick Stats */}
+              <div className="bg-white rounded-lg border border-purple-200 p-4 flex-shrink-0">
+                <h4 className="text-md font-semibold text-purple-500 mb-3">Quick Stats</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-purple-900">
+                      {filteredTasks.filter(task => {
+                        if (!task.start_date) return false
+                        const taskDate = extractDateOnly(task.start_date)
+                        const today = new Date().toISOString().split('T')[0]
+                        return taskDate === today
+                      }).length}
+                    </div>
+                    <div className="text-xs text-gray-600">Today</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-purple-900">{thisWeekTasks.length}</div>
+                    <div className="text-xs text-gray-600">This Week</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-purple-900">{thisMonthTasks.length}</div>
+                    <div className="text-xs text-gray-600">This Month</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-purple-600">
+                      {filteredTasks.filter(task => task.status === 'Completed').length}
+                    </div>
+                    <div className="text-xs text-gray-600">Completed</div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="bg-white rounded-lg border border-purple-200 p-4">
-              <h3 className="text-lg font-semibold text-purple-500 mb-4">Quick Stats</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Today's Tasks</span>
-                  <span className="font-semibold text-purple-900">
-                    {filteredTasks.filter(task => {
-                      if (!task.start_date) return false
-                      const taskDate = extractDateOnly(task.start_date)
-                      const today = new Date().toISOString().split('T')[0]
-                      return taskDate === today
-                    }).length}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">This Week</span>
-                  <span className="font-semibold text-purple-900">{thisWeekTasks.length}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">This Month</span>
-                  <span className="font-semibold text-purple-900">{thisMonthTasks.length}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Completed</span>
-                  <span className="font-semibold text-purple-600">
-                    {filteredTasks.filter(task => task.status === 'Completed').length}
-                  </span>
-                </div>
+            {/* Right: TaskList Section - 60% */}
+            <div className="w-3/5 flex flex-col">
+              {/* TaskList Content - Direct display without header */}
+              <div className="flex-1 overflow-hidden">
+                <TaskListView
+                  tasks={filteredTasks}
+                  selectedDate={state.selectedDate}
+                  onTaskClick={(task) => actions.openFormPanel(task)}
+                  onTaskDelete={handleDeleteTask}
+                  onTaskComplete={(task) => actions.openCompletionModal(task)}
+                  onTaskStart={handleTaskStart}
+                  onTaskEnd={handleTaskEnd}
+                  onRecordTime={handleRecordTime}
+                  onTaskCopy={handleTaskCopy}
+                  onCreateTask={(date) => {
+                    actions.setSelectedDate(date)
+                    actions.openFormPanel()
+                  }}
+                  formatTimeRange={formatTimeRange}
+                  getPriorityColor={getPriorityColor}
+                  hasTimeConflicts={(task) => hasTimeConflicts(task, state.tasks)}
+                  planOptions={state.planOptions}
+                  strategyOptions={state.strategyOptions}
+                />
               </div>
             </div>
-          </div>
-
-          {/* Right Column - Task List (Main Hero) */}
-          <div className="lg:col-span-2">
-            <TaskListView
-              tasks={filteredTasks}
-              selectedDate={state.selectedDate}
-              onTaskClick={(task) => actions.openFormPanel(task)}
-              onTaskDelete={handleDeleteTask}
-              onTaskComplete={(task) => actions.openCompletionModal(task)}
-              onTaskStart={handleTaskStart}
-              onTaskEnd={handleTaskEnd}
-              onRecordTime={handleRecordTime}
-              onTaskCopy={handleTaskCopy}
-              onCreateTask={(date) => {
-                actions.setSelectedDate(date)
-                actions.openFormPanel()
-              }}
-              formatTimeRange={formatTimeRange}
-              getPriorityColor={getPriorityColor}
-              hasTimeConflicts={(task) => hasTimeConflicts(task, state.tasks)}
-              planOptions={state.planOptions}
-              strategyOptions={state.strategyOptions}
-            />
-          </div>
           </div>
         </div>
 
