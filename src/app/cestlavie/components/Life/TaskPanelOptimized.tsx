@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useTaskReducer } from './taskReducer'
 import { TaskErrorBoundary, TaskLoadingSpinner, TaskErrorDisplay, ToastNotification } from './ErrorBoundary'
-import TaskCharts from './TaskCharts'
 import TaskFormPanel from './TaskFormPanel'
 import TaskCalendarView from './TaskCalendarView'
 import TaskListView from './TaskListView'
@@ -648,15 +647,10 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
           </div>
         </div>
 
-        {/* Mobile Priority Layout: Charts -> Calendar -> Tasks -> Other */}
+        {/* Mobile Priority Layout: Calendar -> Tasks -> Other */}
         <div className="md:hidden space-y-4">
-          {/* 1. Charts Section (Mobile First) */}
-          <div>
-            <h3 className="text-lg font-semibold text-purple-500 mb-3">📊 Analytics</h3>
-            <TaskCharts tasks={filteredTasks} planOptions={state.planOptions} />
-          </div>
 
-          {/* 2. Calendar Section (Mobile Second) */}
+          {/* 1. Calendar Section (Mobile First) */}
           <div>
             <h3 className="text-lg font-semibold text-purple-500 mb-3">📅 Calendar</h3>
             <div className="bg-white rounded-lg border border-purple-200">
@@ -786,10 +780,8 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
           </div>
         </div>
 
-        {/* Desktop Layout (unchanged) */}
+        {/* Desktop Layout */}
         <div className="hidden md:block space-y-6">
-          {/* Charts Section */}
-          <TaskCharts tasks={filteredTasks} planOptions={state.planOptions} />
 
           {/* Filters Section */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

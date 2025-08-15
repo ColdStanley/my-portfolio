@@ -1,6 +1,5 @@
 'use client'
 
-import SidebarCalendar from './SidebarCalendar'
 
 interface TaskRecord {
   id: string
@@ -70,10 +69,6 @@ export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMo
             ))}
           </div>
           
-          {/* Calendar positioned with margin from bottom to avoid Vercel logo */}
-          <div className="mt-6 mb-8">
-            <SidebarCalendar tasks={tasks} />
-          </div>
         </div>
       </div>
 
