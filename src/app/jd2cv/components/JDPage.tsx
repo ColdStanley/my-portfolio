@@ -4,6 +4,8 @@ import { createClient } from '@supabase/supabase-js'
 import { JDRecord, CreateJDRequest, APPLICATION_STAGES } from '@/shared/types'
 import { useWorkspaceStore } from '@/store/workspaceStore'
 import { useJDFilterStore } from '@/store/useJDFilterStore'
+import { useBatchAutoCVStore } from '@/store/useBatchAutoCVStore'
+import { useBatchSelectionStore } from '@/store/useBatchSelectionStore'
 import InlineEditField from './InlineEditField'
 import AddJDPopover from './AddJDPopover'
 import ViewJDTooltip from './ViewJDTooltip'
@@ -11,6 +13,7 @@ import DeleteTooltip from './DeleteTooltip'
 import CommentTooltip from './CommentTooltip'
 import CommentInlineEdit from './CommentInlineEdit'
 import StatsPanel from './StatsPanel'
+import EnhancedBatchProgressModal from './EnhancedBatchProgressModal'
 import { extractBullets, generateModuleTitle } from '@/shared/utils'
 
 interface JDPageProps {
@@ -34,12 +37,27 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
     processingJDId: null as string | null
   })
   const [showProgressTooltip, setShowProgressTooltip] = useState(false)
+  const [showBatchProgressModal, setShowBatchProgressModal] = useState(false)
   
   // Workspace store for Select functionality
   const { selectedJD, setSelectedJD } = useWorkspaceStore()
   
   // Global filter store
   const { filters, sortOrder, handleFilterChange, handleSortChange, clearFilters } = useJDFilterStore()
+
+  // Batch Auto CV store
+  const { isProcessing: isBatchProcessing } = useBatchAutoCVStore()
+  
+  // Batch selection store
+  const { 
+    selectedJDIds, 
+    batchMode, 
+    setBatchMode, 
+    toggleJDSelection, 
+    selectAllJDs,
+    clearSelection,
+    getSelectedCount 
+  } = useBatchSelectionStore()
 
   // Load JDs on mount and setup realtime subscription
   useEffect(() => {
@@ -927,6 +945,170 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
     )
   }
 
+  // Handle Batch Auto CV automation - 新增批量处理函数
+  const handleBatchAutoCV = async () => {
+    if (selectedJDIds.size === 0 || isBatchProcessing) return
+
+    // Show batch progress modal
+    setShowBatchProgressModal(true)
+
+    const { startBatchProcess, updateProgress, completeJD, failJD, resetState } = useBatchAutoCVStore.getState()
+
+    try {
+      // 获取PDF配置
+      const pdfSetupData = localStorage.getItem(`oneclick-pdf-data-${user.id}`)
+      if (!pdfSetupData) {
+        alert('Please configure PDF Setup first in the Workspace tab before using Batch Auto CV.')
+        return
+      }
+
+      const config = JSON.parse(pdfSetupData)
+      
+      // 获取starred experiences IDs
+      const getStarredIds = () => {
+        const starred = localStorage.getItem('starred-experiences')
+        if (!starred) return []
+        const starredObj = JSON.parse(starred)
+        return Object.keys(starredObj).filter(id => starredObj[id])
+      }
+
+      const starredIds = getStarredIds()
+      if (starredIds.length === 0) {
+        alert('No starred experiences found. Please star some experiences first in the CV tab.')
+        return
+      }
+
+      // 开始批量处理
+      const selectedJDsArray = Array.from(selectedJDIds)
+      startBatchProcess(selectedJDsArray)
+      
+      // 获取选中的JD记录
+      const selectedJDs = jds.filter(jd => selectedJDIds.has(jd.id))
+      
+      // 逐个处理JD，复制现有Auto CV的逐步处理方式
+      for (let i = 0; i < selectedJDs.length; i++) {
+        const jd = selectedJDs[i]
+        const currentProgress = (i / selectedJDs.length) * 100
+        
+        try {
+          // 更新当前处理的JD
+          updateProgress({
+            currentJDIndex: i,
+            currentJD: jd,
+            currentStep: `Processing ${jd.title}...`,
+            progress: currentProgress
+          })
+          
+          // 调用单个JD的Auto CV API，复制现有Auto CV逻辑
+          await processSingleJD(jd, starredIds, config)
+          
+          // 标记完成
+          completeJD(jd.id)
+          
+        } catch (error: any) {
+          console.error(`Failed to process JD ${jd.id}:`, error)
+          failJD(jd, error.message)
+        }
+      }
+      
+      // 最终完成状态
+      updateProgress({
+        currentStep: `Batch processing completed!`,
+        progress: 100
+      })
+
+      // 3秒后重置状态
+      setTimeout(() => {
+        resetState()
+        clearSelection() // 清除选择
+      }, 3000)
+
+    } catch (error: any) {
+      console.error('❌ [Batch Auto CV] Error:', error)
+      alert(`Batch Auto CV failed: ${error.message}`)
+      resetState()
+    }
+  }
+
+  // 批量专用的JD分析函数 - 不更新单个Auto CV状态
+  const batchStep1_AnalyzeJD = async (jd: JDRecord) => {
+    try {
+      console.log(`🔄 Starting analysis for JD: ${jd.title}`)
+      
+      const response = await fetch('/api/jd2cv/analyze-jd', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jdId: jd.id,
+          userId: user.id
+        })
+      })
+      
+      console.log(`📡 API Response status: ${response.status}`)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('❌ Analyze JD API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText: errorText.substring(0, 200) // 只显示前200字符
+        })
+        throw new Error(`API Error ${response.status}: ${response.statusText}`)
+      }
+      
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text()
+        console.error('❌ Non-JSON response:', {
+          contentType,
+          bodyPreview: text.substring(0, 200)
+        })
+        throw new Error('API returned non-JSON response')
+      }
+      
+      const result = await response.json()
+      console.log(`✅ JD analysis completed for: ${jd.title}`)
+      return result
+    } catch (error: any) {
+      console.error('❌ batchStep1_AnalyzeJD error:', error)
+      throw new Error(`Failed to analyze JD "${jd.title}": ${error.message}`)
+    }
+  }
+
+  // 批量处理单个JD - 完全复制现有Auto CV的逻辑
+  const processSingleJD = async (jd: JDRecord, starredIds: string[], config: any) => {
+    // Step 1: Analyze JD (批量版本，不更新单个状态)
+    await batchStep1_AnalyzeJD(jd)
+    
+    // Step 2: Import Starred Experiences  
+    const allExperiences = await fetchAllExperiences()
+    const starredExperiences = allExperiences
+      .filter((exp: any) => starredIds.includes(exp.id))
+      .sort((a: any, b: any) => {
+        const endYearA = getEndYear(a.time)
+        const endYearB = getEndYear(b.time)
+        return endYearB - endYearA
+      })
+    
+    // Step 3: Batch Optimize
+    const optimizedData = await step3_BatchOptimize(starredExperiences, jd)
+    
+    // Step 4: Batch Send to PDF
+    const pdfModules = await step4_BatchSendToPDF(optimizedData)
+    
+    // Step 5: Generate PDF
+    await step5_GeneratePDF(pdfModules, jd)
+  }
+
+  // 获取所有experiences的辅助函数
+  const fetchAllExperiences = async () => {
+    const response = await fetch(`/api/experience?user_id=${user.id}`)
+    if (!response.ok) throw new Error('Failed to fetch experiences')
+    
+    const result = await response.json()
+    return result.data || []
+  }
+
   const parseKeywords = (keywordsString?: string) => {
     if (!keywordsString) return []
     
@@ -1002,6 +1184,61 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                       <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
                     </svg>
                     Add
+                  </button>
+
+                  {/* Batch Mode Toggle */}
+                  <button
+                    onClick={() => {
+                      setBatchMode(!batchMode)
+                      if (batchMode) {
+                        clearSelection()
+                      }
+                    }}
+                    className={`w-32 px-6 py-2 rounded-lg font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-2 ${
+                      batchMode
+                        ? 'bg-purple-500 hover:bg-purple-600 text-white'
+                        : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                    </svg>
+                    {batchMode ? 'Exit' : 'Batch'}
+                  </button>
+
+                  {/* Select All - Always present, disabled when not in batch mode */}
+                  <button
+                    onClick={() => {
+                      const allIds = getFilteredAndSortedJDs().map(jd => jd.id)
+                      selectAllJDs(allIds)
+                    }}
+                    disabled={!batchMode}
+                    className={`w-32 px-6 py-2 rounded-lg font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-2 ${
+                      batchMode
+                        ? 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    Select All
+                  </button>
+
+                  {/* Clear Selection - Always present, disabled when not in batch mode */}
+                  <button
+                    onClick={() => clearSelection()}
+                    disabled={!batchMode || getSelectedCount() === 0}
+                    className={`w-32 px-6 py-2 rounded-lg font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-2 ${
+                      batchMode && getSelectedCount() > 0
+                        ? 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                    Clear
                   </button>
 
                   {/* Filter Dropdowns */}
@@ -1146,6 +1383,56 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
         </div>
       </div>
 
+      {/* Batch Toolbar - Only show when batch mode is active and JDs are selected */}
+      {batchMode && getSelectedCount() > 0 && (
+        <div className="bg-purple-50/80 backdrop-blur-sm border border-purple-200 rounded-xl shadow-lg p-4 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-medium text-purple-700">
+                {getSelectedCount()} JD{getSelectedCount() > 1 ? 's' : ''} selected
+              </span>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => handleBatchAutoCV()}
+                disabled={isBatchProcessing}
+                className="px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300 text-white rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2"
+              >
+                {isBatchProcessing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b border-white"></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                    Batch Auto CV
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  // TODO: 添加批量删除功能
+                  if (confirm(`Are you sure you want to delete ${getSelectedCount()} selected JDs?`)) {
+                    // handleBatchDelete()
+                    console.log('Batch delete not implemented yet')
+                  }
+                }}
+                disabled={isBatchProcessing}
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 text-gray-700 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                Delete Selected
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stats Panel */}
       <StatsPanel jds={jds} />
 
@@ -1210,22 +1497,36 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                     {/* 0-8%: Select & Final CV Buttons */}
                     <div className="w-[8%] flex-shrink-0">
                       <div className="flex flex-col gap-1 h-[4.5rem]">
-                        {/* Select Button - Top Half */}
-                        <button
-                          onClick={(e) => handleSelectForWorkspace(jd, e)}
-                          className={`w-full flex-1 rounded-lg font-medium text-xs transition-all duration-300 inline-flex items-center justify-center ${
-                            selectedJD?.id === jd.id
-                              ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-lg scale-105'
-                              : 'bg-gray-100 hover:bg-purple-50 text-gray-600 hover:text-purple-600 border border-gray-200 hover:border-purple-300'
-                          }`}
-                          title={selectedJD?.id === jd.id ? 'Selected for Workspace' : 'Select for Workspace'}
-                        >
-                          {selectedJD?.id === jd.id ? (
-                            <span className="text-xs font-medium">In Workspace</span>
-                          ) : (
-                            <span className="text-xs font-medium">Next Step</span>
-                          )}
-                        </button>
+                        {/* Batch Mode Checkbox or Select Button */}
+                        {batchMode ? (
+                          <div className="w-full flex-1 flex items-center justify-center">
+                            <input
+                              type="checkbox"
+                              checked={selectedJDIds.has(jd.id)}
+                              onChange={(e) => {
+                                e.stopPropagation()
+                                toggleJDSelection(jd.id)
+                              }}
+                              className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2"
+                            />
+                          </div>
+                        ) : (
+                          <button
+                            onClick={(e) => handleSelectForWorkspace(jd, e)}
+                            className={`w-full flex-1 rounded-lg font-medium text-xs transition-all duration-300 inline-flex items-center justify-center ${
+                              selectedJD?.id === jd.id
+                                ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-lg scale-105'
+                                : 'bg-gray-100 hover:bg-purple-50 text-gray-600 hover:text-purple-600 border border-gray-200 hover:border-purple-300'
+                            }`}
+                            title={selectedJD?.id === jd.id ? 'Selected for Workspace' : 'Select for Workspace'}
+                          >
+                            {selectedJD?.id === jd.id ? (
+                              <span className="text-xs font-medium">In Workspace</span>
+                            ) : (
+                              <span className="text-xs font-medium">Next Step</span>
+                            )}
+                          </button>
+                        )}
                         
                         {/* Final CV Button - Bottom Half */}
                         <button
@@ -1512,6 +1813,17 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
           isProcessing={finalCVState.isProcessing}
         />
       )}
+
+      {/* Enhanced Batch Progress Modal */}
+      <EnhancedBatchProgressModal
+        isOpen={showBatchProgressModal}
+        onClose={() => {
+          setShowBatchProgressModal(false)
+          if (!isBatchProcessing) {
+            useBatchAutoCVStore.getState().resetState()
+          }
+        }}
+      />
     </div>
   )
 }

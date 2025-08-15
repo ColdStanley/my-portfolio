@@ -16,6 +16,7 @@ interface AIResponseFloatingPanelProps {
   onClose: () => void
   onPlayPronunciation?: (text: string) => void
   isPlaying?: boolean
+  userQuestion?: string
 }
 
 export default function AIResponseFloatingPanel({
@@ -27,7 +28,8 @@ export default function AIResponseFloatingPanel({
   hasError,
   onClose,
   onPlayPronunciation,
-  isPlaying = false
+  isPlaying = false,
+  userQuestion
 }: AIResponseFloatingPanelProps) {
   const [isAnimating, setIsAnimating] = useState(false)
 
@@ -122,10 +124,13 @@ export default function AIResponseFloatingPanel({
         {/* Header */}
         <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
           <div className="flex items-start">
-            {/* Selected Text with Pronunciation Button at end */}
+            {/* Selected Text or User Question for Ask AI */}
             <div className="flex items-start gap-1">
               <div className="text-lg font-bold text-gray-900">
-                "{selectedText}"
+                {queryType === 'ask_ai' && userQuestion 
+                  ? `"${userQuestion}"` 
+                  : `"${selectedText}"`
+                }
               </div>
               
               {/* Pronunciation Button - only show for supported languages */}

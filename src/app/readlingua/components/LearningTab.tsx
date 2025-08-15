@@ -165,7 +165,7 @@ export default function LearningTab() {
         {showFloatingPanel && (
           <AIResponseFloatingPanel 
             isVisible={showFloatingPanel}
-            selectedText={floatingPanelData.selectedText || floatingPanelData.userQuestion || ''}
+            selectedText={floatingPanelData.selectedText || ''}
             queryType={floatingPanelData.queryType}
             aiResponse={floatingPanelData.aiResponse}
             isLoading={floatingPanelData.isLoading}
@@ -173,6 +173,7 @@ export default function LearningTab() {
             onClose={() => setShowFloatingPanel(false)}
             onPlayPronunciation={handlePlayPronunciation}
             isPlaying={isPlaying}
+            userQuestion={floatingPanelData.userQuestion}
           />
         )}
 

@@ -16,7 +16,6 @@ export default function BatchProgressModal({ isOpen, onClose }: BatchProgressMod
     currentJDIndex,
     currentJD,
     currentStep,
-    progress,
     completedJDs,
     failedJDs,
     resetState
@@ -35,10 +34,31 @@ export default function BatchProgressModal({ isOpen, onClose }: BatchProgressMod
     onClose()
   }
 
-  const handleCancel = () => {
-    resetState()
-    onClose()
-  }
+  // Create dynamic steps based on batch processing
+  const remainingCount = totalJDs - completedJDs.length - failedJDs.length - (currentJD ? 1 : 0)
+
+  const steps = [
+    ...completedJDs.map(jd => ({
+      key: `completed-${jd.id}`,
+      label: `${jd.title} at ${jd.company}`,
+      status: 'completed' as const
+    })),
+    ...failedJDs.map(jd => ({
+      key: `failed-${jd.id}`,
+      label: `${jd.title} at ${jd.company}`,
+      status: 'failed' as const
+    })),
+    ...(currentJD ? [{
+      key: `current-${currentJD.id}`,
+      label: `${currentJD.title} at ${currentJD.company}`,
+      status: 'current' as const
+    }] : []),
+    ...Array(remainingCount).fill(null).map((_, index) => ({
+      key: `pending-${index}`,
+      label: 'Waiting...',
+      status: 'pending' as const
+    }))
+  ]
 
   return createPortal(
     <div 
@@ -48,7 +68,7 @@ export default function BatchProgressModal({ isOpen, onClose }: BatchProgressMod
       onClick={handleClose}
     >
       <div 
-        className={`bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 max-w-lg w-full mx-4 transform transition-all duration-300 ${
+        className={`bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 max-w-md w-full mx-4 transform transition-all duration-300 ${
           isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'
         }`}
         style={{
@@ -58,12 +78,10 @@ export default function BatchProgressModal({ isOpen, onClose }: BatchProgressMod
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-100/50">
-          <h3 className="text-lg font-semibold text-gray-800">
-            Batch Auto CV Progress
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-800">Batch Progress</h3>
           <button
             onClick={handleClose}
-            className="w-8 h-8 rounded-full bg-gray-100/80 hover:bg-gray-200 text-gray-500 hover:text-gray-700 transition-all duration-200 flex items-center justify-center group"
+            className="w-8 h-8 rounded-full bg-gray-100/80 hover:bg-red-100 text-gray-500 hover:text-red-500 transition-all duration-200 flex items-center justify-center group"
           >
             <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -71,123 +89,77 @@ export default function BatchProgressModal({ isOpen, onClose }: BatchProgressMod
           </button>
         </div>
 
-        {/* Progress Content */}
-        <div className="p-6">
-          {/* Overall Progress Bar */}
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-gray-700">
-                Overall Progress
-              </span>
-              <span className="text-sm text-gray-500">
-                {Math.round(progress)}%
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-3">
-              <div 
-                className="bg-purple-600 h-3 rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${progress}%` }}
-              ></div>
-            </div>
-          </div>
-
-          {/* Current Status */}
-          <div className="text-center mb-6">
-            <h4 className="text-lg font-semibold text-gray-800 mb-2">
-              {isProcessing ? (
-                <>Processing {currentJDIndex + 1} of {totalJDs} JDs</>
-              ) : (
-                <>Batch Processing {progress === 100 ? 'Completed' : 'Stopped'}</>
-              )}
-            </h4>
-            <p className="text-sm text-gray-600 mb-2">{currentStep}</p>
-            {currentJD && (
-              <div className="bg-purple-50 rounded-lg p-3 border border-purple-100">
-                <p className="text-sm font-medium text-purple-700">
-                  {currentJD.title}
-                </p>
-                <p className="text-xs text-purple-600">
-                  at {currentJD.company}
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Results Summary */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            {/* Completed */}
-            <div className="bg-green-50 rounded-lg p-4 border border-green-100">
-              <div className="flex items-center gap-2 mb-2">
-                <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                <h5 className="font-medium text-green-700">Completed</h5>
-              </div>
-              <p className="text-2xl font-bold text-green-600">{completedJDs.length}</p>
-            </div>
-
-            {/* Failed */}
-            <div className="bg-purple-50 rounded-lg p-4 border border-purple-100">
-              <div className="flex items-center gap-2 mb-2">
-                <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-                <h5 className="font-medium text-purple-700">Failed</h5>
-              </div>
-              <p className="text-2xl font-bold text-purple-600">{failedJDs.length}</p>
-            </div>
-          </div>
-
-          {/* Failed JDs Details */}
-          {failedJDs.length > 0 && (
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-4">
-              <h6 className="font-medium text-gray-700 mb-2">Failed JDs:</h6>
-              <div className="space-y-2 max-h-32 overflow-y-auto">
-                {failedJDs.map((failed, index) => (
-                  <div key={index} className="text-sm">
-                    <p className="font-medium text-gray-800">
-                      {failed.title} at {failed.company}
-                    </p>
-                    <p className="text-gray-600 text-xs">
-                      Error: {failed.error}
-                    </p>
+        {/* Steps */}
+        <div className="p-6 space-y-4 max-h-96 overflow-y-auto">
+          {steps.map((step, index) => (
+            <div key={step.key} className="flex items-center gap-4">
+              {/* Step Indicator */}
+              <div className="flex-shrink-0 relative">
+                {step.status === 'completed' ? (
+                  <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center shadow-lg transform transition-all duration-300">
+                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
                   </div>
-                ))}
+                ) : step.status === 'failed' ? (
+                  <div className="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center shadow-lg">
+                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                ) : step.status === 'current' ? (
+                  <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center shadow-lg">
+                    <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-full border-2 border-gray-300 bg-gray-50"></div>
+                )}
+                
+                {/* Connecting Line */}
+                {index < steps.length - 1 && (
+                  <div className={`absolute top-8 left-1/2 w-0.5 h-6 transform -translate-x-1/2 transition-colors duration-300 ${
+                    step.status === 'completed' ? 'bg-purple-300' : 'bg-gray-200'
+                  }`}></div>
+                )}
               </div>
-            </div>
-          )}
 
-          {/* Processing Status */}
-          {isProcessing && (
-            <div className="bg-purple-50/80 rounded-lg p-4 border border-purple-100 mb-4">
-              <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
-                <p className="text-sm text-purple-700 font-medium">
-                  Processing in progress... Please do not close this window.
+              {/* Step Label */}
+              <div className="flex-1 min-w-0">
+                <p className={`font-medium transition-colors duration-300 ${
+                  step.status === 'current' ? 'text-purple-700' : 
+                  step.status === 'completed' ? 'text-gray-700' : 
+                  step.status === 'failed' ? 'text-gray-500' : 'text-gray-400'
+                }`}>
+                  {step.label}
                 </p>
+                {step.status === 'current' && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="flex space-x-1">
+                      <div className="w-1 h-1 bg-purple-500 rounded-full animate-bounce"></div>
+                      <div className="w-1 h-1 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-1 h-1 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                    <span className="text-xs text-purple-600">{currentStep}</span>
+                  </div>
+                )}
+                {step.status === 'failed' && (
+                  <p className="text-xs text-gray-500 mt-1">Failed to process</p>
+                )}
               </div>
             </div>
-          )}
+          ))}
         </div>
 
-        {/* Footer Actions */}
+        {/* Footer */}
         <div className="px-6 pb-6">
-          <div className="flex justify-center gap-3">
-            {isProcessing ? (
-              <button
-                onClick={handleCancel}
-                className="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition-colors"
-              >
-                Cancel Process
-              </button>
-            ) : (
-              <button
-                onClick={handleClose}
-                className="px-6 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors"
-              >
-                Close
-              </button>
-            )}
+          <div className="bg-purple-50/80 rounded-lg p-4 border border-purple-100">
+            <p className="text-sm text-purple-700 font-medium">
+              {isProcessing ? 'Please wait and do not interrupt the process' : 'Process completed'}
+            </p>
+            <p className="text-xs text-purple-600 mt-1">
+              {isProcessing ? `Processing ${currentJDIndex + 1} of ${totalJDs} JDs` : 
+               `Completed: ${completedJDs.length}, Failed: ${failedJDs.length}`}
+            </p>
           </div>
         </div>
       </div>

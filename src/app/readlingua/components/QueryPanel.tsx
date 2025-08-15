@@ -14,7 +14,6 @@ export default function QueryPanel() {
     setShowQueryPanel, 
     removeQuery,
     dictationQuestions,
-    setDictationQuestions,
     getCurrentQuestions,
     generateDictationQuestions,
     submitQuizAnswer,
@@ -26,11 +25,14 @@ export default function QueryPanel() {
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
   const [deleteMode, setDeleteMode] = useState<string | null>(null)
   const [quizAnswers, setQuizAnswers] = useState<{ [key: string]: string }>({})
-  const [currentQuizAnswer, setCurrentQuizAnswer] = useState('')
   const [quizTimers, setQuizTimers] = useState<{ [key: string]: number }>({}) // Remaining time for each question
   const [activeTimers, setActiveTimers] = useState<{ [key: string]: NodeJS.Timeout }>({}) // Timer refs
   const [visibleQuestionIndex, setVisibleQuestionIndex] = useState(0) // Control which questions to show
   const [showingOriginalQuery, setShowingOriginalQuery] = useState(false) // Control whether showing original query in quiz
+  // Text selection pronunciation states
+  const [selectedText, setSelectedText] = useState('')
+  const [selectionPosition, setSelectionPosition] = useState<{ x: number; y: number } | null>(null)
+  const [showPronunciationButton, setShowPronunciationButton] = useState(false)
   
   // Get current questions based on mode
   const quizQuestions = getCurrentQuestions()
@@ -124,6 +126,14 @@ export default function QueryPanel() {
     }
   }, [])
 
+  // Add document click listener for hiding pronunciation button
+  useEffect(() => {
+    document.addEventListener('click', handleDocumentClick)
+    return () => {
+      document.removeEventListener('click', handleDocumentClick)
+    }
+  }, [])
+
   const getQueryTypeLabel = (type: string) => {
     const labels = {
       quick: 'Quick',
@@ -144,13 +154,14 @@ export default function QueryPanel() {
     return colors[type as keyof typeof colors] || 'bg-gray-100 text-gray-700'
   }
 
-  const parseMarkdownResponse = (text: string) => {
+  const parseMarkdownResponse = (text: string): string => {
     try {
-      return marked.parse(text, {
+      const result = marked.parse(text, {
         breaks: true,        // Convert line breaks to <br>
         gfm: true,          // GitHub Flavored Markdown
-        sanitize: false,    // Don't sanitize HTML
       })
+      // marked.parse can return a string or Promise<string>, we need string only
+      return typeof result === 'string' ? result : text.replace(/\n/g, '<br>')
     } catch (error) {
       console.warn('Failed to parse AI response markdown:', error)
       return text.replace(/\n/g, '<br>')
@@ -355,6 +366,54 @@ export default function QueryPanel() {
     } catch (error) {
       console.error('Error playing pronunciation:', error)
       setIsPlaying(false)
+    }
+  }
+
+  // Handle text selection in AI response content
+  const handleTextSelection = () => {
+    const selection = window.getSelection()
+    if (!selection || selection.rangeCount === 0) {
+      setShowPronunciationButton(false)
+      return
+    }
+
+    const selectedText = selection.toString().trim()
+    if (!selectedText) {
+      setShowPronunciationButton(false)
+      return
+    }
+
+    // Get selection position for floating button
+    const range = selection.getRangeAt(0)
+    const rect = range.getBoundingClientRect()
+    
+    if (rect.width > 0 && rect.height > 0) {
+      setSelectedText(selectedText)
+      setSelectionPosition({
+        x: rect.right + 8, // Position slightly to the right of selection
+        y: rect.top + (rect.height / 2) - 12 // Center vertically
+      })
+      setShowPronunciationButton(true)
+    } else {
+      setShowPronunciationButton(false)
+    }
+  }
+
+  const handleSelectionPronunciation = () => {
+    if (selectedText) {
+      handlePlayPronunciation(selectedText)
+      // Hide button after click
+      setShowPronunciationButton(false)
+      // Clear selection
+      window.getSelection()?.removeAllRanges()
+    }
+  }
+
+  // Hide pronunciation button when clicking outside
+  const handleDocumentClick = (e: MouseEvent) => {
+    const target = e.target as Element
+    if (!target.closest('.ai-response') && !target.closest('.pronunciation-button')) {
+      setShowPronunciationButton(false)
     }
   }
 
@@ -880,10 +939,11 @@ export default function QueryPanel() {
           </div>
           
           {/* AI Response Content */}
-          <div className="flex-1 overflow-y-auto p-3 mx-3 mb-3 bg-white rounded-lg"
+          <div className="flex-1 overflow-y-auto p-3 mx-3 mb-3 bg-white rounded-lg ai-response"
             style={{
               boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
             }}
+            onMouseUp={handleTextSelection}
           >
             {!selectedQuery.ai_response ? (
               /* Loading State */
@@ -967,6 +1027,34 @@ export default function QueryPanel() {
               }
             }
           `}</style>
+        </div>
+      )}
+
+      {/* Floating Pronunciation Button for Text Selection */}
+      {showPronunciationButton && selectionPosition && (
+        <div
+          className="fixed z-50 pronunciation-button"
+          style={{
+            left: `${selectionPosition.x}px`,
+            top: `${selectionPosition.y}px`,
+          }}
+        >
+          <button
+            onClick={handleSelectionPronunciation}
+            disabled={isPlaying}
+            className="w-6 h-6 bg-purple-400/80 hover:bg-purple-500/90 disabled:opacity-50 text-white rounded-full flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg"
+            title="Play pronunciation"
+          >
+            {isPlaying ? (
+              <svg className="w-3 h-3 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.787L4.866 13.1a.5.5 0 00-.316-.1H2a1 1 0 01-1-1V8a1 1 0 011-1h2.55a.5.5 0 00.316-.1l3.517-3.687zm7.316 1.19a1 1 0 011.414 0 8.97 8.97 0 010 12.684 1 1 0 11-1.414-1.414 6.97 6.97 0 000-9.856 1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0 4.985 4.985 0 010 7.072 1 1 0 11-1.415-1.414 2.985 2.985 0 000-4.244 1 1 0 010-1.414z" clipRule="evenodd"/>
+              </svg>
+            ) : (
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.787L4.866 13.1a.5.5 0 00-.316-.1H2a1 1 0 01-1-1V8a1 1 0 011-1h2.55a.5.5 0 00.316-.1l3.517-3.687zm7.316 1.19a1 1 0 011.414 0 8.97 8.97 0 010 12.684 1 1 0 11-1.414-1.414 6.97 6.97 0 000-9.856 1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0 4.985 4.985 0 010 7.072 1 1 0 11-1.415-1.414 2.985 2.985 0 000-4.244 1 1 0 010-1.414z" clipRule="evenodd"/>
+              </svg>
+            )}
+          </button>
         </div>
       )}
     </div>

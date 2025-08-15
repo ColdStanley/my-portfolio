@@ -22,11 +22,18 @@ export default function Part1Step1Component({ onStepComplete }: Part1Step1Compon
 
   const [isLoading, setIsLoading] = useState(false)
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(categorySelection?.categoryId || 'topic')
+  const [isHydrated, setIsHydrated] = useState(false)
 
-  const stepResult = getStepResult('part1', 1)
+  const stepResult = isHydrated ? getStepResult('part1', 1) : null
 
   const selectedCategory = PART1_CATEGORIES.find(cat => cat.id === selectedCategoryId)
-  const canGenerate = categorySelection && categorySelection.categoryId === selectedCategoryId
+  const canGenerate = isHydrated && categorySelection && categorySelection.categoryId === selectedCategoryId
+
+  // Initialize hydration state
+  useState(() => {
+    // Use setTimeout to ensure this runs after initial render
+    setTimeout(() => setIsHydrated(true), 0)
+  })
 
   const handleCategoryChange = (categoryId: string) => {
     setSelectedCategoryId(categoryId)
@@ -151,32 +158,39 @@ export default function Part1Step1Component({ onStepComplete }: Part1Step1Compon
 
       {/* Right Panel - Result Display */}
       <div className="flex-1">
-        {stepResult ? (
-          <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-6 h-full overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-lg font-semibold text-gray-800">Generated Question</h4>
-              <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                {stepResult.timestamp.toLocaleString()}
-              </span>
-            </div>
-            <MarkdownContent 
-              content={stepResult.content}
-              className="text-gray-800 leading-relaxed"
-            />
-          </div>
-        ) : (
-          <div className="bg-white/60 backdrop-blur-sm rounded-lg shadow-lg p-8 h-full flex items-center justify-center">
-            <div className="text-center text-gray-500">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                <svg className="w-8 h-8 text-purple-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z" clipRule="evenodd"/>
-                </svg>
+        <div className={`rounded-lg shadow-lg p-6 h-full overflow-y-auto ${
+          stepResult ? 'bg-white/90 backdrop-blur-sm' : 'bg-white/60 backdrop-blur-sm'
+        }`}>
+          {stepResult ? (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-lg font-semibold text-gray-800">Generated Question</h4>
+                <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                  {isHydrated && stepResult.timestamp instanceof Date 
+                    ? stepResult.timestamp.toLocaleString() 
+                    : 'Just now'
+                  }
+                </span>
               </div>
-              <p className="text-sm font-medium">Select category and type</p>
-              <p className="text-xs text-gray-400 mt-1">Choose a category and item to generate questions</p>
+              <MarkdownContent 
+                content={stepResult.content}
+                className="text-gray-800 leading-relaxed"
+              />
+            </>
+          ) : (
+            <div className="h-full flex items-center justify-center">
+              <div className="text-center text-gray-500">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-purple-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z" clipRule="evenodd"/>
+                  </svg>
+                </div>
+                <p className="text-sm font-medium">Select category and type</p>
+                <p className="text-xs text-gray-400 mt-1">Choose a category and item to generate questions</p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       
       {/* Floating Prompt Manager */}

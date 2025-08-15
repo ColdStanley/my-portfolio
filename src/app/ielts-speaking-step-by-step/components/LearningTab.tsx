@@ -16,6 +16,7 @@ export default function LearningTab() {
   } = useIELTSStepStore()
   
   const [selectedStep, setSelectedStep] = useState(1)
+  const [isHydrated, setIsHydrated] = useState(false)
 
   const parts = [
     { id: 'part1' as const, label: 'Part 1', title: 'Personal Questions' },
@@ -35,6 +36,7 @@ export default function LearningTab() {
 
   // Load progress when component mounts or part changes
   useEffect(() => {
+    setIsHydrated(true)
     loadPartProgress(activePart)
   }, [activePart, loadPartProgress])
 
@@ -71,26 +73,28 @@ export default function LearningTab() {
     <div className="h-full flex flex-col">
       
       {/* Top Steps Navigation - Fixed Position */}
-      <div className="fixed top-16 left-0 right-0 md:left-64 z-10 bg-white/95 backdrop-blur-md pl-6 pr-4 py-4">
+      <div className="fixed top-16 left-0 right-0 md:left-64 z-10 backdrop-blur-sm pl-6 pr-4 py-4">
         <div className="flex items-center gap-2 overflow-x-auto mb-3 justify-start">
             {steps.map((step) => {
-              const isAvailable = isStepAvailable(step.id)
-              const isCompleted = isStepCompleted(step.id)
-              const isCurrent = selectedStep === step.id
+              // Always render same structure to avoid React reconciliation issues
+              const isAvailable = isHydrated ? isStepAvailable(step.id) : true
+              const isCompleted = isHydrated ? isStepCompleted(step.id) : false
+              const isCurrent = isHydrated ? selectedStep === step.id : false
               
               return (
                 <button
                   key={step.id}
-                  onClick={() => handleStepClick(step.id)}
-                  disabled={!isAvailable}
+                  onClick={isHydrated && isAvailable ? () => handleStepClick(step.id) : undefined}
                   className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-300 ease-out ${
-                    isCurrent
-                      ? 'bg-purple-500 text-white hover:-translate-y-0.5'
-                      : isCompleted
-                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:-translate-y-0.5'
-                      : isAvailable
-                      ? 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:-translate-y-0.5'
-                      : 'text-gray-400 cursor-not-allowed opacity-50'
+                    isHydrated 
+                      ? isCurrent
+                        ? 'bg-purple-500 text-white hover:-translate-y-0.5'
+                        : isCompleted
+                        ? 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:-translate-y-0.5'
+                        : isAvailable
+                        ? 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:-translate-y-0.5'
+                        : 'text-gray-400 cursor-not-allowed opacity-50'
+                      : 'text-gray-600' // SSR fallback
                   }`}
                 >
                   <div className="flex items-center gap-2">
@@ -108,7 +112,7 @@ export default function LearningTab() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-hidden pt-20">
+      <div className="flex-1 overflow-hidden pt-20 bg-white/80">
         <StepComponent
           part={activePart}
           step={selectedStep}

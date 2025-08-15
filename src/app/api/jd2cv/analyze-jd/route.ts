@@ -7,30 +7,153 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 
 
 /**
- * Get user's custom prompts or return defaults from Prompt Manager
+ * Default prompts for different AI models
+ */
+const DEFAULT_PROMPTS = {
+  deepseek: {
+    jd_key_sentences: `Analyze the following job description and extract the 10 most important sentences that define the core responsibilities, requirements, and expectations for this role.
+
+Focus on:
+- Key technical skills and qualifications
+- Primary job responsibilities
+- Important experience requirements
+- Critical performance expectations
+- Essential competencies
+
+Job Title: {title}
+
+Job Description:
+{full_job_description}
+
+Please provide exactly 10 sentences from the original job description text, ranked by importance (1 being most important). Format as a simple numbered list using plain text only:
+
+1. [First sentence]
+2. [Second sentence]
+3. [Third sentence]
+...
+
+Do not use JSON, markdown formatting, or any special characters. Use only plain text with simple numbering.`,
+
+    jd_keywords: `Based on the following 10 key sentences extracted from a job description and the job title, identify the most important 3 groups of keywords (3 keywords per group) that represent the core competencies and requirements for this role.
+
+Job Title: {title}
+
+Key Sentences:
+{key_sentences}
+
+Please provide exactly 3 groups of keywords, with each group containing exactly 3 related keywords. Format as plain text only:
+
+Group 1: [Theme Name]
+1. Keyword 1
+2. Keyword 2
+3. Keyword 3
+
+Group 2: [Theme Name]
+1. Keyword 1
+2. Keyword 2
+3. Keyword 3
+
+Group 3: [Theme Name]
+1. Keyword 1
+2. Keyword 2
+3. Keyword 3
+
+Focus on the most critical skills, technologies, and competencies mentioned in the key sentences. Use only plain text formatting without markdown symbols, asterisks, or dashes.`
+  },
+  openai: {
+    jd_key_sentences: `Analyze the following job description and extract the 10 most important sentences that define the core responsibilities, requirements, and expectations for this role.
+
+Focus on:
+- Key technical skills and qualifications
+- Primary job responsibilities
+- Important experience requirements
+- Critical performance expectations
+- Essential competencies
+
+Job Title: {title}
+
+Job Description:
+{full_job_description}
+
+Please provide exactly 10 sentences from the original job description text, ranked by importance (1 being most important). Format as a simple numbered list using plain text only:
+
+1. [First sentence]
+2. [Second sentence]
+3. [Third sentence]
+...
+
+Do not use JSON, markdown formatting, or any special characters. Use only plain text with simple numbering.`,
+
+    jd_keywords: `Based on the following 10 key sentences extracted from a job description and the job title, identify the most important 3 groups of keywords (3 keywords per group) that represent the core competencies and requirements for this role.
+
+Job Title: {title}
+
+Key Sentences:
+{key_sentences}
+
+Please provide exactly 3 groups of keywords, with each group containing exactly 3 related keywords. Format as plain text only:
+
+Group 1: [Theme Name]
+1. Keyword 1
+2. Keyword 2
+3. Keyword 3
+
+Group 2: [Theme Name]
+1. Keyword 1
+2. Keyword 2
+3. Keyword 3
+
+Group 3: [Theme Name]
+1. Keyword 1
+2. Keyword 2
+3. Keyword 3
+
+Focus on the most critical skills, technologies, and competencies mentioned in the key sentences. Use only plain text formatting without markdown symbols, asterisks, or dashes.`
+  }
+}
+
+/**
+ * Get user's custom prompts or return defaults
  */
 async function getUserPrompts(userId: string, aiModel: string = 'deepseek') {
   try {
-    // Fetch user prompts from the prompt management API
-    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/jd2cv/prompts?user_id=${userId}&ai_model=${aiModel}`)
-    
-    if (!response.ok) {
-      throw new Error(`Prompt API request failed: ${response.status}`)
+    // Get user's custom prompts directly from database
+    const { data: userPrompts, error } = await supabase
+      .from('user_prompts')
+      .select('prompt_type, prompt_content')
+      .eq('user_id', userId)
+      .eq('ai_model', aiModel)
+      .eq('is_active', true)
+
+    if (error) {
+      console.error('Error fetching user prompts:', error)
     }
 
-    const result = await response.json()
-    
-    if (result.success) {
-      return {
-        keySentences: result.data.prompts.jd_key_sentences,
-        keywords: result.data.prompts.jd_keywords
+    // Merge with defaults
+    const modelDefaults = DEFAULT_PROMPTS[aiModel as keyof typeof DEFAULT_PROMPTS] || DEFAULT_PROMPTS.deepseek
+    const result = {
+      keySentences: modelDefaults.jd_key_sentences,
+      keywords: modelDefaults.jd_keywords
+    }
+
+    // Override with user's custom prompts if available
+    userPrompts?.forEach(prompt => {
+      if (prompt.prompt_type === 'jd_key_sentences' && prompt.prompt_content) {
+        result.keySentences = prompt.prompt_content
+      } else if (prompt.prompt_type === 'jd_keywords' && prompt.prompt_content) {
+        result.keywords = prompt.prompt_content
       }
-    }
+    })
 
-    throw new Error(result.error || 'Failed to get prompts')
+    return result
   } catch (error) {
     console.error('Error fetching user prompts:', error)
-    throw error
+    // Return defaults if database query fails
+    const modelDefaults = DEFAULT_PROMPTS[aiModel as keyof typeof DEFAULT_PROMPTS] || DEFAULT_PROMPTS.deepseek
+    return {
+      keySentences: modelDefaults.jd_key_sentences,
+      keywords: modelDefaults.jd_keywords
+    }
   }
 }
 

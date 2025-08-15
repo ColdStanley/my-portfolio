@@ -581,10 +581,10 @@ export const useIELTSStepStore = create<IELTSStepStore>()(
   persist(
     (set, get) => ({
       // UI State
-      activeTab: 'dashboard',
+      activeTab: 'learning',
       activePart: 'part1',
       selectedAiModel: 'deepseek',
-      isPracticeExpanded: false,
+      isPracticeExpanded: true,
       setActiveTab: (tab) => set({ activeTab: tab }),
       setActivePart: (part) => set({ activePart: part }),
       setSelectedAiModel: (model) => set({ selectedAiModel: model }),

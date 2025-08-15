@@ -12,11 +12,11 @@ export default function ReadLinguaPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
       {/* Desktop Tab Navigation - Fixed at top */}
       <div className="hidden md:block max-w-7xl mx-auto px-4 py-6">
-        <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl mb-6">
+        <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 mb-6">
           <div className="flex">
             <button
               onClick={() => setActiveTab('dashboard')}
-              className={`flex-1 px-6 py-4 text-center font-medium whitespace-nowrap rounded-l-xl transition-all ${
+              className={`flex-1 px-3 py-3 sm:px-6 sm:py-4 text-center font-medium transition-all duration-300 transform hover:scale-105 text-sm sm:text-base rounded-l-xl ${
                 activeTab === 'dashboard'
                   ? 'bg-purple-500 text-white shadow-lg'
                   : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
@@ -25,11 +25,12 @@ export default function ReadLinguaPage() {
               <svg className="w-5 h-5 inline-block mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
               </svg>
-              Dashboard
+              <span className="hidden sm:inline">Dashboard</span>
+              <span className="sm:hidden">Articles</span>
             </button>
             <button
               onClick={() => setActiveTab('learning')}
-              className={`flex-1 px-6 py-4 text-center font-medium whitespace-nowrap rounded-r-xl transition-all ${
+              className={`flex-1 px-3 py-3 sm:px-6 sm:py-4 text-center font-medium transition-all duration-300 transform hover:scale-105 text-sm sm:text-base rounded-r-xl ${
                 activeTab === 'learning'
                   ? 'bg-purple-500 text-white shadow-lg'
                   : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
@@ -38,7 +39,8 @@ export default function ReadLinguaPage() {
               <svg className="w-5 h-5 inline-block mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
-              Learning
+              <span className="hidden sm:inline">Learning</span>
+              <span className="sm:hidden">History</span>
             </button>
           </div>
         </div>
