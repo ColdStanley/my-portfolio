@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react'
-import { APPLICATION_STAGES, ApplicationStage } from '@/shared/types'
 
 interface InlineEditFieldProps {
   value: string | number
@@ -17,7 +16,7 @@ export default function InlineEditField({
   type,
   onSave,
   placeholder = '',
-  options = APPLICATION_STAGES,
+  options = [],  // Now required to be passed in
   className = ''
 }: InlineEditFieldProps) {
   const [isEditing, setIsEditing] = useState(false)

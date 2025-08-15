@@ -1,18 +1,20 @@
 import { useState, useRef, useEffect } from 'react'
-import { CreateJDRequest, APPLICATION_STAGES } from '@/shared/types'
+import { CreateJDRequest } from '@/shared/types'
 
 interface AddJDPopoverProps {
   isOpen: boolean
   onClose: () => void
   onSave: (data: CreateJDRequest) => Promise<void>
   userId: string
+  stageOptions: string[]
 }
 
 export default function AddJDPopover({
   isOpen,
   onClose,
   onSave,
-  userId
+  userId,
+  stageOptions
 }: AddJDPopoverProps) {
   const [formData, setFormData] = useState<CreateJDRequest>({
     title: '',
@@ -170,7 +172,7 @@ export default function AddJDPopover({
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 >
                   <option value="">Select stage...</option>
-                  {APPLICATION_STAGES.map(stage => (
+                  {stageOptions.map(stage => (
                     <option key={stage} value={stage}>{stage}</option>
                   ))}
                 </select>

@@ -13,17 +13,12 @@ export default function QueryPanel() {
     setSelectedQuery, 
     setShowQueryPanel, 
     removeQuery,
-    fillInQuestions,
     dictationQuestions,
-    setFillInQuestions,
     setDictationQuestions,
     getCurrentQuestions,
-    generateQuizQuestions,
     generateDictationQuestions,
     submitQuizAnswer,
     isGeneratingQuiz,
-    quizMode,
-    setQuizMode,
     selectedArticle
   } = useReadLinguaStore()
   const [isPlaying, setIsPlaying] = useState(false)
@@ -40,24 +35,11 @@ export default function QueryPanel() {
   // Get current questions based on mode
   const quizQuestions = getCurrentQuestions()
 
-  // Auto-generate fill-in quiz when conditions are met
-  useEffect(() => {
-    if (
-      activeTab === 'quiz' &&
-      quizMode === 'fill-in' &&
-      !isGeneratingQuiz &&
-      fillInQuestions.length === 0 &&
-      queries.length > 0
-    ) {
-      generateQuizQuestions()
-    }
-  }, [activeTab, quizMode, queries.length, isGeneratingQuiz, fillInQuestions.length, generateQuizQuestions])
 
   // Auto-generate dictation quiz when conditions are met
   useEffect(() => {
     if (
       activeTab === 'quiz' &&
-      quizMode === 'dictation' &&
       !isGeneratingQuiz &&
       dictationQuestions.length === 0 &&
       queries.length > 0 &&
@@ -66,7 +48,7 @@ export default function QueryPanel() {
     ) {
       generateDictationQuestions()
     }
-  }, [activeTab, quizMode, queries.length, isGeneratingQuiz, dictationQuestions.length, generateDictationQuestions, selectedArticle])
+  }, [activeTab, queries.length, isGeneratingQuiz, dictationQuestions.length, generateDictationQuestions, selectedArticle])
 
   const handleQueryClick = (query: any) => {
     setSelectedQuery(query)
@@ -201,8 +183,6 @@ export default function QueryPanel() {
       // Quiz tab - clear query selection, reset states
       setSelectedQuery(null)
       setShowingOriginalQuery(false)
-      // Set default quiz mode to fill-in
-      setQuizMode('fill-in')
       // Note: Quiz generation now handled by useEffect based on data availability
     } else {
       // Get first query of the new tab type
@@ -217,13 +197,6 @@ export default function QueryPanel() {
     }
   }
 
-  const handleQuizModeChange = (mode: 'fill-in' | 'dictation') => {
-    setQuizMode(mode)
-    setShowingOriginalQuery(false) // Reset original query view
-    setSelectedQuery(null)
-    
-    // Note: Quiz generation now handled by useEffect based on data availability
-  }
 
   // Check if text language supports pronunciation
   const supportsPronunciation = (text: string) => {
@@ -425,51 +398,23 @@ export default function QueryPanel() {
       {activeTab === 'quiz' ? (
         /* Quiz Content */
         <div className="flex-1 bg-gray-50 min-h-0 flex flex-col">
-          {/* Quiz Sub-tabs */}
-          <div className="flex-shrink-0 bg-white border-b border-gray-100">
-            <div className="flex">
-              <button
-                onClick={() => handleQuizModeChange('fill-in')}
-                className={`flex-1 px-4 py-3 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-                  quizMode === 'fill-in'
-                    ? 'bg-purple-500 text-white'
-                    : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
-                }`}
-              >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z" clipRule="evenodd"/>
-                </svg>
-                Fill-in
-              </button>
-              <button
-                onClick={() => handleQuizModeChange('dictation')}
-                className={`flex-1 px-4 py-3 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-                  quizMode === 'dictation'
-                    ? 'bg-purple-500 text-white'
-                    : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
-                }`}
-              >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.787L4.866 13.1a.5.5 0 00-.316-.1H2a1 1 0 01-1-1V8a1 1 0 011-1h2.55a.5.5 0 00.316-.1l3.517-3.687zm7.316 1.19a1 1 0 011.414 0 8.97 8.97 0 010 12.684 1 1 0 11-1.414-1.414 6.97 6.97 0 000-9.856 1 1 0 010-1.414z" clipRule="evenodd"/>
-                </svg>
-                Dictation
-              </button>
+          {/* Quiz Header */}
+          <div className="flex-shrink-0 bg-white border-b border-gray-100 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.787L4.866 13.1a.5.5 0 00-.316-.1H2a1 1 0 01-1-1V8a1 1 0 011-1h2.55a.5.5 0 00.316-.1l3.517-3.687zm7.316 1.19a1 1 0 011.414 0 8.97 8.97 0 010 12.684 1 1 0 11-1.414-1.414 6.97 6.97 0 000-9.856 1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0 4.985 4.985 0 010 7.072 1 1 0 11-1.415-1.414 2.985 2.985 0 000-4.244 1 1 0 010-1.414z" clipRule="evenodd"/>
+              </svg>
+              <span className="text-sm font-medium text-gray-700">Dictation Practice</span>
             </div>
           </div>
 
           {/* Regenerate Button */}
           <div className="p-2 bg-white border-b border-gray-100 flex justify-end">
             <button
-              onClick={() => {
-                if (quizMode === 'fill-in') {
-                  generateQuizQuestions()
-                } else {
-                  generateDictationQuestions()
-                }
-              }}
+              onClick={generateDictationQuestions}
               className="px-3 py-1.5 text-xs rounded bg-purple-500 hover:bg-purple-600 text-white flex items-center gap-1.5 font-medium whitespace-nowrap"
               disabled={isGeneratingQuiz || queries.length === 0}
-              title={queries.length === 0 ? 'First analyze text with Quick/Standard/Deep modes' : `Regenerate ${quizMode === 'fill-in' ? 'fill-in' : 'dictation'} quiz based on current queries`}
+              title={queries.length === 0 ? 'First analyze text with Quick/Standard/Deep modes' : 'Regenerate dictation quiz based on current queries'}
             >
               <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd"/>
@@ -493,15 +438,13 @@ export default function QueryPanel() {
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd"/>
               </svg>
               <h3 className="text-lg font-medium text-gray-700 mb-2">
-                No {quizMode === 'dictation' ? 'Dictation' : 'Fill-in'} Questions Available
+                No Dictation Questions Available
               </h3>
               <div className="max-w-xs mx-auto">
                 <p className="text-sm text-gray-500 mb-3">
                   {queries.length === 0 
                     ? 'No analysis data found.' 
-                    : quizMode === 'dictation' 
-                      ? 'No queries suitable for dictation practice found.'
-                      : 'No queries suitable for fill-in quiz found.'
+                    : 'No queries suitable for dictation practice found.'
                   }
                 </p>
                 {queries.length === 0 ? (
@@ -513,16 +456,12 @@ export default function QueryPanel() {
                 ) : (
                   <div className="text-xs text-gray-400 space-y-1">
                     <p>Current queries: <strong>{queries.length}</strong></p>
-                    <p>Valid for {quizMode}: <strong>{
-                      quizMode === 'dictation' 
-                        ? queries.filter(q => q.query_type !== 'ask_ai' && q.selected_text?.trim()).length
-                        : queries.filter(q => q.query_type !== 'ask_ai' && q.selected_text?.trim() && q.ai_response?.trim()).length
+                    <p>Valid for dictation: <strong>{
+                      queries.filter(q => q.query_type !== 'ask_ai' && q.selected_text?.trim()).length
                     }</strong></p>
                     <p className="mt-2">
-                      {quizMode === 'dictation' 
-                        ? (selectedArticle && !['english', 'french'].includes(selectedArticle.source_language)
-                          ? '⚠️ Article language not supported for dictation'
-                          : 'Click Regenerate button to retry')
+                      {selectedArticle && !['english', 'french'].includes(selectedArticle.source_language)
+                        ? '⚠️ Article language not supported for dictation'
                         : 'Click Regenerate button to retry'
                       }
                     </p>
@@ -646,44 +585,35 @@ export default function QueryPanel() {
                       </div>
                     </div>
                     
-                    {/* Question Text */}
-                    {quizMode === 'dictation' ? (
-                      <div className="mb-4">
-                        <div className="text-base text-gray-900 mb-3 leading-relaxed">
-                          {question.question}
-                        </div>
-                        {/* Audio Player for Dictation */}
-                        <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
-                          <button
-                            onClick={() => handlePlayPronunciation(question.answer)}
-                            disabled={isPlaying}
-                            className="w-10 h-10 bg-purple-500 hover:bg-purple-600 disabled:opacity-50 text-white rounded-full flex items-center justify-center transition-colors"
-                            title="Play audio"
-                          >
-                            {isPlaying ? (
-                              <svg className="w-5 h-5 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.787L4.866 13.1a.5.5 0 00-.316-.1H2a1 1 0 01-1-1V8a1 1 0 011-1h2.55a.5.5 0 00.316-.1l3.517-3.687zm7.316 1.19a1 1 0 011.414 0 8.97 8.97 0 010 12.684 1 1 0 11-1.414-1.414 6.97 6.97 0 000-9.856 1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0 4.985 4.985 0 010 7.072 1 1 0 11-1.415-1.414 2.985 2.985 0 000-4.244 1 1 0 010-1.414z" clipRule="evenodd"/>
-                              </svg>
-                            ) : (
-                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd"/>
-                              </svg>
-                            )}
-                          </button>
-                          <div className="flex-1">
-                            <p className="text-sm text-purple-700 font-medium">Click to listen</p>
-                            <p className="text-xs text-purple-600">Type what you hear in the input below</p>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div
-                        className="text-base text-gray-900 mb-4 leading-relaxed cursor-pointer hover:bg-purple-50 p-2 rounded transition-colors"
-                        onClick={() => handleQuizQuestionClick(question)}
-                      >
+                    {/* Question Text - Dictation Mode */}
+                    <div className="mb-4">
+                      <div className="text-base text-gray-900 mb-3 leading-relaxed">
                         {question.question}
                       </div>
-                    )}
+                      {/* Audio Player for Dictation */}
+                      <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
+                        <button
+                          onClick={() => handlePlayPronunciation(question.answer)}
+                          disabled={isPlaying}
+                          className="w-10 h-10 bg-purple-500 hover:bg-purple-600 disabled:opacity-50 text-white rounded-full flex items-center justify-center transition-colors"
+                          title="Play audio"
+                        >
+                          {isPlaying ? (
+                            <svg className="w-5 h-5 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.787L4.866 13.1a.5.5 0 00-.316-.1H2a1 1 0 01-1-1V8a1 1 0 011-1h2.55a.5.5 0 00.316-.1l3.517-3.687zm7.316 1.19a1 1 0 011.414 0 8.97 8.97 0 010 12.684 1 1 0 11-1.414-1.414 6.97 6.97 0 000-9.856 1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0 4.985 4.985 0 010 7.072 1 1 0 11-1.415-1.414 2.985 2.985 0 000-4.244 1 1 0 010-1.414z" clipRule="evenodd"/>
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd"/>
+                            </svg>
+                          )}
+                        </button>
+                        <div className="flex-1">
+                          <p className="text-sm text-purple-700 font-medium">Click to listen</p>
+                          <p className="text-xs text-purple-600">Type what you hear in the input below</p>
+                        </div>
+                      </div>
+                    </div>
                     
                     {/* Answer Input or Result */}
                     {!question.isAnswered ? (
@@ -692,7 +622,7 @@ export default function QueryPanel() {
                             type="text"
                             value={quizAnswers[index] || ''}
                             onChange={(e) => handleQuizAnswerChange(index, e.target.value)}
-                            placeholder={quizMode === 'dictation' ? 'Type what you hear...' : 'Type your answer...'}
+                            placeholder="Type what you hear..."
                             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                             onKeyPress={(e) => {
                               if (e.key === 'Enter') {
@@ -754,12 +684,6 @@ export default function QueryPanel() {
                           )}
                         </div>
                         
-                        {/* Explanation - Only show for fill-in quiz */}
-                        {quizMode === 'fill-in' && question.explanation && (
-                          <div className="text-sm text-gray-700 leading-relaxed">
-                            {question.explanation}
-                          </div>
-                        )}
 
                         {/* Next Question Button */}
                         {question.isAnswered && index < quizQuestions.length - 1 && index === visibleQuestionIndex && (

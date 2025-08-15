@@ -471,3 +471,31 @@ import MarkdownContent from './MarkdownContent'
 - `backdrop-blur-md` → `bg-white/95` + `shadow-xl`
 - glass效果通过多层阴影实现立体感
 - Portal组件必须渲染到document.body避免继承影响
+
+## UI布局稳定性原则 (CRITICAL)
+
+**核心规则**: 避免布局跳动，保持界面稳定性
+
+### 按钮状态管理
+- **不激活时**: 灰色禁用状态，但始终占据空间
+- **激活时**: 高亮可用状态，位置不变
+- **禁止**: 动态添加/移除按钮导致的布局跳动
+
+### 条件显示策略
+```tsx
+// ✅ 正确 - 位置固定，状态切换
+<button 
+  disabled={!isActive}
+  className={`fixed-width ${isActive ? 'bg-purple-500' : 'bg-gray-300'}`}
+>
+  Action
+</button>
+
+// ❌ 错误 - 动态显示导致跳动
+{isActive && <button>Action</button>}
+```
+
+### 布局容器原则
+- 为条件按钮预留固定空间
+- 使用opacity或disabled而非显示/隐藏
+- 保持容器尺寸恒定，避免重排

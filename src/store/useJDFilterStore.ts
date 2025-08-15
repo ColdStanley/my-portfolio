@@ -6,6 +6,7 @@ interface JDFilters {
   firm: string
   score: string
   time: string
+  comment: string
 }
 
 interface JDFilterStore {
@@ -26,7 +27,8 @@ export const useJDFilterStore = create<JDFilterStore>((set, get) => ({
     role: '',
     firm: '',
     score: '',
-    time: ''
+    time: '',
+    comment: ''
   },
   sortOrder: '',
 
@@ -62,7 +64,8 @@ export const useJDFilterStore = create<JDFilterStore>((set, get) => ({
       role: '',
       firm: '',
       score: '',
-      time: ''
+      time: '',
+      comment: ''
     },
     sortOrder: ''
   })
