@@ -634,19 +634,6 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
   return (
     <TaskErrorBoundary>
       <div className="p-3 md:p-6 space-y-4 md:space-y-6">
-        {/* Header Section */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl md:text-2xl font-bold text-purple-900">Task Management</h2>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleRefresh}
-              disabled={state.refreshing}
-              className="px-3 py-2 md:px-4 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50 text-sm"
-            >
-              {state.refreshing ? 'Refreshing...' : 'Refresh'}
-            </button>
-          </div>
-        </div>
 
         {/* Mobile Layout with Tab Switching */}
         <div className="md:hidden">
@@ -827,9 +814,7 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
         {/* Desktop Layout - 40:60 Split */}
         <div className="hidden md:block">
           {/* Top Controls Bar */}
-          <div className="flex items-center gap-4 mb-6">
-            {/* Task Management Title */}
-            <h2 className="text-xl font-semibold text-purple-500">Task Management</h2>
+          <div className="flex items-center gap-4 mb-6 ml-16 mt-14">
             
             {/* Compact Filters */}
             <div className="flex items-center gap-3">
