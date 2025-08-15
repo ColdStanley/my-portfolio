@@ -633,10 +633,10 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
 
   return (
     <TaskErrorBoundary>
-      <div className="p-3 md:p-6 space-y-4 md:space-y-6">
+      <div className="p-3 md:p-6">
 
         {/* Mobile Layout with Tab Switching */}
-        <div className="md:hidden">
+        <div className="md:hidden mb-6">
           {/* Mobile Tab Navigation */}
           <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 mb-4">
             <div className="flex">
@@ -814,7 +814,7 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
         {/* Desktop Layout - 40:60 Split */}
         <div className="hidden md:block">
           {/* Top Controls Bar */}
-          <div className="flex items-center gap-4 mb-6 ml-16 mt-1">
+          <div className="flex items-center gap-4 mb-6 ml-16 -mt-6">
             
             {/* Compact Filters */}
             <div className="flex items-center gap-3">
@@ -880,13 +880,13 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
           </div>
 
           {/* Main Split Layout: Calendar (40%) | TaskList (60%) */}
-          <div className="flex gap-6 h-[calc(100vh-20rem)]">
+          <div className="flex gap-6">
             {/* Left: Calendar Section - 40% */}
-            <div className="w-2/5 flex flex-col space-y-6">
+            <div className="w-2/5 space-y-6">
               {/* Calendar */}
-              <div className="flex-1">
+              <div>
                 <h3 className="text-lg font-semibold text-purple-500 mb-3">Calendar Overview</h3>
-                <div className="bg-white rounded-lg border border-purple-200 h-full">
+                <div className="bg-white rounded-lg border border-purple-200">
                   <TaskCalendarView
                     tasks={filteredTasks}
                     currentMonth={state.currentMonth}
@@ -905,7 +905,7 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
               </div>
 
               {/* Quick Stats */}
-              <div className="bg-white rounded-lg border border-purple-200 p-4 flex-shrink-0">
+              <div className="bg-white rounded-lg border border-purple-200 p-4">
                 <h4 className="text-md font-semibold text-purple-500 mb-3">Quick Stats</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="text-center">
@@ -938,9 +938,9 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
             </div>
 
             {/* Right: TaskList Section - 60% */}
-            <div className="w-3/5 flex flex-col">
+            <div className="w-3/5">
               {/* TaskList Content - Direct display without header */}
-              <div className="flex-1 overflow-hidden">
+              <div>
                 <TaskListView
                   tasks={filteredTasks}
                   selectedDate={state.selectedDate}

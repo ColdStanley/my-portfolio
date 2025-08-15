@@ -65,9 +65,7 @@ export default function MainContent({ activeMainTab, onConfigClick, onTasksUpdat
   const renderContent = () => {
     switch (effectiveMainTab) {
       case 'life':
-        return (
-          <div className="flex-1 overflow-y-auto p-6">{renderLifeContent()}</div>
-        )
+        return renderLifeContent()
       case 'career':
         return renderCareerContent()
       case 'study':

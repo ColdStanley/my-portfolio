@@ -102,7 +102,7 @@ export default function CestLaViePage() {
 
   return (
     <>
-      <div className="pt-16 h-screen flex relative overflow-hidden">
+      <div className="pt-16 min-h-screen flex relative">
         {/* 移动端导航菜单按钮 - 悬浮设计 */}
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -128,14 +128,12 @@ export default function CestLaViePage() {
         />
         
         {/* 主内容区域 - 全屏布局 */}
-        <div className="flex-1 overflow-hidden">
-          <div className="h-full overflow-y-auto main-content-scroll">
-            <MainContent 
-              activeMainTab={activeTab} 
-              onConfigClick={() => setShowConfigModal(true)}
-              onTasksUpdate={setTasks}
-            />
-          </div>
+        <div className="flex-1">
+          <MainContent 
+            activeMainTab={activeTab} 
+            onConfigClick={() => setShowConfigModal(true)}
+            onTasksUpdate={setTasks}
+          />
         </div>
       </div>
 
