@@ -814,7 +814,7 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
         {/* Desktop Layout - 40:60 Split */}
         <div className="hidden md:block">
           {/* Top Controls Bar */}
-          <div className="flex items-center gap-4 mb-6 ml-16 mt-14">
+          <div className="flex items-center gap-4 mb-6 ml-16 mt-1">
             
             {/* Compact Filters */}
             <div className="flex items-center gap-3">

@@ -102,7 +102,7 @@ export default function CestLaViePage() {
 
   return (
     <>
-      <div className="h-[calc(100vh-3.5rem)] flex relative overflow-hidden">
+      <div className="pt-16 h-screen flex relative overflow-hidden">
         {/* 移动端导航菜单按钮 - 悬浮设计 */}
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

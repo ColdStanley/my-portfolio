@@ -85,7 +85,7 @@ export default function NavBar() {
   }
 
   return (
-    <nav className="fixed top-0 left-0 w-full z-50 bg-white/90 dark:bg-black/80 backdrop-blur border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center shadow-sm transition-colors">
+    <nav className="fixed top-0 left-0 w-full h-16 z-50 bg-white/90 dark:bg-black/80 backdrop-blur border-b border-gray-200 dark:border-gray-700 px-6 flex justify-between items-center shadow-sm transition-colors">
       {/* Left: Logo + Music Prompt */}
       <div className="flex items-center gap-4">
         <Link
