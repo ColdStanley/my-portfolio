@@ -57,7 +57,7 @@ export default function StatsPanel({ jds }: StatsPanelProps) {
 
   return (
     <>
-      <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl shadow-purple-500/10 border border-purple-200/60 p-4 mb-6 relative">
+      <div className="bg-white/90 backdrop-blur-md rounded-xl border border-purple-200/60 p-4 mb-6 relative">
         {/* Glass effect overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-purple-50/30 rounded-xl pointer-events-none" />
         
@@ -65,7 +65,7 @@ export default function StatsPanel({ jds }: StatsPanelProps) {
           <h3 className="text-lg font-semibold text-gray-800 tracking-tight">Progress Dashboard</h3>
           <button
             onClick={() => setShowSettings(true)}
-            className="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50/80 hover:shadow-lg hover:shadow-purple-500/20 rounded-lg transition-all duration-200"
+            className="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50/80 rounded-lg transition-all duration-200"
             title="Settings"
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -83,7 +83,7 @@ export default function StatsPanel({ jds }: StatsPanelProps) {
             return (
               <div 
                 key={index} 
-                className="bg-gradient-to-br from-white/80 to-purple-50/60 backdrop-blur-sm rounded-lg border border-purple-200/50 shadow-lg shadow-purple-500/10 hover:shadow-xl hover:shadow-purple-500/20 transition-all duration-300 relative overflow-hidden group"
+                className="bg-gradient-to-br from-white/80 to-purple-50/60 backdrop-blur-sm rounded-lg border border-purple-200/50 transition-all duration-300 relative overflow-hidden group"
               >
                 {/* Inner glass effect */}
                 <div className="absolute inset-0 bg-gradient-to-t from-purple-100/20 to-white/10 pointer-events-none" />
@@ -102,7 +102,7 @@ export default function StatsPanel({ jds }: StatsPanelProps) {
                   {/* Progress bar */}
                   <div className="relative h-1.5 bg-gradient-to-r from-purple-100 to-purple-50 rounded-full mb-2 overflow-hidden">
                     <div 
-                      className="absolute left-0 top-0 h-full bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 rounded-full shadow-sm shadow-purple-500/30 transition-all duration-500"
+                      className="absolute left-0 top-0 h-full bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 rounded-full transition-all duration-500"
                       style={{ width: `${progress}%` }}
                     />
                     {/* Glow effect */}
@@ -127,7 +127,7 @@ export default function StatsPanel({ jds }: StatsPanelProps) {
                           key={level}
                           className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
                             completionLevel >= level
-                              ? 'bg-purple-500 shadow-sm shadow-purple-500/50'
+                              ? 'bg-purple-500'
                               : 'bg-purple-200'
                           } ${completionLevel === level ? 'animate-pulse' : ''}`}
                         />
