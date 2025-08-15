@@ -96,14 +96,7 @@ export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMo
   }
 
   const handleHoverLeave = () => {
-    // 只在悬浮模式下设置定时器
-    if (isHoverOpen) {
-      const timeout = setTimeout(() => {
-        setSidebarOpen(false)
-        setIsHoverOpen(false)
-      }, 1500) // 增加到1.5秒
-      setHoverTimeout(timeout)
-    }
+    // 不自动关闭，用户主动控制
   }
 
   const handleClickOutside = () => {
@@ -125,14 +118,7 @@ export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMo
   }
 
   const handleSidebarLeave = () => {
-    // 只有在悬浮模式下才设置关闭定时器
-    if (isHoverOpen) {
-      const timeout = setTimeout(() => {
-        setSidebarOpen(false)
-        setIsHoverOpen(false)
-      }, 800)
-      setHoverTimeout(timeout)
-    }
+    // 不自动关闭，用户主动控制
   }
 
   // ESC key to close sidebar

@@ -23,7 +23,7 @@ interface TaskRecord {
 import { useRouter } from 'next/navigation'
 import { useSimplifiedAuth } from '@/hooks/useSimplifiedAuth'
 import Sidebar from './components/Sidebar'
-import MainContent from './components/MainContent'
+import TaskPanelOptimized from './components/Life/TaskPanelOptimized'
 import NotionConfigModal from './components/NotionConfigModal'
 
 export default function CestLaViePage() {
@@ -129,11 +129,30 @@ export default function CestLaViePage() {
         
         {/* 主内容区域 - 全屏布局 */}
         <div className="flex-1">
-          <MainContent 
-            activeMainTab={activeTab} 
-            onConfigClick={() => setShowConfigModal(true)}
-            onTasksUpdate={setTasks}
-          />
+          {/* 直接渲染Task内容，移除MainContent层 */}
+          {(activeTab === 'life' || ['strategy', 'plan', 'task', 'tbd'].includes(activeTab)) && (
+            <TaskPanelOptimized onTasksUpdate={setTasks} activeTab={activeTab} />
+          )}
+          
+          {activeTab === 'career' && (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-6xl mb-4">💼</div>
+                <h2 className="text-2xl font-bold text-gray-700 mb-2">Career</h2>
+                <p className="text-gray-500">Coming soon...</p>
+              </div>
+            </div>
+          )}
+          
+          {activeTab === 'study' && (
+            <div className="flex-1 p-6 flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-6xl mb-4">📚</div>
+                <h2 className="text-2xl font-bold text-gray-700 mb-2">Study</h2>
+                <p className="text-gray-500">Coming soon...</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
