@@ -510,6 +510,314 @@ const handleClickOutside = () => {
 - **ALWAYS** maintain the exact visual design standards
 - **ALWAYS** use purple color theme for active states
 
+## L-Shaped Reserved Space Layout Standard
+
+**CRITICAL**: All pages with Notion-style navigation MUST implement L-shaped reserved space to prevent content overlap with navigation elements.
+
+### Space Calculation Standards
+
+#### Hamburger Button Position Analysis
+```tsx
+// Hamburger button location
+className="fixed top-20 left-4 z-50 p-2"
+// - top-20 = 80px from top
+// - left-4 = 16px from left  
+// - p-2 = 8px padding
+// - Button size: 36px × 36px (20px icon + 16px padding)
+```
+
+#### Required Reserved Space
+```tsx
+// L-shaped space calculation:
+// Horizontal offset: 16px (left) + 36px (button width) + 16px (gap) = 68px
+// Vertical offset: Already handled by pt-16 (64px), additional 52px for visual balance
+
+// Main content area implementation
+<div className="flex-1 ml-[68px] mt-[52px]">
+  {/* All main content */}
+</div>
+```
+
+### Implementation Requirements
+
+#### Project-Level Application
+- **Scope**: ALL main content areas (Life/Career/Study/etc.)
+- **Consistency**: Same offset values across all pages
+- **No Additional Layers**: Apply directly to existing containers
+
+#### Visual Effect Standards
+```
+┌─────────────────────────────────────┐
+│ NavBar (h-16 = 64px)                │
+├─────────────────────────────────────┤
+│ ☰     │                             │
+│ (36px)│                             │
+│       │   Main Content Area         │
+│ 52px  │   (Strategy/Plan/Task/etc.) │
+│ gap   │                             │
+│       │                             │
+└───────┴─────────────────────────────┘
+  68px offset
+```
+
+#### Code Standards
+```tsx
+// ✅ Correct - L-shaped reserved space
+<div className="flex-1 ml-[68px] mt-[52px]">
+  {activeTab === 'strategy' && <StrategyPanel />}
+  {activeTab === 'plan' && <PlanPanel />}
+  {activeTab === 'career' && <CareerContent />}
+</div>
+
+// ❌ Wrong - No space reservation
+<div className="flex-1">
+  {/* Content starts from left edge */}
+</div>
+```
+
+### Maintenance Requirements
+- **Fixed Values**: 68px horizontal, 52px vertical offsets are standard
+- **Universal Application**: Must be applied to all new pages and modules
+- **No Exceptions**: Every main content area follows this pattern
+
+## Control Bar Pattern (CRITICAL)
+
+### Standard Control Bar Layout
+
+**All Life sub-navigation pages (Strategy, Plan, Task, TBD) must use the standardized control bar pattern for visual consistency and optimal user experience.**
+
+#### Core Implementation Pattern
+```tsx
+// ✅ Standard Control Bar Pattern
+return (
+  <>
+    {/* 控制栏 - 固定位置 */}
+    <div className="fixed top-20 right-4 flex items-center gap-4 z-40">
+      {/* Refresh Button - Always first */}
+      <button
+        onClick={handleRefresh}
+        disabled={refreshing}
+        className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95"
+      >
+        <div className={`${refreshing ? 'animate-spin' : ''}`}>
+          {refreshing ? '⟳' : '↻'}
+        </div>
+        <span>Refresh</span>
+      </button>
+      
+      {/* Filter Components - Optional middle section */}
+      <select
+        value={selectedFilter}
+        onChange={(e) => setSelectedFilter(e.target.value)}
+        className="px-3 py-2 bg-white border border-purple-200 rounded-md text-sm text-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:border-purple-300 transition-all duration-200"
+      >
+        <option value="all">All Items</option>
+        {/* Filter options */}
+      </select>
+      
+      {/* Primary Action Button - Always last */}
+      <button
+        onClick={() => {
+          setEditingItem(null)
+          setFormPanelOpen(true)
+        }}
+        className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200 shadow-sm transform hover:scale-105 active:scale-95"
+      >
+        <span>🎯</span>
+        <span>New {ItemType}</span>
+      </button>
+    </div>
+
+    {/* 主内容区域 - 固定位置 */}
+    <div className="fixed top-32 left-[68px] right-4 bottom-4 overflow-y-auto">
+      {/* Main content here */}
+    </div>
+  </>
+)
+```
+
+#### Position Standards
+- **Control Bar**: `fixed top-20 right-4 flex items-center gap-4 z-40`
+- **Main Content**: `fixed top-32 left-[68px] right-4 bottom-4 overflow-y-auto`
+- **Z-Index**: Control bar at `z-40` to stay above content
+
+#### Button Order & Types
+1. **Refresh Button** (Always first)
+   - Gray background: `bg-gray-100 text-gray-700`
+   - Spin animation on loading state
+   - Standard disabled states
+
+2. **Filter Controls** (Optional middle section)
+   - Select dropdowns or filter buttons
+   - Purple theme: `border-purple-200 text-purple-700`
+   - Consistent sizing and spacing
+
+3. **Primary Action** (Always last)
+   - Purple background: `bg-purple-600 text-white`
+   - Appropriate icon (🎯 for Strategy, 📋 for Plan, ✅ for Task)
+   - "New {ItemType}" text pattern
+
+#### Visual Standards
+- **Button Sizing**: `px-4 py-2` for consistent height
+- **Gap Spacing**: `gap-4` between control elements
+- **Border Radius**: `rounded-md` for all controls
+- **Hover Effects**: `hover:scale-105 active:scale-95` transforms
+- **Transitions**: `transition-all duration-200` for smooth interactions
+
+#### Forbidden Patterns
+- **❌ Never use**: Page-level titles or headers in main content
+- **❌ Never use**: Mobile-specific control layouts
+- **❌ Never use**: Relative positioning for control bar
+- **❌ Never use**: Variable button widths in same control bar
+
+#### Implementation Examples
+
+**Strategy Page Pattern:**
+```tsx
+<button className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200 shadow-sm transform hover:scale-105 active:scale-95">
+  <span>🎯</span>
+  <span>New Strategy</span>
+</button>
+```
+
+**Plan Page Pattern:**
+```tsx
+<button className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200 shadow-sm transform hover:scale-105 active:scale-95">
+  <span>🎯</span>
+  <span>New Plan</span>
+</button>
+```
+
+**Task Page Pattern:**
+```tsx
+<button className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200 shadow-sm transform hover:scale-105 active:scale-95">
+  <span>✅</span>
+  <span>New Task</span>
+</button>
+```
+
+### Universal Requirements
+- **Project-Wide Standard**: ALL new Life sub-pages MUST follow this pattern
+- **No Mobile Overrides**: Desktop-only pattern, mobile uses existing navigation
+- **Consistent Icons**: Use appropriate emoji icons for each action type
+- **Purple Theme Compliance**: All elements follow the purple color scheme
+
+## Modern Card Design Standard (CRITICAL)
+
+### Premium Card Visual Pattern
+
+**All cards throughout the application must follow the modern glass morphism design for optimal visual comfort and clarity, based on the successful JD2CV card implementation.**
+
+#### Core Card Styling Pattern
+```tsx
+// ✅ Standard Modern Card Pattern
+<div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl p-4">
+  {/* Card content here */}
+</div>
+
+// ✅ Completed State Variant
+<div className="bg-gradient-to-r from-purple-50/90 to-purple-100/90 backdrop-blur-md rounded-xl shadow-xl opacity-75 transition-all duration-300 p-4">
+  {/* Completed item content */}
+</div>
+
+// ✅ Interactive Hover State
+<div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl hover:bg-gradient-to-r hover:from-purple-25/90 hover:to-purple-50/90 p-4">
+  {/* Interactive content */}
+</div>
+```
+
+#### Essential Design Elements
+1. **Glass Morphism Background**
+   - Base: `bg-white/90` (90% opacity white)
+   - Blur Effect: `backdrop-blur-md` for depth
+   - Never use solid `bg-white` backgrounds
+
+2. **Premium Shadow System**
+   - Default: `shadow-xl` (strong depth)
+   - Hover: `shadow-2xl` (maximum depth)
+   - Never use `shadow-sm` or `shadow-md` for main cards
+
+3. **Border Radius Standards**
+   - Primary Cards: `rounded-xl` (12px radius)
+   - Consistent across all card components
+   - Creates modern, soft appearance
+
+4. **Transparency Hierarchy**
+   - Active Cards: `/90` opacity (90%)
+   - Completed/Disabled: `/75` additional opacity
+   - Hover States: Gradient with `/90` opacity
+
+#### State-Specific Patterns
+
+**Normal Active State:**
+```tsx
+className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl"
+```
+
+**Completed/Disabled State:**
+```tsx
+className="bg-gradient-to-r from-purple-50/90 to-purple-100/90 backdrop-blur-md rounded-xl shadow-xl opacity-75"
+```
+
+**Interactive Hover Enhancement:**
+```tsx
+className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl hover:bg-gradient-to-r hover:from-purple-25/90 hover:to-purple-50/90"
+```
+
+#### Animation Standards
+- **Transition**: `transition-all duration-300` for smooth state changes
+- **Hover Effects**: Scale or shadow changes, never abrupt color shifts
+- **Loading States**: Maintain card structure during data updates
+
+#### Implementation Examples
+
+**Task Cards:**
+```tsx
+<div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl p-4">
+  <div className="flex items-center justify-between">
+    <h3 className="font-semibold text-purple-900">Task Title</h3>
+    <span className="text-sm text-purple-600">Status</span>
+  </div>
+</div>
+```
+
+**Plan Cards:**
+```tsx
+<div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl p-6">
+  <h2 className="text-lg font-bold text-purple-900 mb-2">Plan Objective</h2>
+  <p className="text-gray-600">Plan description...</p>
+</div>
+```
+
+**Strategy Cards:**
+```tsx
+<div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl p-6">
+  <div className="flex items-center gap-4">
+    <span className="text-3xl">🎯</span>
+    <h2 className="text-xl font-bold text-purple-900">Strategy Title</h2>
+  </div>
+</div>
+```
+
+#### Forbidden Card Patterns
+- **❌ Never use**: `bg-white` (solid backgrounds)
+- **❌ Never use**: `shadow-sm` or `shadow-md` (insufficient depth)
+- **❌ Never use**: `rounded-lg` or smaller radius (insufficient modernity)
+- **❌ Never use**: Opaque gradients without transparency
+- **❌ Never use**: Sharp color transitions without blur effects
+
+#### Visual Consistency Requirements
+- **Universal Application**: ALL cards must use this pattern
+- **No Exceptions**: Every card component follows these standards
+- **Content Preservation**: Never modify internal content structure
+- **Style-Only Changes**: Only adjust className properties for visual enhancement
+
+### Quality Assurance Standards
+- **Visual Comfort**: Cards must be easy to read and visually comfortable
+- **Depth Perception**: Strong shadow hierarchy creates clear visual layers
+- **Modern Aesthetics**: Glass morphism effects provide contemporary appearance
+- **Performance**: Blur effects optimized for smooth rendering
+
 ## Content & Text Guidelines
 
 ### Text Content Standards

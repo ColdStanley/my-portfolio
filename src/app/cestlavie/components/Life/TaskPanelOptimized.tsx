@@ -816,8 +816,8 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
 
         {/* Desktop Layout - 40:60 Split */}
         <div className="hidden md:block">
-          {/* Top Controls Bar */}
-          <div className="flex items-center gap-4 mb-6 ml-16 -mt-6">
+          {/* Top Controls Bar - 右对齐，与三杠同行 */}
+          <div className="fixed top-20 right-4 flex items-center gap-4 z-40">
             
             {/* Compact Filters */}
             <div className="flex items-center gap-3">
@@ -883,12 +883,11 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
           </div>
 
           {/* Main Split Layout: Calendar (40%) | TaskList (60%) */}
-          <div className="flex gap-6">
+          <div className="fixed top-32 left-[68px] right-4 bottom-4 flex gap-6 overflow-y-auto bg-white p-6 z-30">
             {/* Left: Calendar Section - 40% */}
             <div className="w-2/5 space-y-6">
               {/* Calendar */}
               <div>
-                <h3 className="text-lg font-semibold text-purple-500 mb-3">Calendar Overview</h3>
                 <div className="bg-white rounded-lg border border-purple-200">
                   <TaskCalendarView
                     tasks={filteredTasks}
@@ -907,37 +906,6 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
                 </div>
               </div>
 
-              {/* Quick Stats */}
-              <div className="bg-white rounded-lg border border-purple-200 p-4">
-                <h4 className="text-md font-semibold text-purple-500 mb-3">Quick Stats</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-purple-900">
-                      {filteredTasks.filter(task => {
-                        if (!task.start_date) return false
-                        const taskDate = extractDateOnly(task.start_date)
-                        const today = new Date().toISOString().split('T')[0]
-                        return taskDate === today
-                      }).length}
-                    </div>
-                    <div className="text-xs text-gray-600">Today</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-purple-900">{thisWeekTasks.length}</div>
-                    <div className="text-xs text-gray-600">This Week</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-purple-900">{thisMonthTasks.length}</div>
-                    <div className="text-xs text-gray-600">This Month</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-purple-600">
-                      {filteredTasks.filter(task => task.status === 'Completed').length}
-                    </div>
-                    <div className="text-xs text-gray-600">Completed</div>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Right: TaskList Section - 60% */}

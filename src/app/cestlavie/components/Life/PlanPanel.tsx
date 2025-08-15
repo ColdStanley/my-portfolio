@@ -151,7 +151,7 @@ function PlanFormPanel({
             ×
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 flex-1 space-y-4">
         <div>
           <label className="block text-sm font-medium text-purple-700 mb-1">Parent Strategy (所属长期目标)</label>
           <select
@@ -295,7 +295,7 @@ function PlanFormPanel({
         </div>
         
         {/* 移动端表单内容 */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 p-4 space-y-4">
           {/* 核心信息优先 */}
           <div>
             <label className="block text-sm font-medium text-purple-700 mb-1">Objective (子目标) *</label>
@@ -942,127 +942,64 @@ export default function PlanPanel() {
   const availableMonths = getAvailableMonths()
 
   return (
-    <div className="w-full py-8 space-y-6">
-      {/* 标题 */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-purple-900">Plans</h1>
-      </div>
-      
-      {/* 桌面端控制区 */}
-      <div className="hidden md:flex items-center justify-between">
-        {/* 左侧：Refresh按钮和筛选器 */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95"
-          >
-            <div className={`${refreshing ? 'animate-spin' : ''}`}>
-              {refreshing ? '⟳' : '↻'}
-            </div>
-            <span>Refresh</span>
-          </button>
-          
-          {/* Strategy筛选框 */}
-          <select
-            value={selectedStrategyFilter}
-            onChange={(e) => setSelectedStrategyFilter(e.target.value)}
-            className="px-3 py-2 bg-white border border-purple-200 rounded-md text-sm text-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:border-purple-300 transition-all duration-200"
-          >
-            <option value="all">All Strategies</option>
-            <option value="none">No Strategy</option>
-            {strategyOptions.map(strategy => (
-              <option key={strategy.id} value={strategy.id}>
-                {strategy.title}
-              </option>
-            ))}
-          </select>
-          
-          {/* 月份筛选框 */}
-          <select
-            value={selectedMonthFilter}
-            onChange={(e) => setSelectedMonthFilter(e.target.value)}
-            className="px-3 py-2 bg-white border border-purple-200 rounded-md text-sm text-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:border-purple-300 transition-all duration-200"
-          >
-            <option value="all">All Months</option>
-            {availableMonths.map(month => (
-              <option key={month} value={month}>
-                {new Date(month + '-01').toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}
-              </option>
-            ))}
-          </select>
-        </div>
+    <>
+      {/* 控制栏 - 固定位置 */}
+      <div className="fixed top-20 right-4 flex items-center gap-4 z-40">
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95"
+        >
+          <div className={`${refreshing ? 'animate-spin' : ''}`}>
+            {refreshing ? '⟳' : '↻'}
+          </div>
+          <span>Refresh</span>
+        </button>
         
-        {/* 右侧：New Plan按钮 */}
-        <div>
-          <button
-            onClick={() => {
-              setEditingPlan(null)
-              setFormPanelOpen(true)
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200 shadow-sm transform hover:scale-105 active:scale-95"
-          >
-            <span>🎯</span>
-            <span>New Plan</span>
-          </button>
-        </div>
+        {/* Strategy筛选框 */}
+        <select
+          value={selectedStrategyFilter}
+          onChange={(e) => setSelectedStrategyFilter(e.target.value)}
+          className="px-3 py-2 bg-white border border-purple-200 rounded-md text-sm text-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:border-purple-300 transition-all duration-200"
+        >
+          <option value="all">All Strategies</option>
+          <option value="none">No Strategy</option>
+          {strategyOptions.map(strategy => (
+            <option key={strategy.id} value={strategy.id}>
+              {strategy.title}
+            </option>
+          ))}
+        </select>
+        
+        {/* 月份筛选框 */}
+        <select
+          value={selectedMonthFilter}
+          onChange={(e) => setSelectedMonthFilter(e.target.value)}
+          className="px-3 py-2 bg-white border border-purple-200 rounded-md text-sm text-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:border-purple-300 transition-all duration-200"
+        >
+          <option value="all">All Months</option>
+          {availableMonths.map(month => (
+            <option key={month} value={month}>
+              {new Date(month + '-01').toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}
+            </option>
+          ))}
+        </select>
+        
+        <button
+          onClick={() => {
+            setEditingPlan(null)
+            setFormPanelOpen(true)
+          }}
+          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200 shadow-sm transform hover:scale-105 active:scale-95"
+        >
+          <span>🎯</span>
+          <span>New Plan</span>
+        </button>
       </div>
 
-      {/* 移动端简化控制区 */}
-      <div className="md:hidden space-y-3">
-        {/* 第一行：主要筛选器和New Plan按钮 */}
-        <div className="flex items-center gap-2">
-          <select
-            value={selectedStrategyFilter}
-            onChange={(e) => setSelectedStrategyFilter(e.target.value)}
-            className="flex-1 px-3 py-2 bg-white border border-purple-200 rounded-md text-sm text-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            <option value="all">All Strategies</option>
-            <option value="none">No Strategy</option>
-            {strategyOptions.map(strategy => (
-              <option key={strategy.id} value={strategy.id}>
-                {strategy.title.length > 15 ? strategy.title.substring(0, 15) + '...' : strategy.title}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={() => {
-              setEditingPlan(null)
-              setFormPanelOpen(true)
-            }}
-            className="flex items-center gap-1 px-3 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200 shadow-sm"
-          >
-            <span>🎯</span>
-            <span>New</span>
-          </button>
-        </div>
-        
-        {/* 第二行：次要控制 */}
-        <div className="flex items-center justify-between">
-          <select
-            value={selectedMonthFilter}
-            onChange={(e) => setSelectedMonthFilter(e.target.value)}
-            className="flex-1 px-3 py-2 bg-white border border-purple-200 rounded-md text-sm text-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 mr-2"
-          >
-            <option value="all">All Months</option>
-            {availableMonths.map(month => (
-              <option key={month} value={month}>
-                {new Date(month + '-01').toLocaleDateString('zh-CN', { year: 'numeric', month: 'short' })}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="flex items-center gap-1 px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200 transition-all duration-200 disabled:opacity-50"
-          >
-            <div className={`${refreshing ? 'animate-spin' : ''}`}>
-              {refreshing ? '⟳' : '↻'}
-            </div>
-            <span className="hidden sm:inline">Refresh</span>
-          </button>
-        </div>
-      </div>
+      {/* 主内容区域 - 固定位置 */}
+      <div className="fixed top-32 left-[68px] right-4 bottom-4 overflow-y-auto bg-white p-6">
+
 
       {filteredPlans.length === 0 ? (
         <div className="text-center py-16">
@@ -1484,8 +1421,9 @@ export default function PlanPanel() {
             </div>
           ))}
         </div>
-        </>
+      </>
       )}
+      </div>
 
       <PlanFormPanel
         isOpen={formPanelOpen}
@@ -1499,6 +1437,6 @@ export default function PlanPanel() {
         priorityOptions={priorityOptions}
         strategyOptions={strategyOptions}
       />
-    </div>
+    </>
   )
 }

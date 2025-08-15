@@ -130,8 +130,8 @@ export default function CestLaViePage() {
           tasks={tasks}
         />
         
-        {/* 主内容区域 - 全屏布局 */}
-        <div className="flex-1">
+        {/* 主内容区域 - L形预留空间布局 */}
+        <div className="flex-1 ml-[68px] mt-[52px]">
           {/* Life子导航路由逻辑 */}
           {activeTab === 'strategy' && <StrategyPanel />}
           {activeTab === 'plan' && <PlanPanel />}

@@ -359,23 +359,6 @@ export default function TaskListView({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-purple-500">Tasks for {dateDisplayName}</h2>
-          <p className="text-sm text-purple-400 mt-1">
-            {selectedDateTasks.length} task{selectedDateTasks.length !== 1 ? 's' : ''} scheduled
-          </p>
-        </div>
-        <button
-          onClick={() => onCreateTask && onCreateTask(selectedDate)}
-          className="px-4 py-2 bg-purple-500 text-white text-sm rounded-lg hover:bg-purple-600 
-                   transition-all duration-200 font-medium shadow-sm hover:shadow-md
-                   transform hover:scale-105 active:scale-95"
-        >
-          New Task
-        </button>
-      </div>
 
       {/* Task List */}
       <div>
@@ -402,14 +385,14 @@ export default function TaskListView({
               return (
                 <div
                   key={task.id}
-                  className={`p-4 rounded-xl shadow-sm transition-all duration-300 hover:shadow-md
+                  className={`p-4 rounded-xl shadow-xl backdrop-blur-md transition-all duration-300 hover:shadow-2xl
                     ${isCompleted 
-                      ? 'bg-gradient-to-r from-purple-50 to-purple-100 opacity-75' 
-                      : 'bg-white hover:bg-gradient-to-r hover:from-purple-25 hover:to-purple-50'
+                      ? 'bg-gradient-to-r from-purple-50/90 to-purple-100/90 opacity-75' 
+                      : 'bg-white/90 hover:bg-gradient-to-r hover:from-purple-25/90 hover:to-purple-50/90'
                     }`}
                 >
                   {/* Desktop: Three column layout, Mobile: Vertical layout */}
-                  <div className="lg:flex lg:items-start lg:justify-between lg:mb-3">
+                  <div className="lg:flex lg:items-stretch lg:justify-between lg:mb-3">
                     {/* Desktop Left Column / Mobile Top Row - Time Info */}
                     <div className="flex flex-col gap-1 lg:min-w-[100px] mb-3 lg:mb-0">
                       {(task.start_date || task.end_date) && (
@@ -431,10 +414,10 @@ export default function TaskListView({
                     </div>
 
                     {/* Desktop Middle Column / Mobile Middle Row - Task Main Content */}
-                    <div className="flex-1 min-w-0 lg:px-4 mb-3 lg:mb-0">
-                      {/* Task Title */}
+                    <div className="flex-1 min-w-0 lg:px-4 mb-3 lg:mb-0 flex flex-col">
+                      {/* Task Title - Aligned to top */}
                       <h3 
-                        className={`text-lg font-semibold mb-2 ${
+                        className={`text-lg font-semibold ${
                           isCompleted ? 'text-purple-500 line-through' : 'text-purple-600'
                         } cursor-pointer hover:underline hover:text-purple-500 transition-colors`}
                         onClick={(e) => handleNotionClick(task, e)}
@@ -443,56 +426,53 @@ export default function TaskListView({
                         {task.title}
                       </h3>
 
-                      {/* Status and Priority Labels */}
-                      <div className="flex items-center gap-2">
-                        <span className="px-3 py-1.5 text-xs rounded-full font-medium transition-all duration-200 hover:scale-105 hover:shadow-sm bg-gradient-to-r from-purple-100 to-purple-200 text-purple-700 shadow-purple-100/50">
+                      {/* 2x2 Grid Layout for Labels - Aligned to bottom */}
+                      <div className="grid grid-cols-2 gap-2 mt-auto">
+                        {/* Row 1, Col 1: Status */}
+                        <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
                           {task.status}
                         </span>
 
-                        {task.priority_quadrant && (
-                          <span className="px-3 py-1.5 text-xs rounded-full font-medium transition-all duration-200 hover:scale-105 hover:shadow-sm bg-gradient-to-r from-purple-100 to-purple-200 text-purple-700 shadow-purple-100/50">
-                            {task.priority_quadrant}
-                          </span>
-                        )}
-                      </div>
+                        {/* Row 1, Col 2: Priority */}
+                        <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
+                          {task.priority_quadrant || 'No Priority'}
+                        </span>
 
-                      {/* Strategy and Plan Labels - Separate Row */}
-                      <div className="flex items-center gap-2 mt-2">
-                        {/* Strategy Label - First */}
+                        {/* Row 2, Col 1: Strategy */}
                         {task.plan && task.plan[0] && (() => {
                           const plan = planOptions.find(p => p.id === task.plan[0])
                           if (plan && plan.parent_goal && plan.parent_goal[0]) {
                             const strategy = strategyOptions.find(s => s.id === plan.parent_goal[0])
                             if (strategy) {
                               return (
-                                <>
-                                  <span 
-                                    className="px-3 py-1.5 text-xs rounded-full font-medium transition-all duration-200 hover:scale-105 hover:shadow-sm bg-gradient-to-r from-violet-100 to-violet-200 text-violet-700 shadow-violet-100/50 cursor-pointer hover:underline"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      const notionPageUrl = `https://www.notion.so/${strategy.id.replace(/-/g, '')}`
-                                      window.open(notionPageUrl, '_blank')
-                                    }}
-                                    title="Click to edit in Notion"
-                                  >
-                                    {strategy.objective}
-                                  </span>
-                                  {/* Arrow connector */}
-                                  <span className="text-violet-400 text-xs">→</span>
-                                </>
+                                <span 
+                                  className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    const notionPageUrl = `https://www.notion.so/${strategy.id.replace(/-/g, '')}`
+                                    window.open(notionPageUrl, '_blank')
+                                  }}
+                                  title="Click to edit in Notion"
+                                >
+                                  {strategy.objective}
+                                </span>
                               )
                             }
                           }
-                          return null
+                          return (
+                            <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
+                              No Strategy
+                            </span>
+                          )
                         })()}
 
-                        {/* Plan Label - Second */}
+                        {/* Row 2, Col 2: Plan */}
                         {task.plan && task.plan[0] && (() => {
                           const plan = planOptions.find(p => p.id === task.plan[0])
                           if (plan) {
                             return (
                               <span 
-                                className="px-3 py-1.5 text-xs rounded-full font-medium transition-all duration-200 hover:scale-105 hover:shadow-sm bg-gradient-to-r from-violet-100 to-violet-200 text-violet-700 shadow-violet-100/50 cursor-pointer hover:underline"
+                                className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 cursor-pointer"
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   const notionPageUrl = `https://www.notion.so/${plan.id.replace(/-/g, '')}`
@@ -504,8 +484,16 @@ export default function TaskListView({
                               </span>
                             )
                           }
-                          return null
-                        })()}
+                          return (
+                            <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
+                              No Plan
+                            </span>
+                          )
+                        })() || (
+                          <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
+                            No Plan
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -543,7 +531,7 @@ export default function TaskListView({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
                         </button>
-                        <div className="absolute right-10 top-1/2 transform -translate-y-1/2 
+                        <div className="absolute right-0 top-full mt-2 
                                       bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap 
                                       opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none z-10">
                           Complete Early

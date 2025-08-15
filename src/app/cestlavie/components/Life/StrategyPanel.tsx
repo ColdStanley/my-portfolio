@@ -721,64 +721,34 @@ export default function StrategyPanel() {
   }
 
   return (
-    <div className="w-full py-8 space-y-6">
-      {/* 桌面端标题和控制区 */}
-      <div className="hidden md:flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-purple-900">Strategy</h1>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95"
-          >
-            <div className={`${refreshing ? 'animate-spin' : ''}`}>
-              {refreshing ? '⟳' : '↻'}
-            </div>
-            <span>Refresh</span>
-          </button>
-          <button
-            onClick={() => {
-              setEditingStrategy(null)
-              setFormPanelOpen(true)
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200 shadow-sm transform hover:scale-105 active:scale-95"
-          >
-            <span>🎯</span>
-            <span>New Strategy</span>
-          </button>
-        </div>
+    <>
+      {/* 控制栏 - 固定位置 */}
+      <div className="fixed top-20 right-4 flex items-center gap-4 z-40">
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95"
+        >
+          <div className={`${refreshing ? 'animate-spin' : ''}`}>
+            {refreshing ? '⟳' : '↻'}
+          </div>
+          <span>Refresh</span>
+        </button>
+        
+        <button
+          onClick={() => {
+            setEditingStrategy(null)
+            setFormPanelOpen(true)
+          }}
+          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200 shadow-sm transform hover:scale-105 active:scale-95"
+        >
+          <span>🎯</span>
+          <span>New Strategy</span>
+        </button>
       </div>
 
-      {/* 移动端简化标题和控制区 */}
-      <div className="md:hidden">
-        <div className="mb-4">
-          <h1 className="text-xl font-bold text-purple-900">Strategy</h1>
-        </div>
-        <div className="flex items-center justify-between mb-4">
-          <button
-            onClick={() => {
-              setEditingStrategy(null)
-              setFormPanelOpen(true)
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200 shadow-sm"
-          >
-            <span>🎯</span>
-            <span>New Strategy</span>
-          </button>
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="flex items-center gap-1 px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200 transition-all duration-200 disabled:opacity-50"
-          >
-            <div className={`${refreshing ? 'animate-spin' : ''}`}>
-              {refreshing ? '⟳' : '↻'}
-            </div>
-            <span className="hidden sm:inline">Refresh</span>
-          </button>
-        </div>
-      </div>
+      {/* 主内容区域 - 固定位置 */}
+      <div className="fixed top-32 left-[68px] right-4 bottom-4 overflow-y-auto">
 
       {data.length === 0 ? (
         <div className="text-center py-16">
@@ -1290,7 +1260,7 @@ export default function StrategyPanel() {
           })()}
         </div>
       )}
-
+      </div>
 
       <StrategyFormPanel
         isOpen={formPanelOpen}
@@ -1304,6 +1274,6 @@ export default function StrategyPanel() {
         categoryOptions={categoryOptions}
         priorityOptions={priorityOptions}
       />
-    </div>
+    </>
   )
 }
