@@ -367,7 +367,8 @@ export default function QueryPanel() {
 
       {/* Tab Navigation */}
       <div className="flex-shrink-0 relative">
-        <div className="flex">
+        {/* Desktop: Equal Width Tabs */}
+        <div className="hidden md:flex">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -391,6 +392,33 @@ export default function QueryPanel() {
               )}
             </button>
           ))}
+        </div>
+        
+        {/* Mobile: Scrollable Tabs */}
+        <div className="md:hidden">
+          <div className="flex overflow-x-auto scrollbar-hide px-3 gap-2 bg-gray-50">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => handleTabChange(tab.id)}
+                className={`relative flex-shrink-0 px-4 py-2 text-xs font-medium rounded-full transition-all duration-300 whitespace-nowrap flex items-center gap-1 ${
+                  activeTab === tab.id
+                    ? 'text-white bg-purple-500 shadow-md'
+                    : 'text-gray-600 bg-white hover:text-purple-500 hover:bg-purple-50'
+                }`}
+              >
+                <span>{tab.label}</span>
+                {/* Number Badge for Mobile */}
+                <div className={`min-w-[16px] h-4 text-[10px] font-bold rounded-full flex items-center justify-center ${
+                  activeTab === tab.id 
+                    ? 'bg-white/20 text-white' 
+                    : 'bg-purple-500 text-white'
+                }`}>
+                  {tab.count}
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

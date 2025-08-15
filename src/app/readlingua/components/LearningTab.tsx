@@ -150,34 +150,40 @@ export default function LearningTab() {
   }
 
   return (
-    <div>
-      {/* Ask AI Search Box - Bottom Right */}
-      <AskAISearchBox 
-        onShowFloatingPanel={handleShowFloatingPanel}
-      />
-
-      {/* Settings Panel - Bottom Right */}
-      <SettingsPanel />
-
-      {/* AI Response Floating Panel */}
-      {showFloatingPanel && (
-        <AIResponseFloatingPanel 
-          isVisible={showFloatingPanel}
-          selectedText={floatingPanelData.selectedText || floatingPanelData.userQuestion || ''}
-          queryType={floatingPanelData.queryType}
-          aiResponse={floatingPanelData.aiResponse}
-          isLoading={floatingPanelData.isLoading}
-          hasError={floatingPanelData.hasError}
-          onClose={() => setShowFloatingPanel(false)}
-          onPlayPronunciation={handlePlayPronunciation}
-          isPlaying={isPlaying}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
+      {/* Desktop-only floating components */}
+      <div className="hidden md:block">
+        {/* Ask AI Search Box - Bottom Right */}
+        <AskAISearchBox 
+          onShowFloatingPanel={handleShowFloatingPanel}
         />
-      )}
+
+        {/* Settings Panel - Bottom Right */}
+        <SettingsPanel />
+
+        {/* AI Response Floating Panel */}
+        {showFloatingPanel && (
+          <AIResponseFloatingPanel 
+            isVisible={showFloatingPanel}
+            selectedText={floatingPanelData.selectedText || floatingPanelData.userQuestion || ''}
+            queryType={floatingPanelData.queryType}
+            aiResponse={floatingPanelData.aiResponse}
+            isLoading={floatingPanelData.isLoading}
+            hasError={floatingPanelData.hasError}
+            onClose={() => setShowFloatingPanel(false)}
+            onPlayPronunciation={handlePlayPronunciation}
+            isPlaying={isPlaying}
+          />
+        )}
+
+        {/* Prompt Manager Modal */}
+        <PromptManager />
+      </div>
 
       {/* Main Content */}
       <div className="flex flex-1 min-h-0 max-w-7xl mx-auto px-4 w-full gap-6">
-        {/* Article Reader - Left Side */}
-        <div className={`transition-all duration-300 ${showQueryPanel ? 'w-1/2' : 'w-full'}`}>
+        {/* Article Reader - Desktop Only */}
+        <div className={`hidden md:block transition-all duration-300 ${showQueryPanel ? 'w-1/2' : 'w-full'}`}>
           <div className="bg-white/95 rounded-xl shadow-xl h-full"
             style={{
               boxShadow: '0 8px 32px rgba(139, 92, 246, 0.15), 0 4px 16px rgba(0, 0, 0, 0.1)'
@@ -186,21 +192,16 @@ export default function LearningTab() {
           </div>
         </div>
         
-        {/* Query Panel - Right Side */}
-        {showQueryPanel && (
-          <div className="w-1/2">
-            <div className="bg-white/95 rounded-xl shadow-xl h-full"
-              style={{
-                boxShadow: '0 8px 32px rgba(139, 92, 246, 0.15), 0 4px 16px rgba(0, 0, 0, 0.1)'
-              }}>
-              <QueryPanel />
-            </div>
+        {/* Query Panel - Desktop: Conditional Display, Mobile: Always Show */}
+        <div className={`block md:${showQueryPanel ? 'block' : 'hidden'} md:w-1/2 w-full`}>
+          <div className="bg-white/95 rounded-xl shadow-xl h-full md:h-auto"
+            style={{
+              boxShadow: '0 8px 32px rgba(139, 92, 246, 0.15), 0 4px 16px rgba(0, 0, 0, 0.1)'
+            }}>
+            <QueryPanel />
           </div>
-        )}
+        </div>
       </div>
-
-      {/* Prompt Manager Modal */}
-      <PromptManager />
     </div>
   )
 }

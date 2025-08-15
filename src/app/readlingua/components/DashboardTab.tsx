@@ -51,7 +51,7 @@ export default function DashboardTab() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
+    <div className="min-h-screen md:min-h-0 md:bg-gradient-to-br md:from-slate-50 md:via-white md:to-purple-50/30">
       {/* Header */}
       <div className="px-6 py-6 bg-white/90 backdrop-blur-md shadow-lg"
         style={{
@@ -116,7 +116,7 @@ export default function DashboardTab() {
           
           {/* Browse Articles */}
           <div 
-            className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 min-h-[500px]"
+            className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 min-h-[500px] md:col-span-1 col-span-full"
             style={{
               boxShadow: '0 15px 35px rgba(139, 92, 246, 0.15), 0 6px 20px rgba(139, 92, 246, 0.08)'
             }}
@@ -127,7 +127,8 @@ export default function DashboardTab() {
                   <svg className="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/>
                   </svg>
-                  Browse
+                  <span className="hidden md:inline">Browse</span>
+                  <span className="md:hidden">Articles</span>
                 </h2>
                 <div className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
                   {filteredArticles.length}
@@ -143,9 +144,9 @@ export default function DashboardTab() {
             </div>
           </div>
 
-          {/* Add New Article */}
+          {/* Add New Article - Hidden on Mobile */}
           <div 
-            className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 min-h-[500px]"
+            className="hidden md:block group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 min-h-[500px]"
             style={{
               boxShadow: '0 15px 35px rgba(139, 92, 246, 0.15), 0 6px 20px rgba(139, 92, 246, 0.08)'
             }}
