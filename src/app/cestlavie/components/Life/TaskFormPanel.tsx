@@ -1,19 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { TaskRecord } from './taskReducer'
 
-interface TaskRecord {
-  id: string
-  title: string
-  status: string
-  start_date: string
-  end_date: string
-  all_day: boolean
-  remind_before: number
-  plan: string[]
-  priority_quadrant: string
-  note: string
-}
 
 interface TaskFormData {
   title: string

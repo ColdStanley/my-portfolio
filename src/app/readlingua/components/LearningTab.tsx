@@ -9,20 +9,14 @@ import QueryPanel from './QueryPanel'
 import PromptManager from './PromptManager'
 import SettingsPanel from './SettingsPanel'
 import AskAISearchBox from './AskAISearchBox'
-import AIResponseFloatingPanel from './AIResponseFloatingPanel'
+import MultipleAITooltips from './MultipleAITooltips'
 
 export default function LearningTab() {
-  const { selectedArticle, queries, setQueries, setSelectedQuery, showQueryPanel, setShowQueryPanel, setShowPromptManager } = useReadLinguaStore()
-  const [showFloatingPanel, setShowFloatingPanel] = useState(false)
-  const [floatingPanelData, setFloatingPanelData] = useState({
-    queryType: '',
-    aiResponse: '',
-    isLoading: false,
-    hasError: false,
-    selectedText: '',
-    userQuestion: ''
-  })
+  const { selectedArticle, queries, setQueries, setSelectedQuery, showQueryPanel, setShowQueryPanel, setShowPromptManager, addAITooltip, updateAITooltip } = useReadLinguaStore()
   const [isPlaying, setIsPlaying] = useState(false)
+
+  // Store tooltip IDs for streaming updates 
+  const [streamingTooltips, setStreamingTooltips] = useState<Map<string, string>>(new Map())
 
   const handleShowFloatingPanel = (data: {
     queryType: string
@@ -31,16 +25,51 @@ export default function LearningTab() {
     hasError: boolean
     selectedText?: string
     userQuestion?: string
+    streamKey?: string  // Unique key for streaming updates
   }) => {
-    setFloatingPanelData({
+    const streamKey = data.streamKey || `${data.queryType}-${data.userQuestion || data.selectedText}`
+    
+    // If we have an existing tooltip for this stream, update it
+    const existingTooltipId = streamingTooltips.get(streamKey)
+    if (existingTooltipId) {
+      updateAITooltip(existingTooltipId, {
+        aiResponse: data.aiResponse,
+        isLoading: data.isLoading,
+        hasError: data.hasError
+      })
+      return existingTooltipId
+    }
+    
+    // Calculate center position for new tooltip
+    const centerX = window.innerWidth / 2 - Math.min(700, window.innerWidth * 0.9) / 2
+    const centerY = window.innerHeight / 2 - Math.min(600, window.innerHeight * 0.85) / 2
+    
+    // Add new tooltip to store
+    const tooltipId = addAITooltip({
+      selectedText: data.selectedText || '',
       queryType: data.queryType,
       aiResponse: data.aiResponse,
       isLoading: data.isLoading,
       hasError: data.hasError,
-      selectedText: data.selectedText || '',
-      userQuestion: data.userQuestion || ''
+      position: { x: centerX, y: centerY },
+      userQuestion: data.userQuestion
     })
-    setShowFloatingPanel(true)
+    
+    // Store tooltip ID for future updates
+    setStreamingTooltips(prev => new Map(prev.set(streamKey, tooltipId)))
+    
+    // Clean up stream key when tooltip is no longer loading
+    if (!data.isLoading) {
+      setTimeout(() => {
+        setStreamingTooltips(prev => {
+          const newMap = new Map(prev)
+          newMap.delete(streamKey)
+          return newMap
+        })
+      }, 1000)
+    }
+    
+    return tooltipId
   }
 
   const handlePlayPronunciation = async (text: string) => {
@@ -161,21 +190,8 @@ export default function LearningTab() {
         {/* Settings Panel - Bottom Right */}
         <SettingsPanel />
 
-        {/* AI Response Floating Panel */}
-        {showFloatingPanel && (
-          <AIResponseFloatingPanel 
-            isVisible={showFloatingPanel}
-            selectedText={floatingPanelData.selectedText || ''}
-            queryType={floatingPanelData.queryType}
-            aiResponse={floatingPanelData.aiResponse}
-            isLoading={floatingPanelData.isLoading}
-            hasError={floatingPanelData.hasError}
-            onClose={() => setShowFloatingPanel(false)}
-            onPlayPronunciation={handlePlayPronunciation}
-            isPlaying={isPlaying}
-            userQuestion={floatingPanelData.userQuestion}
-          />
-        )}
+        {/* Multiple AI Tooltips */}
+        <MultipleAITooltips />
 
         {/* Prompt Manager Modal */}
         <PromptManager />

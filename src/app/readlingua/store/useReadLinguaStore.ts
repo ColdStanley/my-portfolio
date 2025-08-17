@@ -47,6 +47,18 @@ export interface QuizQuestion {
   isAnswered: boolean
 }
 
+export interface AITooltip {
+  id: string
+  selectedText: string
+  queryType: string
+  aiResponse: string
+  isLoading: boolean
+  hasError: boolean
+  position: { x: number, y: number }
+  userQuestion?: string
+  createdAt: number
+}
+
 interface ReadLinguaState {
   // Tab management
   activeTab: 'dashboard' | 'learning'
@@ -89,6 +101,13 @@ interface ReadLinguaState {
   generateDictationQuestions: () => void
   submitQuizAnswer: (index: number, answer: string) => void
   getCurrentQuestions: () => QuizQuestion[]
+  
+  // AI Tooltips
+  aiTooltips: AITooltip[]
+  addAITooltip: (tooltip: Omit<AITooltip, 'id' | 'createdAt'>) => string
+  updateAITooltip: (id: string, updates: Partial<AITooltip>) => void
+  removeAITooltip: (id: string) => void
+  clearAllTooltips: () => void
   
   // UI states
   isLoading: boolean
@@ -1196,6 +1215,46 @@ export const useReadLinguaStore = create<ReadLinguaState>((set) => ({
     
     return state
   }),
+  
+  // AI Tooltips  
+  aiTooltips: [],
+  
+  addAITooltip: (tooltip) => {
+    const id = `tooltip-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    const tooltipCount = useReadLinguaStore.getState().aiTooltips.length
+    
+    // Simple position offset strategy
+    const offsetX = (tooltipCount % 3) * 50
+    const offsetY = Math.floor(tooltipCount / 3) * 50
+    
+    const newTooltip: AITooltip = {
+      ...tooltip,
+      id,
+      position: {
+        x: tooltip.position.x + offsetX,
+        y: tooltip.position.y + offsetY
+      },
+      createdAt: Date.now()
+    }
+    
+    set((state) => ({
+      aiTooltips: [...state.aiTooltips, newTooltip]
+    }))
+    
+    return id
+  },
+  
+  updateAITooltip: (id, updates) => set((state) => ({
+    aiTooltips: state.aiTooltips.map(tooltip =>
+      tooltip.id === id ? { ...tooltip, ...updates } : tooltip
+    )
+  })),
+  
+  removeAITooltip: (id) => set((state) => ({
+    aiTooltips: state.aiTooltips.filter(tooltip => tooltip.id !== id)
+  })),
+  
+  clearAllTooltips: () => set({ aiTooltips: [] }),
   
   // UI states
   isLoading: false,

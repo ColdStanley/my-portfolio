@@ -1,12 +1,13 @@
 import { useReducer, useCallback } from 'react'
 
-interface TaskRecord {
+export interface TaskRecord {
   id: string
   title: string
   status: string
   start_date: string
   end_date: string
   all_day: boolean
+  remind_before?: number
   plan: string[]
   priority_quadrant: string
   note: string

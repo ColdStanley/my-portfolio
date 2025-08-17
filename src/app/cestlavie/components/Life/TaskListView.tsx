@@ -3,19 +3,9 @@
 import { useMemo, useCallback, useState, useRef, useEffect } from 'react'
 import DeleteConfirmTooltip from './DeleteConfirmTooltip'
 import RelationsTooltip from './RelationsTooltip'
-import { extractTimeOnly, extractDateOnly } from '../../utils/timezone'
+import { extractTimeOnly } from '../../utils/timezone'
+import { TaskRecord } from './taskReducer'
 
-interface TaskRecord {
-  id: string
-  title: string
-  status: string
-  start_date: string
-  end_date: string
-  all_day: boolean
-  plan: string[]
-  priority_quadrant: string
-  note: string
-}
 
 interface PlanOption {
   id: string

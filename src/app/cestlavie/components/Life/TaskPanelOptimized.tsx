@@ -1,12 +1,11 @@
 'use client'
 
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { useTaskReducer } from './taskReducer'
+import { useTaskReducer, TaskRecord } from './taskReducer'
 import { TaskErrorBoundary, TaskLoadingSpinner, TaskErrorDisplay, ToastNotification } from './ErrorBoundary'
 import TaskFormPanel from './TaskFormPanel'
 import TaskCalendarView from './TaskCalendarView'
 import TaskListView from './TaskListView'
-import RenderBlock from '@/components/notion/RenderBlock'
 
 interface TaskFormData {
   title: string
@@ -677,7 +676,6 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
                 }}
                 formatTimeRange={formatTimeRange}
                 getPriorityColor={getPriorityColor}
-                hasTimeConflicts={(task) => hasTimeConflicts(task, state.tasks)}
                 planOptions={state.planOptions}
                 strategyOptions={state.strategyOptions}
               />
@@ -729,10 +727,10 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
               {/* Refresh Button */}
               <button
                 onClick={handleRefresh}
-                disabled={state.isRefreshing}
+                disabled={state.refreshing}
                 className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors flex items-center gap-1 text-sm"
               >
-                <svg className={`w-4 h-4 ${state.isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-4 h-4 ${state.refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
                 Refresh

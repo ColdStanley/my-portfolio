@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { marked } from 'marked'
 import { X } from 'lucide-react'
@@ -17,6 +17,10 @@ interface AIResponseFloatingPanelProps {
   onPlayPronunciation?: (text: string) => void
   isPlaying?: boolean
   userQuestion?: string
+  // Multi-tooltip support
+  initialPosition?: { x: number, y: number }
+  tooltipId?: string
+  onPositionChange?: (position: { x: number, y: number }) => void
 }
 
 export default function AIResponseFloatingPanel({
@@ -29,9 +33,16 @@ export default function AIResponseFloatingPanel({
   onClose,
   onPlayPronunciation,
   isPlaying = false,
-  userQuestion
+  userQuestion,
+  initialPosition,
+  tooltipId,
+  onPositionChange
 }: AIResponseFloatingPanelProps) {
   const [isAnimating, setIsAnimating] = useState(false)
+  const [position, setPosition] = useState(initialPosition || { x: 0, y: 0 })
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+  const panelRef = useRef<HTMLDivElement>(null)
 
   // Check if text language supports pronunciation - use article language setting
   const supportsPronunciation = (text: string) => {
@@ -49,8 +60,83 @@ export default function AIResponseFloatingPanel({
   useEffect(() => {
     if (isVisible) {
       setIsAnimating(true)
+      // Reset position to center on each new query (only if no initial position provided)
+      if (!initialPosition) {
+        setPosition({ x: 0, y: 0 })
+      }
     }
-  }, [isVisible])
+  }, [isVisible, initialPosition])
+
+  // Calculate center position
+  const getCenterPosition = useCallback(() => {
+    const panelWidth = Math.min(700, window.innerWidth * 0.9)
+    const panelHeight = Math.min(600, window.innerHeight * 0.85)
+    return {
+      x: (window.innerWidth - panelWidth) / 2,
+      y: (window.innerHeight - panelHeight) / 2
+    }
+  }, [])
+
+  // Constrain position within screen bounds
+  const constrainPosition = useCallback((x: number, y: number) => {
+    const panelWidth = Math.min(700, window.innerWidth * 0.9)
+    const panelHeight = Math.min(600, window.innerHeight * 0.85)
+    
+    const minX = 0
+    const maxX = window.innerWidth - panelWidth
+    const minY = 0
+    const maxY = window.innerHeight - panelHeight
+    
+    return {
+      x: Math.max(minX, Math.min(maxX, x)),
+      y: Math.max(minY, Math.min(maxY, y))
+    }
+  }, [])
+
+  // Mouse event handlers for dragging
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.target !== e.currentTarget && !(e.target as HTMLElement).closest('.drag-handle')) {
+      return
+    }
+    
+    setIsDragging(true)
+    const rect = panelRef.current?.getBoundingClientRect()
+    if (rect) {
+      const currentPos = position.x === 0 && position.y === 0 ? getCenterPosition() : position
+      setDragOffset({
+        x: e.clientX - (currentPos.x || rect.left),
+        y: e.clientY - (currentPos.y || rect.top)
+      })
+    }
+  }, [position, getCenterPosition])
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging) return
+    
+    const newPos = constrainPosition(
+      e.clientX - dragOffset.x,
+      e.clientY - dragOffset.y
+    )
+    setPosition(newPos)
+    // Notify parent component about position change (for multi-tooltip)
+    onPositionChange?.(newPos)
+  }, [isDragging, dragOffset, constrainPosition, onPositionChange])
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false)
+  }, [])
+
+  // Add global mouse event listeners
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+    }
+  }, [isDragging, handleMouseMove, handleMouseUp])
 
   const handleClose = () => {
     setIsAnimating(false)
@@ -63,7 +149,6 @@ export default function AIResponseFloatingPanel({
       return marked.parse(text, {
         breaks: true,
         gfm: true,
-        sanitize: false,
       })
     } catch (error) {
       console.warn('Failed to parse AI response markdown:', error)
@@ -95,34 +180,31 @@ export default function AIResponseFloatingPanel({
 
   const panelContent = (
     <>
-      {/* Backdrop */}
-      <div 
-        className={`fixed inset-0 z-[10000] transition-opacity duration-300 bg-black/20 ${
-          isAnimating ? 'opacity-100' : 'opacity-0'
-        }`}
-        onClick={handleClose}
-      />
       
       {/* Floating Panel */}
       <div 
+        ref={panelRef}
         className={`fixed bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col ${
           isAnimating ? 'ai-panel-enter' : 'ai-panel-exit'
-        }`}
+        } ${isDragging ? 'cursor-grabbing' : 'cursor-default'}`}
         style={{
           position: 'fixed',
-          left: '50%',
-          top: '50%',
+          left: (position.x === 0 && position.y === 0 && !initialPosition) ? '50%' : position.x + 'px',
+          top: (position.x === 0 && position.y === 0 && !initialPosition) ? '50%' : position.y + 'px',
           width: Math.min(700, window.innerWidth * 0.9) + 'px',
           height: Math.min(600, window.innerHeight * 0.85) + 'px',
           maxHeight: window.innerHeight * 0.85 + 'px',
-          marginLeft: -Math.min(700, window.innerWidth * 0.9) / 2 + 'px',
-          marginTop: -Math.min(600, window.innerHeight * 0.85) / 2 + 'px',
+          marginLeft: (position.x === 0 && position.y === 0 && !initialPosition) ? -Math.min(700, window.innerWidth * 0.9) / 2 + 'px' : '0px',
+          marginTop: (position.x === 0 && position.y === 0 && !initialPosition) ? -Math.min(600, window.innerHeight * 0.85) / 2 + 'px' : '0px',
           zIndex: 2147483647,
           boxSizing: 'border-box'
         }}
       >
-        {/* Header */}
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+        {/* Header - Draggable */}
+        <div 
+          className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0 drag-handle cursor-grab active:cursor-grabbing select-none"
+          onMouseDown={handleMouseDown}
+        >
           <div className="flex items-start">
             {/* Selected Text or User Question for Ask AI */}
             <div className="flex items-start gap-1">
@@ -156,10 +238,12 @@ export default function AIResponseFloatingPanel({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Query Type Badge */}
-            <span className={`px-2 py-1 rounded text-xs font-medium ${getQueryTypeColor(queryType)}`}>
-              {getQueryTypeLabel(queryType)}
-            </span>
+            {/* Query Type Badge - Hide for Ask AI since it's redundant */}
+            {queryType !== 'ask_ai' && (
+              <span className={`px-2 py-1 rounded text-xs font-medium ${getQueryTypeColor(queryType)}`}>
+                {getQueryTypeLabel(queryType)}
+              </span>
+            )}
             
             {/* Close Button */}
             <button

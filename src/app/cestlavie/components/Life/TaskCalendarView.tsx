@@ -1,18 +1,8 @@
 'use client'
 
 import { useMemo, useCallback } from 'react'
+import { TaskRecord } from './taskReducer'
 
-interface TaskRecord {
-  id: string
-  title: string
-  status: string
-  start_date: string
-  end_date: string
-  all_day: boolean
-  plan: string[]
-  priority_quadrant: string
-  note: string
-}
 
 interface TaskCalendarViewProps {
   tasks: TaskRecord[]
@@ -25,7 +15,6 @@ interface TaskCalendarViewProps {
   onTaskDelete?: (taskId: string) => void
   formatTimeRange?: (startDate: string, endDate?: string) => string
   getPriorityColor?: (priority: string) => string
-  hasTimeConflicts?: (task: TaskRecord) => boolean
   compact?: boolean  // New prop for compact mode
 }
 
@@ -40,7 +29,6 @@ export default function TaskCalendarView({
   onTaskDelete,
   formatTimeRange,
   getPriorityColor,
-  hasTimeConflicts,
   compact = false
 }: TaskCalendarViewProps) {
   

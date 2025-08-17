@@ -6,7 +6,6 @@ import { Article, useReadLinguaStore } from '../store/useReadLinguaStore'
 import { aiApi, queryApi } from '../utils/apiClient'
 import { supabase } from '../utils/supabaseClient'
 import TextSelectionToolbar from './TextSelectionToolbar'
-import AIResponseFloatingPanel from './AIResponseFloatingPanel'
 import FlagIcon from './FlagIcon'
 
 interface ArticleReaderProps {
@@ -17,16 +16,9 @@ export default function ArticleReader({ article }: ArticleReaderProps) {
   const [selectedText, setSelectedText] = useState('')
   const [selectionPosition, setSelectionPosition] = useState({ x: 0, y: 0 })
   const [showToolbar, setShowToolbar] = useState(false)
-  const [showFloatingPanel, setShowFloatingPanel] = useState(false)
-  const [floatingPanelData, setFloatingPanelData] = useState({
-    queryType: '',
-    aiResponse: '',
-    isLoading: false,
-    hasError: false
-  })
-  const [isPlaying, setIsPlaying] = useState(false)
+  const [streamingTooltips, setStreamingTooltips] = useState<Map<string, string>>(new Map())
   const contentRef = useRef<HTMLDivElement>(null)
-  const { queries, setShowQueryPanel } = useReadLinguaStore()
+  const { queries, setShowQueryPanel, addAITooltip, updateAITooltip, selectedAiModel, getCurrentPromptTemplates, addQuery } = useReadLinguaStore()
 
   const handleTextSelection = () => {
     const selection = window.getSelection()
@@ -64,21 +56,34 @@ export default function ArticleReader({ article }: ArticleReaderProps) {
         console.log('Using anonymous mode for AI features')
       }
 
-      // Hide toolbar and show floating panel
+      // Hide toolbar 
       setShowToolbar(false)
-      setShowFloatingPanel(true)
-      setFloatingPanelData({
-        queryType,
+
+      // Create stream key for this query
+      const streamKey = `${queryType}-${selectedText}-${Date.now()}`
+      
+      // Calculate center position for new tooltip
+      const centerX = window.innerWidth / 2 - Math.min(700, window.innerWidth * 0.9) / 2
+      const centerY = window.innerHeight / 2 - Math.min(600, window.innerHeight * 0.85) / 2
+
+      // Add new tooltip to store
+      const tooltipId = addAITooltip({
+        selectedText: selectedText,
+        queryType: queryType,
         aiResponse: '',
         isLoading: true,
-        hasError: false
+        hasError: false,
+        position: { x: centerX, y: centerY },
+        userQuestion: userQuestion
       })
+
+      // Store tooltip ID for streaming updates
+      setStreamingTooltips(prev => new Map(prev.set(streamKey, tooltipId)))
 
       // Generate highlight ID for later use
       const highlightId = `highlight_${Date.now()}`
 
-      // Get selected AI model and custom prompt templates
-      const { selectedAiModel, getCurrentPromptTemplates } = useReadLinguaStore.getState()
+      // Get custom prompt templates
       const promptTemplates = getCurrentPromptTemplates()
       const customPrompt = promptTemplates[queryType as keyof typeof promptTemplates]
 
@@ -95,16 +100,15 @@ export default function ArticleReader({ article }: ArticleReaderProps) {
           ai_model: selectedAiModel,
           custom_prompt_template: customPrompt
         },
-        // onChunk - update floating panel in real-time
+        // onChunk - update tooltip in real-time
         (chunk: string) => {
           fullResponse += chunk
-          setFloatingPanelData(prev => ({
-            ...prev,
+          updateAITooltip(tooltipId, {
             aiResponse: fullResponse,
-            isLoading: false
-          }))
+            isLoading: true
+          })
         },
-        // onComplete - save to database and close floating panel
+        // onComplete - save to database
         async (finalResponse: string) => {
           try {
             // Save final query to database
@@ -123,49 +127,55 @@ export default function ArticleReader({ article }: ArticleReaderProps) {
             })
 
             // Add to store and right panel
-            useReadLinguaStore.getState().addQuery(newQuery)
+            addQuery(newQuery)
             useReadLinguaStore.getState().setSelectedQuery(newQuery)
             setShowQueryPanel(true)
             
-            // Final update to floating panel
-            setFloatingPanelData(prev => ({
-              ...prev,
+            // Final update to tooltip
+            updateAITooltip(tooltipId, {
               aiResponse: finalResponse,
               isLoading: false,
               hasError: false
-            }))
+            })
             
           } catch (dbError) {
             console.error('Error saving query to database:', dbError)
             // Still show the response but mark as error in console
-            setFloatingPanelData(prev => ({
-              ...prev,
+            updateAITooltip(tooltipId, {
               aiResponse: finalResponse,
               isLoading: false,
-              hasError: false // Don't show error to user if DB save fails
-            }))
+              hasError: false  // Don't show error to user if DB save fails
+            })
           }
+          
+          // Clean up stream key
+          setStreamingTooltips(prev => {
+            const newMap = new Map(prev)
+            newMap.delete(streamKey)
+            return newMap
+          })
         },
         // onError - handle streaming errors
         (error: string) => {
           console.error('Streaming error:', error)
-          setFloatingPanelData(prev => ({
-            ...prev,
+          updateAITooltip(tooltipId, {
             aiResponse: `Error: ${error}. Please try again.`,
             isLoading: false,
             hasError: true
-          }))
+          })
+          
+          // Clean up stream key
+          setStreamingTooltips(prev => {
+            const newMap = new Map(prev)
+            newMap.delete(streamKey)
+            return newMap
+          })
         }
       )
 
     } catch (error) {
       console.error('Error processing query:', error)
-      setFloatingPanelData(prev => ({
-        ...prev,
-        aiResponse: 'Failed to process query. Please try again.',
-        isLoading: false,
-        hasError: true
-      }))
+      // Note: Error handling for tooltip is done in the API stream error handler above
     } finally {
       // Clear selection
       window.getSelection()?.removeAllRanges()
@@ -205,7 +215,6 @@ export default function ArticleReader({ article }: ArticleReaderProps) {
       content = marked.parse(content, {
         breaks: true,        // Convert line breaks to <br>
         gfm: true,          // GitHub Flavored Markdown
-        sanitize: false,    // Don't sanitize HTML (we'll handle it)
       })
     } catch (error) {
       console.warn('Markdown parsing failed, using plain text:', error)
@@ -234,57 +243,7 @@ export default function ArticleReader({ article }: ArticleReaderProps) {
     return content
   }
 
-  const handlePlayPronunciation = async (text: string) => {
-    if (isPlaying) return
-    
-    setIsPlaying(true)
-    try {
-      const response = await fetch('/api/readlingua/text-to-speech', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          text,
-          language: article.source_language // Use article's language directly
-        })
-      })
-      
-      if (response.ok) {
-        const audioBlob = await response.blob()
-        const audioUrl = URL.createObjectURL(audioBlob)
-        const audio = new Audio(audioUrl)
-        
-        audio.onended = () => {
-          setIsPlaying(false)
-          URL.revokeObjectURL(audioUrl)
-        }
-        
-        audio.onerror = () => {
-          setIsPlaying(false)
-          URL.revokeObjectURL(audioUrl)
-        }
-        
-        await audio.play()
-      } else {
-        const errorData = await response.json()
-        console.error('Failed to get audio:', errorData.error)
-        alert(errorData.error || 'Failed to generate pronunciation')
-        setIsPlaying(false)
-      }
-    } catch (error) {
-      console.error('Error playing pronunciation:', error)
-      setIsPlaying(false)
-    }
-  }
 
-  const handleFloatingPanelClose = () => {
-    setShowFloatingPanel(false)
-    setFloatingPanelData({
-      queryType: '',
-      aiResponse: '',
-      isLoading: false,
-      hasError: false
-    })
-  }
 
   return (
     <div className="flex flex-col min-h-full">
@@ -340,19 +299,6 @@ export default function ArticleReader({ article }: ArticleReaderProps) {
           onClose={() => setShowToolbar(false)}
         />
       )}
-
-      {/* AI Response Floating Panel */}
-      <AIResponseFloatingPanel
-        isVisible={showFloatingPanel}
-        selectedText={selectedText}
-        queryType={floatingPanelData.queryType}
-        aiResponse={floatingPanelData.aiResponse}
-        isLoading={floatingPanelData.isLoading}
-        hasError={floatingPanelData.hasError}
-        onClose={handleFloatingPanelClose}
-        onPlayPronunciation={handlePlayPronunciation}
-        isPlaying={isPlaying}
-      />
 
       {/* Custom Styles for Article Highlights */}
       <style jsx>{`
