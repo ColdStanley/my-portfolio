@@ -2,7 +2,6 @@
 
 import { useState, useRef } from 'react'
 import MobileBottomTabs from './MobileBottomTabs'
-import MobileSubTabs from './MobileSubTabs'
 import MobileTaskPanel from './MobileTaskPanel'
 import MobilePlanPanel from './MobilePlanPanel'
 import MobileStrategyPanel from './MobileStrategyPanel'
@@ -18,13 +17,13 @@ interface PanelRef {
 export default function MobileLayout({ children }: MobileLayoutProps) {
   const [activeTab, setActiveTab] = useState('life')
   const [activeSubTab, setActiveSubTab] = useState('task')
+  const [isTabSelectorOpen, setIsTabSelectorOpen] = useState(false)
   
   const taskPanelRef = useRef<PanelRef>(null)
   const planPanelRef = useRef<PanelRef>(null)
   const strategyPanelRef = useRef<PanelRef>(null)
 
-  const showAddButton = activeTab === 'life'
-  const showSubTabs = activeTab === 'life'
+  const showButtons = activeTab === 'life'
 
   const handleAddButtonClick = () => {
     if (activeSubTab === 'task' && taskPanelRef.current) {
@@ -36,26 +35,101 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
     }
   }
 
+  const handleSubTabChange = (subTab: string) => {
+    setActiveSubTab(subTab)
+    setIsTabSelectorOpen(false)
+  }
+
+  const getSubTabIcon = (subTab: string) => {
+    switch (subTab) {
+      case 'task': return '✓'
+      case 'plan': return '📋'
+      case 'strategy': return '🎯'
+      default: return ''
+    }
+  }
+
+  const getSubTabLabel = (subTab: string) => {
+    switch (subTab) {
+      case 'task': return 'Task'
+      case 'plan': return 'Plan'
+      case 'strategy': return 'Strategy'
+      default: return ''
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
       {/* Content Area */}
       <div className="pb-16">
-        {/* Add Button - only show when in Life tab */}
-        {showAddButton && (
-          <div className="fixed bottom-32 right-4 z-50">
-            <button 
-              onClick={handleAddButtonClick}
-              className="w-12 h-12 bg-purple-500 hover:bg-purple-600 text-white rounded-full shadow-xl flex items-center justify-center transition-all duration-300 hover:scale-110"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-            </button>
-          </div>
+        {/* Floating Buttons - only show when in Life tab */}
+        {showButtons && (
+          <>
+            {/* Add Button - moved up */}
+            <div className="fixed bottom-44 right-4 z-50">
+              <button 
+                onClick={handleAddButtonClick}
+                className="w-10 h-10 bg-purple-500 hover:bg-purple-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Tab Selector Buttons */}
+            <div className="fixed bottom-28 right-4 z-50">
+              {/* Sub tab buttons - show when expanded */}
+              {isTabSelectorOpen && (
+                <div className="flex flex-col gap-2 mb-2">
+                  {['strategy', 'plan', 'task'].map((subTab, index) => (
+                    <div 
+                      key={subTab}
+                      className="animate-in slide-in-from-right duration-300"
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
+                      <button
+                        onClick={() => handleSubTabChange(subTab)}
+                        className={`w-9 h-9 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 text-sm ${
+                          activeSubTab === subTab
+                            ? 'bg-purple-500 text-white'
+                            : 'bg-white text-gray-600 hover:bg-gray-50'
+                        }`}
+                        title={getSubTabLabel(subTab)}
+                      >
+                        {getSubTabIcon(subTab)}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Main tab selector button */}
+              <button 
+                onClick={() => setIsTabSelectorOpen(!isTabSelectorOpen)}
+                className={`w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 ${
+                  isTabSelectorOpen 
+                    ? 'bg-gray-500 text-white' 
+                    : 'bg-white text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <svg 
+                  className={`w-5 h-5 transition-transform duration-300 ${
+                    isTabSelectorOpen ? 'rotate-45' : ''
+                  }`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+          </>
         )}
 
         {/* Main Content */}
-        <div className={`${showSubTabs ? 'pb-12' : ''}`}>
+        <div>
           {activeTab === 'life' && (
             <>
               {activeSubTab === 'task' && <MobileTaskPanel ref={taskPanelRef} onTasksUpdate={() => {}} />}
@@ -82,12 +156,6 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
         </div>
       </div>
 
-      {/* Sub Tabs - only show for Life */}
-      <MobileSubTabs 
-        activeSubTab={activeSubTab}
-        onSubTabChange={setActiveSubTab}
-        show={showSubTabs}
-      />
 
       {/* Bottom Tabs */}
       <MobileBottomTabs 
