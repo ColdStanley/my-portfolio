@@ -132,9 +132,18 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
         <div>
           {activeTab === 'life' && (
             <>
-              {activeSubTab === 'task' && <MobileTaskPanel ref={taskPanelRef} onTasksUpdate={() => {}} />}
-              {activeSubTab === 'plan' && <MobilePlanPanel ref={planPanelRef} onTasksUpdate={() => {}} />}
-              {activeSubTab === 'strategy' && <MobileStrategyPanel ref={strategyPanelRef} onTasksUpdate={() => {}} />}
+              {activeSubTab === 'task' && <MobileTaskPanel ref={taskPanelRef} onTasksUpdate={(tasks) => {
+                // Handle tasks update if needed
+                console.log('Tasks updated:', tasks.length)
+              }} />}
+              {activeSubTab === 'plan' && <MobilePlanPanel ref={planPanelRef} onPlansUpdate={(plans) => {
+                // Handle plans update if needed
+                console.log('Plans updated:', plans.length)
+              }} />}
+              {activeSubTab === 'strategy' && <MobileStrategyPanel ref={strategyPanelRef} onStrategiesUpdate={(strategies) => {
+                // Handle strategies update if needed
+                console.log('Strategies updated:', strategies.length)
+              }} />}
             </>
           )}
           {activeTab === 'career' && (
