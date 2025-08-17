@@ -6,9 +6,7 @@ import { TaskErrorBoundary, TaskLoadingSpinner, TaskErrorDisplay, ToastNotificat
 import TaskFormPanel from './TaskFormPanel'
 import TaskCalendarView from './TaskCalendarView'
 import TaskListView from './TaskListView'
-import TaskCompletionModal from './TaskCompletionModal'
 import RenderBlock from '@/components/notion/RenderBlock'
-import { getCurrentTorontoTime, extractTimeOnly, extractDateOnly } from '../../utils/timezone'
 
 interface TaskFormData {
   title: string
@@ -19,37 +17,11 @@ interface TaskFormData {
   plan: string[]
   priority_quadrant: string
   note: string
-  budget_time: number
 }
 
 // Utility functions - moved outside component to prevent recreation
 
 
-const hasTimeConflicts = (task: any, allTasks: any[]): boolean => {
-  if (!task.start_date || !task.end_date) return false
-  
-  // Extract date part from task date string with timezone
-  const newTaskDateStr = extractDateOnly(task.start_date)
-  
-  const conflicts = allTasks.filter(t => {
-    if (t.id === task.id) return false
-    if (!t.start_date || !t.end_date) return false
-    
-    // Extract date part from existing task with timezone
-    const taskDateStr = extractDateOnly(t.start_date)
-    if (taskDateStr !== newTaskDateStr) return false
-    
-    // Check time overlap using Toronto timezone parsing
-    const startTime1 = new Date(task.start_date.replace(/-04:00$/, '')).getTime()
-    const endTime1 = new Date(task.end_date.replace(/-04:00$/, '')).getTime()
-    const startTime2 = new Date(t.start_date.replace(/-04:00$/, '')).getTime()
-    const endTime2 = new Date(t.end_date.replace(/-04:00$/, '')).getTime()
-    
-    return startTime1 < endTime2 && startTime2 < endTime1
-  })
-  
-  return conflicts.length > 0
-}
 
 interface TaskRecord {
   id: string
@@ -61,11 +33,6 @@ interface TaskRecord {
   plan: string[]
   priority_quadrant: string
   note: string
-  actual_start?: string
-  actual_end?: string
-  budget_time: number
-  actual_time: number
-  quality_rating?: number
   next?: string
   is_plan_critical?: boolean
 }
@@ -120,7 +87,7 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
     return filteredTasks.filter(task => {
       if (!task.start_date) return false
       // Parse date from Toronto timezone string 
-      const datePart = extractDateOnly(task.start_date)
+      const datePart = new Date(task.start_date).toLocaleDateString('en-CA')
       const [year, month, day] = datePart.split('-').map(Number)
       const taskDateOnly = new Date(year, month - 1, day)
       return taskDateOnly >= monday && taskDateOnly <= sunday
@@ -140,7 +107,7 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
     return filteredTasks.filter(task => {
       if (!task.start_date) return false
       // Parse date from Toronto timezone string
-      const datePart = extractDateOnly(task.start_date)
+      const datePart = new Date(task.start_date).toLocaleDateString('en-CA')
       const [year, month, day] = datePart.split('-').map(Number)
       const taskDateOnly = new Date(year, month - 1, day)
       return taskDateOnly >= firstDayOfMonth && taskDateOnly <= lastDayOfMonth
@@ -218,8 +185,6 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
             planOptions = rawPlans.map((plan: any) => ({
               id: plan.id,
               title: plan.objective || 'Untitled Plan',
-              budget_money: plan.budget_money || 0,
-              budget_time: plan.budget_time || 0,
               parent_goal: plan.parent_goal || []
             }))
           } catch (err) {
@@ -292,115 +257,8 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
   }, [])
 
   // Task execution operations
-  const handleTaskStart = useCallback(async (task: any) => {
-    try {
-      const updatedTask = {
-        ...task,
-        actual_start: getCurrentTorontoTime(),
-        status: 'In Progress'
-      }
-      
-      const response = await fetch('/api/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedTask)
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to start task')
-      }
-      
-      actions.updateTask(updatedTask)
-      
-    } catch (error) {
-      console.error('Error starting task:', error)
-      setToast({ 
-        message: error instanceof Error ? error.message : 'Failed to start task', 
-        type: 'error' 
-      })
-    }
-  }, [actions])
 
-  const handleTaskEnd = useCallback(async (task: any, surveyData?: {
-    quality_rating?: number
-    is_plan_critical?: boolean
-    next?: string
-  }) => {
-    try {
-      const updatedTask = {
-        ...task,
-        actual_end: getCurrentTorontoTime(),
-        status: 'Completed',
-        // Include survey data
-        ...(surveyData?.quality_rating && { quality_rating: surveyData.quality_rating }),
-        is_plan_critical: surveyData?.is_plan_critical || false,
-        ...(surveyData?.next && { next: surveyData.next })
-      }
-      
-      const response = await fetch('/api/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedTask)
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to end task')
-      }
-      
-      actions.updateTask(updatedTask)
-      
-    } catch (error) {
-      console.error('Error ending task:', error)
-      setToast({ 
-        message: error instanceof Error ? error.message : 'Failed to end task', 
-        type: 'error' 
-      })
-    }
-  }, [actions])
 
-  const handleRecordTime = useCallback(async (task: any, startTime?: string, endTime?: string, surveyData?: {
-    quality_rating?: number
-    is_plan_critical?: boolean
-    next?: string
-  }) => {
-    try {
-      const updatedTask = { ...task }
-      
-      // Update actual times
-      if (startTime) updatedTask.actual_start = startTime
-      if (endTime) updatedTask.actual_end = endTime
-      
-      // Auto-adjust status based on recorded times
-      if (endTime) {
-        updatedTask.status = 'Completed'
-        // Include survey data when completing early
-        if (surveyData?.quality_rating) updatedTask.quality_rating = surveyData.quality_rating
-        updatedTask.is_plan_critical = surveyData?.is_plan_critical || false
-        if (surveyData?.next) updatedTask.next = surveyData.next
-      } else if (startTime && !task.actual_end) {
-        updatedTask.status = 'In Progress'
-      }
-      
-      const response = await fetch('/api/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedTask)
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to record time')
-      }
-      
-      actions.updateTask(updatedTask)
-      
-    } catch (error) {
-      console.error('Error recording time:', error)
-      setToast({ 
-        message: error instanceof Error ? error.message : 'Failed to record time', 
-        type: 'error' 
-      })
-    }
-  }, [actions])
 
   const handleTaskCopy = useCallback((task: any) => {
     // Parse the original Toronto timezone dates
@@ -427,34 +285,47 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
     const nextDayEnd = new Date(originalEnd)
     nextDayEnd.setDate(nextDayEnd.getDate() + 1)
     
-    // Format back to Toronto timezone format
-    const formatTorontoDate = (date: Date) => {
-      const year = date.getFullYear()
-      const month = String(date.getMonth() + 1).padStart(2, '0')
-      const day = String(date.getDate()).padStart(2, '0')
-      const hour = String(date.getHours()).padStart(2, '0')
-      const minute = String(date.getMinutes()).padStart(2, '0')
-      return `${year}-${month}-${day}T${hour}:${minute}:00-04:00`
-    }
-    
     // Create a copy of the task with new dates and reset status
     const copiedTask = {
       ...task,
       id: undefined, // Remove id so it creates a new task
       title: `${task.title} (Copy)`,
-      start_date: formatTorontoDate(nextDayStart),
-      end_date: formatTorontoDate(nextDayEnd),
+      start_date: nextDayStart.toISOString(),
+      end_date: nextDayEnd.toISOString(),
       status: 'Not Started',
-      actual_start: undefined,
-      actual_end: undefined,
-      actual_time: 0,
-      quality_rating: undefined,
       next: undefined,
       is_plan_critical: false
     }
     
     // Open form panel with the copied task data
     actions.openFormPanel(copiedTask)
+  }, [actions])
+
+  const handleTaskComplete = useCallback(async (task: any) => {
+    try {
+      // Simply update task status to Completed
+      const updatedTask = {
+        ...task,
+        status: 'Completed'
+      }
+      
+      const response = await fetch('/api/cestlavie/tasks', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTask)
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        actions.updateTask(result.data)
+        setToast({ message: 'Task completed successfully', type: 'success' })
+        setTimeout(() => setToast(null), 3000)
+      }
+    } catch (error) {
+      console.error('Error completing task:', error)
+      setToast({ message: 'Failed to complete task', type: 'error' })
+      setTimeout(() => setToast(null), 3000)
+    }
   }, [actions])
 
   // Task CRUD operations
@@ -592,23 +463,27 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
   const formatTimeRange = useCallback((startDate: string, endDate?: string) => {
     if (!startDate) return ''
     
-    // Extract date and time from Toronto timezone string
-    const datePart = extractDateOnly(startDate)
-    const startTime = extractTimeOnly(startDate)
+    // Convert UTC to local timezone for display
+    const startDateTime = new Date(startDate)
+    const startTime = startDateTime.toLocaleTimeString('en-US', {
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: false
+    })
     
-    // Parse date for weekday (this is safe as it's just date, no time)
-    const [year, month, day] = datePart.split('-').map(Number)
-    const dateObj = new Date(year, month - 1, day) // Local date object
-    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-    const weekday = weekdays[dateObj.getDay()]
-    
-    const dateStr = `${month}/${day}`
+    // Get weekday and date
+    const weekday = startDateTime.toLocaleDateString('en-US', { weekday: 'short' })
+    const dateStr = startDateTime.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })
     
     if (!endDate) {
       return `${dateStr} ${weekday} ${startTime}`
     }
     
-    const endTime = extractTimeOnly(endDate)
+    const endTime = new Date(endDate).toLocaleTimeString('en-US', {
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: false
+    })
     
     // Since we don't support cross-day tasks, always same day
     return `${dateStr} ${weekday} ${startTime} - ${endTime}`
@@ -683,7 +558,6 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
                   onTaskDelete={handleDeleteTask}
                   formatTimeRange={formatTimeRange}
                   getPriorityColor={getPriorityColor}
-                  hasTimeConflicts={(task) => hasTimeConflicts(task, state.tasks)}
                   compact={true}
                 />
               </div>
@@ -696,8 +570,8 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
                     <div className="text-lg font-bold text-purple-900">
                       {filteredTasks.filter(task => {
                         if (!task.start_date) return false
-                        const taskDate = extractDateOnly(task.start_date)
-                        const today = new Date().toISOString().split('T')[0]
+                        const taskDate = new Date(task.start_date).toLocaleDateString('en-CA')
+                        const today = new Date().toLocaleDateString('en-CA')
                         return taskDate === today
                       }).length}
                     </div>
@@ -795,10 +669,7 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
                 selectedDate={state.selectedDate}
                 onTaskClick={(task) => actions.openFormPanel(task)}
                 onTaskDelete={handleDeleteTask}
-                onTaskComplete={(task) => actions.openCompletionModal(task)}
-                onTaskStart={handleTaskStart}
-                onTaskEnd={handleTaskEnd}
-                onRecordTime={handleRecordTime}
+                onTaskComplete={handleTaskComplete}
                 onTaskCopy={handleTaskCopy}
                 onCreateTask={(date) => {
                   actions.setSelectedDate(date)
@@ -882,10 +753,10 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
             </div>
           </div>
 
-          {/* Main Split Layout: Calendar (40%) | TaskList (60%) */}
+          {/* Main Split Layout: Calendar (30%) | TaskList (70%) */}
           <div className="fixed top-32 left-[68px] right-4 bottom-4 flex gap-6 overflow-y-auto bg-white p-6 z-30">
-            {/* Left: Calendar Section - 40% */}
-            <div className="w-2/5 space-y-6">
+            {/* Left: Calendar Section - 30% */}
+            <div className="w-3/10 space-y-6">
               {/* Calendar */}
               <div>
                 <div className="bg-white rounded-lg border border-purple-200">
@@ -900,16 +771,15 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
                     onTaskDelete={handleDeleteTask}
                     formatTimeRange={formatTimeRange}
                     getPriorityColor={getPriorityColor}
-                    hasTimeConflicts={(task) => hasTimeConflicts(task, state.tasks)}
-                    compact={false}
+                      compact={false}
                   />
                 </div>
               </div>
 
             </div>
 
-            {/* Right: TaskList Section - 60% */}
-            <div className="w-3/5">
+            {/* Right: TaskList Section - 70% */}
+            <div className="w-7/10 relative">
               {/* TaskList Content - Direct display without header */}
               <div>
                 <TaskListView
@@ -917,10 +787,7 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
                   selectedDate={state.selectedDate}
                   onTaskClick={(task) => actions.openFormPanel(task)}
                   onTaskDelete={handleDeleteTask}
-                  onTaskComplete={(task) => actions.openCompletionModal(task)}
-                  onTaskStart={handleTaskStart}
-                  onTaskEnd={handleTaskEnd}
-                  onRecordTime={handleRecordTime}
+                  onTaskComplete={handleTaskComplete}
                   onTaskCopy={handleTaskCopy}
                   onCreateTask={(date) => {
                     actions.setSelectedDate(date)
@@ -928,7 +795,6 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
                   }}
                   formatTimeRange={formatTimeRange}
                   getPriorityColor={getPriorityColor}
-                  hasTimeConflicts={(task) => hasTimeConflicts(task, state.tasks)}
                   planOptions={state.planOptions}
                   strategyOptions={state.strategyOptions}
                 />
@@ -950,12 +816,6 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
           allTasks={state.tasks}
         />
 
-        {/* Task Completion Modal */}
-        <TaskCompletionModal
-          isOpen={state.completionModal.isOpen}
-          onClose={actions.closeCompletionModal}
-          task={state.completionModal.task}
-        />
 
         {/* Toast Notification */}
         {toast && (

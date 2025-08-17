@@ -10,20 +10,11 @@ interface TaskRecord {
   plan: string[]
   priority_quadrant: string
   note: string
-  actual_start?: string
-  actual_end?: string
-  budget_time: number
-  actual_time: number
-  quality_rating?: number
-  next?: string
-  is_plan_critical?: boolean
 }
 
 interface PlanOption {
   id: string
   title: string
-  budget_money?: number
-  budget_time?: number
   parent_goal?: string[]
 }
 
@@ -59,18 +50,6 @@ export interface TaskState {
   selectedDate: string
   currentMonth: Date
   
-  // Timer State
-  runningTasks: Set<string>
-  updatingTimer: string | null
-  
-  // Calendar Integration
-  addingToCalendar: string | null
-  
-  // Completion Modal
-  completionModal: {
-    isOpen: boolean
-    task: TaskRecord | null
-  }
 }
 
 // Action types
@@ -93,11 +72,6 @@ export type TaskAction =
   | { type: 'SET_SELECTED_PLAN_FILTER'; payload: string }
   | { type: 'SET_SELECTED_DATE'; payload: string }
   | { type: 'SET_CURRENT_MONTH'; payload: Date }
-  | { type: 'SET_RUNNING_TASKS'; payload: Set<string> }
-  | { type: 'SET_UPDATING_TIMER'; payload: string | null }
-  | { type: 'SET_ADDING_TO_CALENDAR'; payload: string | null }
-  | { type: 'OPEN_COMPLETION_MODAL'; payload: TaskRecord }
-  | { type: 'CLOSE_COMPLETION_MODAL' }
   | { type: 'RESET_STATE' }
 
 // Initial state
@@ -115,15 +89,8 @@ const createInitialState = (): TaskState => ({
   selectedStatus: 'all',
   selectedQuadrant: 'all',
   selectedPlanFilter: 'all',
-  selectedDate: new Date().toISOString().split('T')[0],
+  selectedDate: new Date().toLocaleDateString('en-CA'),
   currentMonth: new Date(),
-  runningTasks: new Set(),
-  updatingTimer: null,
-  addingToCalendar: null,
-  completionModal: {
-    isOpen: false,
-    task: null
-  }
 })
 
 // Reducer function
@@ -199,32 +166,6 @@ export const taskReducer = (state: TaskState, action: TaskAction): TaskState => 
     case 'SET_CURRENT_MONTH':
       return { ...state, currentMonth: action.payload }
     
-    case 'SET_RUNNING_TASKS':
-      return { ...state, runningTasks: action.payload }
-    
-    case 'SET_UPDATING_TIMER':
-      return { ...state, updatingTimer: action.payload }
-    
-    case 'SET_ADDING_TO_CALENDAR':
-      return { ...state, addingToCalendar: action.payload }
-    
-    case 'OPEN_COMPLETION_MODAL':
-      return {
-        ...state,
-        completionModal: {
-          isOpen: true,
-          task: action.payload
-        }
-      }
-    
-    case 'CLOSE_COMPLETION_MODAL':
-      return {
-        ...state,
-        completionModal: {
-          isOpen: false,
-          task: null
-        }
-      }
     
     case 'RESET_STATE':
       return createInitialState()
@@ -294,20 +235,6 @@ export const useTaskReducer = () => {
     setCurrentMonth: useCallback((month: Date) => 
       dispatch({ type: 'SET_CURRENT_MONTH', payload: month }), []),
     
-    setRunningTasks: useCallback((tasks: Set<string>) => 
-      dispatch({ type: 'SET_RUNNING_TASKS', payload: tasks }), []),
-    
-    setUpdatingTimer: useCallback((taskId: string | null) => 
-      dispatch({ type: 'SET_UPDATING_TIMER', payload: taskId }), []),
-    
-    setAddingToCalendar: useCallback((taskId: string | null) => 
-      dispatch({ type: 'SET_ADDING_TO_CALENDAR', payload: taskId }), []),
-    
-    openCompletionModal: useCallback((task: TaskRecord) => 
-      dispatch({ type: 'OPEN_COMPLETION_MODAL', payload: task }), []),
-    
-    closeCompletionModal: useCallback(() => 
-      dispatch({ type: 'CLOSE_COMPLETION_MODAL' }), []),
     
     resetState: useCallback(() => 
       dispatch({ type: 'RESET_STATE' }), [])

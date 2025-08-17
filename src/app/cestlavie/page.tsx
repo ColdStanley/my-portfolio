@@ -27,7 +27,7 @@ import TaskPanelOptimized from './components/Life/TaskPanelOptimized'
 import NotionConfigModal from './components/NotionConfigModal'
 import StrategyPanel from './components/Life/StrategyPanel'
 import PlanPanel from './components/Life/PlanPanel'
-import TBDPanel from './components/Life/TBDPanel'
+import FrenchPanel from './components/Study/FrenchPanel'
 
 export default function CestLaViePage() {
   const [activeTab, setActiveTab] = useState('life')
@@ -135,7 +135,7 @@ export default function CestLaViePage() {
           {/* Life子导航路由逻辑 */}
           {activeTab === 'strategy' && <StrategyPanel />}
           {activeTab === 'plan' && <PlanPanel />}
-          {activeTab === 'tbd' && <TBDPanel />}
+          {activeTab === 'tbd' && <div className="text-center text-gray-500 py-8">TBD module coming soon...</div>}
           {(activeTab === 'life' || activeTab === 'task') && (
             <TaskPanelOptimized onTasksUpdate={setTasks} />
           )}
@@ -155,10 +155,12 @@ export default function CestLaViePage() {
               <div className="text-center">
                 <div className="text-6xl mb-4">📚</div>
                 <h2 className="text-2xl font-bold text-gray-700 mb-2">Study</h2>
-                <p className="text-gray-500">Coming soon...</p>
+                <p className="text-gray-500">Select a study module from the sidebar</p>
               </div>
             </div>
           )}
+          
+          {activeTab === 'french' && <FrenchPanel />}
         </div>
       </div>
 

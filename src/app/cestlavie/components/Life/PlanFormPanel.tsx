@@ -1,36 +1,26 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
-interface TaskRecord {
+interface PlanRecord {
   id: string
-  title: string
-  status: string
+  objective: string
+  description: string
   start_date: string
-  end_date: string
-  all_day: boolean
-  remind_before: number
-  plan: string[]
-  priority_quadrant: string
-  note: string
-}
-
-interface TaskFormData {
-  title: string
+  due_date: string
   status: string
-  start_date: string
-  end_date: string
-  all_day: boolean
-  remind_before: number
-  plan: string[]
   priority_quadrant: string
-  note: string
-}
-
-interface PlanOption {
-  id: string
-  title: string
   parent_goal?: string[]
+}
+
+interface PlanFormData {
+  objective: string
+  description: string
+  start_date: string
+  due_date: string
+  status: string
+  priority_quadrant: string
+  parent_goal: string[]
 }
 
 interface StrategyOption {
@@ -38,117 +28,92 @@ interface StrategyOption {
   objective: string
 }
 
-interface TaskFormPanelProps {
+interface PlanFormPanelProps {
   isOpen: boolean
   onClose: () => void
-  task?: TaskRecord | null
-  onSave: (task: TaskFormData) => void
+  plan?: PlanRecord | null
+  onSave: (plan: PlanFormData) => void
   statusOptions: string[]
   priorityOptions: string[]
-  planOptions: PlanOption[]
   strategyOptions: StrategyOption[]
-  allTasks: TaskRecord[]
 }
 
-// Utility functions - using timezone utility
-
-const getDefaultDateTime = (): string => {
+const getDefaultDate = (): string => {
   const now = new Date()
   return now.getFullYear() + '-' +
          String(now.getMonth() + 1).padStart(2, '0') + '-' +
-         String(now.getDate()).padStart(2, '0') + 'T' +
-         String(now.getHours()).padStart(2, '0') + ':' +
-         String(now.getMinutes()).padStart(2, '0')
+         String(now.getDate()).padStart(2, '0')
 }
 
-
-export default function TaskFormPanel({ 
+export default function PlanFormPanel({ 
   isOpen, 
   onClose, 
-  task, 
+  plan, 
   onSave, 
   statusOptions, 
   priorityOptions, 
-  planOptions, 
-  strategyOptions,
-  allTasks 
-}: TaskFormPanelProps) {
-  const [formData, setFormData] = useState<TaskFormData>({
-    title: '',
-    status: '',
+  strategyOptions
+}: PlanFormPanelProps) {
+  const [formData, setFormData] = useState<PlanFormData>({
+    objective: '',
+    description: '',
     start_date: '',
-    end_date: '',
-    all_day: false,
-    remind_before: 15,
-    plan: [],
+    due_date: '',
+    status: '',
     priority_quadrant: '',
-    note: ''
+    parent_goal: []
   })
-  
 
-
-  // Initialize form data when task changes
+  // Initialize form data when plan changes
   useEffect(() => {
-    if (task) {
+    if (plan) {
       setFormData({
-        title: task.title || '',
-        status: task.status || '',
-        start_date: task.start_date ? new Date(task.start_date).toISOString().slice(0, 16) : '',
-        end_date: task.end_date ? new Date(task.end_date).toISOString().slice(0, 16) : '',
-        all_day: task.all_day || false,
-        remind_before: task.remind_before || 15,
-        plan: task.plan || [],
-        priority_quadrant: task.priority_quadrant || '',
-        note: task.note || ''
+        objective: plan.objective || '',
+        description: plan.description || '',
+        start_date: plan.start_date ? plan.start_date.split('T')[0] : '',
+        due_date: plan.due_date ? plan.due_date.split('T')[0] : '',
+        status: plan.status || '',
+        priority_quadrant: plan.priority_quadrant || '',
+        parent_goal: plan.parent_goal || []
       })
     } else {
-      const defaultStart = getDefaultDateTime()
-      const defaultEnd = new Date(Date.now() + 60 * 60 * 1000)
-      const defaultEndStr = defaultEnd.getFullYear() + '-' +
-                            String(defaultEnd.getMonth() + 1).padStart(2, '0') + '-' +
-                            String(defaultEnd.getDate()).padStart(2, '0') + 'T' +
-                            String(defaultEnd.getHours()).padStart(2, '0') + ':' +
-                            String(defaultEnd.getMinutes()).padStart(2, '0')
+      const defaultDate = getDefaultDate()
       
       setFormData({
-        title: '',
+        objective: '',
+        description: '',
+        start_date: defaultDate,
+        due_date: defaultDate,
         status: '',
-        start_date: defaultStart,
-        end_date: defaultEndStr,
-        all_day: false,
-        remind_before: 15,
-        plan: [],
         priority_quadrant: '',
-        note: ''
+        parent_goal: []
       })
     }
-  }, [task, isOpen])
-
-
+  }, [plan, isOpen])
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault()
     
-    // Convert local datetime to UTC for saving
+    // Convert dates to UTC format
     const processedFormData = {
       ...formData,
-      start_date: new Date(formData.start_date).toISOString(),
-      end_date: new Date(formData.end_date).toISOString()
+      start_date: new Date(formData.start_date + 'T00:00:00').toISOString(),
+      due_date: new Date(formData.due_date + 'T23:59:59').toISOString()
     }
     
     onSave(processedFormData)
   }, [formData, onSave])
 
-  const handlePlanChange = useCallback((planId: string) => {
+  const handleStrategyChange = useCallback((strategyId: string) => {
     setFormData(prev => ({ 
       ...prev, 
-      plan: planId ? [planId] : [] 
+      parent_goal: strategyId ? [strategyId] : [] 
     }))
   }, [])
 
   return (
     <>
-      {/* Task Form Panel - Sidebar Style Drawer */}
+      {/* Plan Form Panel - Sidebar Style Drawer */}
       <div 
         className={`hidden md:block fixed top-32 right-2 w-80 h-[calc(100vh-12rem)] bg-white border border-gray-200 rounded-xl shadow-lg z-50 transform transition-all duration-400 flex flex-col ${
           isOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full shadow-lg'
@@ -162,7 +127,7 @@ export default function TaskFormPanel({
         {/* Header with Close Button */}
         <div className="flex justify-between items-center p-4 border-b border-gray-100 flex-shrink-0">
           <h2 className="text-sm font-medium text-gray-800">
-            {task ? 'Edit Task' : 'New Task'}
+            {plan ? 'Edit Plan' : 'New Plan'}
           </h2>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded transition-colors">
             <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -173,42 +138,40 @@ export default function TaskFormPanel({
         
         {/* Form Content */}
         <form onSubmit={handleSubmit} className="p-3 overflow-y-auto min-h-0 flex-1 space-y-3">
-          {/* Plan Selection */}
+          {/* Strategy Selection */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Related Plan *</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Related Strategy</label>
             <select
-              value={formData.plan[0] || ''}
-              onChange={(e) => handlePlanChange(e.target.value)}
+              value={formData.parent_goal[0] || ''}
+              onChange={(e) => handleStrategyChange(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 rounded-md 
                         focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
                         bg-white text-gray-700 text-sm
                         hover:border-gray-300 transition-all duration-200"
-              required
             >
-              <option value="">Select a Plan First</option>
-              {planOptions.map(plan => (
-                <option key={plan.id} value={plan.id}>
-                  {plan.title || 'Untitled Plan'}
+              <option value="">Select Strategy (Optional)</option>
+              {strategyOptions.map(strategy => (
+                <option key={strategy.id} value={strategy.id}>
+                  {strategy.objective || 'Untitled Strategy'}
                 </option>
               ))}
             </select>
-            
-            
+            <p className="text-xs text-gray-400 mt-1">Link this plan to a strategy</p>
           </div>
 
-          {/* Task Title */}
+          {/* Plan Title */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Task Title *</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Plan Title *</label>
             <input
               type="text"
-              value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              value={formData.objective}
+              onChange={(e) => setFormData(prev => ({ ...prev, objective: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-200 rounded-md 
                         focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
                         bg-white text-gray-700 text-sm
                         hover:border-gray-300 transition-all duration-200"
               required
-              placeholder="Enter task title..."
+              placeholder="Enter plan objective..."
             />
           </div>
 
@@ -253,64 +216,54 @@ export default function TaskFormPanel({
             </div>
           </div>
 
-          {/* Time Range - 2 Row Layout */}
+          {/* Date Range - 2 Row Layout */}
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                Start Time *
+                Start Date *
+                <span className="text-xs text-gray-400 ml-1">(Plan start date)</span>
               </label>
               <input
-                type="datetime-local"
+                type="date"
                 value={formData.start_date}
-                onChange={(e) => {
-                  const newStartDate = e.target.value
-                  setFormData(prev => ({ 
-                    ...prev, 
-                    start_date: newStartDate,
-                    // Auto-set end_date to same value when start_date changes
-                    end_date: newStartDate
-                  }))
-                }}
+                onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-200 rounded-md 
                           focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
                           bg-white text-gray-700 text-sm
                           hover:border-gray-300 transition-all duration-200"
                 required
-                step="60"
               />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                End Time *
+                Due Date *
+                <span className="text-xs text-gray-400 ml-1">(Plan deadline)</span>
               </label>
               <input
-                type="datetime-local"
-                value={formData.end_date}
-                onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
+                type="date"
+                value={formData.due_date}
+                onChange={(e) => setFormData(prev => ({ ...prev, due_date: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-200 rounded-md 
                           focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
                           bg-white text-gray-700 text-sm
                           hover:border-gray-300 transition-all duration-200"
                 required
-                step="60"
               />
             </div>
           </div>
 
-
-
-          {/* Notes */}
+          {/* Description */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Notes</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
             <textarea
-              value={formData.note}
-              onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={2}
               className="w-full px-3 py-2 border border-gray-200 rounded-md 
                         focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
                         bg-white text-gray-700 text-sm max-h-20
                         hover:border-gray-300 transition-all duration-200 resize-none"
-              placeholder="Add task notes or description..."
+              placeholder="Describe the plan details..."
             />
           </div>
 
@@ -323,7 +276,7 @@ export default function TaskFormPanel({
                         transition-colors duration-200 font-medium text-sm
                         shadow-sm hover:shadow-md"
             >
-              {task ? 'Update Task' : 'Create Task'}
+              {plan ? 'Update Plan' : 'Create Plan'}
             </button>
           </div>
         </form>
@@ -338,7 +291,7 @@ export default function TaskFormPanel({
         {/* Mobile Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-100 flex-shrink-0">
           <h2 className="text-lg font-medium text-gray-800">
-            {task ? 'Edit Task' : 'New Task'}
+            {plan ? 'Edit Plan' : 'New Plan'}
           </h2>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded transition-colors">
             <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -349,41 +302,40 @@ export default function TaskFormPanel({
         
         {/* Mobile Form Content */}
         <form onSubmit={handleSubmit} className="p-4 overflow-y-auto min-h-0 flex-1 space-y-4">
-          {/* Plan Selection */}
+          {/* Strategy Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">Related Plan *</label>
+            <label className="block text-sm font-medium text-gray-600 mb-2">Related Strategy</label>
             <select
-              value={formData.plan[0] || ''}
-              onChange={(e) => handlePlanChange(e.target.value)}
+              value={formData.parent_goal[0] || ''}
+              onChange={(e) => handleStrategyChange(e.target.value)}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
                         bg-white text-gray-700
                         hover:border-gray-300 transition-all duration-200"
-              required
             >
-              <option value="">Select a Plan First</option>
-              {planOptions.map(plan => (
-                <option key={plan.id} value={plan.id}>
-                  {plan.title || 'Untitled Plan'}
+              <option value="">Select Strategy (Optional)</option>
+              {strategyOptions.map(strategy => (
+                <option key={strategy.id} value={strategy.id}>
+                  {strategy.objective || 'Untitled Strategy'}
                 </option>
               ))}
             </select>
-            
+            <p className="text-xs text-gray-400 mt-1">Link this plan to a strategy</p>
           </div>
 
-          {/* Task Title */}
+          {/* Plan Title */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">Task Title *</label>
+            <label className="block text-sm font-medium text-gray-600 mb-2">Plan Title *</label>
             <input
               type="text"
-              value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              value={formData.objective}
+              onChange={(e) => setFormData(prev => ({ ...prev, objective: e.target.value }))}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
                         bg-white text-gray-700
                         hover:border-gray-300 transition-all duration-200"
               required
-              placeholder="Enter task title..."
+              placeholder="Enter plan objective..."
             />
           </div>
 
@@ -406,7 +358,7 @@ export default function TaskFormPanel({
             </select>
           </div>
 
-          {/* Priority Quadrant */}
+          {/* Priority */}
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-2">Priority *</label>
             <select
@@ -425,62 +377,54 @@ export default function TaskFormPanel({
             </select>
           </div>
 
-          {/* Time Range */}
+          {/* Date Range */}
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-2">
-                Start Time *
+                Start Date *
+                <span className="text-xs text-gray-400 ml-2">(Plan start date)</span>
               </label>
               <input
-                type="datetime-local"
+                type="date"
                 value={formData.start_date}
-                onChange={(e) => {
-                  const newStartDate = e.target.value
-                  setFormData(prev => ({ 
-                    ...prev, 
-                    start_date: newStartDate,
-                    end_date: newStartDate
-                  }))
-                }}
+                onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
                 className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                           focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
                           bg-white text-gray-700
                           hover:border-gray-300 transition-all duration-200"
                 required
-                step="60"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-2">
-                End Time *
+                Due Date *
+                <span className="text-xs text-gray-400 ml-2">(Plan deadline)</span>
               </label>
               <input
-                type="datetime-local"
-                value={formData.end_date}
-                onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
+                type="date"
+                value={formData.due_date}
+                onChange={(e) => setFormData(prev => ({ ...prev, due_date: e.target.value }))}
                 className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                           focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
                           bg-white text-gray-700
                           hover:border-gray-300 transition-all duration-200"
                 required
-                step="60"
               />
             </div>
           </div>
 
-
-          {/* Notes */}
+          {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">Notes</label>
+            <label className="block text-sm font-medium text-gray-600 mb-2">Description</label>
             <textarea
-              value={formData.note}
-              onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={3}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
                         bg-white text-gray-700 max-h-24
                         hover:border-gray-300 transition-all duration-200 resize-none"
-              placeholder="Add task notes or description..."
+              placeholder="Describe the plan details..."
             />
           </div>
 
@@ -493,7 +437,7 @@ export default function TaskFormPanel({
                         transition-colors duration-200 font-medium
                         shadow-md hover:shadow-lg"
             >
-              {task ? 'Update Task' : 'Create Task'}
+              {plan ? 'Update Plan' : 'Create Plan'}
             </button>
           </div>
         </form>

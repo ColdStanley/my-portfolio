@@ -4,7 +4,6 @@ import { useState } from 'react'
 import StrategyPanel from './Life/StrategyPanel'
 import PlanPanel from './Life/PlanPanel'
 import TaskPanelOptimized from './Life/TaskPanelOptimized'
-import TBDPanel from './Life/TBDPanel'
 
 interface TaskRecord {
   id: string
@@ -57,7 +56,7 @@ export default function MainContent({ activeMainTab, onConfigClick, onTasksUpdat
       case 'strategy': return <StrategyPanel />
       case 'plan': return <PlanPanel />
       case 'task': return <TaskPanelOptimized onTasksUpdate={onTasksUpdate} />
-      case 'tbd': return <TBDPanel />
+      case 'tbd': return <div className="text-center text-gray-500 py-8">TBD module coming soon...</div>
       default: return <div className="text-gray-500 text-sm">This section is under construction.</div>
     }
   }

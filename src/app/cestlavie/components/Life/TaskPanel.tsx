@@ -237,12 +237,6 @@ interface TaskRecord {
   note: string
   actual_start?: string
   actual_end?: string
-  budget_time: number
-  actual_time: number
-  quality_rating?: number
-  next?: string
-  is_plan_critical?: boolean
-  timer_status?: string
 }
 
 interface TaskFormData {
@@ -255,14 +249,11 @@ interface TaskFormData {
   plan: string[]
   priority_quadrant: string
   note: string
-  budget_time: number
 }
 
 interface PlanOption {
   id: string
   title: string
-  budget_money?: number
-  budget_time?: number
 }
 
 interface TaskFormPanelProps {
@@ -286,37 +277,11 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
     remind_before: 15,
     plan: [],
     priority_quadrant: '',
-    note: '',
-    budget_time: 0
+    note: ''
   })
   
-  const [selectedPlanBudget, setSelectedPlanBudget] = useState<{money: number, time: number} | null>(null)
-  const [remainingTime, setRemainingTime] = useState<number | null>(null)
   const [conflictingTasks, setConflictingTasks] = useState<TaskRecord[]>([])
 
-  // Function to calculate remaining time
-  const calculateRemainingTime = (planId: string, planBudgetTime: number, currentTaskBudgetTime: number = 0) => {
-    if (!planId || !allTasks) return null
-    
-    // Find all Tasks belonging to this Plan (excluding the currently editing Task)
-    const planTasks = allTasks.filter(t => 
-      t.plan && t.plan.includes(planId) && t.id !== task?.id
-    )
-    
-    // Calculate total allocated time using new logic:
-    // - Use actual_time for completed tasks
-    // - Use budget_time for non-completed tasks (including In Progress)
-    const allocatedTime = planTasks.reduce((total, t) => {
-      if (t.status === 'Completed') {
-        return total + (t.actual_time || 0)
-      } else {
-        return total + (t.budget_time || 0)
-      }
-    }, 0)
-    
-    // Add the budget_time of the current task being entered
-    return planBudgetTime - allocatedTime - currentTaskBudgetTime
-  }
 
   useEffect(() => {
     if (task) {
@@ -330,7 +295,6 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
         plan: task.plan || [],
         priority_quadrant: task.priority_quadrant || '',
         note: task.note || '',
-        budget_time: task.budget_time || 0
       })
     } else {
       // When creating a new task, use current time as default
@@ -352,42 +316,11 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
         plan: [],
         priority_quadrant: '',
         note: '',
-        budget_time: 0
       })
     }
   }, [task, isOpen])
 
-  // Update budget information display when planOptions or formData.plan changes
-  useEffect(() => {
-    if (formData.plan.length > 0 && planOptions.length > 0) {
-      const selectedPlan = planOptions.find(p => p.id === formData.plan[0])
-      if (selectedPlan) {
-        const budget = {
-          money: selectedPlan.budget_money || 0,
-          time: selectedPlan.budget_time || 0
-        }
-        setSelectedPlanBudget(budget)
-        
-        // Calculate remaining time
-        const remaining = calculateRemainingTime(selectedPlan.id, budget.time, formData.budget_time)
-        setRemainingTime(remaining)
-      }
-    } else {
-      setSelectedPlanBudget(null)
-      setRemainingTime(null)
-    }
-  }, [formData.plan, formData.budget_time, planOptions, allTasks, task])
 
-  // 当budget_time改变时，重新计算剩余时间
-  useEffect(() => {
-    if (formData.plan.length > 0 && selectedPlanBudget) {
-      const selectedPlan = planOptions.find(p => p.id === formData.plan[0])
-      if (selectedPlan) {
-        const remaining = calculateRemainingTime(selectedPlan.id, selectedPlanBudget.time, formData.budget_time)
-        setRemainingTime(remaining)
-      }
-    }
-  }, [formData.budget_time, formData.plan, selectedPlanBudget, planOptions, allTasks, task])
 
   // Detect time conflicts when start_date or end_date changes
   useEffect(() => {
@@ -455,20 +388,6 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
               // Find and set budget information for selected Plan
               if (planId) {
                 const selectedPlan = planOptions.find(p => p.id === planId)
-                if (selectedPlan) {
-                  const budget = {
-                    money: selectedPlan.budget_money || 0,
-                    time: selectedPlan.budget_time || 0
-                  }
-                  setSelectedPlanBudget(budget)
-                  
-                  // Calculate remaining time
-                  const remaining = calculateRemainingTime(planId, budget.time, formData.budget_time)
-                  setRemainingTime(remaining)
-                } else {
-                  setSelectedPlanBudget(null)
-                  setRemainingTime(null)
-                }
               } else {
                 setSelectedPlanBudget(null)
                 setRemainingTime(null)
@@ -484,25 +403,6 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
           </select>
           <p className="text-xs text-gray-500 mt-1">Each task must belong to a plan</p>
           
-          {/* Display budget information for selected Plan */}
-          {selectedPlanBudget && (selectedPlanBudget.money > 0 || selectedPlanBudget.time > 0) && (
-            <div className="mt-2 p-2 bg-purple-50 rounded border border-purple-200">
-              <div className="text-xs text-purple-700 font-medium mb-1">Plan Budget Reference:</div>
-              <div className="flex items-center gap-4 text-sm">
-                {selectedPlanBudget.money > 0 && (
-                  <span className="text-green-600">💰 ¥{selectedPlanBudget.money}</span>
-                )}
-                {selectedPlanBudget.time > 0 && (
-                  <span className="text-blue-600">⏱️ {selectedPlanBudget.time}h</span>
-                )}
-                {remainingTime !== null && (
-                  <span className={`text-sm ${remainingTime >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    📅 Remaining: {remainingTime > 0 ? '+' : ''}{remainingTime}h
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
         </div>
 
         <div>
@@ -573,13 +473,6 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
                         updates.end_date = endDateStr
                       }
                       
-                      // Automatically calculate budget_time
-                      if (updates.start_date && updates.end_date) {
-                        const start = new Date(updates.start_date)
-                        const end = new Date(updates.end_date)
-                        const diffHours = Math.max(0, (end.getTime() - start.getTime()) / (1000 * 60 * 60))
-                        updates.budget_time = parseFloat(diffHours.toFixed(1))
-                      }
                       
                       return updates
                     })
@@ -597,13 +490,6 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
                     setFormData(prev => {
                       const updates = { ...prev, end_date: newEndDate }
                       
-                      // Automatically calculate budget_time
-                      if (prev.start_date && newEndDate) {
-                        const start = new Date(prev.start_date)
-                        const end = new Date(newEndDate)
-                        const diffHours = Math.max(0, (end.getTime() - start.getTime()) / (1000 * 60 * 60))
-                        updates.budget_time = parseFloat(diffHours.toFixed(1))
-                      }
                       
                       return updates
                     })
@@ -626,24 +512,6 @@ function TaskFormPanel({ isOpen, onClose, task, onSave, statusOptions, priorityO
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-purple-700 mb-1">Budget Time (hours)</label>
-          <input
-            type="number"
-            min="0"
-            step="0.1"
-            value={formData.budget_time}
-            onChange={(e) => setFormData(prev => ({ ...prev, budget_time: parseFloat(e.target.value) || 0 }))}
-            className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-            placeholder="Auto-calculated from End - Start time"
-            readOnly={formData.start_date && formData.end_date}
-          />
-          {formData.start_date && formData.end_date && (
-            <p className="text-xs text-gray-500 mt-1">
-              ✨ Auto-calculated based on time duration
-            </p>
-          )}
-        </div>
 
         <div>
           <label className="flex items-center">
@@ -872,7 +740,7 @@ function TimeDisplay({ task }: { task: TaskRecord }) {
         <div className="flex items-center justify-between text-xs">
           <span className="text-green-600 font-medium">Running</span>
           <span className="font-medium text-purple-700">
-            {totalElapsedTime.toFixed(1)}h {task.budget_time ? `/ ${task.budget_time}h` : ''}
+            {totalElapsedTime.toFixed(1)}h
           </span>
         </div>
       </div>
@@ -883,12 +751,12 @@ function TimeDisplay({ task }: { task: TaskRecord }) {
         <div className="flex items-center justify-between text-xs">
           <span className="text-orange-600 font-medium">Paused</span>
           <span className="font-medium text-purple-700">
-            {totalElapsedTime.toFixed(1)}h {task.budget_time ? `/ ${task.budget_time}h` : ''}
+            {totalElapsedTime.toFixed(1)}h
           </span>
         </div>
       </div>
     )
-  } else if ((task.timer_status === 'completed' || task.actual_time > 0) && task.budget_time) {
+  } else if (task.timer_status === 'completed' || task.actual_time > 0) {
     return (
       <div className="mt-2">
         <div className="flex items-center justify-between text-xs">
@@ -896,7 +764,7 @@ function TimeDisplay({ task }: { task: TaskRecord }) {
             {task.status === 'Completed' ? 'Time' : 'Completed'}
           </span>
           <span className="font-medium text-purple-700">
-            {totalElapsedTime.toFixed(1)}h / {task.budget_time}h
+            {totalElapsedTime.toFixed(1)}h
           </span>
         </div>
       </div>
@@ -992,7 +860,7 @@ export default function TaskPanel() {
   }>({ isOpen: false, task: null })
   
   // 日历相关状态
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0])
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toLocaleDateString('en-CA'))
   const [currentMonth, setCurrentMonth] = useState(new Date())
   
   const { isAuthenticated, authenticate, addToCalendar } = useOutlookAuth()
@@ -1226,7 +1094,7 @@ export default function TaskPanel() {
       days.push({
         date: prevDate,
         isCurrentMonth: false,
-        dateString: prevDate.toISOString().split('T')[0]
+        dateString: prevDate.toLocaleDateString('en-CA')
       })
     }
     
@@ -1236,7 +1104,7 @@ export default function TaskPanel() {
       days.push({
         date: currentDate,
         isCurrentMonth: true,
-        dateString: currentDate.toISOString().split('T')[0]
+        dateString: currentDate.toLocaleDateString('en-CA')
       })
     }
     
@@ -1247,7 +1115,7 @@ export default function TaskPanel() {
       days.push({
         date: nextDate,
         isCurrentMonth: false,
-        dateString: nextDate.toISOString().split('T')[0]
+        dateString: nextDate.toLocaleDateString('en-CA')
       })
     }
     
@@ -1255,7 +1123,7 @@ export default function TaskPanel() {
   }
 
   const isToday = (dateString: string) => {
-    const today = new Date().toISOString().split('T')[0]
+    const today = new Date().toLocaleDateString('en-CA')
     return dateString === today
   }
 
@@ -1367,9 +1235,7 @@ export default function TaskPanel() {
         const result = await response.json()
         const plans = result.data?.map((p: any) => ({
           id: p.id,
-          title: p.objective || 'Untitled Plan',
-          budget_money: p.budget_money || 0,
-          budget_time: p.budget_time || 0
+          title: p.objective || 'Untitled Plan'
         })) || []
         setPlanOptions(plans)
       }
@@ -1681,7 +1547,6 @@ export default function TaskPanel() {
       task.note,
       task.priority_quadrant ? `Priority: ${task.priority_quadrant}` : '',
       task.status ? `Status: ${task.status}` : '',
-      `Budget Time: ${task.budget_time || 0} hours`
     ].filter(Boolean).join('\n\n')
 
     const params = new URLSearchParams({
@@ -2047,11 +1912,6 @@ export default function TaskPanel() {
                                   {task.priority_quadrant}
                                 </span>
                               )}
-                              {task.budget_time > 0 && (
-                                <span className="px-2 py-1 bg-green-50 text-green-700 rounded border border-green-200 font-medium">
-                                  {task.budget_time}h
-                                </span>
-                              )}
                             </div>
                           </div>
                           
@@ -2082,8 +1942,7 @@ export default function TaskPanel() {
                                   const body = encodeURIComponent(
                                     `Status: ${task.status || 'N/A'}\n` +
                                     `Priority: ${task.priority_quadrant || 'N/A'}\n` +
-                                    `Budget: ${task.budget_time || 0}h\n` +
-                                    `${task.note ? '\nNote: ' + task.note : ''}`
+                                                    `${task.note ? '\nNote: ' + task.note : ''}`
                                   )
                                   
                                   const outlookUrl = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${subject}&startdt=${formatDate(startDate)}&enddt=${formatDate(endDate)}&body=${body}&path=%2Fcalendar%2Faction%2Fcompose&rru=addevent`
@@ -2330,14 +2189,9 @@ export default function TaskPanel() {
                             </div>
                           )}
                           
-                          {/* Budget行 */}
-                          {(task.budget_time > 0 || task.all_day) && (
+                          {/* All day indicator */}
+                          {task.all_day && (
                             <div className="mb-2">
-                              {task.budget_time > 0 && (
-                                <span className="px-2 py-1 bg-purple-50 text-purple-600 text-xs rounded border border-purple-200 mr-2">
-                                  Budget: {task.budget_time}h
-                                </span>
-                              )}
                               {task.all_day && (
                                 <span className="px-2 py-1 bg-purple-50 text-purple-600 text-xs rounded border border-purple-200">
                                   All Day
@@ -2545,14 +2399,9 @@ export default function TaskPanel() {
                             </div>
                           )}
                           
-                          {/* Budget行 */}
-                          {(task.budget_time > 0 || task.all_day) && (
+                          {/* All day indicator */}
+                          {task.all_day && (
                             <div className="mb-2">
-                              {task.budget_time > 0 && (
-                                <span className="px-2 py-1 bg-purple-50 text-purple-600 text-xs rounded border border-purple-200 mr-2">
-                                  Budget: {task.budget_time}h
-                                </span>
-                              )}
                               {task.all_day && (
                                 <span className="px-2 py-1 bg-purple-50 text-purple-600 text-xs rounded border border-purple-200">
                                   All Day
@@ -2815,13 +2664,8 @@ export default function TaskPanel() {
                                     </span>
                                   </div>
                                 )}
-                                {(task.budget_time > 0 || task.actual_time > 0) && (
+                                {task.actual_time > 0 && (
                                   <div className="text-xs">
-                                    {task.budget_time > 0 && (
-                                      <span className="text-purple-700 font-medium mr-2">
-                                        Budget: {task.budget_time}h
-                                      </span>
-                                    )}
                                     {task.actual_time > 0 && (
                                       <span className="text-purple-700 font-medium">
                                         Actual: {task.actual_time}h

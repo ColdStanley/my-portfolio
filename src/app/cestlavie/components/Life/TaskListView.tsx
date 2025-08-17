@@ -1,12 +1,8 @@
 'use client'
 
-import { useMemo, useCallback, useState, useRef } from 'react'
-import TaskExtensionModal from './TaskExtensionModal'
-import SimpleTaskTimer from './SimpleTaskTimer'
-import TimeRecordTooltip from './TimeRecordTooltip'
-import TimeComparisonTooltip from './TimeComparisonTooltip'
-import StartEndConfirmTooltip from './StartEndConfirmTooltip'
+import { useMemo, useCallback, useState, useRef, useEffect } from 'react'
 import DeleteConfirmTooltip from './DeleteConfirmTooltip'
+import RelationsTooltip from './RelationsTooltip'
 import { extractTimeOnly, extractDateOnly } from '../../utils/timezone'
 
 interface TaskRecord {
@@ -19,13 +15,6 @@ interface TaskRecord {
   plan: string[]
   priority_quadrant: string
   note: string
-  actual_start?: string
-  actual_end?: string
-  budget_time: number
-  actual_time: number
-  quality_rating?: number
-  next?: string
-  is_plan_critical?: boolean
 }
 
 interface PlanOption {
@@ -46,24 +35,13 @@ interface TaskListViewProps {
   onTaskDelete?: (taskId: string) => void
   onCreateTask?: (date: string) => void
   onTaskComplete?: (task: TaskRecord) => void
-  onTaskStart?: (task: TaskRecord) => void
-  onTaskEnd?: (task: TaskRecord, surveyData?: {
-    quality_rating?: number
-    is_plan_critical?: boolean
-    next?: string
-  }) => void
-  onRecordTime?: (task: TaskRecord, startTime?: string, endTime?: string, surveyData?: {
-    quality_rating?: number
-    is_plan_critical?: boolean
-    next?: string
-  }) => void
   onTaskCopy?: (task: TaskRecord) => void
   formatTimeRange?: (startDate: string, endDate?: string) => string
   getPriorityColor?: (priority: string) => string
-  hasTimeConflicts?: (task: TaskRecord) => boolean
   planOptions?: PlanOption[]
   strategyOptions?: StrategyOption[]
 }
+
 
 export default function TaskListView({ 
   tasks, 
@@ -72,35 +50,13 @@ export default function TaskListView({
   onTaskDelete,
   onCreateTask,
   onTaskComplete,
-  onTaskStart,
-  onTaskEnd,
-  onRecordTime,
   onTaskCopy,
   formatTimeRange,
   getPriorityColor,
-  hasTimeConflicts,
   planOptions = [],
   strategyOptions = []
 }: TaskListViewProps) {
-  const [extensionModal, setExtensionModal] = useState<{
-    isOpen: boolean
-    task: TaskRecord | null
-  }>({ isOpen: false, task: null })
   
-  const [extendedTasks, setExtendedTasks] = useState<{[taskId: string]: string}>({})
-  
-  const [timeRecordTooltip, setTimeRecordTooltip] = useState<{
-    isOpen: boolean
-    task: TaskRecord | null
-    triggerElement: HTMLElement | null
-  }>({ isOpen: false, task: null, triggerElement: null })
-
-  const [startEndTooltip, setStartEndTooltip] = useState<{
-    isOpen: boolean
-    task: TaskRecord | null
-    action: 'start' | 'end'
-    triggerElement: HTMLElement | null
-  }>({ isOpen: false, task: null, action: 'start', triggerElement: null })
 
 
   const [deleteTooltip, setDeleteTooltip] = useState<{
@@ -109,8 +65,11 @@ export default function TaskListView({
     triggerElement: HTMLElement | null
   }>({ isOpen: false, task: null, triggerElement: null })
   
-  const timeRecordButtonRefs = useRef<{[taskId: string]: HTMLButtonElement}>({})
-  const startEndButtonRefs = useRef<{[taskId: string]: HTMLButtonElement}>({})
+  const [relationsTooltip, setRelationsTooltip] = useState<{
+    isOpen: boolean
+    task: TaskRecord | null
+  }>({ isOpen: false, task: null })
+  
   const deleteButtonRefs = useRef<{[taskId: string]: HTMLButtonElement}>({}) // taskId -> new end time
 
   // Get tasks for selected date
@@ -123,8 +82,8 @@ export default function TaskListView({
       const taskDate = task.start_date || task.end_date
       if (!taskDate) return false
       
-      // Extract date part from task date string with timezone
-      const taskDateString = extractDateOnly(taskDate)
+      // Extract date part from UTC date string
+      const taskDateString = new Date(taskDate).toLocaleDateString('en-CA') // YYYY-MM-DD format
       return taskDateString === selectedDate
     }).sort((a, b) => {
       // Sort by status: completed tasks last
@@ -145,13 +104,21 @@ export default function TaskListView({
   const formatTimeOnly = useCallback((startDate: string, endDate?: string) => {
     if (!startDate) return ''
     
-    const startTime = extractTimeOnly(startDate)
+    const startTime = new Date(startDate).toLocaleTimeString('en-US', {
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: false
+    })
     
     if (!endDate) {
       return startTime
     }
     
-    const endTime = extractTimeOnly(endDate)
+    const endTime = new Date(endDate).toLocaleTimeString('en-US', {
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: false
+    })
     
     // Display as simple time range
     return `${startTime} - ${endTime}`
@@ -164,162 +131,9 @@ export default function TaskListView({
     window.open(notionPageUrl, '_blank')
   }, [])
 
-  const handleOutlookClick = useCallback((task: TaskRecord, e: React.MouseEvent) => {
-    e.stopPropagation()
-    
-    // Format start and end dates for Outlook
-    const formatDateForOutlook = (dateStr: string) => {
-      if (!dateStr) return ''
-      
-      // Manual parsing of Toronto time format: "2024-07-24T09:00:00-04:00"
-      // Extract date and time parts
-      const [datePart, timePart] = dateStr.split('T')
-      const [year, month, day] = datePart.split('-')
-      const [hour, minute, second] = timePart.replace('-04:00', '').replace('.000', '').split(':')
-      
-      // Convert Toronto time to UTC (add 4 hours)
-      const torontoDate = new Date(
-        parseInt(year), 
-        parseInt(month) - 1, // month is 0-indexed
-        parseInt(day), 
-        parseInt(hour), 
-        parseInt(minute), 
-        parseInt(second)
-      )
-      
-      // Add 4 hours to convert Toronto (-04:00) to UTC
-      const utcDate = new Date(torontoDate.getTime() + (4 * 60 * 60 * 1000))
-      
-      // Format as Outlook expects: YYYYMMDDTHHMMSSZ
-      const utcYear = utcDate.getFullYear()
-      const utcMonth = String(utcDate.getMonth() + 1).padStart(2, '0')
-      const utcDay = String(utcDate.getDate()).padStart(2, '0')
-      const utcHour = String(utcDate.getHours()).padStart(2, '0')
-      const utcMinute = String(utcDate.getMinutes()).padStart(2, '0')
-      const utcSecond = String(utcDate.getSeconds()).padStart(2, '0')
-      
-      return `${utcYear}${utcMonth}${utcDay}T${utcHour}${utcMinute}${utcSecond}Z`
-    }
-    
-    const startDate = formatDateForOutlook(task.start_date)
-    const endDate = formatDateForOutlook(task.end_date)
-    
-    // Create Outlook Calendar URL
-    const outlookParams = new URLSearchParams({
-      path: '/calendar/action/compose',
-      rru: 'addevent',
-      subject: task.title,
-      body: task.note || '',
-      startdt: startDate,
-      enddt: endDate,
-      allday: task.all_day ? 'true' : 'false'
-    })
-    
-    const outlookUrl = `https://outlook.live.com/calendar/0/deeplink/compose?${outlookParams.toString()}`
-    window.open(outlookUrl, '_blank')
-  }, [])
-
-  const handleTimeExpired = useCallback((task: TaskRecord) => {
-    setExtensionModal({ isOpen: true, task })
-  }, [])
-
-  const handleExtend = useCallback((minutes: number) => {
-    if (extensionModal.task) {
-      const newEndTime = new Date(Date.now() + minutes * 60 * 1000).toISOString()
-      setExtendedTasks(prev => ({
-        ...prev,
-        [extensionModal.task!.id]: newEndTime
-      }))
-    }
-    setExtensionModal({ isOpen: false, task: null })
-  }, [extensionModal.task])
-
-  const handleCompleteFromModal = useCallback(() => {
-    if (extensionModal.task) {
-      // Close extension modal and open start/end tooltip for completion
-      const task = extensionModal.task
-      setExtensionModal({ isOpen: false, task: null })
-      
-      // Trigger the same flow as clicking "End Task" button
-      // We need to simulate the tooltip trigger but we don't have the actual button element
-      // So we create a virtual one for positioning
-      const virtualButton = document.createElement('div')
-      virtualButton.style.position = 'fixed'
-      virtualButton.style.top = '50%'
-      virtualButton.style.left = '50%'
-      virtualButton.style.transform = 'translate(-50%, -50%)'
-      virtualButton.style.width = '1px'
-      virtualButton.style.height = '1px'
-      virtualButton.style.pointerEvents = 'none'
-      document.body.appendChild(virtualButton)
-      
-      setStartEndTooltip({
-        isOpen: true,
-        task,
-        action: 'end',
-        triggerElement: virtualButton
-      })
-      
-      // Clean up the virtual button after a delay
-      setTimeout(() => {
-        if (document.body.contains(virtualButton)) {
-          document.body.removeChild(virtualButton)
-        }
-      }, 100)
-    }
-  }, [extensionModal.task])
 
 
-  const handleRecordTimeClick = useCallback((task: TaskRecord, e: React.MouseEvent) => {
-    e.stopPropagation()
-    const button = e.currentTarget as HTMLButtonElement
-    setTimeRecordTooltip({
-      isOpen: true,
-      task,
-      triggerElement: button
-    })
-  }, [])
 
-  const handleRecordTimeSave = useCallback((startTime?: string, endTime?: string, surveyData?: {
-    quality_rating?: number
-    is_plan_critical?: boolean
-    next?: string
-  }) => {
-    if (timeRecordTooltip.task && onRecordTime) {
-      onRecordTime(timeRecordTooltip.task, startTime, endTime, surveyData)
-    }
-    setTimeRecordTooltip({ isOpen: false, task: null, triggerElement: null })
-  }, [timeRecordTooltip.task, onRecordTime])
-
-  const handleStartEndClick = useCallback((task: TaskRecord, e: React.MouseEvent) => {
-    e.stopPropagation()
-    const button = e.currentTarget as HTMLButtonElement
-    
-    const action: 'start' | 'end' = !task.actual_start ? 'start' : 'end'
-
-    setStartEndTooltip({
-      isOpen: true,
-      task,
-      action,
-      triggerElement: button
-    })
-  }, [])
-
-  const handleStartEndConfirm = useCallback((surveyData?: {
-    quality_rating?: number
-    is_plan_critical?: boolean
-    next?: string
-  }) => {
-    if (startEndTooltip.task) {
-      const task = startEndTooltip.task
-      if (startEndTooltip.action === 'start') {
-        onTaskStart && onTaskStart(task)
-      } else if (startEndTooltip.action === 'end') {
-        onTaskEnd && onTaskEnd(task, surveyData)
-      }
-    }
-    setStartEndTooltip({ isOpen: false, task: null, action: 'start', triggerElement: null })
-  }, [startEndTooltip.task, startEndTooltip.action, onTaskStart, onTaskEnd])
 
   const handleDeleteClick = useCallback((task: TaskRecord, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -379,7 +193,6 @@ export default function TaskListView({
         ) : (
           <div className="space-y-3">
             {selectedDateTasks.map(task => {
-              const isConflicted = hasTimeConflicts && hasTimeConflicts(task)
               const isCompleted = task.status === 'Completed'
               
               return (
@@ -394,22 +207,11 @@ export default function TaskListView({
                   {/* Desktop: Three column layout, Mobile: Vertical layout */}
                   <div className="lg:flex lg:items-stretch lg:justify-between lg:mb-3">
                     {/* Desktop Left Column / Mobile Top Row - Time Info */}
-                    <div className="flex flex-col gap-1 lg:min-w-[100px] mb-3 lg:mb-0">
+                    <div className="flex flex-col gap-1 lg:min-w-[120px] mb-3 lg:mb-0">
                       {(task.start_date || task.end_date) && (
                         <span className="text-sm font-semibold text-purple-500">
                           {formatTimeOnly(task.start_date, task.end_date)}
                         </span>
-                      )}
-                      {/* Show countdown for started tasks */}
-                      {task.actual_start && !task.actual_end && (
-                        <SimpleTaskTimer
-                          task={task}
-                          extendedEndTime={extendedTasks[task.id]}
-                          onTimeExpired={handleTimeExpired}
-                          onTaskStart={onTaskStart || (() => {})}
-                          onTaskEnd={onTaskEnd || (() => {})}
-                          displayOnly={true}
-                        />
                       )}
                     </div>
 
@@ -497,135 +299,77 @@ export default function TaskListView({
                       </div>
                     </div>
 
-                    {/* Desktop: Right Column with Two-Column Grid, Mobile: Bottom Row with Horizontal Icons */}
-                    <div className="flex lg:grid lg:grid-cols-2 gap-1 lg:gap-2 flex-shrink-0 justify-center">
-                      {/* Row 1, Col 1: Add to Outlook */}
-                      <div className="relative group">
-                        <button
-                          onClick={(e) => handleOutlookClick(task, e)}
-                          className="w-8 h-8 rounded-full bg-gray-100 hover:bg-purple-500 flex items-center justify-center 
-                                   transition-all duration-100 hover:scale-110 group"
-                        >
-                          <svg className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors duration-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                        </button>
-                        <div className="absolute right-10 top-1/2 transform -translate-y-1/2 
-                                      bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap 
-                                      opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none z-10">
-                          Add to Outlook
-                        </div>
-                      </div>
-
-                      {/* Row 1, Col 2: Complete Early */}
-                      <div className="relative group">
-                        <button
-                          ref={(el) => {
-                            if (el) timeRecordButtonRefs.current[task.id] = el
-                          }}
-                          onClick={(e) => handleRecordTimeClick(task, e)}
-                          className="w-8 h-8 rounded-full bg-gray-100 hover:bg-purple-500 flex items-center justify-center 
-                                   transition-all duration-100 hover:scale-110 group"
-                        >
-                          <svg className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors duration-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </button>
-                        <div className="absolute right-0 top-full mt-2 
-                                      bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap 
-                                      opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none z-10">
-                          Complete Early
-                        </div>
-                      </div>
-
-                      {/* Row 2, Col 1: Start/End Task */}
-                      <div className="relative group">
-                        <button
-                          ref={(el) => {
-                            if (el) startEndButtonRefs.current[task.id] = el
-                          }}
-                          onClick={(e) => handleStartEndClick(task, e)}
-                          className="w-8 h-8 rounded-full bg-gray-100 hover:bg-purple-500 flex items-center justify-center 
-                                   transition-all duration-100 hover:scale-110 group"
-                        >
-                          {!task.actual_start ? (
-                            <svg className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors duration-100" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M8 5v14l11-7z"/>
-                            </svg>
-                          ) : (
-                            <svg className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors duration-100" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M6 6h12v12H6z"/>
-                            </svg>
-                          )}
-                        </button>
-                        <div className="absolute right-10 top-1/2 transform -translate-y-1/2 
-                                      bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap 
-                                      opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none z-10">
-                          {!task.actual_start ? 'Start Task' : 'End Task'}
-                        </div>
-                      </div>
-
-                      {/* Row 2, Col 2: Copy Task */}
-                      <div className="relative group">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onTaskCopy && onTaskCopy(task)
-                          }}
-                          className="w-8 h-8 rounded-full bg-gray-100 hover:bg-purple-500 flex items-center justify-center 
-                                   transition-all duration-100 hover:scale-110 group"
-                        >
-                          <svg className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors duration-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                        </button>
-                        <div className="absolute right-10 top-1/2 transform -translate-y-1/2 
-                                      bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap 
-                                      opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none z-10">
-                          Copy Task
-                        </div>
-                      </div>
-
-                      {/* Row 3, Col 1: Edit */}
-                      <div className="relative group">
+                    {/* Desktop: Right Column with Vertical Layout, Mobile: Bottom Row with Horizontal Icons */}
+                    <div className="w-20 flex-shrink-0 space-y-2">
+                      {/* Row 1: Edit, Delete */}
+                      <div className="flex gap-1">
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
                             onTaskClick && onTaskClick(task)
                           }}
-                          className="w-8 h-8 rounded-full bg-gray-100 hover:bg-purple-500 flex items-center justify-center 
-                                   transition-all duration-100 hover:scale-110 group"
+                          className="flex-1 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                          title="Edit"
                         >
-                          <svg className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors duration-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
                         </button>
-                        <div className="absolute right-10 top-1/2 transform -translate-y-1/2 
-                                      bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap 
-                                      opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none z-10">
-                          Edit Task
-                        </div>
-                      </div>
-
-                      {/* Row 3, Col 2: Delete */}
-                      <div className="relative group">
                         <button
                           ref={(el) => {
                             if (el) deleteButtonRefs.current[task.id] = el
                           }}
                           onClick={(e) => handleDeleteClick(task, e)}
-                          className="w-8 h-8 rounded-full bg-gray-100 hover:bg-purple-500 flex items-center justify-center 
-                                   transition-all duration-100 hover:scale-110 group"
+                          className="flex-1 p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="Delete"
                         >
-                          <svg className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors duration-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
                         </button>
-                        <div className="absolute right-10 top-1/2 transform -translate-y-1/2 
-                                      bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap 
-                                      opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none z-10">
-                          Delete Task
-                        </div>
+                      </div>
+                      
+                      {/* Row 2: Copy, Complete Early */}
+                      <div className="flex gap-1">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onTaskCopy && onTaskCopy(task)
+                          }}
+                          className="flex-1 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                          title="Copy Task"
+                        >
+                          <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onTaskComplete && onTaskComplete(task)
+                          }}
+                          className="flex-1 p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
+                          title="Complete Early"
+                          disabled={task.status === 'Completed'}
+                        >
+                          <svg className="w-4 h-4 mx-auto" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                          </svg>
+                        </button>
+                      </div>
+                      
+                      {/* Row 3: Relations Button */}
+                      <div className="flex">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setRelationsTooltip({ isOpen: true, task })
+                          }}
+                          className="w-full px-2 py-1 text-xs text-gray-500 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
+                          title="View Relations"
+                        >
+                          Relations
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -646,32 +390,7 @@ export default function TaskListView({
         )}
       </div>
 
-      {/* Task Extension Modal */}
-      <TaskExtensionModal
-        isOpen={extensionModal.isOpen}
-        onExtend={handleExtend}
-        onComplete={handleCompleteFromModal}
-        taskTitle={extensionModal.task?.title || ''}
-      />
 
-      {/* Time Record Tooltip */}
-      <TimeRecordTooltip
-        isOpen={timeRecordTooltip.isOpen}
-        onClose={() => setTimeRecordTooltip({ isOpen: false, task: null, triggerElement: null })}
-        onSave={handleRecordTimeSave}
-        task={timeRecordTooltip.task}
-        triggerElement={timeRecordTooltip.triggerElement}
-      />
-
-      {/* Start/End Confirm Tooltip */}
-      <StartEndConfirmTooltip
-        isOpen={startEndTooltip.isOpen}
-        onClose={() => setStartEndTooltip({ isOpen: false, task: null, action: 'start', triggerElement: null })}
-        onConfirm={handleStartEndConfirm}
-        action={startEndTooltip.action}
-        taskTitle={startEndTooltip.task?.title || ''}
-        triggerElement={startEndTooltip.triggerElement}
-      />
 
       {/* Delete Confirm Tooltip */}
       <DeleteConfirmTooltip
@@ -681,6 +400,49 @@ export default function TaskListView({
         taskTitle={deleteTooltip.task?.title || ''}
         triggerElement={deleteTooltip.triggerElement}
       />
+      
+      {/* Relations Tooltip */}
+      {relationsTooltip.task && (
+        <RelationsTooltip
+          type="task"
+          isOpen={relationsTooltip.isOpen}
+          onClose={() => setRelationsTooltip({ isOpen: false, task: null })}
+          parentPlan={(() => {
+            const task = relationsTooltip.task
+            if (task.plan && task.plan[0]) {
+              const plan = planOptions.find(p => p.id === task.plan[0])
+              if (plan) {
+                return {
+                  id: plan.id,
+                  objective: plan.title,
+                  status: 'Unknown',
+                  total_tasks: 0,
+                  completed_tasks: 0
+                }
+              }
+            }
+            return undefined
+          })()}
+          parentStrategy={(() => {
+            const task = relationsTooltip.task
+            if (task.plan && task.plan[0]) {
+              const plan = planOptions.find(p => p.id === task.plan[0])
+              if (plan && plan.parent_goal && plan.parent_goal[0]) {
+                const strategy = strategyOptions.find(s => s.id === plan.parent_goal[0])
+                if (strategy) {
+                  return {
+                    id: strategy.id,
+                    objective: strategy.objective,
+                    status: 'Unknown',
+                    progress: 0
+                  }
+                }
+              }
+            }
+            return undefined
+          })()}
+        />
+      )}
     </div>
   )
 }

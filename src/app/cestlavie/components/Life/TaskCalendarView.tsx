@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo, useCallback } from 'react'
-import { extractTimeOnly, extractDateOnly } from '../../utils/timezone'
 
 interface TaskRecord {
   id: string
@@ -13,13 +12,6 @@ interface TaskRecord {
   plan: string[]
   priority_quadrant: string
   note: string
-  actual_start?: string
-  actual_end?: string
-  budget_time: number
-  actual_time: number
-  quality_rating?: number
-  next?: string
-  is_plan_critical?: boolean
 }
 
 interface TaskCalendarViewProps {
@@ -78,7 +70,7 @@ export default function TaskCalendarView({
       days.push({
         date: prevDate,
         isCurrentMonth: false,
-        dateString: prevDate.toISOString().split('T')[0]
+        dateString: prevDate.toLocaleDateString('en-CA')
       })
     }
     
@@ -88,7 +80,7 @@ export default function TaskCalendarView({
       days.push({
         date: currentDate,
         isCurrentMonth: true,
-        dateString: currentDate.toISOString().split('T')[0]
+        dateString: currentDate.toLocaleDateString('en-CA')
       })
     }
     
@@ -99,7 +91,7 @@ export default function TaskCalendarView({
       days.push({
         date: nextDate,
         isCurrentMonth: false,
-        dateString: nextDate.toISOString().split('T')[0]
+        dateString: nextDate.toLocaleDateString('en-CA')
       })
     }
     
@@ -107,7 +99,7 @@ export default function TaskCalendarView({
   }, [])
 
   const isToday = useCallback((dateString: string) => {
-    const today = new Date().toISOString().split('T')[0]
+    const today = new Date().toLocaleDateString('en-CA')
     return dateString === today
   }, [])
 
@@ -118,8 +110,8 @@ export default function TaskCalendarView({
       const taskDate = task.start_date || task.end_date
       if (!taskDate) return false
       
-      // Extract date part from task date string with timezone
-      const taskDateString = extractDateOnly(taskDate)
+      // Extract date part from UTC date string
+      const taskDateString = new Date(taskDate).toLocaleDateString('en-CA') // YYYY-MM-DD format
       return taskDateString === dateString
     }).sort((a, b) => {
       // Sort by status: completed tasks last
@@ -158,13 +150,21 @@ export default function TaskCalendarView({
   const formatTimeOnly = useCallback((startDate: string, endDate?: string) => {
     if (!startDate) return ''
     
-    const startTime = extractTimeOnly(startDate)
+    const startTime = new Date(startDate).toLocaleTimeString('en-US', {
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: false
+    })
     
     if (!endDate) {
       return startTime
     }
     
-    const endTime = extractTimeOnly(endDate)
+    const endTime = new Date(endDate).toLocaleTimeString('en-US', {
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: false
+    })
     
     // Display as time range
     return `${startTime} - ${endTime}`
