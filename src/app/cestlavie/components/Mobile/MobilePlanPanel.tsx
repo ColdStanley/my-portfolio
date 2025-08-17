@@ -58,23 +58,21 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
           fetch('/api/strategy')
         ])
         
-        if (planResponse.ok) {
-          const planData = await planResponse.json()
-          const plansArray = planData.data || []
-          setPlans(plansArray)
-          
-          if (onPlansUpdate) {
-            onPlansUpdate(plansArray)
-          }
+        if (!planResponse.ok) {
+          throw new Error('Failed to fetch plans')
+        }
+        
+        const planData = await planResponse.json()
+        const plansArray = planData.data || []
+        setPlans(plansArray)
+        
+        if (onPlansUpdate) {
+          onPlansUpdate(plansArray)
         }
         
         if (strategyResponse.ok) {
           const strategyData = await strategyResponse.json()
           setStrategies(strategyData.data || [])
-        }
-        
-        if (!planResponse.ok) {
-          throw new Error('Failed to fetch plans')
         }
         
       } catch (error) {

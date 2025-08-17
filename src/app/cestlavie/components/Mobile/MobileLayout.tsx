@@ -83,32 +83,31 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
             {/* Tab Selector Buttons */}
             <div className="fixed bottom-20 right-4 z-50">
               {/* Sub tab buttons - show when expanded */}
-              {isTabSelectorOpen && (
-                <div className="absolute bottom-0 right-12 flex gap-3">
-                  {['task', 'plan', 'strategy'].map((subTab, index) => (
-                    <div 
-                      key={subTab}
-                      className="transform transition-all duration-500 ease-out"
-                      style={{ 
-                        animation: `slideInLeft 0.4s ease-out ${index * 100}ms both`,
-                        transform: `translateX(${isTabSelectorOpen ? '0' : '20px'})`,
-                        opacity: isTabSelectorOpen ? '1' : '0'
-                      }}
+              <div className="absolute bottom-0 right-12 flex gap-3">
+                {['task', 'plan', 'strategy'].map((subTab, index) => (
+                  <div 
+                    key={subTab}
+                    className={`transform transition-all duration-300 ease-out ${
+                      isTabSelectorOpen ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-5 pointer-events-none'
+                    }`}
+                    style={{ 
+                      transitionDelay: isTabSelectorOpen ? `${index * 50}ms` : `${(2 - index) * 50}ms`
+                    }}
+                  >
+                    <button
+                      onClick={() => handleSubTabChange(subTab)}
+                      className={`px-3 py-2 rounded-lg shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-105 text-sm font-medium whitespace-nowrap ${
+                        activeSubTab === subTab
+                          ? 'bg-purple-500 text-white shadow-purple-200'
+                          : 'bg-white text-gray-600 hover:bg-gray-50 hover:shadow-xl'
+                      }`}
+                      disabled={!isTabSelectorOpen}
                     >
-                      <button
-                        onClick={() => handleSubTabChange(subTab)}
-                        className={`px-3 py-2 rounded-lg shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-105 text-sm font-medium whitespace-nowrap ${
-                          activeSubTab === subTab
-                            ? 'bg-purple-500 text-white shadow-purple-200'
-                            : 'bg-white text-gray-600 hover:bg-gray-50 hover:shadow-xl'
-                        }`}
-                      >
-                        {getSubTabLabel(subTab)}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+                      {getSubTabLabel(subTab)}
+                    </button>
+                  </div>
+                ))}
+              </div>
               
               {/* Main tab selector button */}
               <button 
