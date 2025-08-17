@@ -24,7 +24,7 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
       <div className="pb-16">
         {/* Add Button - only show when in Life tab */}
         {showAddButton && (
-          <div className="fixed bottom-36 right-4 z-50">
+          <div className="fixed bottom-40 right-4 z-50">
             <button className="w-12 h-12 bg-purple-500 hover:bg-purple-600 text-white rounded-full shadow-xl flex items-center justify-center transition-all duration-300 hover:scale-110">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

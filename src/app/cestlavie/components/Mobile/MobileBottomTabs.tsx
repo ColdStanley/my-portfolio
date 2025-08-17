@@ -13,7 +13,7 @@ export default function MobileBottomTabs({ activeTab, onTabChange }: MobileBotto
   ]
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-purple-200 z-40">
+    <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-purple-200 shadow-2xl rounded-t-2xl z-40">
       <div className="grid grid-cols-3 h-16">
         {tabs.map((tab) => (
           <button
