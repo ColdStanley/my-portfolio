@@ -50,57 +50,72 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
     }
   }), [])
   
-  // Data fetching
+  // Data fetching - unified with web version and mobile Task/Strategy pattern
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        
-        const [planResponse, strategyResponse, taskResponse] = await Promise.all([
-          fetch('/api/plan'),
-          fetch('/api/strategy'),
-          fetch('/api/tasks')
-        ])
-        
-        if (!planResponse.ok) {
-          throw new Error('Failed to fetch plans')
-        }
-        
-        const planData = await planResponse.json()
-        const plansArray = planData.data || []
-        setPlans(plansArray)
-        
-        if (onPlansUpdate) {
-          onPlansUpdate(plansArray)
-        }
-        
-        if (strategyResponse.ok) {
-          const strategyData = await strategyResponse.json()
-          setStrategies(strategyData.data || [])
-        }
-        
-        if (taskResponse.ok) {
-          const taskData = await taskResponse.json()
-          setTasks(taskData.data || [])
-        }
-        
-      } catch (error) {
-        console.error('Error fetching data:', error)
-        setError(error instanceof Error ? error.message : 'Failed to load plans')
-        setPlans([])
-        
-        if (onPlansUpdate) {
-          onPlansUpdate([])
-        }
-        
-      } finally {
-        setLoading(false)
-      }
-    }
-    
-    fetchData()
+    fetchPlans()
+    fetchStrategies()
+    fetchTasks()
   }, [onPlansUpdate])
+
+  const fetchPlans = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const response = await fetch('/api/plan')
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      const result = await response.json()
+      
+      if (result.error) {
+        throw new Error(result.error)
+      }
+      
+      const plansArray = result.data || []
+      setPlans(plansArray)
+      
+      if (onPlansUpdate) {
+        onPlansUpdate(plansArray)
+      }
+    } catch (error) {
+      console.error('Error fetching plans:', error)
+      setError(error instanceof Error ? error.message : 'Failed to load plans')
+      setPlans([])
+      
+      if (onPlansUpdate) {
+        onPlansUpdate([])
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchStrategies = async () => {
+    try {
+      const response = await fetch('/api/strategy')
+      if (response.ok) {
+        const result = await response.json()
+        setStrategies(result.data || [])
+      }
+    } catch (err) {
+      console.warn('Failed to fetch strategies:', err)
+    }
+  }
+
+  const fetchTasks = async () => {
+    try {
+      const response = await fetch('/api/tasks')
+      if (response.ok) {
+        const result = await response.json()
+        setTasks(result.data || [])
+      }
+    } catch (err) {
+      console.warn('Failed to fetch tasks:', err)
+    }
+  }
 
   const handleDeletePlan = useCallback(async (planId: string) => {
     try {
@@ -126,8 +141,39 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
   }, [plans, onPlansUpdate])
 
   const handleRefresh = useCallback(() => {
-    window.location.reload()
+    fetchPlans()
   }, [])
+
+  const handleSavePlan = useCallback(async (planData: any) => {
+    try {
+      const isEditing = !!editingPlan
+      
+      if (isEditing) {
+        planData.id = editingPlan!.id
+      }
+      
+      const response = await fetch('/api/plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(planData)
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Failed to ${isEditing ? 'update' : 'create'} plan`)
+      }
+      
+      setFormPanelOpen(false)
+      setEditingPlan(null)
+      fetchPlans() // Refresh data
+      setToast({ 
+        message: `Plan ${isEditing ? 'updated' : 'created'} successfully`, 
+        type: 'success' 
+      })
+    } catch (error) {
+      console.error('Error saving plan:', error)
+      setToast({ message: 'Failed to save plan', type: 'error' })
+    }
+  }, [editingPlan])
 
   // Loading state
   if (loading) {
@@ -172,29 +218,18 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
         {/* Plan Form Panel */}
         <PlanFormPanel
           isOpen={formPanelOpen}
-          onClose={() => setFormPanelOpen(false)}
-          editingPlan={editingPlan}
-          strategies={strategies}
-          onPlanCreated={(plan) => {
-            const updatedPlans = [...plans, plan]
-            setPlans(updatedPlans)
+          onClose={() => {
             setFormPanelOpen(false)
-            setToast({ message: 'Plan created successfully', type: 'success' })
-            
-            if (onPlansUpdate) {
-              onPlansUpdate(updatedPlans)
-            }
+            setEditingPlan(null)
           }}
-          onPlanUpdated={(plan) => {
-            const updatedPlans = plans.map(p => p.id === plan.id ? plan : p)
-            setPlans(updatedPlans)
-            setFormPanelOpen(false)
-            setToast({ message: 'Plan updated successfully', type: 'success' })
-            
-            if (onPlansUpdate) {
-              onPlansUpdate(updatedPlans)
-            }
-          }}
+          plan={editingPlan}
+          onSave={handleSavePlan}
+          statusOptions={['Not Started', 'In Progress', 'Completed', 'On Hold']}
+          priorityOptions={['Q1 - Urgent Important', 'Q2 - Important Not Urgent', 'Q3 - Urgent Not Important', 'Q4 - Neither']}
+          strategyOptions={strategies.map(strategy => ({
+            id: strategy.id,
+            objective: strategy.objective
+          }))}
         />
 
         {/* Relations Tooltip */}
