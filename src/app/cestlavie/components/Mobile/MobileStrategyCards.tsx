@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useCallback, useState, useRef } from 'react'
+import BottomSheet from '../Life/BottomSheet'
 
 interface StrategyRecord {
   id: string
@@ -21,7 +22,10 @@ interface MobileStrategyCardsProps {
   onStrategyClick?: (strategy: StrategyRecord) => void
   onStrategyEdit?: (strategy: StrategyRecord) => void
   onStrategyDelete?: (strategyId: string) => void
+  onStrategyUpdate?: (strategyId: string, field: 'status' | 'priority_quadrant', value: string) => void
   onStrategyRelations?: (strategy: StrategyRecord) => void
+  statusOptions?: string[]
+  priorityOptions?: string[]
 }
 
 export default function MobileStrategyCards({ 
@@ -29,7 +33,10 @@ export default function MobileStrategyCards({
   onStrategyClick,
   onStrategyEdit,
   onStrategyDelete,
-  onStrategyRelations
+  onStrategyUpdate,
+  onStrategyRelations,
+  statusOptions = [],
+  priorityOptions = []
 }: MobileStrategyCardsProps) {
   
   const [deleteTooltip, setDeleteTooltip] = useState<{
@@ -37,6 +44,15 @@ export default function MobileStrategyCards({
     strategy: StrategyRecord | null
     triggerElement: HTMLElement | null
   }>({ isOpen: false, strategy: null, triggerElement: null })
+  
+  const [bottomSheet, setBottomSheet] = useState<{
+    isOpen: boolean
+    strategyId: string | null
+    field: 'status' | 'priority_quadrant' | null
+    currentValue: string
+  }>({ isOpen: false, strategyId: null, field: null, currentValue: '' })
+  
+  const [updatingFields, setUpdatingFields] = useState<{[key: string]: boolean}>({})
   
   const deleteButtonRefs = useRef<{[strategyId: string]: HTMLButtonElement}>({})
 
@@ -99,6 +115,31 @@ export default function MobileStrategyCards({
     }
     setDeleteTooltip({ isOpen: false, strategy: null, triggerElement: null })
   }, [deleteTooltip.strategy, onStrategyDelete])
+
+  const handleFieldClick = useCallback((strategyId: string, field: 'status' | 'priority_quadrant', currentValue: string) => {
+    setBottomSheet({
+      isOpen: true,
+      strategyId,
+      field,
+      currentValue: currentValue || ''
+    })
+  }, [])
+
+  const handleBottomSheetSelect = useCallback(async (value: string) => {
+    if (!bottomSheet.strategyId || !bottomSheet.field || !onStrategyUpdate) return
+
+    const updateKey = `${bottomSheet.strategyId}-${bottomSheet.field}`
+    setUpdatingFields(prev => ({ ...prev, [updateKey]: true }))
+
+    try {
+      await onStrategyUpdate(bottomSheet.strategyId, bottomSheet.field, value)
+    } catch (error) {
+      console.error('Failed to update strategy field:', error)
+    } finally {
+      setUpdatingFields(prev => ({ ...prev, [updateKey]: false }))
+      setBottomSheet({ isOpen: false, strategyId: null, field: null, currentValue: '' })
+    }
+  }, [bottomSheet, onStrategyUpdate])
 
   if (sortedStrategies.length === 0) {
     return (
@@ -195,17 +236,41 @@ export default function MobileStrategyCards({
 
             {/* Labels Grid */}
             <div className="grid grid-cols-3 gap-2 mb-3">
-              {/* Status */}
-              <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
+              {/* Status - Clickable */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleFieldClick(strategy.id, 'status', strategy.status || '')
+                }}
+                disabled={updatingFields[`${strategy.id}-status`]}
+                className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
+              >
                 {strategy.status || 'No Status'}
-              </span>
+                {updatingFields[`${strategy.id}-status`] && (
+                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                    <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                )}
+              </button>
 
-              {/* Priority */}
-              <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
+              {/* Priority - Clickable */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleFieldClick(strategy.id, 'priority_quadrant', strategy.priority_quadrant || '')
+                }}
+                disabled={updatingFields[`${strategy.id}-priority_quadrant`]}
+                className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
+              >
                 {strategy.priority_quadrant || 'No Priority'}
-              </span>
+                {updatingFields[`${strategy.id}-priority_quadrant`] && (
+                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                    <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                )}
+              </button>
 
-              {/* Category */}
+              {/* Category - Keep as span */}
               <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
                 {strategy.category || 'No Category'}
               </span>
@@ -246,6 +311,23 @@ export default function MobileStrategyCards({
           </div>
         </div>
       )}
+
+      {/* Bottom Sheet for Status/Priority Selection */}
+      <BottomSheet
+        isOpen={bottomSheet.isOpen}
+        onClose={() => setBottomSheet({ isOpen: false, strategyId: null, field: null, currentValue: '' })}
+        onSelect={handleBottomSheetSelect}
+        options={
+          bottomSheet.field === 'status'
+            ? statusOptions.map(option => ({ value: option, label: option }))
+            : bottomSheet.field === 'priority_quadrant'
+            ? [{ value: '', label: 'No Priority' }, ...priorityOptions.map(option => ({ value: option, label: option }))]
+            : []
+        }
+        currentValue={bottomSheet.currentValue}
+        title={`Select ${bottomSheet.field === 'status' ? 'Status' : 'Priority'}`}
+        loading={updatingFields[`${bottomSheet.strategyId}-${bottomSheet.field}`]}
+      />
     </div>
   )
 }

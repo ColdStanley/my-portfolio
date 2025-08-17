@@ -26,10 +26,13 @@ interface TaskListViewProps {
   onCreateTask?: (date: string) => void
   onTaskComplete?: (task: TaskRecord) => void
   onTaskCopy?: (task: TaskRecord) => void
+  onTaskUpdate?: (taskId: string, field: 'status' | 'priority_quadrant', value: string) => void
   formatTimeRange?: (startDate: string, endDate?: string) => string
   getPriorityColor?: (priority: string) => string
   planOptions?: PlanOption[]
   strategyOptions?: StrategyOption[]
+  statusOptions?: string[]
+  priorityOptions?: string[]
 }
 
 
@@ -41,10 +44,13 @@ export default function TaskListView({
   onCreateTask,
   onTaskComplete,
   onTaskCopy,
+  onTaskUpdate,
   formatTimeRange,
   getPriorityColor,
   planOptions = [],
-  strategyOptions = []
+  strategyOptions = [],
+  statusOptions = ['Not Started', 'In Progress', 'Completed'],
+  priorityOptions = ['Important & Urgent', 'Important & Not Urgent', 'Not Important & Urgent', 'Not Important & Not Urgent']
 }: TaskListViewProps) {
   
 
@@ -59,6 +65,8 @@ export default function TaskListView({
     isOpen: boolean
     task: TaskRecord | null
   }>({ isOpen: false, task: null })
+  
+  const [updatingFields, setUpdatingFields] = useState<{[key: string]: boolean}>({}) // taskId-field -> loading state
   
   const deleteButtonRefs = useRef<{[taskId: string]: HTMLButtonElement}>({}) // taskId -> new end time
 
@@ -141,6 +149,21 @@ export default function TaskListView({
     }
     setDeleteTooltip({ isOpen: false, task: null, triggerElement: null })
   }, [deleteTooltip.task, onTaskDelete])
+
+  const handleFieldUpdate = useCallback(async (taskId: string, field: 'status' | 'priority_quadrant', value: string) => {
+    if (!onTaskUpdate) return
+    
+    const updateKey = `${taskId}-${field}`
+    setUpdatingFields(prev => ({ ...prev, [updateKey]: true }))
+    
+    try {
+      await onTaskUpdate(taskId, field, value)
+    } catch (error) {
+      console.error('Failed to update task field:', error)
+    } finally {
+      setUpdatingFields(prev => ({ ...prev, [updateKey]: false }))
+    }
+  }, [onTaskUpdate])
 
   if (!selectedDate) {
     return (
@@ -279,15 +302,46 @@ export default function TaskListView({
 
                   {/* Labels Grid */}
                   <div className="grid grid-cols-2 gap-2 mb-3">
-                        {/* Row 1, Col 1: Status */}
-                        <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
-                          {task.status}
-                        </span>
+                        {/* Row 1, Col 1: Status - Dropdown Select */}
+                        <div className="relative">
+                          <select
+                            value={task.status}
+                            onChange={(e) => handleFieldUpdate(task.id, 'status', e.target.value)}
+                            disabled={updatingFields[`${task.id}-status`]}
+                            className="w-full px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 border-0 appearance-none cursor-pointer hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {statusOptions.map(option => (
+                              <option key={option} value={option}>{option}</option>
+                            ))}
+                          </select>
+                          {updatingFields[`${task.id}-status`] && (
+                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                              <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                          )}
+                        </div>
 
-                        {/* Row 1, Col 2: Priority */}
-                        <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
-                          {task.priority_quadrant || 'No Priority'}
-                        </span>
+                        {/* Row 1, Col 2: Priority - Dropdown Select */}
+                        <div className="relative">
+                          <select
+                            value={task.priority_quadrant || ''}
+                            onChange={(e) => handleFieldUpdate(task.id, 'priority_quadrant', e.target.value)}
+                            disabled={updatingFields[`${task.id}-priority_quadrant`]}
+                            className="w-full px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 border-0 appearance-none cursor-pointer hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <option value="">No Priority</option>
+                            {priorityOptions.map(option => (
+                              <option key={option} value={option}>{option}</option>
+                            ))}
+                          </select>
+                          {updatingFields[`${task.id}-priority_quadrant`] && (
+                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                              <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                          )}
+                        </div>
 
                         {/* Row 2, Col 1: Strategy */}
                         {task.plan && task.plan[0] && (() => {

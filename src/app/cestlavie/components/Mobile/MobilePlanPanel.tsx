@@ -35,6 +35,8 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null)
   const [formPanelOpen, setFormPanelOpen] = useState(false)
   const [editingPlan, setEditingPlan] = useState<PlanRecord | null>(null)
+  const [statusOptions, setStatusOptions] = useState<string[]>(['Not Started', 'In Progress', 'Completed', 'On Hold'])
+  const [priorityOptions, setPriorityOptions] = useState<string[]>(['Q1 - Urgent Important', 'Q2 - Important Not Urgent', 'Q3 - Urgent Not Important', 'Q4 - Neither'])
   const [relationsTooltip, setRelationsTooltip] = useState<{
     isOpen: boolean
     plan: PlanRecord | null
@@ -55,7 +57,27 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
     fetchPlans()
     fetchStrategies()
     fetchTasks()
+    fetchSchemaOptions()
   }, [onPlansUpdate])
+
+  const fetchSchemaOptions = async () => {
+    try {
+      const response = await fetch('/api/tasks?action=schema')
+      if (response.ok) {
+        const result = await response.json()
+        const schema = result.schema || {}
+        
+        if (schema.statusOptions && schema.statusOptions.length > 0) {
+          setStatusOptions(schema.statusOptions)
+        }
+        if (schema.priorityOptions && schema.priorityOptions.length > 0) {
+          setPriorityOptions(schema.priorityOptions)
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch schema options, using defaults:', err)
+    }
+  }
 
   const fetchPlans = async () => {
     try {
@@ -144,6 +166,32 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
     fetchPlans()
   }, [])
 
+  const handlePlanUpdate = useCallback(async (planId: string, field: 'status' | 'priority_quadrant', value: string) => {
+    const plan = plans.find(p => p.id === planId)
+    if (!plan) return
+
+    const updatedPlan = { ...plan, [field]: value }
+    
+    try {
+      const response = await fetch('/api/plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedPlan)
+      })
+      
+      if (response.ok) {
+        setPlans(prev => prev.map(p => p.id === planId ? updatedPlan : p))
+        setToast({ message: `Plan ${field} updated successfully`, type: 'success' })
+      } else {
+        throw new Error(`Failed to update plan ${field}`)
+      }
+    } catch (error) {
+      console.error(`Failed to update plan ${field}:`, error)
+      setToast({ message: `Failed to update plan ${field}`, type: 'error' })
+      throw error // Re-throw for error handling in component
+    }
+  }, [plans])
+
   const handleSavePlan = useCallback(async (planData: any) => {
     try {
       const isEditing = !!editingPlan
@@ -209,9 +257,12 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
               setFormPanelOpen(true)
             }}
             onPlanDelete={handleDeletePlan}
+            onPlanUpdate={handlePlanUpdate}
             onPlanRelations={(plan) => {
               setRelationsTooltip({ isOpen: true, plan })
             }}
+            statusOptions={statusOptions}
+            priorityOptions={priorityOptions}
           />
         </div>
 

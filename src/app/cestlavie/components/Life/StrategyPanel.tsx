@@ -33,12 +33,35 @@ export default function StrategyPanel() {
   const [tasks, setTasks] = useState<any[]>([])
   const [formPanelOpen, setFormPanelOpen] = useState(false)
   const [editingStrategy, setEditingStrategy] = useState<StrategyRecord | null>(null)
+  const [updatingFields, setUpdatingFields] = useState<{[key: string]: boolean}>({})
+  const [statusOptions, setStatusOptions] = useState<string[]>(['Not Started', 'In Progress', 'Completed', 'On Hold'])
+  const [priorityOptions, setPriorityOptions] = useState<string[]>(['Q1 - Urgent Important', 'Q2 - Important Not Urgent', 'Q3 - Urgent Not Important', 'Q4 - Neither'])
 
   useEffect(() => {
     fetchStrategies()
     fetchPlans()
     fetchTasks()
+    fetchSchemaOptions()
   }, [])
+
+  const fetchSchemaOptions = async () => {
+    try {
+      const response = await fetch('/api/tasks?action=schema')
+      if (response.ok) {
+        const result = await response.json()
+        const schema = result.schema || {}
+        
+        if (schema.statusOptions && schema.statusOptions.length > 0) {
+          setStatusOptions(schema.statusOptions)
+        }
+        if (schema.priorityOptions && schema.priorityOptions.length > 0) {
+          setPriorityOptions(schema.priorityOptions)
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch schema options, using defaults:', err)
+    }
+  }
   
   const fetchPlans = async () => {
     try {
@@ -137,9 +160,36 @@ export default function StrategyPanel() {
     }
   }
 
-  // Options for form
-  const statusOptions = ['Not Started', 'In Progress', 'Completed', 'On Hold']
-  const priorityOptions = ['Q1 - Urgent Important', 'Q2 - Important Not Urgent', 'Q3 - Urgent Not Important', 'Q4 - Neither']
+  const handleStrategyUpdate = async (strategyId: string, field: 'status' | 'priority_quadrant', value: string) => {
+    const strategy = data.find(s => s.id === strategyId)
+    if (!strategy) return
+
+    const updateKey = `${strategyId}-${field}`
+    setUpdatingFields(prev => ({ ...prev, [updateKey]: true }))
+
+    const updatedStrategy = { ...strategy, [field]: value }
+    
+    try {
+      const response = await fetch('/api/strategy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedStrategy)
+      })
+      
+      if (response.ok) {
+        setData(prev => prev.map(s => s.id === strategyId ? updatedStrategy : s))
+      } else {
+        throw new Error(`Failed to update strategy ${field}`)
+      }
+    } catch (error) {
+      console.error(`Failed to update strategy ${field}:`, error)
+      setError(`Failed to update strategy ${field}`)
+    } finally {
+      setUpdatingFields(prev => ({ ...prev, [updateKey]: false }))
+    }
+  }
+
+  // Options loaded from database schema
   const categoryOptions = ['Career', 'Health', 'Finance', 'Personal', 'Learning', 'Relationships']
 
   if (loading) {
@@ -279,12 +329,49 @@ export default function StrategyPanel() {
                       
                       {/* Fields below title */}
                       <div className="grid grid-cols-3 gap-3 text-sm text-gray-600">
-                        <span className="px-2 py-1 bg-gray-100 rounded text-center">
-                          {strategy.status || 'No Status'}
-                        </span>
-                        <span className="px-2 py-1 bg-gray-100 rounded text-center">
-                          {strategy.priority_quadrant || 'No Priority'}
-                        </span>
+                        {/* Status - Dropdown Select */}
+                        <div className="relative">
+                          <select
+                            value={strategy.status || ''}
+                            onChange={(e) => handleStrategyUpdate(strategy.id, 'status', e.target.value)}
+                            disabled={updatingFields[`${strategy.id}-status`]}
+                            className="w-full px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 border-0 appearance-none cursor-pointer hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <option value="">No Status</option>
+                            {statusOptions.map(option => (
+                              <option key={option} value={option}>{option}</option>
+                            ))}
+                          </select>
+                          {updatingFields[`${strategy.id}-status`] && (
+                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                              <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Priority - Dropdown Select */}
+                        <div className="relative">
+                          <select
+                            value={strategy.priority_quadrant || ''}
+                            onChange={(e) => handleStrategyUpdate(strategy.id, 'priority_quadrant', e.target.value)}
+                            disabled={updatingFields[`${strategy.id}-priority_quadrant`]}
+                            className="w-full px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 border-0 appearance-none cursor-pointer hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <option value="">No Priority</option>
+                            {priorityOptions.map(option => (
+                              <option key={option} value={option}>{option}</option>
+                            ))}
+                          </select>
+                          {updatingFields[`${strategy.id}-priority_quadrant`] && (
+                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                              <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Category - Keep as span */}
                         <span className="px-2 py-1 bg-gray-100 rounded text-center">
                           {strategy.category || 'No Category'}
                         </span>
@@ -292,8 +379,8 @@ export default function StrategyPanel() {
                     </div>
 
                     {/* Right: Actions Section */}
-                    <div className="w-20 flex-shrink-0 space-y-2">
-                      {/* Row 1: Edit, Delete */}
+                    <div className="w-20 flex-shrink-0 flex flex-col justify-between">
+                      {/* Top: Edit, Delete */}
                       <div className="flex gap-1">
                         <button
                           onClick={() => {
@@ -318,7 +405,7 @@ export default function StrategyPanel() {
                         </button>
                       </div>
                       
-                      {/* Row 2: Relations Button */}
+                      {/* Bottom: Relations Button - Aligned with labels bottom */}
                       <div className="flex">
                         <button
                           onClick={() => setRelationsTooltip({ isOpen: true, strategy })}

@@ -35,6 +35,8 @@ const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPan
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null)
   const [formPanelOpen, setFormPanelOpen] = useState(false)
   const [editingStrategy, setEditingStrategy] = useState<StrategyRecord | null>(null)
+  const [statusOptions, setStatusOptions] = useState<string[]>(['Not Started', 'In Progress', 'Completed', 'On Hold'])
+  const [priorityOptions, setPriorityOptions] = useState<string[]>(['Q1 - Urgent Important', 'Q2 - Important Not Urgent', 'Q3 - Urgent Not Important', 'Q4 - Neither'])
   const [relationsTooltip, setRelationsTooltip] = useState<{
     isOpen: boolean
     strategy: StrategyRecord | null
@@ -56,6 +58,9 @@ const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPan
       try {
         setLoading(true)
         setError(null)
+        
+        // Fetch schema options first
+        await fetchSchemaOptions()
         
         const [strategyResponse, planResponse, taskResponse] = await Promise.all([
           fetch('/api/strategy'),
@@ -102,6 +107,25 @@ const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPan
     fetchData()
   }, [onStrategiesUpdate])
 
+  const fetchSchemaOptions = async () => {
+    try {
+      const response = await fetch('/api/tasks?action=schema')
+      if (response.ok) {
+        const result = await response.json()
+        const schema = result.schema || {}
+        
+        if (schema.statusOptions && schema.statusOptions.length > 0) {
+          setStatusOptions(schema.statusOptions)
+        }
+        if (schema.priorityOptions && schema.priorityOptions.length > 0) {
+          setPriorityOptions(schema.priorityOptions)
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch schema options, using defaults:', err)
+    }
+  }
+
   const handleDeleteStrategy = useCallback(async (strategyId: string) => {
     try {
       const response = await fetch(`/api/strategy?id=${strategyId}`, {
@@ -128,6 +152,32 @@ const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPan
   const handleRefresh = useCallback(() => {
     window.location.reload()
   }, [])
+
+  const handleStrategyUpdate = useCallback(async (strategyId: string, field: 'status' | 'priority_quadrant', value: string) => {
+    const strategy = strategies.find(s => s.id === strategyId)
+    if (!strategy) return
+
+    const updatedStrategy = { ...strategy, [field]: value }
+    
+    try {
+      const response = await fetch('/api/strategy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedStrategy)
+      })
+      
+      if (response.ok) {
+        setStrategies(prev => prev.map(s => s.id === strategyId ? updatedStrategy : s))
+        setToast({ message: `Strategy ${field} updated successfully`, type: 'success' })
+      } else {
+        throw new Error(`Failed to update strategy ${field}`)
+      }
+    } catch (error) {
+      console.error(`Failed to update strategy ${field}:`, error)
+      setToast({ message: `Failed to update strategy ${field}`, type: 'error' })
+      throw error // Re-throw for error handling in component
+    }
+  }, [strategies])
 
   // Loading state
   if (loading) {
@@ -163,9 +213,12 @@ const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPan
               setFormPanelOpen(true)
             }}
             onStrategyDelete={handleDeleteStrategy}
+            onStrategyUpdate={handleStrategyUpdate}
             onStrategyRelations={(strategy) => {
               setRelationsTooltip({ isOpen: true, strategy })
             }}
+            statusOptions={statusOptions}
+            priorityOptions={priorityOptions}
           />
         </div>
 

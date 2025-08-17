@@ -50,12 +50,35 @@ export default function PlanPanel() {
   const [tasks, setTasks] = useState<any[]>([])
   const [formPanelOpen, setFormPanelOpen] = useState(false)
   const [editingPlan, setEditingPlan] = useState<PlanRecord | null>(null)
+  const [updatingFields, setUpdatingFields] = useState<{[key: string]: boolean}>({})
+  const [statusOptions, setStatusOptions] = useState<string[]>(['Not Started', 'In Progress', 'Completed', 'On Hold'])
+  const [priorityOptions, setPriorityOptions] = useState<string[]>(['Q1 - Urgent Important', 'Q2 - Important Not Urgent', 'Q3 - Urgent Not Important', 'Q4 - Neither'])
 
   useEffect(() => {
     fetchPlans()
     fetchStrategies()
     fetchTasks()
+    fetchSchemaOptions()
   }, [])
+
+  const fetchSchemaOptions = async () => {
+    try {
+      const response = await fetch('/api/tasks?action=schema')
+      if (response.ok) {
+        const result = await response.json()
+        const schema = result.schema || {}
+        
+        if (schema.statusOptions && schema.statusOptions.length > 0) {
+          setStatusOptions(schema.statusOptions)
+        }
+        if (schema.priorityOptions && schema.priorityOptions.length > 0) {
+          setPriorityOptions(schema.priorityOptions)
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch schema options, using defaults:', err)
+    }
+  }
   
   const fetchStrategies = async () => {
     try {
@@ -154,9 +177,36 @@ export default function PlanPanel() {
     }
   }
 
-  // Options for form
-  const statusOptions = ['Not Started', 'In Progress', 'Completed', 'On Hold']
-  const priorityOptions = ['Q1 - Urgent Important', 'Q2 - Important Not Urgent', 'Q3 - Urgent Not Important', 'Q4 - Neither']
+  const handlePlanUpdate = async (planId: string, field: 'status' | 'priority_quadrant', value: string) => {
+    const plan = data.find(p => p.id === planId)
+    if (!plan) return
+
+    const updateKey = `${planId}-${field}`
+    setUpdatingFields(prev => ({ ...prev, [updateKey]: true }))
+
+    const updatedPlan = { ...plan, [field]: value }
+    
+    try {
+      const response = await fetch('/api/plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedPlan)
+      })
+      
+      if (response.ok) {
+        setData(prev => prev.map(p => p.id === planId ? updatedPlan : p))
+      } else {
+        throw new Error(`Failed to update plan ${field}`)
+      }
+    } catch (error) {
+      console.error(`Failed to update plan ${field}:`, error)
+      setError(`Failed to update plan ${field}`)
+    } finally {
+      setUpdatingFields(prev => ({ ...prev, [updateKey]: false }))
+    }
+  }
+
+  // Options loaded from database schema
 
   if (loading) {
     return (
@@ -277,18 +327,53 @@ export default function PlanPanel() {
                       
                       {/* Fields below title - 2 columns for Plan */}
                       <div className="grid grid-cols-2 gap-3 text-sm text-gray-600">
-                        <span className="px-2 py-1 bg-gray-100 rounded text-center">
-                          {plan.status || 'No Status'}
-                        </span>
-                        <span className="px-2 py-1 bg-gray-100 rounded text-center">
-                          {plan.priority_quadrant || 'No Priority'}
-                        </span>
+                        {/* Status - Dropdown Select */}
+                        <div className="relative">
+                          <select
+                            value={plan.status || ''}
+                            onChange={(e) => handlePlanUpdate(plan.id, 'status', e.target.value)}
+                            disabled={updatingFields[`${plan.id}-status`]}
+                            className="w-full px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 border-0 appearance-none cursor-pointer hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <option value="">No Status</option>
+                            {statusOptions.map(option => (
+                              <option key={option} value={option}>{option}</option>
+                            ))}
+                          </select>
+                          {updatingFields[`${plan.id}-status`] && (
+                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                              <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Priority - Dropdown Select */}
+                        <div className="relative">
+                          <select
+                            value={plan.priority_quadrant || ''}
+                            onChange={(e) => handlePlanUpdate(plan.id, 'priority_quadrant', e.target.value)}
+                            disabled={updatingFields[`${plan.id}-priority_quadrant`]}
+                            className="w-full px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 border-0 appearance-none cursor-pointer hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <option value="">No Priority</option>
+                            {priorityOptions.map(option => (
+                              <option key={option} value={option}>{option}</option>
+                            ))}
+                          </select>
+                          {updatingFields[`${plan.id}-priority_quadrant`] && (
+                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                              <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
 
                     {/* Right: Actions Section */}
-                    <div className="w-20 flex-shrink-0 space-y-2">
-                      {/* Row 1: Edit, Delete */}
+                    <div className="w-20 flex-shrink-0 flex flex-col justify-between">
+                      {/* Top: Edit, Delete */}
                       <div className="flex gap-1">
                         <button
                           onClick={() => {
@@ -313,7 +398,7 @@ export default function PlanPanel() {
                         </button>
                       </div>
                       
-                      {/* Row 2: Relations Button */}
+                      {/* Bottom: Relations Button - Aligned with labels bottom */}
                       <div className="flex">
                         <button
                           onClick={() => setRelationsTooltip({ isOpen: true, plan })}

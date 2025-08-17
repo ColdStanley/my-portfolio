@@ -1015,3 +1015,53 @@ import MarkdownContent from './MarkdownContent'
 - 为条件按钮预留固定空间
 - 使用opacity或disabled而非显示/隐藏
 - 保持容器尺寸恒定，避免重排
+
+## 数据选项管理原则 (CRITICAL)
+
+### 从数据库读取选项规则
+
+**禁止硬编码选项**：所有下拉选择器和选项列表必须从数据库schema表读取，确保数据一致性和可维护性。
+
+#### 实现标准
+```tsx
+// ✅ 正确 - 从数据库读取选项
+const [statusOptions, setStatusOptions] = useState<string[]>([])
+const [priorityOptions, setPriorityOptions] = useState<string[]>([])
+
+useEffect(() => {
+  // 从schema表获取选项
+  fetchSchemaOptions('task_status').then(setStatusOptions)
+  fetchSchemaOptions('priority_quadrant').then(setPriorityOptions)
+}, [])
+
+// ❌ 错误 - 硬编码选项
+const statusOptions = ['Not Started', 'In Progress', 'Completed']
+```
+
+#### 数据源要求
+- **Status选项**: 从 `task_status` schema字段读取
+- **Priority选项**: 从 `priority_quadrant` schema字段读取  
+- **顺序**: 按数据库中定义的顺序显示，支持自定义排序
+- **一致性**: 确保网页端和移动端使用相同数据源
+
+#### Schema表结构标准
+```sql
+-- 选项表结构示例
+CREATE TABLE field_options (
+  field_name VARCHAR,      -- 字段名称 (task_status, priority_quadrant)
+  option_value VARCHAR,    -- 选项值
+  display_label VARCHAR,   -- 显示标签
+  sort_order INTEGER,      -- 排序顺序
+  is_active BOOLEAN        -- 是否启用
+);
+```
+
+#### 缓存策略
+- **应用启动**: 一次性加载所有选项
+- **状态管理**: 使用Zustand全局存储
+- **更新机制**: 支持运行时选项更新
+
+#### 移动端适配
+- **Bottom Sheet**: 选项列表自动适应数据库选项数量
+- **本地化**: 支持多语言选项标签
+- **性能优化**: 选项预加载，避免每次API调用

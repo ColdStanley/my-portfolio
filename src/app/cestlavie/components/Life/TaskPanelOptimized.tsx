@@ -327,6 +327,34 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
     }
   }, [actions])
 
+  const handleTaskUpdate = useCallback(async (taskId: string, field: 'status' | 'priority_quadrant', value: string) => {
+    const task = state.tasks.find(t => t.id === taskId)
+    if (!task) return
+
+    const updatedTask = { ...task, [field]: value }
+    
+    try {
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTask)
+      })
+      
+      if (response.ok) {
+        actions.updateTask(updatedTask)
+        setToast({ message: `Task ${field} updated successfully`, type: 'success' })
+        setTimeout(() => setToast(null), 3000)
+      } else {
+        throw new Error(`Failed to update task ${field}`)
+      }
+    } catch (error) {
+      console.error(`Failed to update task ${field}:`, error)
+      setToast({ message: `Failed to update task ${field}`, type: 'error' })
+      setTimeout(() => setToast(null), 3000)
+      throw error // Re-throw for error handling in component
+    }
+  }, [state.tasks, actions])
+
   // Task CRUD operations
   const handleSaveTask = useCallback(async (formData: TaskFormData) => {
     try {
@@ -670,6 +698,7 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
                 onTaskDelete={handleDeleteTask}
                 onTaskComplete={handleTaskComplete}
                 onTaskCopy={handleTaskCopy}
+                onTaskUpdate={handleTaskUpdate}
                 onCreateTask={(date) => {
                   actions.setSelectedDate(date)
                   actions.openFormPanel()
@@ -678,6 +707,8 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
                 getPriorityColor={getPriorityColor}
                 planOptions={state.planOptions}
                 strategyOptions={state.strategyOptions}
+                statusOptions={state.statusOptions}
+                priorityOptions={state.priorityOptions}
               />
             </div>
           )}
@@ -787,6 +818,7 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
                   onTaskDelete={handleDeleteTask}
                   onTaskComplete={handleTaskComplete}
                   onTaskCopy={handleTaskCopy}
+                  onTaskUpdate={handleTaskUpdate}
                   onCreateTask={(date) => {
                     actions.setSelectedDate(date)
                     actions.openFormPanel()
@@ -795,6 +827,8 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
                   getPriorityColor={getPriorityColor}
                   planOptions={state.planOptions}
                   strategyOptions={state.strategyOptions}
+                  statusOptions={state.statusOptions}
+                  priorityOptions={state.priorityOptions}
                 />
               </div>
             </div>

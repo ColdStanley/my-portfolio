@@ -5,7 +5,7 @@ import { useTaskReducer, TaskRecord } from '../Life/taskReducer'
 import { TaskErrorBoundary, TaskLoadingSpinner, TaskErrorDisplay, ToastNotification } from '../Life/ErrorBoundary'
 import TaskFormPanel from '../Life/TaskFormPanel'
 import TaskCalendarView from '../Life/TaskCalendarView'
-import TaskListView from '../Life/TaskListView'
+import MobileTaskCards from './MobileTaskCards'
 
 interface TaskFormData {
   title: string
@@ -222,6 +222,32 @@ const MobileTaskPanel = forwardRef<MobileTaskPanelRef, MobileTaskPanelProps>(({ 
     window.location.reload()
   }, [])
 
+  const handleTaskUpdate = useCallback(async (taskId: string, field: 'status' | 'priority_quadrant', value: string) => {
+    const task = state.tasks.find(t => t.id === taskId)
+    if (!task) return
+
+    const updatedTask = { ...task, [field]: value }
+    
+    try {
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTask)
+      })
+      
+      if (response.ok) {
+        actions.updateTask(updatedTask)
+        setToast({ message: `Task ${field} updated successfully`, type: 'success' })
+      } else {
+        throw new Error(`Failed to update task ${field}`)
+      }
+    } catch (error) {
+      console.error(`Failed to update task ${field}:`, error)
+      setToast({ message: `Failed to update task ${field}`, type: 'error' })
+      throw error // Re-throw for error handling in component
+    }
+  }, [state.tasks, actions])
+
   // Loading state
   if (state.loading) {
     return (
@@ -262,15 +288,17 @@ const MobileTaskPanel = forwardRef<MobileTaskPanelRef, MobileTaskPanelProps>(({ 
 
         {/* Task Cards */}
         <div className="mx-4">
-          <TaskListView
+          <MobileTaskCards
             tasks={filteredTasks}
-            selectedDate={state.selectedDate || new Date().toISOString().split('T')[0]}
             onTaskClick={(task) => actions.openFormPanel(task)}
             onTaskDelete={handleDeleteTask}
+            onTaskUpdate={handleTaskUpdate}
             formatTimeRange={formatTimeRange}
             getPriorityColor={getPriorityColor}
             planOptions={state.planOptions}
             strategyOptions={state.strategyOptions}
+            statusOptions={state.statusOptions}
+            priorityOptions={state.priorityOptions}
           />
         </div>
 
