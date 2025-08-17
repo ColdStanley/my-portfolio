@@ -1,33 +1,17 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-
-interface TaskRecord {
-  id: string
-  title: string
-  status: string
-  start_date: string
-  end_date: string
-  all_day: boolean
-  plan: string[]
-  priority_quadrant: string
-  note: string
-  actual_start?: string
-  actual_end?: string
-  budget_time: number
-  actual_time: number
-  quality_rating?: number
-  next?: string
-  is_plan_critical?: boolean
-}
 import { useRouter } from 'next/navigation'
 import { useSimplifiedAuth } from '@/hooks/useSimplifiedAuth'
+import { TaskRecord } from './components/Life/taskReducer'
+import { useIsMobile } from './hooks/useIsMobile'
 import Sidebar from './components/Sidebar'
 import TaskPanelOptimized from './components/Life/TaskPanelOptimized'
 import NotionConfigModal from './components/NotionConfigModal'
 import StrategyPanel from './components/Life/StrategyPanel'
 import PlanPanel from './components/Life/PlanPanel'
 import FrenchPanel from './components/Study/FrenchPanel'
+import MobileLayout from './components/Mobile/MobileLayout'
 
 export default function CestLaViePage() {
   const [activeTab, setActiveTab] = useState('life')
@@ -36,6 +20,7 @@ export default function CestLaViePage() {
   const [tasks, setTasks] = useState<TaskRecord[]>([])
   const { user, loading, notionConfig } = useSimplifiedAuth()
   const router = useRouter()
+  const isMobile = useIsMobile()
 
   // Handle tab change with scroll reset
   const handleTabChange = (newTab: string) => {
@@ -103,6 +88,23 @@ export default function CestLaViePage() {
     return null
   }
 
+  // Mobile layout
+  if (isMobile) {
+    return (
+      <>
+        <MobileLayout />
+
+        {/* Notion配置模态框 */}
+        <NotionConfigModal
+          isOpen={showConfigModal}
+          onClose={() => setShowConfigModal(false)}
+          onConfigSaved={handleConfigSaved}
+        />
+      </>
+    )
+  }
+
+  // Desktop layout
   return (
     <>
       <div className="pt-16 min-h-screen flex relative">
