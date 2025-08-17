@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, forwardRef, useImperativeHandle } from 'react'
 import { TaskErrorBoundary, TaskLoadingSpinner, TaskErrorDisplay, ToastNotification } from '../Life/ErrorBoundary'
 import MobilePlanCards from './MobilePlanCards'
+import PlanFormPanel from '../Life/PlanFormPanel'
 
 interface PlanRecord {
   id: string
@@ -28,12 +29,15 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null)
+  const [formPanelOpen, setFormPanelOpen] = useState(false)
+  const [editingPlan, setEditingPlan] = useState<PlanRecord | null>(null)
+  const [strategies, setStrategies] = useState<any[]>([])
 
   // Expose openCreateForm method to parent component
   useImperativeHandle(ref, () => ({
     openCreateForm: () => {
-      // For now, redirect to Notion to create new plan
-      window.open('https://www.notion.so', '_blank')
+      setEditingPlan(null)
+      setFormPanelOpen(true)
     }
   }), [])
   
@@ -44,22 +48,32 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
         setLoading(true)
         setError(null)
         
-        const response = await fetch('/api/plan')
+        const [planResponse, strategyResponse] = await Promise.all([
+          fetch('/api/plan'),
+          fetch('/api/strategy')
+        ])
         
-        if (response.ok) {
-          const planData = await response.json()
+        if (planResponse.ok) {
+          const planData = await planResponse.json()
           const plansArray = planData.data || []
           setPlans(plansArray)
           
           if (onPlansUpdate) {
             onPlansUpdate(plansArray)
           }
-        } else {
+        }
+        
+        if (strategyResponse.ok) {
+          const strategyData = await strategyResponse.json()
+          setStrategies(strategyData.data || [])
+        }
+        
+        if (!planResponse.ok) {
           throw new Error('Failed to fetch plans')
         }
         
       } catch (error) {
-        console.error('Error fetching plans:', error)
+        console.error('Error fetching data:', error)
         setError(error instanceof Error ? error.message : 'Failed to load plans')
         setPlans([])
         
@@ -128,13 +142,40 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
           <MobilePlanCards
             plans={plans}
             onPlanClick={(plan) => {
-              // Open plan in Notion
-              const notionPageUrl = `https://www.notion.so/${plan.id.replace(/-/g, '')}`
-              window.open(notionPageUrl, '_blank')
+              setEditingPlan(plan)
+              setFormPanelOpen(true)
             }}
             onPlanDelete={handleDeletePlan}
           />
         </div>
+
+        {/* Plan Form Panel */}
+        <PlanFormPanel
+          isOpen={formPanelOpen}
+          onClose={() => setFormPanelOpen(false)}
+          editingPlan={editingPlan}
+          strategies={strategies}
+          onPlanCreated={(plan) => {
+            const updatedPlans = [...plans, plan]
+            setPlans(updatedPlans)
+            setFormPanelOpen(false)
+            setToast({ message: 'Plan created successfully', type: 'success' })
+            
+            if (onPlansUpdate) {
+              onPlansUpdate(updatedPlans)
+            }
+          }}
+          onPlanUpdated={(plan) => {
+            const updatedPlans = plans.map(p => p.id === plan.id ? plan : p)
+            setPlans(updatedPlans)
+            setFormPanelOpen(false)
+            setToast({ message: 'Plan updated successfully', type: 'success' })
+            
+            if (onPlansUpdate) {
+              onPlansUpdate(updatedPlans)
+            }
+          }}
+        />
 
         {/* Toast Notification */}
         {toast && (

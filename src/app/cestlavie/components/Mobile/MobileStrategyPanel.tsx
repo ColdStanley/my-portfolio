@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, forwardRef, useImperativeHandle } from 'react'
 import { TaskErrorBoundary, TaskLoadingSpinner, TaskErrorDisplay, ToastNotification } from '../Life/ErrorBoundary'
 import MobileStrategyCards from './MobileStrategyCards'
+import StrategyFormPanel from '../Life/StrategyFormPanel'
 
 interface StrategyRecord {
   id: string
@@ -27,12 +28,14 @@ const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPan
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null)
+  const [formPanelOpen, setFormPanelOpen] = useState(false)
+  const [editingStrategy, setEditingStrategy] = useState<StrategyRecord | null>(null)
 
   // Expose openCreateForm method to parent component
   useImperativeHandle(ref, () => ({
     openCreateForm: () => {
-      // For now, redirect to Notion to create new strategy
-      window.open('https://www.notion.so', '_blank')
+      setEditingStrategy(null)
+      setFormPanelOpen(true)
     }
   }), [])
   
@@ -127,13 +130,68 @@ const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPan
           <MobileStrategyCards
             strategies={strategies}
             onStrategyClick={(strategy) => {
-              // Open strategy in Notion
-              const notionPageUrl = `https://www.notion.so/${strategy.id.replace(/-/g, '')}`
-              window.open(notionPageUrl, '_blank')
+              setEditingStrategy(strategy)
+              setFormPanelOpen(true)
             }}
             onStrategyDelete={handleDeleteStrategy}
           />
         </div>
+
+        {/* Strategy Form Panel */}
+        <StrategyFormPanel
+          isOpen={formPanelOpen}
+          onClose={() => setFormPanelOpen(false)}
+          strategy={editingStrategy}
+          onSave={async (strategyData) => {
+            try {
+              const isEditing = !!editingStrategy
+              
+              if (isEditing) {
+                strategyData.id = editingStrategy!.id
+              }
+              
+              const response = await fetch('/api/strategy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(strategyData)
+              })
+              
+              if (!response.ok) {
+                throw new Error(`Failed to ${isEditing ? 'update' : 'create'} strategy`)
+              }
+              
+              const result = await response.json()
+              
+              if (isEditing) {
+                const updatedStrategies = strategies.map(s => s.id === editingStrategy!.id ? { ...editingStrategy, ...strategyData } : s)
+                setStrategies(updatedStrategies)
+                setToast({ message: 'Strategy updated successfully', type: 'success' })
+                
+                if (onStrategiesUpdate) {
+                  onStrategiesUpdate(updatedStrategies)
+                }
+              } else {
+                const newStrategy = { ...strategyData, id: result.id || `temp-${Date.now()}` }
+                const updatedStrategies = [...strategies, newStrategy]
+                setStrategies(updatedStrategies)
+                setToast({ message: 'Strategy created successfully', type: 'success' })
+                
+                if (onStrategiesUpdate) {
+                  onStrategiesUpdate(updatedStrategies)
+                }
+              }
+              
+              setFormPanelOpen(false)
+              setEditingStrategy(null)
+            } catch (error) {
+              console.error('Error saving strategy:', error)
+              setToast({ message: 'Failed to save strategy', type: 'error' })
+            }
+          }}
+          statusOptions={['Not Started', 'In Progress', 'Completed', 'On Hold']}
+          priorityOptions={['Q1 - Urgent Important', 'Q2 - Important Not Urgent', 'Q3 - Urgent Not Important', 'Q4 - Neither']}
+          categoryOptions={['Career', 'Health', 'Finance', 'Personal', 'Learning', 'Relationships']}
+        />
 
         {/* Toast Notification */}
         {toast && (
