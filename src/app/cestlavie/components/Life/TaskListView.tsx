@@ -194,20 +194,17 @@ export default function TaskListView({
                       : 'bg-white/90 hover:bg-gradient-to-r hover:from-purple-25/90 hover:to-purple-50/90'
                     }`}
                 >
-                  {/* Desktop: Three column layout, Mobile: Vertical layout */}
-                  <div className="lg:flex lg:items-stretch lg:justify-between lg:mb-3">
-                    {/* Desktop Left Column / Mobile Top Row - Time Info */}
-                    <div className="flex flex-col gap-1 lg:min-w-[120px] mb-3 lg:mb-0">
+                  {/* Task Header */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0">
+                      {/* Time Info */}
                       {(task.start_date || task.end_date) && (
                         <span className="text-sm font-semibold text-purple-500">
                           {formatTimeOnly(task.start_date, task.end_date)}
                         </span>
                       )}
-                    </div>
-
-                    {/* Desktop Middle Column / Mobile Middle Row - Task Main Content */}
-                    <div className="flex-1 min-w-0 lg:px-4 mb-3 lg:mb-0 flex flex-col">
-                      {/* Task Title - Aligned to top */}
+                      
+                      {/* Task Title */}
                       <h3 
                         className={`text-lg font-semibold ${
                           isCompleted ? 'text-purple-500 line-through' : 'text-purple-600'
@@ -217,9 +214,71 @@ export default function TaskListView({
                       >
                         {task.title}
                       </h3>
+                    </div>
 
-                      {/* 2x2 Grid Layout for Labels - Aligned to bottom */}
-                      <div className="grid grid-cols-2 gap-2 mt-auto">
+                    {/* Action Buttons */}
+                    <div className="space-y-1">
+                      {/* Row 1: Edit, Delete */}
+                      <div className="flex gap-1">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onTaskClick && onTaskClick(task)
+                          }}
+                          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                          title="Edit"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button
+                          ref={(el) => {
+                            if (el) deleteButtonRefs.current[task.id] = el
+                          }}
+                          onClick={(e) => handleDeleteClick(task, e)}
+                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200"
+                          title="Delete"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                      
+                      {/* Row 2: Copy, Complete */}
+                      <div className="flex gap-1">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onTaskCopy && onTaskCopy(task)
+                          }}
+                          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                          title="Copy Task"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onTaskComplete && onTaskComplete(task)
+                          }}
+                          className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                          title="Complete Early"
+                          disabled={task.status === 'Completed'}
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Labels Grid */}
+                  <div className="grid grid-cols-2 gap-2 mb-3">
                         {/* Row 1, Col 1: Status */}
                         <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
                           {task.status}
@@ -286,82 +345,6 @@ export default function TaskListView({
                             No Plan
                           </span>
                         )}
-                      </div>
-                    </div>
-
-                    {/* Desktop: Right Column with Vertical Layout, Mobile: Bottom Row with Horizontal Icons */}
-                    <div className="w-20 flex-shrink-0 space-y-2">
-                      {/* Row 1: Edit, Delete */}
-                      <div className="flex gap-1">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onTaskClick && onTaskClick(task)
-                          }}
-                          className="flex-1 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
-                          title="Edit"
-                        >
-                          <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                        <button
-                          ref={(el) => {
-                            if (el) deleteButtonRefs.current[task.id] = el
-                          }}
-                          onClick={(e) => handleDeleteClick(task, e)}
-                          className="flex-1 p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                          title="Delete"
-                        >
-                          <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
-                      
-                      {/* Row 2: Copy, Complete Early */}
-                      <div className="flex gap-1">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onTaskCopy && onTaskCopy(task)
-                          }}
-                          className="flex-1 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
-                          title="Copy Task"
-                        >
-                          <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onTaskComplete && onTaskComplete(task)
-                          }}
-                          className="flex-1 p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
-                          title="Complete Early"
-                          disabled={task.status === 'Completed'}
-                        >
-                          <svg className="w-4 h-4 mx-auto" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                          </svg>
-                        </button>
-                      </div>
-                      
-                      {/* Row 3: Relations Button */}
-                      <div className="flex">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setRelationsTooltip({ isOpen: true, task })
-                          }}
-                          className="w-full px-2 py-1 text-xs text-gray-500 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
-                          title="View Relations"
-                        >
-                          Relations
-                        </button>
-                      </div>
-                    </div>
                   </div>
 
                   {/* Full Notes Display - Bottom section spanning full width */}

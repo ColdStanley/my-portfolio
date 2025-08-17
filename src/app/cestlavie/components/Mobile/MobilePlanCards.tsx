@@ -40,24 +40,27 @@ export default function MobilePlanCards({
   
   const deleteButtonRefs = useRef<{[planId: string]: HTMLButtonElement}>({})
 
-  // Sort plans by last edited time (most recent first)
+  // Sort plans by display order (same as web version)
   const sortedPlans = useMemo(() => {
-    return plans.sort((a, b) => {
-      const aTime = a.last_edited_time || a.created_time || ''
-      const bTime = b.last_edited_time || b.created_time || ''
-      return bTime.localeCompare(aTime)
-    })
+    return plans.sort((a, b) => (a.display_order ?? 999999) - (b.display_order ?? 999999))
   }, [plans])
 
-  const formatDate = useCallback((dateStr: string) => {
-    if (!dateStr) return ''
+  const formatDateRange = useCallback((startDate: string, endDate: string): string => {
+    if (!startDate && !endDate) return 'No dates'
     
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
+    try {
+      // Convert UTC dates to local timezone for display
+      const start = startDate ? new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''
+      const end = endDate ? new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''
+      
+      if (start && end) {
+        return `${start} - ${end}`
+      }
+      
+      return start || end
+    } catch (error) {
+      return 'Invalid date'
+    }
   }, [])
 
   const handleNotionClick = useCallback((plan: PlanRecord, e: React.MouseEvent) => {
@@ -128,9 +131,9 @@ export default function MobilePlanCards({
                   {plan.objective || 'Untitled Plan'}
                 </h3>
                 
-                {/* Last Edited Date */}
-                <span className="text-sm font-medium text-gray-500">
-                  Updated: {formatDate(plan.last_edited_time || plan.created_time)}
+                {/* Date Range */}
+                <span className="text-sm font-medium text-purple-500">
+                  {formatDateRange(plan.start_date, plan.due_date)}
                 </span>
               </div>
 
