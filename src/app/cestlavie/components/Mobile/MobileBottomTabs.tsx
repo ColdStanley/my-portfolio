@@ -7,9 +7,9 @@ interface MobileBottomTabsProps {
 
 export default function MobileBottomTabs({ activeTab, onTabChange }: MobileBottomTabsProps) {
   const tabs = [
-    { id: 'life', label: 'Life', icon: '🌱' },
-    { id: 'career', label: 'Career', icon: '💼' },
-    { id: 'study', label: 'Study', icon: '📚' }
+    { id: 'life', label: 'Life' },
+    { id: 'career', label: 'Career' },
+    { id: 'study', label: 'Study' }
   ]
 
   return (
@@ -19,14 +19,13 @@ export default function MobileBottomTabs({ activeTab, onTabChange }: MobileBotto
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className={`flex flex-col items-center justify-center gap-1 transition-colors ${
+            className={`flex items-center justify-center transition-colors ${
               activeTab === tab.id
                 ? 'text-purple-600 bg-purple-50'
                 : 'text-gray-600 hover:text-gray-800'
             }`}
           >
-            <span className="text-lg">{tab.icon}</span>
-            <span className="text-xs font-medium">{tab.label}</span>
+            <span className="text-sm font-medium">{tab.label}</span>
           </button>
         ))}
       </div>
