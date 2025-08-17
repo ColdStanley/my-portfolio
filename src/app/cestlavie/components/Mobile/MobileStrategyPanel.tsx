@@ -1,209 +1,108 @@
 'use client'
 
-import { useEffect, useState, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react'
-import { useTaskReducer, TaskRecord } from '../Life/taskReducer'
+import { useEffect, useState, useCallback, forwardRef, useImperativeHandle } from 'react'
 import { TaskErrorBoundary, TaskLoadingSpinner, TaskErrorDisplay, ToastNotification } from '../Life/ErrorBoundary'
-import TaskFormPanel from '../Life/TaskFormPanel'
-import MobileTaskCards from './MobileTaskCards'
+import MobileStrategyCards from './MobileStrategyCards'
+
+interface StrategyRecord {
+  id: string
+  objective: string
+  status: string
+  priority: string
+  description: string
+  created_time: string
+  last_edited_time: string
+}
 
 interface MobileStrategyPanelProps {
-  onTasksUpdate?: (tasks: TaskRecord[]) => void
+  onStrategiesUpdate?: (strategies: StrategyRecord[]) => void
 }
 
 interface MobileStrategyPanelRef {
   openCreateForm: () => void
 }
 
-const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPanelProps>(({ onTasksUpdate }, ref) => {
-  const [state, actions] = useTaskReducer()
+const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPanelProps>(({ onStrategiesUpdate }, ref) => {
+  const [strategies, setStrategies] = useState<StrategyRecord[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null)
 
   // Expose openCreateForm method to parent component
   useImperativeHandle(ref, () => ({
     openCreateForm: () => {
-      actions.openFormPanel()
+      // For now, redirect to Notion to create new strategy
+      window.open('https://www.notion.so', '_blank')
     }
-  }), [actions])
+  }), [])
   
-  // Memoized filtered data
-  const filteredTasks = useMemo(() => {
-    let filtered = state.tasks
-    
-    if (state.selectedStatus !== 'all') {
-      filtered = filtered.filter(task => task.status === state.selectedStatus)
-    }
-    
-    if (state.selectedQuadrant !== 'all') {
-      filtered = filtered.filter(task => task.priority_quadrant === state.selectedQuadrant)
-    }
-    
-    if (state.selectedPlanFilter !== 'all') {
-      filtered = filtered.filter(task => {
-        if (!task.plan || task.plan.length === 0) return state.selectedPlanFilter === 'none'
-        return task.plan.includes(state.selectedPlanFilter)
-      })
-    }
-    
-    return filtered
-  }, [state.tasks, state.selectedStatus, state.selectedQuadrant, state.selectedPlanFilter])
-
-  // Utility functions
-  const formatTimeRange = useCallback((start: string, end: string, allDay: boolean) => {
-    if (allDay) return 'All Day'
-    
-    const formatTime = (dateStr: string) => {
-      const date = new Date(dateStr)
-      return date.toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        minute: '2-digit', 
-        hour12: true 
-      })
-    }
-    
-    return `${formatTime(start)} - ${formatTime(end)}`
-  }, [])
-
-  const getPriorityColor = useCallback((priority: string) => {
-    switch (priority) {
-      case 'Important & Urgent': return 'bg-red-100 text-red-800 border-red-200'
-      case 'Important & Not Urgent': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      case 'Not Important & Urgent': return 'bg-blue-100 text-blue-800 border-blue-200'
-      case 'Not Important & Not Urgent': return 'bg-gray-100 text-gray-800 border-gray-200'
-      default: return 'bg-purple-100 text-purple-800 border-purple-200'
-    }
-  }, [])
-
   // Data fetching
   useEffect(() => {
     const fetchData = async () => {
       try {
-        actions.setLoading(true)
-        actions.setError(null)
+        setLoading(true)
+        setError(null)
         
-        const requests = [
-          fetch('/api/tasks'),
-          fetch('/api/sync-notion-schema'),
-          fetch('/api/plan'),
-          fetch('/api/strategy')
-        ]
+        const response = await fetch('/api/strategy')
         
-        const results = await Promise.allSettled(requests)
-        const [tasksRes, schemaRes, planRes, strategyRes] = results
-        
-        let tasks: TaskRecord[] = []
-        let statusOptions: string[] = ['Not Started', 'In Progress', 'Completed']
-        let priorityOptions: string[] = ['Important & Urgent', 'Important & Not Urgent', 'Not Important & Urgent', 'Not Important & Not Urgent']
-        let planOptions: any[] = []
-        let strategyOptions: any[] = []
-        
-        if (tasksRes.status === 'fulfilled' && tasksRes.value.ok) {
-          const taskData = await tasksRes.value.json()
-          tasks = taskData.data || []
-        }
-        
-        if (schemaRes.status === 'fulfilled' && schemaRes.value.ok) {
-          try {
-            const schemaData = await schemaRes.value.json()
-            const statusProperty = schemaData.data?.properties?.Status
-            if (statusProperty?.type === 'select' && statusProperty.select?.options) {
-              statusOptions = statusProperty.select.options.map((opt: any) => opt.name)
-            }
-            
-            const priorityProperty = schemaData.data?.properties?.['Priority Quadrant']
-            if (priorityProperty?.type === 'select' && priorityProperty.select?.options) {
-              priorityOptions = priorityProperty.select.options.map((opt: any) => opt.name)
-            }
-          } catch (err) {
-            console.warn('Failed to parse schema data:', err)
+        if (response.ok) {
+          const strategyData = await response.json()
+          const strategiesArray = strategyData.data || []
+          setStrategies(strategiesArray)
+          
+          if (onStrategiesUpdate) {
+            onStrategiesUpdate(strategiesArray)
           }
-        }
-        
-        if (planRes.status === 'fulfilled' && planRes.value.ok) {
-          try {
-            const planResult = await planRes.value.json()
-            const rawPlans = planResult.data || []
-            planOptions = rawPlans.map((plan: any) => ({
-              id: plan.id,
-              title: plan.title || 'Untitled Plan'
-            }))
-          } catch (err) {
-            console.warn('Failed to parse plans data:', err)
-          }
-        }
-        
-        if (strategyRes.status === 'fulfilled' && strategyRes.value.ok) {
-          try {
-            const strategyResult = await strategyRes.value.json()
-            const rawStrategies = strategyResult.data || []
-            strategyOptions = rawStrategies.map((strategy: any) => ({
-              id: strategy.id,
-              objective: strategy.objective || 'Untitled Strategy'
-            }))
-          } catch (err) {
-            console.warn('Failed to parse strategies data:', err)
-          }
-        }
-        
-        actions.setTasks(tasks)
-        actions.setStatusOptions(statusOptions)
-        actions.setPriorityOptions(priorityOptions)
-        actions.setPlanOptions(planOptions)
-        actions.setStrategyOptions(strategyOptions)
-        
-        if (onTasksUpdate) {
-          onTasksUpdate(tasks)
+        } else {
+          throw new Error('Failed to fetch strategies')
         }
         
       } catch (error) {
-        console.error('Error fetching data:', error)
-        actions.setError(error instanceof Error ? error.message : 'Failed to load task data')
+        console.error('Error fetching strategies:', error)
+        setError(error instanceof Error ? error.message : 'Failed to load strategies')
+        setStrategies([])
         
-        actions.setStatusOptions(['Not Started', 'In Progress', 'Completed'])
-        actions.setPriorityOptions(['Important & Urgent', 'Important & Not Urgent', 'Not Important & Urgent', 'Not Important & Not Urgent'])
-        actions.setTasks([])
-        actions.setPlanOptions([])
-        
-        if (onTasksUpdate) {
-          onTasksUpdate([])
+        if (onStrategiesUpdate) {
+          onStrategiesUpdate([])
         }
         
       } finally {
-        actions.setLoading(false)
+        setLoading(false)
       }
     }
     
     fetchData()
-  }, [])
+  }, [onStrategiesUpdate])
 
-  const handleDeleteTask = useCallback(async (taskId: string) => {
+  const handleDeleteStrategy = useCallback(async (strategyId: string) => {
     try {
-      const response = await fetch(`/api/tasks?id=${taskId}`, {
+      const response = await fetch(`/api/strategy?id=${strategyId}`, {
         method: 'DELETE'
       })
       
       if (response.ok) {
-        actions.removeTask(taskId)
-        setToast({ message: 'Task deleted successfully', type: 'success' })
+        const updatedStrategies = strategies.filter(s => s.id !== strategyId)
+        setStrategies(updatedStrategies)
+        setToast({ message: 'Strategy deleted successfully', type: 'success' })
         
-        if (onTasksUpdate) {
-          const updatedTasks = state.tasks.filter(t => t.id !== taskId)
-          onTasksUpdate(updatedTasks)
+        if (onStrategiesUpdate) {
+          onStrategiesUpdate(updatedStrategies)
         }
       } else {
-        throw new Error('Failed to delete task')
+        throw new Error('Failed to delete strategy')
       }
     } catch (error) {
-      console.error('Error deleting task:', error)
-      setToast({ message: 'Failed to delete task', type: 'error' })
+      console.error('Error deleting strategy:', error)
+      setToast({ message: 'Failed to delete strategy', type: 'error' })
     }
-  }, [state.tasks, onTasksUpdate])
+  }, [strategies, onStrategiesUpdate])
 
   const handleRefresh = useCallback(() => {
     window.location.reload()
   }, [])
 
   // Loading state
-  if (state.loading) {
+  if (loading) {
     return (
       <TaskErrorBoundary>
         <TaskLoadingSpinner />
@@ -212,10 +111,10 @@ const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPan
   }
 
   // Error state
-  if (state.error) {
+  if (error) {
     return (
       <TaskErrorBoundary>
-        <TaskErrorDisplay error={state.error} onRetry={handleRefresh} />
+        <TaskErrorDisplay error={error} onRetry={handleRefresh} />
       </TaskErrorBoundary>
     )
   }
@@ -223,48 +122,18 @@ const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPan
   return (
     <TaskErrorBoundary>
       <div className="w-full space-y-4 pb-32">
-        {/* Task Cards Only */}
+        {/* Strategy Cards */}
         <div className="mx-4">
-          <MobileTaskCards
-            tasks={filteredTasks}
-            onTaskClick={(task) => actions.openFormPanel(task)}
-            onTaskDelete={handleDeleteTask}
-            formatTimeRange={formatTimeRange}
-            getPriorityColor={getPriorityColor}
-            planOptions={state.planOptions}
-            strategyOptions={state.strategyOptions}
+          <MobileStrategyCards
+            strategies={strategies}
+            onStrategyClick={(strategy) => {
+              // Open strategy in Notion
+              const notionPageUrl = `https://www.notion.so/${strategy.id.replace(/-/g, '')}`
+              window.open(notionPageUrl, '_blank')
+            }}
+            onStrategyDelete={handleDeleteStrategy}
           />
         </div>
-
-        {/* Task Form Panel */}
-        <TaskFormPanel
-          isOpen={state.formPanelOpen}
-          onClose={actions.closeFormPanel}
-          editingTask={state.editingTask}
-          statusOptions={state.statusOptions}
-          priorityOptions={state.priorityOptions}
-          planOptions={state.planOptions}
-          strategyOptions={state.strategyOptions}
-          onTaskCreated={(task) => {
-            actions.addTask(task)
-            actions.closeFormPanel()
-            setToast({ message: 'Task created successfully', type: 'success' })
-            
-            if (onTasksUpdate) {
-              onTasksUpdate([...state.tasks, task])
-            }
-          }}
-          onTaskUpdated={(task) => {
-            actions.updateTask(task)
-            actions.closeFormPanel()
-            setToast({ message: 'Task updated successfully', type: 'success' })
-            
-            if (onTasksUpdate) {
-              const updatedTasks = state.tasks.map(t => t.id === task.id ? task : t)
-              onTasksUpdate(updatedTasks)
-            }
-          }}
-        />
 
         {/* Toast Notification */}
         {toast && (
