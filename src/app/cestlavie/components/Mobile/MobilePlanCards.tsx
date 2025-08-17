@@ -4,10 +4,15 @@ import { useMemo, useCallback, useState, useRef } from 'react'
 
 interface PlanRecord {
   id: string
-  title: string
+  objective: string
+  description: string
+  start_date: string
+  due_date: string
   status: string
-  priority: string
-  notes: string
+  priority_quadrant: string
+  total_tasks: number
+  completed_tasks: number
+  display_order?: number
   parent_goal?: string[]
   created_time: string
   last_edited_time: string
@@ -120,7 +125,7 @@ export default function MobilePlanCards({
                   onClick={(e) => handleNotionClick(plan, e)}
                   title="Click to edit in Notion"
                 >
-                  {plan.title}
+                  {plan.objective || 'Untitled Plan'}
                 </h3>
                 
                 {/* Last Edited Date */}
@@ -171,14 +176,14 @@ export default function MobilePlanCards({
 
               {/* Priority */}
               <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
-                {plan.priority || 'No Priority'}
+                {plan.priority_quadrant || 'No Priority'}
               </span>
             </div>
 
-            {/* Notes */}
-            {plan.notes && (
+            {/* Description */}
+            {plan.description && (
               <div className="pt-3 border-t border-gray-200">
-                <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">{plan.notes}</p>
+                <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">{plan.description}</p>
               </div>
             )}
           </div>
@@ -191,7 +196,7 @@ export default function MobilePlanCards({
           <div className="bg-white rounded-lg p-6 mx-4 max-w-sm w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Plan</h3>
             <p className="text-gray-600 mb-4">
-              Are you sure you want to delete "{deleteTooltip.plan?.title}"? This action cannot be undone.
+              Are you sure you want to delete "{deleteTooltip.plan?.objective}"? This action cannot be undone.
             </p>
             <div className="flex gap-3 justify-end">
               <button

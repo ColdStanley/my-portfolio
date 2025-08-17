@@ -7,10 +7,15 @@ import PlanFormPanel from '../Life/PlanFormPanel'
 
 interface PlanRecord {
   id: string
-  title: string
+  objective: string
+  description: string
+  start_date: string
+  due_date: string
   status: string
-  priority: string
-  notes: string
+  priority_quadrant: string
+  total_tasks: number
+  completed_tasks: number
+  display_order?: number
   parent_goal?: string[]
   created_time: string
   last_edited_time: string

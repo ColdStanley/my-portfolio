@@ -40,15 +40,6 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
     setIsTabSelectorOpen(false)
   }
 
-  const getSubTabIcon = (subTab: string) => {
-    switch (subTab) {
-      case 'task': return '✓'
-      case 'plan': return '📋'
-      case 'strategy': return '🎯'
-      default: return ''
-    }
-  }
-
   const getSubTabLabel = (subTab: string) => {
     switch (subTab) {
       case 'task': return 'Task'
@@ -60,6 +51,18 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
+      <style jsx>{`
+        @keyframes slideInLeft {
+          0% {
+            transform: translateX(20px);
+            opacity: 0;
+          }
+          100% {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+      `}</style>
       {/* Content Area */}
       <div className="pb-16">
         {/* Floating Buttons - only show when in Life tab */}
@@ -81,23 +84,26 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
             <div className="fixed bottom-20 right-4 z-50">
               {/* Sub tab buttons - show when expanded */}
               {isTabSelectorOpen && (
-                <div className="absolute bottom-0 right-12 flex gap-2">
+                <div className="absolute bottom-0 right-12 flex gap-3">
                   {['task', 'plan', 'strategy'].map((subTab, index) => (
                     <div 
                       key={subTab}
-                      className="animate-in slide-in-from-right duration-300"
-                      style={{ animationDelay: `${index * 50}ms` }}
+                      className="transform transition-all duration-500 ease-out"
+                      style={{ 
+                        animation: `slideInLeft 0.4s ease-out ${index * 100}ms both`,
+                        transform: `translateX(${isTabSelectorOpen ? '0' : '20px'})`,
+                        opacity: isTabSelectorOpen ? '1' : '0'
+                      }}
                     >
                       <button
                         onClick={() => handleSubTabChange(subTab)}
-                        className={`w-9 h-9 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 text-sm ${
+                        className={`px-3 py-2 rounded-lg shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-105 text-sm font-medium whitespace-nowrap ${
                           activeSubTab === subTab
-                            ? 'bg-purple-500 text-white'
-                            : 'bg-white text-gray-600 hover:bg-gray-50'
+                            ? 'bg-purple-500 text-white shadow-purple-200'
+                            : 'bg-white text-gray-600 hover:bg-gray-50 hover:shadow-xl'
                         }`}
-                        title={getSubTabLabel(subTab)}
                       >
-                        {getSubTabIcon(subTab)}
+                        {getSubTabLabel(subTab)}
                       </button>
                     </div>
                   ))}
@@ -107,14 +113,10 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
               {/* Main tab selector button */}
               <button 
                 onClick={() => setIsTabSelectorOpen(!isTabSelectorOpen)}
-                className={`w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 ${
-                  isTabSelectorOpen 
-                    ? 'bg-gray-500 text-white' 
-                    : 'bg-white text-gray-600 hover:bg-gray-50'
-                }`}
+                className="w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 bg-white text-gray-600 hover:bg-gray-50"
               >
                 <svg 
-                  className={`w-5 h-5 transition-transform duration-300 ${
+                  className={`w-5 h-5 transition-transform duration-500 ease-out ${
                     isTabSelectorOpen ? 'rotate-45' : ''
                   }`} 
                   fill="none" 

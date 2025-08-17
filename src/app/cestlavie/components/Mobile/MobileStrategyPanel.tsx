@@ -8,11 +8,15 @@ import StrategyFormPanel from '../Life/StrategyFormPanel'
 interface StrategyRecord {
   id: string
   objective: string
-  status: string
-  priority: string
   description: string
-  created_time: string
-  last_edited_time: string
+  start_date: string
+  due_date: string
+  status: string
+  priority_quadrant: string
+  category: string
+  progress: number
+  total_plans: number
+  order?: number
 }
 
 interface MobileStrategyPanelProps {

@@ -5,11 +5,15 @@ import { useMemo, useCallback, useState, useRef } from 'react'
 interface StrategyRecord {
   id: string
   objective: string
-  status: string
-  priority: string
   description: string
-  created_time: string
-  last_edited_time: string
+  start_date: string
+  due_date: string
+  status: string
+  priority_quadrant: string
+  category: string
+  progress: number
+  total_plans: number
+  order?: number
 }
 
 interface MobileStrategyCardsProps {
@@ -34,24 +38,27 @@ export default function MobileStrategyCards({
   
   const deleteButtonRefs = useRef<{[strategyId: string]: HTMLButtonElement}>({})
 
-  // Sort strategies by last edited time (most recent first)
+  // Sort strategies by order (same as web version)
   const sortedStrategies = useMemo(() => {
-    return strategies.sort((a, b) => {
-      const aTime = a.last_edited_time || a.created_time || ''
-      const bTime = b.last_edited_time || b.created_time || ''
-      return bTime.localeCompare(aTime)
-    })
+    return strategies.sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999))
   }, [strategies])
 
-  const formatDate = useCallback((dateStr: string) => {
-    if (!dateStr) return ''
+  const formatDateRange = useCallback((startDate: string, endDate: string): string => {
+    if (!startDate && !endDate) return 'No dates'
     
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
+    try {
+      // Convert UTC dates to local timezone for display
+      const start = startDate ? new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''
+      const end = endDate ? new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''
+      
+      if (start && end) {
+        return `${start} - ${end}`
+      }
+      
+      return start || end
+    } catch (error) {
+      return 'Invalid date'
+    }
   }, [])
 
   const handleNotionClick = useCallback((strategy: StrategyRecord, e: React.MouseEvent) => {
@@ -122,9 +129,9 @@ export default function MobileStrategyCards({
                   {strategy.objective}
                 </h3>
                 
-                {/* Last Edited Date */}
-                <span className="text-sm font-medium text-gray-500">
-                  Updated: {formatDate(strategy.last_edited_time || strategy.created_time)}
+                {/* Date Range */}
+                <span className="text-sm font-medium text-purple-500">
+                  {formatDateRange(strategy.start_date, strategy.due_date)}
                 </span>
               </div>
 
@@ -162,15 +169,20 @@ export default function MobileStrategyCards({
             </div>
 
             {/* Labels Grid */}
-            <div className="grid grid-cols-2 gap-2 mb-3">
+            <div className="grid grid-cols-3 gap-2 mb-3">
               {/* Status */}
               <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
-                {strategy.status}
+                {strategy.status || 'No Status'}
               </span>
 
               {/* Priority */}
               <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
-                {strategy.priority || 'No Priority'}
+                {strategy.priority_quadrant || 'No Priority'}
+              </span>
+
+              {/* Category */}
+              <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
+                {strategy.category || 'No Category'}
               </span>
             </div>
 
