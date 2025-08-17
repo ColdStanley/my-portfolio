@@ -5,7 +5,7 @@ import { useTaskReducer, TaskRecord } from '../Life/taskReducer'
 import { TaskErrorBoundary, TaskLoadingSpinner, TaskErrorDisplay, ToastNotification } from '../Life/ErrorBoundary'
 import TaskFormPanel from '../Life/TaskFormPanel'
 import TaskCalendarView from '../Life/TaskCalendarView'
-import MobileTaskCards from './MobileTaskCards'
+import TaskListView from '../Life/TaskListView'
 
 interface TaskFormData {
   title: string
@@ -36,6 +36,14 @@ const MobileTaskPanel = forwardRef<MobileTaskPanelRef, MobileTaskPanelProps>(({ 
       actions.openFormPanel()
     }
   }), [actions])
+
+  // Set default selected date to today for mobile
+  useEffect(() => {
+    if (!state.selectedDate) {
+      const today = new Date().toISOString().split('T')[0]
+      actions.setSelectedDate(today)
+    }
+  }, [state.selectedDate, actions])
   
   // Memoized filtered data
   const filteredTasks = useMemo(() => {
@@ -254,8 +262,9 @@ const MobileTaskPanel = forwardRef<MobileTaskPanelRef, MobileTaskPanelProps>(({ 
 
         {/* Task Cards */}
         <div className="mx-4">
-          <MobileTaskCards
+          <TaskListView
             tasks={filteredTasks}
+            selectedDate={state.selectedDate || new Date().toISOString().split('T')[0]}
             onTaskClick={(task) => actions.openFormPanel(task)}
             onTaskDelete={handleDeleteTask}
             formatTimeRange={formatTimeRange}
