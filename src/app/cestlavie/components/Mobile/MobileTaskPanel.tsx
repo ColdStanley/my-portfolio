@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useEffect, useState, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react'
 import { useTaskReducer, TaskRecord } from '../Life/taskReducer'
 import { TaskErrorBoundary, TaskLoadingSpinner, TaskErrorDisplay, ToastNotification } from '../Life/ErrorBoundary'
 import TaskFormPanel from '../Life/TaskFormPanel'
@@ -22,9 +22,20 @@ interface MobileTaskPanelProps {
   onTasksUpdate?: (tasks: TaskRecord[]) => void
 }
 
-export default function MobileTaskPanel({ onTasksUpdate }: MobileTaskPanelProps) {
+interface MobileTaskPanelRef {
+  openCreateForm: () => void
+}
+
+const MobileTaskPanel = forwardRef<MobileTaskPanelRef, MobileTaskPanelProps>(({ onTasksUpdate }, ref) => {
   const [state, actions] = useTaskReducer()
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null)
+
+  // Expose openCreateForm method to parent component
+  useImperativeHandle(ref, () => ({
+    openCreateForm: () => {
+      actions.openFormPanel()
+    }
+  }), [actions])
   
   // Memoized filtered data
   const filteredTasks = useMemo(() => {
@@ -295,4 +306,8 @@ export default function MobileTaskPanel({ onTasksUpdate }: MobileTaskPanelProps)
       </div>
     </TaskErrorBoundary>
   )
-}
+})
+
+MobileTaskPanel.displayName = 'MobileTaskPanel'
+
+export default MobileTaskPanel
