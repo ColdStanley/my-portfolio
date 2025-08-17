@@ -66,7 +66,7 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
         {showButtons && (
           <>
             {/* Add Button - moved up */}
-            <div className="fixed bottom-44 right-4 z-50">
+            <div className="fixed bottom-32 right-4 z-50">
               <button 
                 onClick={handleAddButtonClick}
                 className="w-10 h-10 bg-purple-500 hover:bg-purple-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110"
@@ -78,11 +78,11 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
             </div>
 
             {/* Tab Selector Buttons */}
-            <div className="fixed bottom-28 right-4 z-50">
+            <div className="fixed bottom-20 right-4 z-50">
               {/* Sub tab buttons - show when expanded */}
               {isTabSelectorOpen && (
-                <div className="flex flex-col gap-2 mb-2">
-                  {['strategy', 'plan', 'task'].map((subTab, index) => (
+                <div className="absolute bottom-0 right-12 flex gap-2">
+                  {['task', 'plan', 'strategy'].map((subTab, index) => (
                     <div 
                       key={subTab}
                       className="animate-in slide-in-from-right duration-300"

@@ -142,6 +142,10 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
           <MobilePlanCards
             plans={plans}
             onPlanClick={(plan) => {
+              const notionPageUrl = `https://www.notion.so/${plan.id.replace(/-/g, '')}`
+              window.open(notionPageUrl, '_blank')
+            }}
+            onPlanEdit={(plan) => {
               setEditingPlan(plan)
               setFormPanelOpen(true)
             }}

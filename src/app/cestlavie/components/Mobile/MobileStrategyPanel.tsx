@@ -130,6 +130,10 @@ const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPan
           <MobileStrategyCards
             strategies={strategies}
             onStrategyClick={(strategy) => {
+              const notionPageUrl = `https://www.notion.so/${strategy.id.replace(/-/g, '')}`
+              window.open(notionPageUrl, '_blank')
+            }}
+            onStrategyEdit={(strategy) => {
               setEditingStrategy(strategy)
               setFormPanelOpen(true)
             }}
