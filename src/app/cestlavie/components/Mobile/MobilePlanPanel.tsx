@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, forwardRef, useImperativeHandle } fro
 import { TaskErrorBoundary, TaskLoadingSpinner, TaskErrorDisplay, ToastNotification } from '../Life/ErrorBoundary'
 import MobilePlanCards from './MobilePlanCards'
 import PlanFormPanel from '../Life/PlanFormPanel'
+import RelationsTooltip from '../Life/RelationsTooltip'
 
 interface PlanRecord {
   id: string
@@ -17,8 +18,6 @@ interface PlanRecord {
   completed_tasks: number
   display_order?: number
   parent_goal?: string[]
-  created_time: string
-  last_edited_time: string
 }
 
 interface MobilePlanPanelProps {
@@ -36,7 +35,12 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null)
   const [formPanelOpen, setFormPanelOpen] = useState(false)
   const [editingPlan, setEditingPlan] = useState<PlanRecord | null>(null)
+  const [relationsTooltip, setRelationsTooltip] = useState<{
+    isOpen: boolean
+    plan: PlanRecord | null
+  }>({ isOpen: false, plan: null })
   const [strategies, setStrategies] = useState<any[]>([])
+  const [tasks, setTasks] = useState<any[]>([])
 
   // Expose openCreateForm method to parent component
   useImperativeHandle(ref, () => ({
@@ -53,9 +57,10 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
         setLoading(true)
         setError(null)
         
-        const [planResponse, strategyResponse] = await Promise.all([
+        const [planResponse, strategyResponse, taskResponse] = await Promise.all([
           fetch('/api/plan'),
-          fetch('/api/strategy')
+          fetch('/api/strategy'),
+          fetch('/api/tasks')
         ])
         
         if (!planResponse.ok) {
@@ -73,6 +78,11 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
         if (strategyResponse.ok) {
           const strategyData = await strategyResponse.json()
           setStrategies(strategyData.data || [])
+        }
+        
+        if (taskResponse.ok) {
+          const taskData = await taskResponse.json()
+          setTasks(taskData.data || [])
         }
         
       } catch (error) {
@@ -153,6 +163,9 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
               setFormPanelOpen(true)
             }}
             onPlanDelete={handleDeletePlan}
+            onPlanRelations={(plan) => {
+              setRelationsTooltip({ isOpen: true, plan })
+            }}
           />
         </div>
 
@@ -183,6 +196,38 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
             }
           }}
         />
+
+        {/* Relations Tooltip */}
+        {relationsTooltip.plan && (
+          <RelationsTooltip
+            type="plan"
+            isOpen={relationsTooltip.isOpen}
+            onClose={() => setRelationsTooltip({ isOpen: false, plan: null })}
+            parentStrategyForPlan={(() => {
+              const plan = relationsTooltip.plan
+              // Filter strategies that this plan belongs to
+              return strategies.filter(strategy => 
+                plan.parent_goal && plan.parent_goal.includes(strategy.id)
+              ).map(strategy => ({
+                id: strategy.id,
+                objective: strategy.objective,
+                status: strategy.status
+              }))
+            })()}
+            childTasks={(() => {
+              const plan = relationsTooltip.plan
+              // Filter tasks that belong to this plan
+              return tasks.filter(task => 
+                task.plan && task.plan.includes(plan.id)
+              ).map(task => ({
+                id: task.id,
+                title: task.title,
+                status: task.status,
+                plan: task.plan
+              }))
+            })()}
+          />
+        )}
 
         {/* Toast Notification */}
         {toast && (

@@ -14,8 +14,6 @@ interface PlanRecord {
   completed_tasks: number
   display_order?: number
   parent_goal?: string[]
-  created_time: string
-  last_edited_time: string
 }
 
 interface MobilePlanCardsProps {
@@ -23,13 +21,15 @@ interface MobilePlanCardsProps {
   onPlanClick?: (plan: PlanRecord) => void
   onPlanEdit?: (plan: PlanRecord) => void
   onPlanDelete?: (planId: string) => void
+  onPlanRelations?: (plan: PlanRecord) => void
 }
 
 export default function MobilePlanCards({ 
   plans, 
   onPlanClick,
   onPlanEdit,
-  onPlanDelete
+  onPlanDelete,
+  onPlanRelations
 }: MobilePlanCardsProps) {
   
   const [deleteTooltip, setDeleteTooltip] = useState<{
@@ -75,6 +75,13 @@ export default function MobilePlanCards({
       onPlanEdit(plan)
     }
   }, [onPlanEdit])
+
+  const handleRelationsClick = useCallback((plan: PlanRecord, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (onPlanRelations) {
+      onPlanRelations(plan)
+    }
+  }, [onPlanRelations])
 
   const handleDeleteClick = useCallback((plan: PlanRecord, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -138,34 +145,50 @@ export default function MobilePlanCards({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-1">
-                {/* Edit Button */}
-                {onPlanEdit && (
-                  <button
-                    onClick={(e) => handleEditClick(plan, e)}
-                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200"
-                    title="Edit plan"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </button>
-                )}
+              <div className="space-y-1">
+                {/* Row 1: Edit, Delete */}
+                <div className="flex gap-1">
+                  {/* Edit Button */}
+                  {onPlanEdit && (
+                    <button
+                      onClick={(e) => handleEditClick(plan, e)}
+                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                      title="Edit plan"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                  )}
+                  
+                  {/* Delete Button */}
+                  {onPlanDelete && (
+                    <button
+                      ref={el => {
+                        if (el) deleteButtonRefs.current[plan.id] = el
+                      }}
+                      onClick={(e) => handleDeleteClick(plan, e)}
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200"
+                      title="Delete plan"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
                 
-                {/* Delete Button */}
-                {onPlanDelete && (
-                  <button
-                    ref={el => {
-                      if (el) deleteButtonRefs.current[plan.id] = el
-                    }}
-                    onClick={(e) => handleDeleteClick(plan, e)}
-                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200"
-                    title="Delete plan"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+                {/* Row 2: Relations Button */}
+                {onPlanRelations && (
+                  <div className="flex">
+                    <button
+                      onClick={(e) => handleRelationsClick(plan, e)}
+                      className="w-full px-2 py-1 text-xs text-gray-500 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
+                      title="View Relations"
+                    >
+                      Relations
+                    </button>
+                  </div>
                 )}
               </div>
             </div>

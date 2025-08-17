@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, forwardRef, useImperativeHandle } fro
 import { TaskErrorBoundary, TaskLoadingSpinner, TaskErrorDisplay, ToastNotification } from '../Life/ErrorBoundary'
 import MobileStrategyCards from './MobileStrategyCards'
 import StrategyFormPanel from '../Life/StrategyFormPanel'
+import RelationsTooltip from '../Life/RelationsTooltip'
 
 interface StrategyRecord {
   id: string
@@ -34,6 +35,12 @@ const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPan
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null)
   const [formPanelOpen, setFormPanelOpen] = useState(false)
   const [editingStrategy, setEditingStrategy] = useState<StrategyRecord | null>(null)
+  const [relationsTooltip, setRelationsTooltip] = useState<{
+    isOpen: boolean
+    strategy: StrategyRecord | null
+  }>({ isOpen: false, strategy: null })
+  const [plans, setPlans] = useState<any[]>([])
+  const [tasks, setTasks] = useState<any[]>([])
 
   // Expose openCreateForm method to parent component
   useImperativeHandle(ref, () => ({
@@ -50,18 +57,32 @@ const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPan
         setLoading(true)
         setError(null)
         
-        const response = await fetch('/api/strategy')
+        const [strategyResponse, planResponse, taskResponse] = await Promise.all([
+          fetch('/api/strategy'),
+          fetch('/api/plan'),
+          fetch('/api/tasks')
+        ])
         
-        if (response.ok) {
-          const strategyData = await response.json()
-          const strategiesArray = strategyData.data || []
-          setStrategies(strategiesArray)
-          
-          if (onStrategiesUpdate) {
-            onStrategiesUpdate(strategiesArray)
-          }
-        } else {
+        if (!strategyResponse.ok) {
           throw new Error('Failed to fetch strategies')
+        }
+        
+        const strategyData = await strategyResponse.json()
+        const strategiesArray = strategyData.data || []
+        setStrategies(strategiesArray)
+        
+        if (onStrategiesUpdate) {
+          onStrategiesUpdate(strategiesArray)
+        }
+        
+        if (planResponse.ok) {
+          const planData = await planResponse.json()
+          setPlans(planData.data || [])
+        }
+        
+        if (taskResponse.ok) {
+          const taskData = await taskResponse.json()
+          setTasks(taskData.data || [])
         }
         
       } catch (error) {
@@ -142,6 +163,9 @@ const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPan
               setFormPanelOpen(true)
             }}
             onStrategyDelete={handleDeleteStrategy}
+            onStrategyRelations={(strategy) => {
+              setRelationsTooltip({ isOpen: true, strategy })
+            }}
           />
         </div>
 
@@ -200,6 +224,44 @@ const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPan
           priorityOptions={['Q1 - Urgent Important', 'Q2 - Important Not Urgent', 'Q3 - Urgent Not Important', 'Q4 - Neither']}
           categoryOptions={['Career', 'Health', 'Finance', 'Personal', 'Learning', 'Relationships']}
         />
+
+        {/* Relations Tooltip */}
+        {relationsTooltip.strategy && (
+          <RelationsTooltip
+            type="strategy"
+            isOpen={relationsTooltip.isOpen}
+            onClose={() => setRelationsTooltip({ isOpen: false, strategy: null })}
+            childPlans={(() => {
+              const strategy = relationsTooltip.strategy
+              // Filter plans that belong to this strategy
+              return plans.filter(plan => 
+                plan.parent_goal && plan.parent_goal.includes(strategy.id)
+              ).map(plan => ({
+                id: plan.id,
+                objective: plan.objective,
+                status: plan.status,
+                total_tasks: plan.total_tasks || 0,
+                completed_tasks: plan.completed_tasks || 0
+              }))
+            })()}
+            allChildTasks={(() => {
+              const strategy = relationsTooltip.strategy
+              // Get all tasks that belong to plans under this strategy
+              const strategyPlanIds = plans
+                .filter(plan => plan.parent_goal && plan.parent_goal.includes(strategy.id))
+                .map(plan => plan.id)
+              
+              return tasks.filter(task => 
+                task.plan && task.plan.some((planId: string) => strategyPlanIds.includes(planId))
+              ).map(task => ({
+                id: task.id,
+                title: task.title,
+                status: task.status,
+                plan: task.plan
+              }))
+            })()}
+          />
+        )}
 
         {/* Toast Notification */}
         {toast && (
