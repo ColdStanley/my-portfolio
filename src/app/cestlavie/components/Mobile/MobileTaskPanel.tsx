@@ -5,7 +5,7 @@ import { useTaskReducer, TaskRecord } from '../Life/taskReducer'
 import { TaskErrorBoundary, TaskLoadingSpinner, TaskErrorDisplay, ToastNotification } from '../Life/ErrorBoundary'
 import TaskFormPanel from '../Life/TaskFormPanel'
 import TaskCalendarView from '../Life/TaskCalendarView'
-import TaskListView from '../Life/TaskListView'
+import MobileTaskCards from './MobileTaskCards'
 
 interface TaskFormData {
   title: string
@@ -243,13 +243,14 @@ export default function MobileTaskPanel({ onTasksUpdate }: MobileTaskPanelProps)
 
         {/* Task Cards */}
         <div className="mx-4">
-          <TaskListView
+          <MobileTaskCards
             tasks={filteredTasks}
             onTaskClick={(task) => actions.openFormPanel(task)}
             onTaskDelete={handleDeleteTask}
             formatTimeRange={formatTimeRange}
             getPriorityColor={getPriorityColor}
-            compact={true}
+            planOptions={state.planOptions}
+            strategyOptions={state.strategyOptions}
           />
         </div>
 

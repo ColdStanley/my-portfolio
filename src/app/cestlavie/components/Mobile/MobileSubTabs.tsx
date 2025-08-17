@@ -16,7 +16,7 @@ export default function MobileSubTabs({ activeSubTab, onSubTabChange, show }: Mo
   ]
 
   return (
-    <div className="fixed bottom-24 left-4 right-4 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 z-30">
+    <div className="fixed bottom-18 left-4 right-4 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 z-30">
       <div className="grid grid-cols-3 h-12">
         {subTabs.map((tab) => (
           <button

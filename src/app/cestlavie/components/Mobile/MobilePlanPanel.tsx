@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useTaskReducer, TaskRecord } from '../Life/taskReducer'
 import { TaskErrorBoundary, TaskLoadingSpinner, TaskErrorDisplay, ToastNotification } from '../Life/ErrorBoundary'
 import TaskFormPanel from '../Life/TaskFormPanel'
-import TaskListView from '../Life/TaskListView'
+import MobileTaskCards from './MobileTaskCards'
 
 interface MobilePlanPanelProps {
   onTasksUpdate?: (tasks: TaskRecord[]) => void
@@ -214,13 +214,14 @@ export default function MobilePlanPanel({ onTasksUpdate }: MobilePlanPanelProps)
       <div className="w-full space-y-4 pb-32">
         {/* Task Cards Only */}
         <div className="mx-4">
-          <TaskListView
+          <MobileTaskCards
             tasks={filteredTasks}
             onTaskClick={(task) => actions.openFormPanel(task)}
             onTaskDelete={handleDeleteTask}
             formatTimeRange={formatTimeRange}
             getPriorityColor={getPriorityColor}
-            compact={true}
+            planOptions={state.planOptions}
+            strategyOptions={state.strategyOptions}
           />
         </div>
 
