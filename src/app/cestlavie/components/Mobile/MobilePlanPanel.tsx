@@ -70,10 +70,10 @@ export default function MobilePlanPanel({ onTasksUpdate }: MobilePlanPanelProps)
         actions.setError(null)
         
         const requests = [
-          fetch('/api/cestlavie/tasks'),
-          fetch('/api/cestlavie/notion-schema'),
-          fetch('/api/cestlavie/plans'),
-          fetch('/api/cestlavie/strategies')
+          fetch('/api/tasks'),
+          fetch('/api/sync-notion-schema'),
+          fetch('/api/plan'),
+          fetch('/api/strategy')
         ]
         
         const results = await Promise.allSettled(requests)
@@ -166,7 +166,7 @@ export default function MobilePlanPanel({ onTasksUpdate }: MobilePlanPanelProps)
 
   const handleDeleteTask = useCallback(async (taskId: string) => {
     try {
-      const response = await fetch(`/api/cestlavie/tasks/${taskId}`, {
+      const response = await fetch(`/api/tasks?id=${taskId}`, {
         method: 'DELETE'
       })
       
