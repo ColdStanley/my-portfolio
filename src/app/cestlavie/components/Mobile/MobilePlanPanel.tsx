@@ -14,10 +14,11 @@ interface PlanRecord {
   due_date: string
   status: string
   priority_quadrant: string
+  strategy?: string[]
+  task?: string[]
   total_tasks: number
   completed_tasks: number
   display_order?: number
-  parent_goal?: string[]
 }
 
 interface MobilePlanPanelProps {
@@ -291,26 +292,26 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
             onClose={() => setRelationsTooltip({ isOpen: false, plan: null })}
             parentStrategyForPlan={(() => {
               const plan = relationsTooltip.plan
-              // Filter strategies that this plan belongs to
-              return strategies.filter(strategy => 
-                plan.parent_goal && plan.parent_goal.includes(strategy.id)
-              ).map(strategy => ({
-                id: strategy.id,
-                objective: strategy.objective,
-                status: strategy.status
-              }))
+              // Direct access to plan's parent strategies using plan.strategy field
+              return plan.strategy 
+                ? strategies.filter(strategy => plan.strategy.includes(strategy.id)).map(strategy => ({
+                    id: strategy.id,
+                    objective: strategy.objective,
+                    status: strategy.status
+                  }))
+                : []
             })()}
             childTasks={(() => {
               const plan = relationsTooltip.plan
-              // Filter tasks that belong to this plan
-              return tasks.filter(task => 
-                task.plan && task.plan.includes(plan.id)
-              ).map(task => ({
-                id: task.id,
-                title: task.title,
-                status: task.status,
-                plan: task.plan
-              }))
+              // Direct access to plan's child tasks using plan.task field
+              return plan.task 
+                ? tasks.filter(task => plan.task.includes(task.id)).map(task => ({
+                    id: task.id,
+                    title: task.title,
+                    status: task.status,
+                    plan: [plan.id] // Maintain interface compatibility
+                  }))
+                : []
             })()}
           />
         )}

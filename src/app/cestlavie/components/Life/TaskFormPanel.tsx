@@ -12,21 +12,10 @@ interface TaskFormData {
   end_date: string
   all_day: boolean
   remind_before: number
-  plan: string[]
   priority_quadrant: string
   note: string
 }
 
-interface PlanOption {
-  id: string
-  objective: string
-  parent_goal?: string[]
-}
-
-interface StrategyOption {
-  id: string
-  objective: string
-}
 
 interface TaskFormPanelProps {
   isOpen: boolean
@@ -35,8 +24,6 @@ interface TaskFormPanelProps {
   onSave: (task: TaskFormData) => void
   statusOptions: string[]
   priorityOptions: string[]
-  planOptions: PlanOption[]
-  strategyOptions: StrategyOption[]
   allTasks: TaskRecord[]
 }
 
@@ -49,9 +36,7 @@ export default function TaskFormPanel({
   task, 
   onSave, 
   statusOptions, 
-  priorityOptions, 
-  planOptions, 
-  strategyOptions,
+  priorityOptions,
   allTasks 
 }: TaskFormPanelProps) {
   const [formData, setFormData] = useState<TaskFormData>({
@@ -61,7 +46,6 @@ export default function TaskFormPanel({
     end_date: '',
     all_day: false,
     remind_before: 15,
-    plan: [],
     priority_quadrant: '',
     note: ''
   })
@@ -78,7 +62,6 @@ export default function TaskFormPanel({
         end_date: task.end_date ? toDatetimeLocal(task.end_date) : '',
         all_day: task.all_day || false,
         remind_before: task.remind_before || 15,
-        plan: task.plan || [],
         priority_quadrant: task.priority_quadrant || '',
         note: task.note || ''
       })
@@ -93,7 +76,6 @@ export default function TaskFormPanel({
         end_date: defaultEnd,
         all_day: false,
         remind_before: 15,
-        plan: [],
         priority_quadrant: '',
         note: ''
       })
@@ -115,12 +97,6 @@ export default function TaskFormPanel({
     onSave(processedFormData)
   }, [formData, onSave])
 
-  const handlePlanChange = useCallback((planId: string) => {
-    setFormData(prev => ({ 
-      ...prev, 
-      plan: planId ? [planId] : [] 
-    }))
-  }, [])
 
   return (
     <>
@@ -149,28 +125,6 @@ export default function TaskFormPanel({
         
         {/* Form Content */}
         <form onSubmit={handleSubmit} className="p-3 overflow-y-auto min-h-0 flex-1 space-y-3">
-          {/* Plan Selection */}
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Related Plan *</label>
-            <select
-              value={formData.plan[0] || ''}
-              onChange={(e) => handlePlanChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-md 
-                        focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700 text-sm
-                        hover:border-gray-300 transition-all duration-200"
-              required
-            >
-              <option value="">Select a Plan First</option>
-              {planOptions.map(plan => (
-                <option key={plan.id} value={plan.id}>
-                  {plan.objective || 'Untitled Plan'}
-                </option>
-              ))}
-            </select>
-            
-            
-          </div>
 
           {/* Task Title */}
           <div>
@@ -325,27 +279,6 @@ export default function TaskFormPanel({
         
         {/* Mobile Form Content */}
         <form onSubmit={handleSubmit} className="p-4 overflow-y-auto min-h-0 flex-1 space-y-4">
-          {/* Plan Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">Related Plan *</label>
-            <select
-              value={formData.plan[0] || ''}
-              onChange={(e) => handlePlanChange(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg 
-                        focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700
-                        hover:border-gray-300 transition-all duration-200"
-              required
-            >
-              <option value="">Select a Plan First</option>
-              {planOptions.map(plan => (
-                <option key={plan.id} value={plan.id}>
-                  {plan.objective || 'Untitled Plan'}
-                </option>
-              ))}
-            </select>
-            
-          </div>
 
           {/* Task Title */}
           <div>

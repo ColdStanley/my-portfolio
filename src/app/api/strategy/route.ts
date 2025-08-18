@@ -24,6 +24,11 @@ function extractNumberValue(number: any): number {
   return number ?? 0
 }
 
+function extractRelationValue(relation: any[]): string[] {
+  if (!relation || !Array.isArray(relation)) return []
+  return relation.map(item => item.id)
+}
+
 export async function GET(request: NextRequest) {
   try {
     // 获取用户的Strategy数据库配置
@@ -45,18 +50,6 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const action = searchParams.get('action')
 
-    // Test database connection first
-    if (action === 'test') {
-      const databaseInfo = await notion.databases.retrieve({
-        database_id: strategyConfig.database_id
-      })
-      
-      return NextResponse.json({ 
-        success: true,
-        database_title: databaseInfo.title,
-        properties: Object.keys(databaseInfo.properties || {})
-      })
-    }
 
     // If requesting schema information
     if (action === 'schema') {
@@ -134,6 +127,8 @@ export async function GET(request: NextRequest) {
         priority_quadrant: extractSelectValue(properties.priority_quadrant?.select),
         estimate_cost: extractTextContent(properties.estimate_cost?.rich_text),
         order: extractNumberValue(properties.order?.number),
+        plan: extractRelationValue(properties.plan?.relation),
+        task: extractRelationValue(properties.task?.relation),
         total_plans: totalPlans,
         completed_plans: completedPlans
       }
@@ -160,20 +155,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('=== STRATEGY POST API START ===')
     
     // 获取用户的Strategy数据库配置
     const { config: strategyConfig, user, error } = await getNotionDatabaseConfig('strategy')
     
-    console.log('Config result:', { 
-      hasConfig: !!strategyConfig, 
-      user: user?.email, 
-      error,
-      databaseId: strategyConfig?.database_id 
-    })
     
     if (error || !strategyConfig) {
-      console.error('Config error:', error)
       return NextResponse.json({ 
         error: error || 'Strategy database not configured' 
       }, { status: 400 })
@@ -184,7 +171,6 @@ export async function POST(request: NextRequest) {
     })
 
     const body = await request.json()
-    console.log('Strategy API received body:', body)
     
     const { 
       id,
@@ -220,24 +206,19 @@ export async function POST(request: NextRequest) {
     if (estimate_cost !== undefined) properties.estimate_cost = { rich_text: [{ text: { content: estimate_cost } }] }
     if (typeof order === 'number') properties.order = { number: order }
 
-    console.log('Properties to update:', properties)
 
     let response
     
     if (id) {
       // Update existing strategy
-      console.log('Updating strategy with ID:', id)
       response = await notion.pages.update({
         page_id: id,
         properties
       })
       
-      console.log('Update response:', response.id)
       return NextResponse.json({ success: true, id: response.id, updated: true })
     } else {
       // Create new strategy
-      console.log('Creating new strategy with database ID:', strategyConfig.database_id)
-      console.log('Properties to create:', JSON.stringify(properties, null, 2))
       
       try {
         response = await notion.pages.create({
@@ -245,7 +226,6 @@ export async function POST(request: NextRequest) {
           properties
         })
         
-        console.log('Create success! Response ID:', response.id)
         return NextResponse.json({ success: true, id: response.id, created: true })
       } catch (createError: any) {
         console.error('Notion pages.create failed:', createError)

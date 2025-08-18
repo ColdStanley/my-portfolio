@@ -60,16 +60,23 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
       filtered = filtered.filter(task => task.priority_quadrant === state.selectedQuadrant)
     }
     
-    // Filter by plan
+      // Filter by plan - direct task.plan field lookup
     if (state.selectedPlanFilter !== 'all') {
       filtered = filtered.filter(task => {
-        if (!task.plan || task.plan.length === 0) return state.selectedPlanFilter === 'none'
-        return task.plan.includes(state.selectedPlanFilter)
+        if (state.selectedPlanFilter === 'none') {
+          // Show tasks with no plan
+          return !task.plan || task.plan.length === 0
+        } else {
+          // Show tasks linked to the selected plan
+          return task.plan && task.plan.includes(state.selectedPlanFilter)
+        }
       })
     }
     
     return filtered
   }, [state.tasks, state.selectedStatus, state.selectedQuadrant, state.selectedPlanFilter])
+
+  // Simple data arrays - no complex indexing needed
 
   // Memoized week and month tasks
   const thisWeekTasks = useMemo(() => {
@@ -184,7 +191,8 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
             planOptions = rawPlans.map((plan: any) => ({
               id: plan.id,
               objective: plan.objective || 'Untitled Plan',
-              parent_goal: plan.parent_goal || []
+              strategy: plan.strategy || [],
+              task: plan.task || []
             }))
           } catch (err) {
             console.warn('Failed to parse plans data:', err)
@@ -606,6 +614,7 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
                   onDateSelect={actions.setSelectedDate}
                   onMonthChange={actions.setCurrentMonth}
                   selectedPlanFilter={state.selectedPlanFilter}
+                  planOptions={state.planOptions}
                   onTaskClick={(task) => actions.openFormPanel(task)}
                   onTaskDelete={handleDeleteTask}
                   formatTimeRange={formatTimeRange}
@@ -731,8 +740,8 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
                 }}
                 formatTimeRange={formatTimeRange}
                 getPriorityColor={getPriorityColor}
-                planOptions={state.planOptions}
-                strategyOptions={state.strategyOptions}
+                plans={state.planOptions}
+                strategies={state.strategyOptions}
                 statusOptions={state.statusOptions}
                 priorityOptions={state.priorityOptions}
               />
@@ -822,11 +831,12 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
                     onDateSelect={actions.setSelectedDate}
                     onMonthChange={actions.setCurrentMonth}
                     selectedPlanFilter={state.selectedPlanFilter}
+                    planOptions={state.planOptions}
                     onTaskClick={(task) => actions.openFormPanel(task)}
                     onTaskDelete={handleDeleteTask}
                     formatTimeRange={formatTimeRange}
                     getPriorityColor={getPriorityColor}
-                      compact={false}
+                    compact={false}
                   />
                 </div>
               </div>
@@ -852,8 +862,8 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
                   }}
                   formatTimeRange={formatTimeRange}
                   getPriorityColor={getPriorityColor}
-                  planOptions={state.planOptions}
-                  strategyOptions={state.strategyOptions}
+                  plans={state.planOptions}
+                  strategies={state.strategyOptions}
                   statusOptions={state.statusOptions}
                   priorityOptions={state.priorityOptions}
                 />
@@ -870,8 +880,6 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
           onSave={handleSaveTask}
           statusOptions={state.statusOptions}
           priorityOptions={state.priorityOptions}
-          planOptions={state.planOptions}
-          strategyOptions={state.strategyOptions}
           allTasks={state.tasks}
         />
 

@@ -58,15 +58,23 @@ const MobileTaskPanel = forwardRef<MobileTaskPanelRef, MobileTaskPanelProps>(({ 
       filtered = filtered.filter(task => task.priority_quadrant === state.selectedQuadrant)
     }
     
+    // Filter by plan - direct task.plan field lookup
     if (state.selectedPlanFilter !== 'all') {
       filtered = filtered.filter(task => {
-        if (!task.plan || task.plan.length === 0) return state.selectedPlanFilter === 'none'
-        return task.plan.includes(state.selectedPlanFilter)
+        if (state.selectedPlanFilter === 'none') {
+          // Show tasks with no plan
+          return !task.plan || task.plan.length === 0
+        } else {
+          // Show tasks linked to the selected plan
+          return task.plan && task.plan.includes(state.selectedPlanFilter)
+        }
       })
     }
     
     return filtered
   }, [state.tasks, state.selectedStatus, state.selectedQuadrant, state.selectedPlanFilter])
+
+  // Simple data arrays - no complex indexing needed
 
   // Utility functions
   const formatTimeRange = useCallback((start: string, end: string, allDay: boolean) => {
@@ -288,8 +296,8 @@ const MobileTaskPanel = forwardRef<MobileTaskPanelRef, MobileTaskPanelProps>(({ 
             onTaskUpdate={handleTaskUpdate}
             formatTimeRange={formatTimeRange}
             getPriorityColor={getPriorityColor}
-            planOptions={state.planOptions}
-            strategyOptions={state.strategyOptions}
+            plans={state.planOptions}
+            strategies={state.strategyOptions}
             statusOptions={state.statusOptions}
             priorityOptions={state.priorityOptions}
           />
@@ -299,29 +307,33 @@ const MobileTaskPanel = forwardRef<MobileTaskPanelRef, MobileTaskPanelProps>(({ 
         <TaskFormPanel
           isOpen={state.formPanelOpen}
           onClose={actions.closeFormPanel}
-          editingTask={state.editingTask}
+          task={state.editingTask}
           statusOptions={state.statusOptions}
           priorityOptions={state.priorityOptions}
-          planOptions={state.planOptions}
-          strategyOptions={state.strategyOptions}
-          onTaskCreated={(task) => {
-            actions.addTask(task)
-            actions.closeFormPanel()
-            setToast({ message: 'Task created successfully', type: 'success' })
-            
-            if (onTasksUpdate) {
-              onTasksUpdate([...state.tasks, task])
+          allTasks={state.tasks}
+          onSave={(formData) => {
+            // Handle both create and update with unified logic
+            if (state.editingTask) {
+              // Update existing task
+              const updatedTask = { ...state.editingTask, ...formData }
+              actions.updateTask(updatedTask)
+              setToast({ message: 'Task updated successfully', type: 'success' })
+              
+              if (onTasksUpdate) {
+                const updatedTasks = state.tasks.map(t => t.id === updatedTask.id ? updatedTask : t)
+                onTasksUpdate(updatedTasks)
+              }
+            } else {
+              // Create new task - needs API call to get ID
+              const newTask = { ...formData, id: Date.now().toString() } // Temporary ID
+              actions.addTask(newTask)
+              setToast({ message: 'Task created successfully', type: 'success' })
+              
+              if (onTasksUpdate) {
+                onTasksUpdate([...state.tasks, newTask])
+              }
             }
-          }}
-          onTaskUpdated={(task) => {
-            actions.updateTask(task)
             actions.closeFormPanel()
-            setToast({ message: 'Task updated successfully', type: 'success' })
-            
-            if (onTasksUpdate) {
-              const updatedTasks = state.tasks.map(t => t.id === task.id ? task : t)
-              onTasksUpdate(updatedTasks)
-            }
           }}
         />
 

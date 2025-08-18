@@ -24,8 +24,8 @@ interface MobileTaskCardsProps {
   onTaskUpdate?: (taskId: string, field: 'status' | 'priority_quadrant', value: string) => void
   formatTimeRange?: (startDate: string, endDate?: string) => string
   getPriorityColor?: (priority: string) => string
-  planOptions?: PlanOption[]
-  strategyOptions?: StrategyOption[]
+  plans?: PlanOption[]
+  strategies?: StrategyOption[]
   statusOptions?: string[]
   priorityOptions?: string[]
 }
@@ -38,8 +38,8 @@ export default function MobileTaskCards({
   onTaskUpdate,
   formatTimeRange,
   getPriorityColor,
-  planOptions = [],
-  strategyOptions = [],
+  plans = [],
+  strategies = [],
   statusOptions = [],
   priorityOptions = []
 }: MobileTaskCardsProps) {
@@ -51,7 +51,6 @@ export default function MobileTaskCards({
   }>({ isOpen: false, task: null, triggerElement: null })
   
   
-  const [updatingFields, setUpdatingFields] = useState<{[key: string]: boolean}>({})
   
   const deleteButtonRefs = useRef<{[taskId: string]: HTMLButtonElement}>({})
 
@@ -213,7 +212,6 @@ export default function MobileTaskCards({
                 <select
                   value={task.status}
                   onChange={(e) => handleFieldUpdate(task.id, 'status', e.target.value)}
-                  disabled={updatingFields[`${task.id}-status`]}
                   className="w-full px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 border-0 appearance-none cursor-pointer hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -221,11 +219,6 @@ export default function MobileTaskCards({
                     <option key={option} value={option}>{option}</option>
                   ))}
                 </select>
-                {updatingFields[`${task.id}-status`] && (
-                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                    <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                )}
               </div>
 
               {/* Row 1, Col 2: Priority - Dropdown Select */}
@@ -233,7 +226,6 @@ export default function MobileTaskCards({
                 <select
                   value={task.priority_quadrant || ''}
                   onChange={(e) => handleFieldUpdate(task.id, 'priority_quadrant', e.target.value)}
-                  disabled={updatingFields[`${task.id}-priority_quadrant`]}
                   className="w-full px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 border-0 appearance-none cursor-pointer hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -242,36 +234,29 @@ export default function MobileTaskCards({
                     <option key={option} value={option}>{option}</option>
                   ))}
                 </select>
-                {updatingFields[`${task.id}-priority_quadrant`] && (
-                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                    <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                )}
               </div>
 
-              {/* Row 2, Col 1: Strategy */}
+              {/* Row 2, Col 1: Strategy - Direct lookup */}
               {(() => {
-                if (task.plan && task.plan[0]) {
-                  const plan = planOptions.find(p => p.id === task.plan[0])
-                  if (plan && plan.parent_goal && plan.parent_goal[0]) {
-                    const strategy = strategyOptions.find(s => s.id === plan.parent_goal[0])
-                    if (strategy) {
-                      return (
-                        <span 
-                          className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            const notionPageUrl = `https://www.notion.so/${strategy.id.replace(/-/g, '')}`
-                            window.open(notionPageUrl, '_blank')
-                          }}
-                          title="Click to edit in Notion"
-                        >
-                          {strategy.objective}
-                        </span>
-                      )
-                    }
-                  }
+                const strategyId = task.strategy?.[0]
+                const strategy = strategyId ? strategies.find(s => s.id === strategyId) : null
+                
+                if (strategy) {
+                  return (
+                    <span 
+                      className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        const notionPageUrl = `https://www.notion.so/${strategy.id.replace(/-/g, '')}`
+                        window.open(notionPageUrl, '_blank')
+                      }}
+                      title="Click to edit in Notion"
+                    >
+                      {strategy.objective}
+                    </span>
+                  )
                 }
+                
                 return (
                   <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
                     No Strategy
@@ -279,36 +264,33 @@ export default function MobileTaskCards({
                 )
               })()}
 
-              {/* Row 2, Col 2: Plan */}
+              {/* Row 2, Col 2: Plan - Direct lookup */}
               {(() => {
-                if (task.plan && task.plan[0]) {
-                  const plan = planOptions.find(p => p.id === task.plan[0])
-                  if (plan) {
-                    return (
-                      <span 
-                        className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          const notionPageUrl = `https://www.notion.so/${plan.id.replace(/-/g, '')}`
-                          window.open(notionPageUrl, '_blank')
-                        }}
-                        title="Click to edit in Notion"
-                      >
-                        {plan.objective}
-                      </span>
-                    )
-                  }
+                const planId = task.plan?.[0]
+                const plan = planId ? plans.find(p => p.id === planId) : null
+                
+                if (plan) {
+                  return (
+                    <span 
+                      className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        const notionPageUrl = `https://www.notion.so/${plan.id.replace(/-/g, '')}`
+                        window.open(notionPageUrl, '_blank')
+                      }}
+                      title="Click to edit in Notion"
+                    >
+                      {plan.objective}
+                    </span>
+                  )
                 }
+                
                 return (
                   <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
                     No Plan
                   </span>
                 )
-              })() || (
-                <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
-                  No Plan
-                </span>
-              )}
+              })()}
             </div>
 
             {/* Note */}

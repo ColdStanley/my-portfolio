@@ -124,13 +124,13 @@ export async function GET(request: NextRequest) {
         id: page.id,
         objective: extractTitleContent(properties.objective?.title),
         description: extractTextContent(properties.description?.rich_text),
-        parent_goal: extractRelationValue(properties.parent_goal?.relation),
+        strategy: extractRelationValue(properties.strategy?.relation),
         start_date: extractDateValue(properties.start_date?.date),
         due_date: extractDateValue(properties.due_date?.date),
         status: extractSelectValue(properties.status?.select),
         priority_quadrant: extractSelectValue(properties.priority_quadrant?.select),
         progress: calculatedProgress,
-        linked_tasks: extractRelationValue(properties.linked_tasks?.relation),
+        task: extractRelationValue(properties.task?.relation),
         estimate_resources: extractTextContent(properties.estimate_resources?.rich_text),
         budget_money: extractNumberValue(properties.budget_money?.number),
         budget_time: extractNumberValue(properties.budget_time?.number),
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
       id,
       objective, 
       description, 
-      parent_goal,
+      strategy,
       start_date, 
       due_date, 
       status,
@@ -196,8 +196,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (description) properties.description = { rich_text: [{ text: { content: description } }] }
-    if (parent_goal && parent_goal.length > 0) {
-      properties.parent_goal = { relation: parent_goal.map((id: string) => ({ id })) }
+    if (strategy && strategy.length > 0) {
+      properties.strategy = { relation: strategy.map((id: string) => ({ id })) }
     }
     if (start_date) properties.start_date = { date: { start: start_date } }
     if (due_date) properties.due_date = { date: { start: due_date } }

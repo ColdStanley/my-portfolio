@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import StrategyTimeFilter from './StrategyTimeFilter'
 import RelationsTooltip from './RelationsTooltip'
 import StrategyFormPanel from './StrategyFormPanel'
 
@@ -14,6 +13,8 @@ interface StrategyRecord {
   status: string
   priority_quadrant: string
   category: string
+  plan?: string[]
+  task?: string[]
   progress: number
   total_plans: number
   order?: number
@@ -23,8 +24,6 @@ export default function StrategyPanel() {
   const [data, setData] = useState<StrategyRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
-  const [selectedQuarter, setSelectedQuarter] = useState<'all' | 'Q1' | 'Q2' | 'Q3' | 'Q4'>('all')
   const [relationsTooltip, setRelationsTooltip] = useState<{
     isOpen: boolean
     strategy: StrategyRecord | null
@@ -33,7 +32,6 @@ export default function StrategyPanel() {
   const [tasks, setTasks] = useState<any[]>([])
   const [formPanelOpen, setFormPanelOpen] = useState(false)
   const [editingStrategy, setEditingStrategy] = useState<StrategyRecord | null>(null)
-  const [updatingFields, setUpdatingFields] = useState<{[key: string]: boolean}>({})
   const [statusOptions, setStatusOptions] = useState<string[]>(['Not Started', 'In Progress', 'Completed', 'On Hold'])
   const [priorityOptions, setPriorityOptions] = useState<string[]>(['Q1 - Urgent Important', 'Q2 - Important Not Urgent', 'Q3 - Urgent Not Important', 'Q4 - Neither'])
 
@@ -164,8 +162,6 @@ export default function StrategyPanel() {
     const strategy = data.find(s => s.id === strategyId)
     if (!strategy) return
 
-    const updateKey = `${strategyId}-${field}`
-    setUpdatingFields(prev => ({ ...prev, [updateKey]: true }))
 
     const updatedStrategy = { ...strategy, [field]: value }
     
@@ -184,8 +180,6 @@ export default function StrategyPanel() {
     } catch (error) {
       console.error(`Failed to update strategy ${field}:`, error)
       setError(`Failed to update strategy ${field}`)
-    } finally {
-      setUpdatingFields(prev => ({ ...prev, [updateKey]: false }))
     }
   }
 
@@ -262,28 +256,11 @@ export default function StrategyPanel() {
         </button>
       </div>
 
-      {/* Main Split Layout: Calendar (30%) | StrategyList (70%) - Replicate Task Layout */}
-      <div className="fixed top-32 left-[68px] right-4 bottom-4 flex gap-6 overflow-y-auto bg-white p-6 z-30">
-        {/* Left: Time Filter Section - 30% */}
-        <div className="w-3/10 space-y-6">
-          {/* Strategy Time Filter */}
-          <div>
-            <StrategyTimeFilter
-              strategies={sortedData}
-              selectedYear={selectedYear}
-              selectedQuarter={selectedQuarter}
-              onYearChange={setSelectedYear}
-              onQuarterChange={setSelectedQuarter}
-              onStrategyClick={(strategy) => {
-                const notionPageUrl = `https://www.notion.so/${strategy.id.replace(/-/g, '')}`
-                window.open(notionPageUrl, '_blank')
-              }}
-            />
-          </div>
-        </div>
+      {/* Main Content Area - Full Width */}
+      <div className="fixed top-32 left-[68px] right-4 bottom-4 overflow-y-auto bg-white p-6 z-30">
 
-        {/* Right: StrategyList Section - 70% */}
-        <div className="w-7/10 relative">
+        {/* StrategyList Section - Full Width */}
+        <div className="w-full relative">
           {sortedData.length === 0 ? (
             <div className="text-center py-16">
               <h3 className="text-xl font-semibold text-gray-700 mb-2">No Strategies Yet</h3>
@@ -334,7 +311,6 @@ export default function StrategyPanel() {
                           <select
                             value={strategy.status || ''}
                             onChange={(e) => handleStrategyUpdate(strategy.id, 'status', e.target.value)}
-                            disabled={updatingFields[`${strategy.id}-status`]}
                             className="w-full px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 border-0 appearance-none cursor-pointer hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -343,11 +319,6 @@ export default function StrategyPanel() {
                               <option key={option} value={option}>{option}</option>
                             ))}
                           </select>
-                          {updatingFields[`${strategy.id}-status`] && (
-                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                              <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                            </div>
-                          )}
                         </div>
                         
                         {/* Priority - Dropdown Select */}
@@ -355,7 +326,6 @@ export default function StrategyPanel() {
                           <select
                             value={strategy.priority_quadrant || ''}
                             onChange={(e) => handleStrategyUpdate(strategy.id, 'priority_quadrant', e.target.value)}
-                            disabled={updatingFields[`${strategy.id}-priority_quadrant`]}
                             className="w-full px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 border-0 appearance-none cursor-pointer hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -364,11 +334,6 @@ export default function StrategyPanel() {
                               <option key={option} value={option}>{option}</option>
                             ))}
                           </select>
-                          {updatingFields[`${strategy.id}-priority_quadrant`] && (
-                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                              <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                            </div>
-                          )}
                         </div>
                         
                         {/* Category - Keep as span */}
@@ -441,32 +406,28 @@ export default function StrategyPanel() {
           onClose={() => setRelationsTooltip({ isOpen: false, strategy: null })}
           childPlans={(() => {
             const strategy = relationsTooltip.strategy
-            // Filter plans that belong to this strategy
-            return plans.filter(plan => 
-              plan.parent_goal && plan.parent_goal.includes(strategy.id)
-            ).map(plan => ({
-              id: plan.id,
-              objective: plan.objective,
-              status: plan.status,
-              total_tasks: plan.total_tasks || 0,
-              completed_tasks: plan.completed_tasks || 0
-            }))
+            // Direct access to strategy plans using strategy.plan field
+            return strategy.plan 
+              ? plans.filter(plan => strategy.plan.includes(plan.id)).map(plan => ({
+                  id: plan.id,
+                  objective: plan.objective,
+                  status: plan.status,
+                  total_tasks: plan.total_tasks || 0,
+                  completed_tasks: plan.completed_tasks || 0
+                }))
+              : []
           })()}
           allChildTasks={(() => {
             const strategy = relationsTooltip.strategy
-            // Get all tasks that belong to plans under this strategy
-            const strategyPlanIds = plans
-              .filter(plan => plan.parent_goal && plan.parent_goal.includes(strategy.id))
-              .map(plan => plan.id)
-            
-            return tasks.filter(task => 
-              task.plan && task.plan.some((planId: string) => strategyPlanIds.includes(planId))
-            ).map(task => ({
-              id: task.id,
-              title: task.title,
-              status: task.status,
-              plan: task.plan
-            }))
+            // Direct access to strategy tasks using strategy.task field
+            return strategy.task 
+              ? tasks.filter(task => strategy.task.includes(task.id)).map(task => ({
+                  id: task.id,
+                  title: task.title,
+                  status: task.status,
+                  plan: [] // Direct strategy tasks
+                }))
+              : []
           })()}
         />
       )}

@@ -8,7 +8,8 @@ export interface TaskRecord {
   end_date: string
   all_day: boolean
   remind_before?: number
-  plan: string[]
+  plan?: string[]
+  strategy?: string[]
   priority_quadrant: string
   note: string
   outlook_event_id?: string
@@ -17,7 +18,8 @@ export interface TaskRecord {
 interface PlanOption {
   id: string
   objective: string
-  parent_goal?: string[]
+  strategy?: string[]
+  task?: string[]
 }
 
 interface StrategyOption {

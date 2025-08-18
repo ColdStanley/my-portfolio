@@ -52,7 +52,6 @@ export default function MobileStrategyCards({
     currentValue: string
   }>({ isOpen: false, strategyId: null, field: null, currentValue: '' })
   
-  const [updatingFields, setUpdatingFields] = useState<{[key: string]: boolean}>({})
   
   const deleteButtonRefs = useRef<{[strategyId: string]: HTMLButtonElement}>({})
 
@@ -242,15 +241,9 @@ export default function MobileStrategyCards({
                   e.stopPropagation()
                   handleFieldClick(strategy.id, 'status', strategy.status || '')
                 }}
-                disabled={updatingFields[`${strategy.id}-status`]}
                 className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
               >
                 {strategy.status || 'No Status'}
-                {updatingFields[`${strategy.id}-status`] && (
-                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                    <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                )}
               </button>
 
               {/* Priority - Clickable */}
@@ -259,15 +252,9 @@ export default function MobileStrategyCards({
                   e.stopPropagation()
                   handleFieldClick(strategy.id, 'priority_quadrant', strategy.priority_quadrant || '')
                 }}
-                disabled={updatingFields[`${strategy.id}-priority_quadrant`]}
                 className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
               >
                 {strategy.priority_quadrant || 'No Priority'}
-                {updatingFields[`${strategy.id}-priority_quadrant`] && (
-                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                    <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                )}
               </button>
 
               {/* Category - Keep as span */}
@@ -326,7 +313,7 @@ export default function MobileStrategyCards({
         }
         currentValue={bottomSheet.currentValue}
         title={`Select ${bottomSheet.field === 'status' ? 'Status' : 'Priority'}`}
-        loading={updatingFields[`${bottomSheet.strategyId}-${bottomSheet.field}`]}
+        loading={false}
       />
     </div>
   )

@@ -52,7 +52,6 @@ export default function MobilePlanCards({
     currentValue: string
   }>({ isOpen: false, planId: null, field: null, currentValue: '' })
   
-  const [updatingFields, setUpdatingFields] = useState<{[key: string]: boolean}>({})
   
   const deleteButtonRefs = useRef<{[planId: string]: HTMLButtonElement}>({})
 
@@ -242,15 +241,9 @@ export default function MobilePlanCards({
                   e.stopPropagation()
                   handleFieldClick(plan.id, 'status', plan.status)
                 }}
-                disabled={updatingFields[`${plan.id}-status`]}
                 className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
               >
                 {plan.status}
-                {updatingFields[`${plan.id}-status`] && (
-                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                    <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                )}
               </button>
 
               {/* Priority - Clickable */}
@@ -259,15 +252,9 @@ export default function MobilePlanCards({
                   e.stopPropagation()
                   handleFieldClick(plan.id, 'priority_quadrant', plan.priority_quadrant || '')
                 }}
-                disabled={updatingFields[`${plan.id}-priority_quadrant`]}
                 className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
               >
                 {plan.priority_quadrant || 'No Priority'}
-                {updatingFields[`${plan.id}-priority_quadrant`] && (
-                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                    <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                )}
               </button>
             </div>
 
@@ -321,7 +308,7 @@ export default function MobilePlanCards({
         }
         currentValue={bottomSheet.currentValue}
         title={`Select ${bottomSheet.field === 'status' ? 'Status' : 'Priority'}`}
-        loading={updatingFields[`${bottomSheet.planId}-${bottomSheet.field}`]}
+        loading={false}
       />
     </div>
   )

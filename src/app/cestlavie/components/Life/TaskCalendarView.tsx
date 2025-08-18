@@ -11,6 +11,7 @@ interface TaskCalendarViewProps {
   onDateSelect: (date: string) => void
   onMonthChange: (date: Date) => void
   selectedPlanFilter: string
+  planOptions?: any[]
   onTaskClick?: (task: TaskRecord) => void
   onTaskDelete?: (taskId: string) => void
   formatTimeRange?: (startDate: string, endDate?: string) => string
@@ -25,6 +26,7 @@ export default function TaskCalendarView({
   onDateSelect, 
   onMonthChange,
   selectedPlanFilter,
+  planOptions = [],
   onTaskClick,
   onTaskDelete,
   formatTimeRange,
@@ -32,14 +34,23 @@ export default function TaskCalendarView({
   compact = false
 }: TaskCalendarViewProps) {
   
-  // Filter tasks by plan
+  // Filter tasks by plan - using Plan.linked_tasks reverse lookup
   const filteredTasks = useMemo(() => {
     if (selectedPlanFilter === 'all') return tasks
+    
     return tasks.filter(task => {
-      if (!task.plan || task.plan.length === 0) return selectedPlanFilter === 'none'
-      return task.plan.includes(selectedPlanFilter)
+      if (selectedPlanFilter === 'none') {
+        // Show tasks that are not linked to any plan
+        return !planOptions.some(plan => 
+          plan.linked_tasks && plan.linked_tasks.includes(task.id)
+        )
+      } else {
+        // Show tasks linked to the selected plan
+        const selectedPlan = planOptions.find(p => p.id === selectedPlanFilter)
+        return selectedPlan && selectedPlan.linked_tasks && selectedPlan.linked_tasks.includes(task.id)
+      }
     })
-  }, [tasks, selectedPlanFilter])
+  }, [tasks, selectedPlanFilter, planOptions])
 
   // Calendar helper functions
   const getDaysInMonth = useCallback((date: Date) => {

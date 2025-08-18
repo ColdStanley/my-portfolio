@@ -30,8 +30,8 @@ interface TaskListViewProps {
   onTaskSyncToOutlook?: (task: TaskRecord) => void
   formatTimeRange?: (startDate: string, endDate?: string) => string
   getPriorityColor?: (priority: string) => string
-  planOptions?: PlanOption[]
-  strategyOptions?: StrategyOption[]
+  plans?: PlanOption[]
+  strategies?: StrategyOption[]
   statusOptions?: string[]
   priorityOptions?: string[]
 }
@@ -49,8 +49,8 @@ export default function TaskListView({
   onTaskSyncToOutlook,
   formatTimeRange,
   getPriorityColor,
-  planOptions = [],
-  strategyOptions = [],
+  plans = [],
+  strategies = [],
   statusOptions = ['Not Started', 'In Progress', 'Completed'],
   priorityOptions = ['Important & Urgent', 'Important & Not Urgent', 'Not Important & Urgent', 'Not Important & Not Urgent']
 }: TaskListViewProps) {
@@ -68,7 +68,6 @@ export default function TaskListView({
     task: TaskRecord | null
   }>({ isOpen: false, task: null })
   
-  const [updatingFields, setUpdatingFields] = useState<{[key: string]: boolean}>({}) // taskId-field -> loading state
   
   const deleteButtonRefs = useRef<{[taskId: string]: HTMLButtonElement}>({}) // taskId -> new end time
 
@@ -147,15 +146,10 @@ export default function TaskListView({
   const handleFieldUpdate = useCallback(async (taskId: string, field: 'status' | 'priority_quadrant', value: string) => {
     if (!onTaskUpdate) return
     
-    const updateKey = `${taskId}-${field}`
-    setUpdatingFields(prev => ({ ...prev, [updateKey]: true }))
-    
     try {
       await onTaskUpdate(taskId, field, value)
     } catch (error) {
       console.error('Failed to update task field:', error)
-    } finally {
-      setUpdatingFields(prev => ({ ...prev, [updateKey]: false }))
     }
   }, [onTaskUpdate])
 
@@ -312,7 +306,6 @@ export default function TaskListView({
                           <select
                             value={task.status}
                             onChange={(e) => handleFieldUpdate(task.id, 'status', e.target.value)}
-                            disabled={updatingFields[`${task.id}-status`]}
                             className="w-full px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 border-0 appearance-none cursor-pointer hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -320,11 +313,6 @@ export default function TaskListView({
                               <option key={option} value={option}>{option}</option>
                             ))}
                           </select>
-                          {updatingFields[`${task.id}-status`] && (
-                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                              <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                            </div>
-                          )}
                         </div>
 
                         {/* Row 1, Col 2: Priority - Dropdown Select */}
@@ -332,7 +320,6 @@ export default function TaskListView({
                           <select
                             value={task.priority_quadrant || ''}
                             onChange={(e) => handleFieldUpdate(task.id, 'priority_quadrant', e.target.value)}
-                            disabled={updatingFields[`${task.id}-priority_quadrant`]}
                             className="w-full px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 border-0 appearance-none cursor-pointer hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -341,34 +328,29 @@ export default function TaskListView({
                               <option key={option} value={option}>{option}</option>
                             ))}
                           </select>
-                          {updatingFields[`${task.id}-priority_quadrant`] && (
-                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                              <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                            </div>
-                          )}
                         </div>
 
-                        {/* Row 2, Col 1: Strategy */}
-                        {task.plan && task.plan[0] && (() => {
-                          const plan = planOptions.find(p => p.id === task.plan[0])
-                          if (plan && plan.parent_goal && plan.parent_goal[0]) {
-                            const strategy = strategyOptions.find(s => s.id === plan.parent_goal[0])
-                            if (strategy) {
-                              return (
-                                <span 
-                                  className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 cursor-pointer"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    const notionPageUrl = `https://www.notion.so/${strategy.id.replace(/-/g, '')}`
-                                    window.open(notionPageUrl, '_blank')
-                                  }}
-                                  title="Click to edit in Notion"
-                                >
-                                  {strategy.objective}
-                                </span>
-                              )
-                            }
+                        {/* Row 2, Col 1: Strategy - Direct lookup */}
+                        {(() => {
+                          const strategyId = task.strategy?.[0]
+                          const strategy = strategyId ? strategies.find(s => s.id === strategyId) : null
+                          
+                          if (strategy) {
+                            return (
+                              <span 
+                                className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const notionPageUrl = `https://www.notion.so/${strategy.id.replace(/-/g, '')}`
+                                  window.open(notionPageUrl, '_blank')
+                                }}
+                                title="Click to edit in Notion"
+                              >
+                                {strategy.objective}
+                              </span>
+                            )
                           }
+                          
                           return (
                             <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
                               No Strategy
@@ -376,9 +358,11 @@ export default function TaskListView({
                           )
                         })()}
 
-                        {/* Row 2, Col 2: Plan */}
-                        {task.plan && task.plan[0] && (() => {
-                          const plan = planOptions.find(p => p.id === task.plan[0])
+                        {/* Row 2, Col 2: Plan - Direct lookup */}
+                        {(() => {
+                          const planId = task.plan?.[0]
+                          const plan = planId ? plans.find(p => p.id === planId) : null
+                          
                           if (plan) {
                             return (
                               <span 
@@ -394,16 +378,13 @@ export default function TaskListView({
                               </span>
                             )
                           }
+                          
                           return (
                             <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
                               No Plan
                             </span>
                           )
-                        })() || (
-                          <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
-                            No Plan
-                          </span>
-                        )}
+                        })()}
                   </div>
 
                   {/* Full Notes Display - Bottom section spanning full width */}
@@ -441,34 +422,35 @@ export default function TaskListView({
           onClose={() => setRelationsTooltip({ isOpen: false, task: null })}
           parentPlan={(() => {
             const task = relationsTooltip.task
-            if (task.plan && task.plan[0]) {
-              const plan = planOptions.find(p => p.id === task.plan[0])
-              if (plan) {
-                return {
-                  id: plan.id,
-                  objective: plan.objective,
-                  status: 'Unknown',
-                  total_tasks: 0,
-                  completed_tasks: 0
-                }
+            if (!task || !getTaskRelations) return undefined
+            
+            const relations = getTaskRelations(task.id)
+            const plan = relations.plan
+            
+            if (plan) {
+              return {
+                id: plan.id,
+                objective: plan.objective,
+                status: 'Unknown',
+                total_tasks: 0,
+                completed_tasks: 0
               }
             }
             return undefined
           })()}
           parentStrategy={(() => {
             const task = relationsTooltip.task
-            if (task.plan && task.plan[0]) {
-              const plan = planOptions.find(p => p.id === task.plan[0])
-              if (plan && plan.parent_goal && plan.parent_goal[0]) {
-                const strategy = strategyOptions.find(s => s.id === plan.parent_goal[0])
-                if (strategy) {
-                  return {
-                    id: strategy.id,
-                    objective: strategy.objective,
-                    status: 'Unknown',
-                    progress: 0
-                  }
-                }
+            if (!task || !getTaskRelations) return undefined
+            
+            const relations = getTaskRelations(task.id)
+            const strategy = relations.strategy
+            
+            if (strategy) {
+              return {
+                id: strategy.id,
+                objective: strategy.objective,
+                status: 'Unknown',
+                progress: 0
               }
             }
             return undefined

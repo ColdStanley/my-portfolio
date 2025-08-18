@@ -45,26 +45,17 @@ function calculateHours(startDate: string, endDate: string): number {
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('Tasks API: Starting request...')
     
     // 获取用户的Notion配置
     const { config, user, error } = await getNotionDatabaseConfig('tasks')
     
-    console.log('Tasks API: Config result:', { 
-      hasConfig: !!config, 
-      hasUser: !!user, 
-      error,
-      databaseId: config?.database_id ? `${config.database_id.substring(0, 8)}...` : 'none'
-    })
     
     if (error || !config) {
-      console.log('Tasks API: Configuration error:', error)
       return NextResponse.json({ 
         error: error || 'Tasks database not configured' 
       }, { status: 400 })
     }
 
-    console.log('Tasks API: Creating Notion client...')
     const notion = new Client({
       auth: config.notion_api_key,
     })
@@ -84,7 +75,6 @@ export async function GET(request: NextRequest) {
         const statusOptions = properties.status?.select?.options?.map((opt: any) => opt.name) || []
         const priorityOptions = properties.priority_quadrant?.select?.options?.map((opt: any) => opt.name) || []
 
-        console.log('Tasks API: Schema retrieved successfully')
         return NextResponse.json({ 
           schema: {
             statusOptions,
@@ -97,7 +87,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log('Tasks API: Querying database...')
     let response
     try {
       response = await notion.databases.query({
@@ -111,7 +100,6 @@ export async function GET(request: NextRequest) {
         ]
       })
       
-      console.log('Tasks API: Database query successful, results:', response.results.length)
     } catch (queryError) {
       console.error('Tasks API: Database query failed:', queryError)
       throw queryError
@@ -129,6 +117,7 @@ export async function GET(request: NextRequest) {
         all_day: extractCheckboxValue(properties.all_day?.checkbox),
         remind_before: extractNumberValue(properties.remind_before?.number),
         plan: extractRelationValue(properties.plan?.relation),
+        strategy: extractRelationValue(properties.strategy?.relation),
         priority_quadrant: extractSelectValue(properties.priority_quadrant?.select),
         note: extractTextContent(properties.note?.rich_text),
         actual_start: extractDateValue(properties.actual_start?.date),
@@ -215,7 +204,6 @@ async function syncToOutlook(action: 'create' | 'update' | 'delete', taskData: a
     if (!response.ok) {
       console.warn(`Outlook sync failed for ${action}:`, response.statusText)
     } else {
-      console.log(`Outlook sync successful for ${action}`)
     }
   } catch (error) {
     console.warn('Outlook sync error:', error)

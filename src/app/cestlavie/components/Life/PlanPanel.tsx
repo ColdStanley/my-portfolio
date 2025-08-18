@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import PlanTimeFilter from './PlanTimeFilter'
 import RelationsTooltip from './RelationsTooltip'
 import PlanFormPanel from './PlanFormPanel'
 
@@ -13,6 +12,8 @@ interface PlanRecord {
   due_date: string
   status: string
   priority_quadrant: string
+  strategy?: string[]
+  task?: string[]
   total_tasks: number
   completed_tasks: number
   display_order?: number
@@ -40,8 +41,6 @@ export default function PlanPanel() {
   const [data, setData] = useState<PlanRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
-  const [selectedMonth, setSelectedMonth] = useState<'all' | number>('all')
   const [relationsTooltip, setRelationsTooltip] = useState<{
     isOpen: boolean
     plan: PlanRecord | null
@@ -50,7 +49,6 @@ export default function PlanPanel() {
   const [tasks, setTasks] = useState<any[]>([])
   const [formPanelOpen, setFormPanelOpen] = useState(false)
   const [editingPlan, setEditingPlan] = useState<PlanRecord | null>(null)
-  const [updatingFields, setUpdatingFields] = useState<{[key: string]: boolean}>({})
   const [statusOptions, setStatusOptions] = useState<string[]>(['Not Started', 'In Progress', 'Completed', 'On Hold'])
   const [priorityOptions, setPriorityOptions] = useState<string[]>(['Q1 - Urgent Important', 'Q2 - Important Not Urgent', 'Q3 - Urgent Not Important', 'Q4 - Neither'])
 
@@ -181,8 +179,6 @@ export default function PlanPanel() {
     const plan = data.find(p => p.id === planId)
     if (!plan) return
 
-    const updateKey = `${planId}-${field}`
-    setUpdatingFields(prev => ({ ...prev, [updateKey]: true }))
 
     const updatedPlan = { ...plan, [field]: value }
     
@@ -201,8 +197,6 @@ export default function PlanPanel() {
     } catch (error) {
       console.error(`Failed to update plan ${field}:`, error)
       setError(`Failed to update plan ${field}`)
-    } finally {
-      setUpdatingFields(prev => ({ ...prev, [updateKey]: false }))
     }
   }
 
@@ -260,28 +254,11 @@ export default function PlanPanel() {
         </button>
       </div>
 
-      {/* Main Split Layout: Calendar (30%) | PlanList (70%) - Replicate Task Layout */}
-      <div className="fixed top-32 left-[68px] right-4 bottom-4 flex gap-6 overflow-y-auto bg-white p-6 z-30">
-        {/* Left: Time Filter Section - 30% */}
-        <div className="w-3/10 space-y-6">
-          {/* Plan Time Filter */}
-          <div>
-            <PlanTimeFilter
-              plans={filteredPlans}
-              selectedYear={selectedYear}
-              selectedMonth={selectedMonth}
-              onYearChange={setSelectedYear}
-              onMonthChange={setSelectedMonth}
-              onPlanClick={(plan) => {
-                const notionPageUrl = `https://www.notion.so/${plan.id.replace(/-/g, '')}`
-                window.open(notionPageUrl, '_blank')
-              }}
-            />
-          </div>
-        </div>
+      {/* Main Content Area - Full Width */}
+      <div className="fixed top-32 left-[68px] right-4 bottom-4 overflow-y-auto bg-white p-6 z-30">
 
-        {/* Right: PlanList Section - 70% */}
-        <div className="w-7/10 relative">
+        {/* PlanList Section - Full Width */}
+        <div className="w-full relative">
           {filteredPlans.length === 0 ? (
             <div className="text-center py-16">
               <h3 className="text-xl font-semibold text-gray-700 mb-2">No Plans Yet</h3>
@@ -332,7 +309,6 @@ export default function PlanPanel() {
                           <select
                             value={plan.status || ''}
                             onChange={(e) => handlePlanUpdate(plan.id, 'status', e.target.value)}
-                            disabled={updatingFields[`${plan.id}-status`]}
                             className="w-full px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 border-0 appearance-none cursor-pointer hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -341,11 +317,6 @@ export default function PlanPanel() {
                               <option key={option} value={option}>{option}</option>
                             ))}
                           </select>
-                          {updatingFields[`${plan.id}-status`] && (
-                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                              <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                            </div>
-                          )}
                         </div>
                         
                         {/* Priority - Dropdown Select */}
@@ -353,7 +324,6 @@ export default function PlanPanel() {
                           <select
                             value={plan.priority_quadrant || ''}
                             onChange={(e) => handlePlanUpdate(plan.id, 'priority_quadrant', e.target.value)}
-                            disabled={updatingFields[`${plan.id}-priority_quadrant`]}
                             className="w-full px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 border-0 appearance-none cursor-pointer hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -362,11 +332,6 @@ export default function PlanPanel() {
                               <option key={option} value={option}>{option}</option>
                             ))}
                           </select>
-                          {updatingFields[`${plan.id}-priority_quadrant`] && (
-                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                              <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -434,21 +399,26 @@ export default function PlanPanel() {
           onClose={() => setRelationsTooltip({ isOpen: false, plan: null })}
           parentStrategyForPlan={(() => {
             const plan = relationsTooltip.plan
-            // Note: Need to add parent_goal field to PlanRecord interface
-            // For now, return undefined until interface is updated
-            return undefined
+            // Direct access to plan's parent strategies using plan.strategy field
+            return plan.strategy 
+              ? strategies.filter(strategy => plan.strategy.includes(strategy.id)).map(strategy => ({
+                  id: strategy.id,
+                  objective: strategy.objective,
+                  status: strategy.status
+                }))
+              : []
           })()}
           childTasks={(() => {
             const plan = relationsTooltip.plan
-            // Filter tasks that belong to this plan
-            return tasks.filter(task => 
-              task.plan && task.plan.includes(plan.id)
-            ).map(task => ({
-              id: task.id,
-              title: task.title,
-              status: task.status,
-              plan: task.plan
-            }))
+            // Direct access to plan's child tasks using plan.task field
+            return plan.task 
+              ? tasks.filter(task => plan.task.includes(task.id)).map(task => ({
+                  id: task.id,
+                  title: task.title,
+                  status: task.status,
+                  plan: [plan.id] // Maintain interface compatibility
+                }))
+              : []
           })()}
         />
       )}

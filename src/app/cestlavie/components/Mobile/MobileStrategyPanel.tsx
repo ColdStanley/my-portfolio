@@ -15,6 +15,8 @@ interface StrategyRecord {
   status: string
   priority_quadrant: string
   category: string
+  plan?: string[]
+  task?: string[]
   progress: number
   total_plans: number
   order?: number
@@ -286,32 +288,28 @@ const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPan
             onClose={() => setRelationsTooltip({ isOpen: false, strategy: null })}
             childPlans={(() => {
               const strategy = relationsTooltip.strategy
-              // Filter plans that belong to this strategy
-              return plans.filter(plan => 
-                plan.parent_goal && plan.parent_goal.includes(strategy.id)
-              ).map(plan => ({
-                id: plan.id,
-                objective: plan.objective,
-                status: plan.status,
-                total_tasks: plan.total_tasks || 0,
-                completed_tasks: plan.completed_tasks || 0
-              }))
+              // Direct access to strategy plans using strategy.plan field
+              return strategy.plan 
+                ? plans.filter(plan => strategy.plan.includes(plan.id)).map(plan => ({
+                    id: plan.id,
+                    objective: plan.objective,
+                    status: plan.status,
+                    total_tasks: plan.total_tasks || 0,
+                    completed_tasks: plan.completed_tasks || 0
+                  }))
+                : []
             })()}
             allChildTasks={(() => {
               const strategy = relationsTooltip.strategy
-              // Get all tasks that belong to plans under this strategy
-              const strategyPlanIds = plans
-                .filter(plan => plan.parent_goal && plan.parent_goal.includes(strategy.id))
-                .map(plan => plan.id)
-              
-              return tasks.filter(task => 
-                task.plan && task.plan.some((planId: string) => strategyPlanIds.includes(planId))
-              ).map(task => ({
-                id: task.id,
-                title: task.title,
-                status: task.status,
-                plan: task.plan
-              }))
+              // Direct access to strategy tasks using strategy.task field
+              return strategy.task 
+                ? tasks.filter(task => strategy.task.includes(task.id)).map(task => ({
+                    id: task.id,
+                    title: task.title,
+                    status: task.status,
+                    plan: [] // Direct strategy tasks
+                  }))
+                : []
             })()}
           />
         )}
