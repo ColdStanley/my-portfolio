@@ -355,6 +355,31 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
     }
   }, [state.tasks, actions])
 
+  // Sync task to Outlook
+  const handleTaskSyncToOutlook = useCallback(async (task: TaskRecord) => {
+    try {
+      const response = await fetch('http://localhost:5678/webhook/Sync Task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create',
+          data: task
+        })
+      })
+      
+      if (response.ok) {
+        setToast({ message: 'Task synced to Outlook successfully', type: 'success' })
+        setTimeout(() => setToast(null), 3000)
+      } else {
+        throw new Error('Failed to sync task to Outlook')
+      }
+    } catch (error) {
+      console.error('Failed to sync task to Outlook:', error)
+      setToast({ message: 'Failed to sync task to Outlook', type: 'error' })
+      setTimeout(() => setToast(null), 3000)
+    }
+  }, [])
+
   // Task CRUD operations
   const handleSaveTask = useCallback(async (formData: TaskFormData) => {
     try {
@@ -699,6 +724,7 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
                 onTaskComplete={handleTaskComplete}
                 onTaskCopy={handleTaskCopy}
                 onTaskUpdate={handleTaskUpdate}
+                onTaskSyncToOutlook={handleTaskSyncToOutlook}
                 onCreateTask={(date) => {
                   actions.setSelectedDate(date)
                   actions.openFormPanel()
@@ -819,6 +845,7 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
                   onTaskComplete={handleTaskComplete}
                   onTaskCopy={handleTaskCopy}
                   onTaskUpdate={handleTaskUpdate}
+                  onTaskSyncToOutlook={handleTaskSyncToOutlook}
                   onCreateTask={(date) => {
                     actions.setSelectedDate(date)
                     actions.openFormPanel()

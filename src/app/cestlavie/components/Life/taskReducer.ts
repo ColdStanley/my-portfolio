@@ -11,6 +11,7 @@ export interface TaskRecord {
   plan: string[]
   priority_quadrant: string
   note: string
+  outlook_event_id?: string
 }
 
 interface PlanOption {

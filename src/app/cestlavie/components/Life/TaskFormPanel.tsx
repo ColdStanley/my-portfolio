@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { TaskRecord } from './taskReducer'
-import { toDatetimeLocal } from '../../utils/timezone'
+import { toDatetimeLocal, toUTC, getDefaultStartTime, getDefaultEndTime } from '@/utils/dateUtils'
 
 
 interface TaskFormData {
@@ -40,16 +40,7 @@ interface TaskFormPanelProps {
   allTasks: TaskRecord[]
 }
 
-// Utility functions - using timezone utility
-
-const getDefaultDateTime = (): string => {
-  const now = new Date()
-  return now.getFullYear() + '-' +
-         String(now.getMonth() + 1).padStart(2, '0') + '-' +
-         String(now.getDate()).padStart(2, '0') + 'T' +
-         String(now.getHours()).padStart(2, '0') + ':' +
-         String(now.getMinutes()).padStart(2, '0')
-}
+// Utility functions - using dayjs utility
 
 
 export default function TaskFormPanel({ 
@@ -92,19 +83,14 @@ export default function TaskFormPanel({
         note: task.note || ''
       })
     } else {
-      const defaultStart = getDefaultDateTime()
-      const defaultEnd = new Date(Date.now() + 60 * 60 * 1000)
-      const defaultEndStr = defaultEnd.getFullYear() + '-' +
-                            String(defaultEnd.getMonth() + 1).padStart(2, '0') + '-' +
-                            String(defaultEnd.getDate()).padStart(2, '0') + 'T' +
-                            String(defaultEnd.getHours()).padStart(2, '0') + ':' +
-                            String(defaultEnd.getMinutes()).padStart(2, '0')
+      const defaultStart = getDefaultStartTime()
+      const defaultEnd = getDefaultEndTime()
       
       setFormData({
         title: '',
         status: '',
         start_date: defaultStart,
-        end_date: defaultEndStr,
+        end_date: defaultEnd,
         all_day: false,
         remind_before: 15,
         plan: [],
@@ -122,8 +108,8 @@ export default function TaskFormPanel({
     // Convert local datetime to UTC for saving
     const processedFormData = {
       ...formData,
-      start_date: new Date(formData.start_date).toISOString(),
-      end_date: new Date(formData.end_date).toISOString()
+      start_date: toUTC(formData.start_date),
+      end_date: toUTC(formData.end_date)
     }
     
     onSave(processedFormData)

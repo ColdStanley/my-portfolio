@@ -1,0 +1,161 @@
+{
+  "name": "Batch Sync Outlook",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "Batch-Sync-Tasks",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -640,
+        240
+      ],
+      "id": "batch-webhook-001",
+      "name": "Batch Sync Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const tasks = $json.body.tasks;\nreturn tasks.map(task => ({ json: task }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        240
+      ],
+      "id": "split-tasks-001",
+      "name": "Split Tasks Array"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      subject: $json.title,\n      start: { dateTime: $json.start_date },\n      end: { dateTime: $json.end_date },\n      body: { content: $json.note || '' },\n      taskId: $json.id\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        240
+      ],
+      "id": "code-transform-001",
+      "name": "Transform Task Data"
+    },
+    {
+      "parameters": {
+        "resource": "event",
+        "operation": "create",
+        "calendarId": {
+          "__rl": true,
+          "value": "AQMkADAwATZiZmYAZC1lZQBiYgAtYjMyNS0wMAItMDAKAEYAAAPwm4bmebtYR56qQdW69aEdBwDcFpCVmZQrR5RS2J9cvhbmAAACAQYAAADcFpCVmZQrR5RS2J9cvhbmAAACNDYAAAA=",
+          "mode": "list",
+          "cachedResultName": "日历"
+        },
+        "subject": "={{ $json.subject }}",
+        "additionalFields": {
+          "start": "={{ $json.start.dateTime }}",
+          "end": "={{ $json.end.dateTime }}",
+          "body": "={{ $json.body.content }}"
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        80,
+        240
+      ],
+      "id": "outlook-create-001",
+      "name": "Create Outlook Event",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "ZMHKMGER00QEpdD5",
+          "name": "Microsoft Outlook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/api/tasks/update-outlook-id",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"taskId\": \"{{ $('Transform Task Data').first().json.taskId }}\",\n  \"outlook_event_id\": \"{{ $json.id }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        320,
+        240
+      ],
+      "id": "http-callback-001",
+      "name": "Update Task with Event ID"
+    }
+  ],
+  "connections": {
+    "Batch Sync Webhook": {
+      "main": [
+        [
+          {
+            "node": "Split Tasks Array",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Tasks Array": {
+      "main": [
+        [
+          {
+            "node": "Transform Task Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Task Data": {
+      "main": [
+        [
+          {
+            "node": "Create Outlook Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Outlook Event": {
+      "main": [
+        [
+          {
+            "node": "Update Task with Event ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "batch-sync-v1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "BatchSyncOutlook",
+  "tags": []
+}

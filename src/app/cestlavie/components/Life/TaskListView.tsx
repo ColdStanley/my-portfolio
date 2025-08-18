@@ -3,7 +3,7 @@
 import { useMemo, useCallback, useState, useRef, useEffect } from 'react'
 import DeleteConfirmTooltip from './DeleteConfirmTooltip'
 import RelationsTooltip from './RelationsTooltip'
-import { extractTimeOnly } from '../../utils/timezone'
+import { extractTimeOnly, extractDateOnly, formatDateDisplayName } from '@/utils/dateUtils'
 import { TaskRecord } from './taskReducer'
 
 
@@ -27,6 +27,7 @@ interface TaskListViewProps {
   onTaskComplete?: (task: TaskRecord) => void
   onTaskCopy?: (task: TaskRecord) => void
   onTaskUpdate?: (taskId: string, field: 'status' | 'priority_quadrant', value: string) => void
+  onTaskSyncToOutlook?: (task: TaskRecord) => void
   formatTimeRange?: (startDate: string, endDate?: string) => string
   getPriorityColor?: (priority: string) => string
   planOptions?: PlanOption[]
@@ -45,6 +46,7 @@ export default function TaskListView({
   onTaskComplete,
   onTaskCopy,
   onTaskUpdate,
+  onTaskSyncToOutlook,
   formatTimeRange,
   getPriorityColor,
   planOptions = [],
@@ -81,7 +83,7 @@ export default function TaskListView({
       if (!taskDate) return false
       
       // Extract date part from UTC date string
-      const taskDateString = new Date(taskDate).toLocaleDateString('en-CA') // YYYY-MM-DD format
+      const taskDateString = extractDateOnly(taskDate)
       return taskDateString === selectedDate
     }).sort((a, b) => {
       // Sort by status: completed tasks last
@@ -102,21 +104,13 @@ export default function TaskListView({
   const formatTimeOnly = useCallback((startDate: string, endDate?: string) => {
     if (!startDate) return ''
     
-    const startTime = new Date(startDate).toLocaleTimeString('en-US', {
-      hour: '2-digit', 
-      minute: '2-digit', 
-      hour12: false
-    })
+    const startTime = extractTimeOnly(startDate)
     
     if (!endDate) {
       return startTime
     }
     
-    const endTime = new Date(endDate).toLocaleTimeString('en-US', {
-      hour: '2-digit', 
-      minute: '2-digit', 
-      hour12: false
-    })
+    const endTime = extractTimeOnly(endDate)
     
     // Display as simple time range
     return `${startTime} - ${endTime}`
@@ -177,12 +171,7 @@ export default function TaskListView({
     )
   }
 
-  const selectedDateObj = new Date(selectedDate + 'T00:00:00')
-  const dateDisplayName = selectedDateObj.toLocaleDateString('en-US', { 
-    month: 'long', 
-    day: 'numeric',
-    weekday: 'long'
-  })
+  const dateDisplayName = formatDateDisplayName(selectedDate)
 
   return (
     <div className="space-y-6">
@@ -241,8 +230,24 @@ export default function TaskListView({
 
                     {/* Action Buttons */}
                     <div className="space-y-1">
-                      {/* Row 1: Edit, Delete */}
+                      {/* Row 1: Sync to Outlook (if not synced), Edit, Delete */}
                       <div className="flex gap-1">
+                        {/* Sync to Outlook Button - Only show if not synced */}
+                        {!task.outlook_event_id && onTaskSyncToOutlook && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onTaskSyncToOutlook(task)
+                            }}
+                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                            title="Sync to Outlook"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                          </button>
+                        )}
+                        
                         <button
                           onClick={(e) => {
                             e.stopPropagation()

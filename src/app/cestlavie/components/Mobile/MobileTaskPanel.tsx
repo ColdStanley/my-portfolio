@@ -6,6 +6,7 @@ import { TaskErrorBoundary, TaskLoadingSpinner, TaskErrorDisplay, ToastNotificat
 import TaskFormPanel from '../Life/TaskFormPanel'
 import TaskCalendarView from '../Life/TaskCalendarView'
 import MobileTaskCards from './MobileTaskCards'
+import { extractDateOnly, getTodayDate, extractTime12Hour } from '@/utils/dateUtils'
 
 interface TaskFormData {
   title: string
@@ -40,7 +41,7 @@ const MobileTaskPanel = forwardRef<MobileTaskPanelRef, MobileTaskPanelProps>(({ 
   // Set default selected date to today for mobile
   useEffect(() => {
     if (!state.selectedDate) {
-      const today = new Date().toISOString().split('T')[0]
+      const today = getTodayDate()
       actions.setSelectedDate(today)
     }
   }, [state.selectedDate, actions])
@@ -71,16 +72,7 @@ const MobileTaskPanel = forwardRef<MobileTaskPanelRef, MobileTaskPanelProps>(({ 
   const formatTimeRange = useCallback((start: string, end: string, allDay: boolean) => {
     if (allDay) return 'All Day'
     
-    const formatTime = (dateStr: string) => {
-      const date = new Date(dateStr)
-      return date.toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        minute: '2-digit', 
-        hour12: true 
-      })
-    }
-    
-    return `${formatTime(start)} - ${formatTime(end)}`
+    return `${extractTime12Hour(start)} - ${extractTime12Hour(end)}`
   }, [])
 
   const getPriorityColor = useCallback((priority: string) => {

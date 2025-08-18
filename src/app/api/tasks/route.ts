@@ -139,6 +139,7 @@ export async function GET(request: NextRequest) {
         next: extractTextContent(properties.next?.rich_text),
         is_plan_critical: extractCheckboxValue(properties.is_plan_critical?.checkbox),
         timer_status: extractSelectValue(properties.timer_status?.select),
+        outlook_event_id: extractTextContent(properties.outlook_event_id?.rich_text),
       }
     })
 
