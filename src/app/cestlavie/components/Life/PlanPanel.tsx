@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import RelationsTooltip from './RelationsTooltip'
 import PlanFormPanel from './PlanFormPanel'
 import { PlanRecord } from '../../types/plan'
-import { formatDateRange, fetchSchemaOptions, openNotionPage, getPlanRelationsData, createFormCloseHandler } from '../../utils/planUtils'
+import { formatDateRange, fetchSchemaOptions, openNotionPage, getPlanRelationsData, createFormCloseHandler, sortPlansByOrder } from '../../utils/planUtils'
 import { fetchPlans, fetchStrategies, fetchTasks, deletePlan, savePlan, updatePlanField } from '../../services/planService'
 
 
@@ -97,8 +97,6 @@ export default function PlanPanel() {
     }
   }
 
-  // Options loaded from database schema
-
   if (loading) {
     return (
       <div className="w-full py-8">
@@ -131,7 +129,7 @@ export default function PlanPanel() {
     )
   }
 
-  const filteredPlans = data.sort((a, b) => (a.display_order ?? 999999) - (b.display_order ?? 999999))
+  const filteredPlans = sortPlansByOrder(data)
 
   return (
     <>

@@ -3,7 +3,7 @@
 import { useMemo, useCallback, useState, useRef } from 'react'
 import BottomSheet from '../Life/BottomSheet'
 import { PlanRecord, MobilePlanCardsProps } from '../../types/plan'
-import { formatDateRange, openNotionPage } from '../../utils/planUtils'
+import { formatDateRange, openNotionPage, sortPlansByOrder } from '../../utils/planUtils'
 
 
 export default function MobilePlanCards({ 
@@ -35,7 +35,7 @@ export default function MobilePlanCards({
 
   // Sort plans by display order (same as web version)
   const sortedPlans = useMemo(() => {
-    return plans.sort((a, b) => (a.display_order ?? 999999) - (b.display_order ?? 999999))
+    return sortPlansByOrder(plans)
   }, [plans])
 
 

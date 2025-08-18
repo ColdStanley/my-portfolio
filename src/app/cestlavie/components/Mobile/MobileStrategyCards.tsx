@@ -2,31 +2,9 @@
 
 import { useMemo, useCallback, useState, useRef } from 'react'
 import BottomSheet from '../Life/BottomSheet'
-
-interface StrategyRecord {
-  id: string
-  objective: string
-  description: string
-  start_date: string
-  due_date: string
-  status: string
-  priority_quadrant: string
-  category: string
-  progress: number
-  total_plans: number
-  order?: number
-}
-
-interface MobileStrategyCardsProps {
-  strategies: StrategyRecord[]
-  onStrategyClick?: (strategy: StrategyRecord) => void
-  onStrategyEdit?: (strategy: StrategyRecord) => void
-  onStrategyDelete?: (strategyId: string) => void
-  onStrategyUpdate?: (strategyId: string, field: 'status' | 'priority_quadrant', value: string) => void
-  onStrategyRelations?: (strategy: StrategyRecord) => void
-  statusOptions?: string[]
-  priorityOptions?: string[]
-}
+import { StrategyRecord, MobileStrategyCardsProps } from '../../types/strategy'
+import { formatDateRange, openNotionPage } from '../../utils/planUtils'
+import { sortStrategiesByOrder } from '../../utils/strategyUtils'
 
 export default function MobileStrategyCards({ 
   strategies, 
@@ -57,31 +35,13 @@ export default function MobileStrategyCards({
 
   // Sort strategies by order (same as web version)
   const sortedStrategies = useMemo(() => {
-    return strategies.sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999))
+    return sortStrategiesByOrder(strategies)
   }, [strategies])
 
-  const formatDateRange = useCallback((startDate: string, endDate: string): string => {
-    if (!startDate && !endDate) return 'No dates'
-    
-    try {
-      // Convert UTC dates to local timezone for display
-      const start = startDate ? new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''
-      const end = endDate ? new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''
-      
-      if (start && end) {
-        return `${start} - ${end}`
-      }
-      
-      return start || end
-    } catch (error) {
-      return 'Invalid date'
-    }
-  }, [])
 
   const handleNotionClick = useCallback((strategy: StrategyRecord, e: React.MouseEvent) => {
     e.stopPropagation()
-    const notionPageUrl = `https://www.notion.so/${strategy.id.replace(/-/g, '')}`
-    window.open(notionPageUrl, '_blank')
+    openNotionPage(strategy.id)
   }, [])
 
   const handleEditClick = useCallback((strategy: StrategyRecord, e: React.MouseEvent) => {

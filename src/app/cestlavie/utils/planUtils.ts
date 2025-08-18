@@ -157,3 +157,10 @@ export function createFormCloseHandler(
     setEditingItem(null)
   }
 }
+
+/**
+ * Sort plans by display_order
+ */
+export function sortPlansByOrder<T extends { display_order?: number }>(plans: T[]): T[] {
+  return plans.sort((a, b) => (a.display_order ?? 999999) - (b.display_order ?? 999999))
+}

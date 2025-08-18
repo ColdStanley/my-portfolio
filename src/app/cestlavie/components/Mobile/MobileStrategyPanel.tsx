@@ -5,30 +5,11 @@ import { TaskErrorBoundary, TaskLoadingSpinner, TaskErrorDisplay, ToastNotificat
 import MobileStrategyCards from './MobileStrategyCards'
 import StrategyFormPanel from '../Life/StrategyFormPanel'
 import RelationsTooltip from '../Life/RelationsTooltip'
-
-interface StrategyRecord {
-  id: string
-  objective: string
-  description: string
-  start_date: string
-  due_date: string
-  status: string
-  priority_quadrant: string
-  category: string
-  plan?: string[]
-  task?: string[]
-  progress: number
-  total_plans: number
-  order?: number
-}
-
-interface MobileStrategyPanelProps {
-  onStrategiesUpdate?: (strategies: StrategyRecord[]) => void
-}
-
-interface MobileStrategyPanelRef {
-  openCreateForm: () => void
-}
+import { StrategyRecord, MobileStrategyPanelProps, MobileStrategyPanelRef } from '../../types/strategy'
+import { fetchSchemaOptions, openNotionPage, createFormCloseHandler } from '../../utils/planUtils'
+import { getStrategyRelationsData } from '../../utils/strategyUtils'
+import { fetchAllStrategyData, deleteStrategy, saveStrategy, updateStrategyField } from '../../services/strategyService'
+import { STRATEGY_CATEGORY_OPTIONS } from '../../constants/strategyOptions'
 
 const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPanelProps>(({ onStrategiesUpdate }, ref) => {
   const [strategies, setStrategies] = useState<StrategyRecord[]>([])
@@ -54,96 +35,53 @@ const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPan
     }
   }), [])
   
-  // Data fetching
+  // Data fetching - unified with desktop version
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        
-        // Fetch schema options first
-        await fetchSchemaOptions()
-        
-        const [strategyResponse, planResponse, taskResponse] = await Promise.all([
-          fetch('/api/strategy'),
-          fetch('/api/plan'),
-          fetch('/api/tasks')
-        ])
-        
-        if (!strategyResponse.ok) {
-          throw new Error('Failed to fetch strategies')
-        }
-        
-        const strategyData = await strategyResponse.json()
-        const strategiesArray = strategyData.data || []
-        setStrategies(strategiesArray)
-        
-        if (onStrategiesUpdate) {
-          onStrategiesUpdate(strategiesArray)
-        }
-        
-        if (planResponse.ok) {
-          const planData = await planResponse.json()
-          setPlans(planData.data || [])
-        }
-        
-        if (taskResponse.ok) {
-          const taskData = await taskResponse.json()
-          setTasks(taskData.data || [])
-        }
-        
-      } catch (error) {
-        console.error('Error fetching strategies:', error)
-        setError(error instanceof Error ? error.message : 'Failed to load strategies')
-        setStrategies([])
-        
-        if (onStrategiesUpdate) {
-          onStrategiesUpdate([])
-        }
-        
-      } finally {
-        setLoading(false)
-      }
-    }
-    
-    fetchData()
+    loadInitialData()
   }, [onStrategiesUpdate])
 
-  const fetchSchemaOptions = async () => {
+  const loadInitialData = async () => {
     try {
-      const response = await fetch('/api/tasks?action=schema')
-      if (response.ok) {
-        const result = await response.json()
-        const schema = result.schema || {}
-        
-        if (schema.statusOptions && schema.statusOptions.length > 0) {
-          setStatusOptions(schema.statusOptions)
-        }
-        if (schema.priorityOptions && schema.priorityOptions.length > 0) {
-          setPriorityOptions(schema.priorityOptions)
-        }
+      setLoading(true)
+      setError(null)
+      
+      const [strategyData, schemaOptions] = await Promise.all([
+        fetchAllStrategyData(),
+        fetchSchemaOptions()
+      ])
+      
+      setStrategies(strategyData.strategies)
+      setPlans(strategyData.plans)
+      setTasks(strategyData.tasks)
+      setStatusOptions(schemaOptions.statusOptions)
+      setPriorityOptions(schemaOptions.priorityOptions)
+      
+      if (onStrategiesUpdate) {
+        onStrategiesUpdate(strategyData.strategies)
       }
-    } catch (err) {
-      console.warn('Failed to fetch schema options, using defaults:', err)
+    } catch (error) {
+      console.error('Error loading initial data:', error)
+      setError(error instanceof Error ? error.message : 'Failed to load data')
+      setStrategies([])
+      
+      if (onStrategiesUpdate) {
+        onStrategiesUpdate([])
+      }
+    } finally {
+      setLoading(false)
     }
   }
 
+
   const handleDeleteStrategy = useCallback(async (strategyId: string) => {
     try {
-      const response = await fetch(`/api/strategy?id=${strategyId}`, {
-        method: 'DELETE'
-      })
+      await deleteStrategy(strategyId)
+      const updatedStrategies = strategies.filter(s => s.id !== strategyId)
+      setStrategies(updatedStrategies)
+      setToast({ message: 'Strategy deleted successfully', type: 'success' })
       
-      if (response.ok) {
-        const updatedStrategies = strategies.filter(s => s.id !== strategyId)
-        setStrategies(updatedStrategies)
-        setToast({ message: 'Strategy deleted successfully', type: 'success' })
-        
-        if (onStrategiesUpdate) {
-          onStrategiesUpdate(updatedStrategies)
-        }
-      } else {
-        throw new Error('Failed to delete strategy')
+      if (onStrategiesUpdate) {
+        onStrategiesUpdate(updatedStrategies)
       }
     } catch (error) {
       console.error('Error deleting strategy:', error)
@@ -152,21 +90,16 @@ const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPan
   }, [strategies, onStrategiesUpdate])
 
   const handleRefresh = useCallback(() => {
-    window.location.reload()
+    loadInitialData()
   }, [])
 
   const handleStrategyUpdate = useCallback(async (strategyId: string, field: 'status' | 'priority_quadrant', value: string) => {
     const strategy = strategies.find(s => s.id === strategyId)
     if (!strategy) return
 
-    const updatedStrategy = { ...strategy, [field]: value }
-    
     try {
-      const response = await fetch('/api/strategy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedStrategy)
-      })
+      await updateStrategyField(strategy, field, value)
+      const updatedStrategy = { ...strategy, [field]: value }
       
       if (response.ok) {
         setStrategies(prev => prev.map(s => s.id === strategyId ? updatedStrategy : s))
@@ -206,10 +139,7 @@ const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPan
         <div className="mx-4">
           <MobileStrategyCards
             strategies={strategies}
-            onStrategyClick={(strategy) => {
-              const notionPageUrl = `https://www.notion.so/${strategy.id.replace(/-/g, '')}`
-              window.open(notionPageUrl, '_blank')
-            }}
+            onStrategyClick={(strategy) => openNotionPage(strategy.id)}
             onStrategyEdit={(strategy) => {
               setEditingStrategy(strategy)
               setFormPanelOpen(true)
@@ -227,57 +157,29 @@ const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPan
         {/* Strategy Form Panel */}
         <StrategyFormPanel
           isOpen={formPanelOpen}
-          onClose={() => setFormPanelOpen(false)}
+          onClose={createFormCloseHandler(setFormPanelOpen, setEditingStrategy)}
           strategy={editingStrategy}
           onSave={async (strategyData) => {
             try {
               const isEditing = !!editingStrategy
               
-              if (isEditing) {
-                strategyData.id = editingStrategy!.id
-              }
-              
-              const response = await fetch('/api/strategy', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(strategyData)
-              })
-              
-              if (!response.ok) {
-                throw new Error(`Failed to ${isEditing ? 'update' : 'create'} strategy`)
-              }
-              
-              const result = await response.json()
-              
-              if (isEditing) {
-                const updatedStrategies = strategies.map(s => s.id === editingStrategy!.id ? { ...editingStrategy, ...strategyData } : s)
-                setStrategies(updatedStrategies)
-                setToast({ message: 'Strategy updated successfully', type: 'success' })
-                
-                if (onStrategiesUpdate) {
-                  onStrategiesUpdate(updatedStrategies)
-                }
-              } else {
-                const newStrategy = { ...strategyData, id: result.id || `temp-${Date.now()}` }
-                const updatedStrategies = [...strategies, newStrategy]
-                setStrategies(updatedStrategies)
-                setToast({ message: 'Strategy created successfully', type: 'success' })
-                
-                if (onStrategiesUpdate) {
-                  onStrategiesUpdate(updatedStrategies)
-                }
-              }
+              await saveStrategy(strategyData, isEditing ? editingStrategy!.id : undefined)
               
               setFormPanelOpen(false)
               setEditingStrategy(null)
+              loadInitialData() // Refresh data
+              setToast({ 
+                message: `Strategy ${isEditing ? 'updated' : 'created'} successfully`, 
+                type: 'success' 
+              })
             } catch (error) {
               console.error('Error saving strategy:', error)
               setToast({ message: 'Failed to save strategy', type: 'error' })
             }
           }}
-          statusOptions={['Not Started', 'In Progress', 'Completed', 'On Hold']}
-          priorityOptions={['Q1 - Urgent Important', 'Q2 - Important Not Urgent', 'Q3 - Urgent Not Important', 'Q4 - Neither']}
-          categoryOptions={['Career', 'Health', 'Finance', 'Personal', 'Learning', 'Relationships']}
+          statusOptions={statusOptions}
+          priorityOptions={priorityOptions}
+          categoryOptions={STRATEGY_CATEGORY_OPTIONS}
         />
 
         {/* Relations Tooltip */}
@@ -286,30 +188,9 @@ const MobileStrategyPanel = forwardRef<MobileStrategyPanelRef, MobileStrategyPan
             type="strategy"
             isOpen={relationsTooltip.isOpen}
             onClose={() => setRelationsTooltip({ isOpen: false, strategy: null })}
-            childPlans={(() => {
-              const strategy = relationsTooltip.strategy
-              // Direct access to strategy plans using strategy.plan field
-              return strategy.plan 
-                ? plans.filter(plan => strategy.plan.includes(plan.id)).map(plan => ({
-                    id: plan.id,
-                    objective: plan.objective,
-                    status: plan.status,
-                    total_tasks: plan.total_tasks || 0,
-                    completed_tasks: plan.completed_tasks || 0
-                  }))
-                : []
-            })()}
-            allChildTasks={(() => {
-              const strategy = relationsTooltip.strategy
-              // Direct access to strategy tasks using strategy.task field
-              return strategy.task 
-                ? tasks.filter(task => strategy.task.includes(task.id)).map(task => ({
-                    id: task.id,
-                    title: task.title,
-                    status: task.status,
-                    plan: [] // Direct strategy tasks
-                  }))
-                : []
+            {...(() => {
+              const { childPlans, allChildTasks } = getStrategyRelationsData(relationsTooltip.strategy, plans, tasks)
+              return { childPlans, allChildTasks }
             })()}
           />
         )}

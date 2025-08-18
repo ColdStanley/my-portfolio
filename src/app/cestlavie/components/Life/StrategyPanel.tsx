@@ -4,23 +4,10 @@ import { useEffect, useState } from 'react'
 import RelationsTooltip from './RelationsTooltip'
 import StrategyFormPanel from './StrategyFormPanel'
 import { formatDateRange, fetchSchemaOptions, openNotionPage, createFormCloseHandler } from '../../utils/planUtils'
-import { fetchPlans, fetchTasks } from '../../services/planService'
-
-interface StrategyRecord {
-  id: string
-  objective: string
-  description: string
-  start_date: string
-  due_date: string
-  status: string
-  priority_quadrant: string
-  category: string
-  plan?: string[]
-  task?: string[]
-  progress: number
-  total_plans: number
-  order?: number
-}
+import { getStrategyRelationsData, sortStrategiesByOrder } from '../../utils/strategyUtils'
+import { fetchAllStrategyData, deleteStrategy, saveStrategy, updateStrategyField } from '../../services/strategyService'
+import { StrategyRecord } from '../../types/strategy'
+import { STRATEGY_CATEGORY_OPTIONS } from '../../constants/strategyOptions'
 
 export default function StrategyPanel() {
   const [data, setData] = useState<StrategyRecord[]>([])
@@ -46,16 +33,14 @@ export default function StrategyPanel() {
       setLoading(true)
       setError(null)
       
-      const [strategies, plans, tasks, schemaOptions] = await Promise.all([
-        fetchStrategies(),
-        fetchPlans(),
-        fetchTasks(),
+      const [strategyData, schemaOptions] = await Promise.all([
+        fetchAllStrategyData(),
         fetchSchemaOptions()
       ])
       
-      if (strategies) setData(strategies)
-      setPlans(plans)
-      setTasks(tasks)
+      setData(strategyData.strategies)
+      setPlans(strategyData.plans)
+      setTasks(strategyData.tasks)
       setStatusOptions(schemaOptions.statusOptions)
       setPriorityOptions(schemaOptions.priorityOptions)
     } catch (err) {
@@ -69,37 +54,15 @@ export default function StrategyPanel() {
   
   
 
-  const fetchStrategies = async () => {
-    const response = await fetch('/api/strategy')
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-    
-    const result = await response.json()
-    
-    if (result.error) {
-      throw new Error(result.error)
-    }
-    
-    return result.data || []
-  }
 
 
   const handleDeleteStrategy = async (strategyId: string) => {
     if (!confirm('Are you sure you want to delete this strategy?')) return
     
     try {
-      const response = await fetch(`/api/strategy?id=${strategyId}`, {
-        method: 'DELETE'
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to delete strategy')
-      }
-
-      const strategies = await fetchStrategies()
-      setData(strategies)
+      await deleteStrategy(strategyId)
+      const strategyData = await fetchAllStrategyData()
+      setData(strategyData.strategies)
     } catch (err) {
       console.error('Failed to delete strategy:', err)
       setError(err instanceof Error ? err.message : 'Failed to delete strategy')
@@ -110,24 +73,12 @@ export default function StrategyPanel() {
     try {
       const isEditing = !!editingStrategy
       
-      if (isEditing) {
-        strategyData.id = editingStrategy!.id
-      }
-      
-      const response = await fetch('/api/strategy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(strategyData)
-      })
-      
-      if (!response.ok) {
-        throw new Error(`Failed to ${isEditing ? 'update' : 'create'} strategy`)
-      }
+      await saveStrategy(strategyData, isEditing ? editingStrategy!.id : undefined)
       
       setFormPanelOpen(false)
       setEditingStrategy(null)
-      const strategies = await fetchStrategies()
-      setData(strategies)
+      const updatedStrategyData = await fetchAllStrategyData()
+      setData(updatedStrategyData.strategies)
     } catch (err) {
       console.error('Failed to save strategy:', err)
       setError(err instanceof Error ? err.message : 'Failed to save strategy')
@@ -138,29 +89,16 @@ export default function StrategyPanel() {
     const strategy = data.find(s => s.id === strategyId)
     if (!strategy) return
 
-
-    const updatedStrategy = { ...strategy, [field]: value }
-    
     try {
-      const response = await fetch('/api/strategy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedStrategy)
-      })
-      
-      if (response.ok) {
-        setData(prev => prev.map(s => s.id === strategyId ? updatedStrategy : s))
-      } else {
-        throw new Error(`Failed to update strategy ${field}`)
-      }
+      await updateStrategyField(strategy, field, value)
+      const updatedStrategy = { ...strategy, [field]: value }
+      setData(prev => prev.map(s => s.id === strategyId ? updatedStrategy : s))
     } catch (error) {
       console.error(`Failed to update strategy ${field}:`, error)
       setError(`Failed to update strategy ${field}`)
     }
   }
 
-  // Options loaded from database schema
-  const categoryOptions = ['Career', 'Health', 'Finance', 'Personal', 'Learning', 'Relationships']
 
   if (loading) {
     return (
@@ -194,8 +132,6 @@ export default function StrategyPanel() {
     )
   }
 
-  const sortedData = data.sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999))
-
 
   return (
     <>
@@ -220,7 +156,7 @@ export default function StrategyPanel() {
 
         {/* StrategyList Section - Full Width */}
         <div className="w-full relative">
-          {sortedData.length === 0 ? (
+          {data.length === 0 ? (
             <div className="text-center py-16">
               <h3 className="text-xl font-semibold text-gray-700 mb-2">No Strategies Yet</h3>
               <p className="text-gray-600 mb-6">Create your first long-term goal to get started</p>
@@ -239,7 +175,7 @@ export default function StrategyPanel() {
             </div>
           ) : (
             <div className="space-y-4">
-              {sortedData.map((strategy) => (
+              {sortStrategiesByOrder(data).map((strategy) => (
                 <div key={strategy.id} className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl border border-white/20 p-6">
                   {/* Strategy Card Layout: Time - Title - Actions */}
                   <div className="flex gap-6">
@@ -360,30 +296,9 @@ export default function StrategyPanel() {
           type="strategy"
           isOpen={relationsTooltip.isOpen}
           onClose={() => setRelationsTooltip({ isOpen: false, strategy: null })}
-          childPlans={(() => {
-            const strategy = relationsTooltip.strategy
-            // Direct access to strategy plans using strategy.plan field
-            return strategy.plan 
-              ? plans.filter(plan => strategy.plan.includes(plan.id)).map(plan => ({
-                  id: plan.id,
-                  objective: plan.objective,
-                  status: plan.status,
-                  total_tasks: plan.total_tasks || 0,
-                  completed_tasks: plan.completed_tasks || 0
-                }))
-              : []
-          })()}
-          allChildTasks={(() => {
-            const strategy = relationsTooltip.strategy
-            // Direct access to strategy tasks using strategy.task field
-            return strategy.task 
-              ? tasks.filter(task => strategy.task.includes(task.id)).map(task => ({
-                  id: task.id,
-                  title: task.title,
-                  status: task.status,
-                  plan: [] // Direct strategy tasks
-                }))
-              : []
+          {...(() => {
+            const { childPlans, allChildTasks } = getStrategyRelationsData(relationsTooltip.strategy, plans, tasks)
+            return { childPlans, allChildTasks }
           })()}
         />
       )}
@@ -396,7 +311,7 @@ export default function StrategyPanel() {
         onSave={handleSaveStrategy}
         statusOptions={statusOptions}
         priorityOptions={priorityOptions}
-        categoryOptions={categoryOptions}
+        categoryOptions={STRATEGY_CATEGORY_OPTIONS}
       />
     </>
   )

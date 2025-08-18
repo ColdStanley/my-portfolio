@@ -1,44 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { StrategyRecord, StrategyFormData, StrategyFormPanelProps } from '../../types/strategy'
+import { getDefaultStrategyFormData } from '../../utils/strategyUtils'
 
-interface StrategyRecord {
-  id: string
-  objective: string
-  description: string
-  start_date: string
-  due_date: string
-  status: string
-  priority_quadrant: string
-  category: string
-}
-
-interface StrategyFormData {
-  objective: string
-  description: string
-  start_date: string
-  due_date: string
-  status: string
-  priority_quadrant: string
-  category: string
-}
-
-interface StrategyFormPanelProps {
-  isOpen: boolean
-  onClose: () => void
-  strategy?: StrategyRecord | null
-  onSave: (strategy: StrategyFormData) => void
-  statusOptions: string[]
-  priorityOptions: string[]
-  categoryOptions: string[]
-}
-
-const getDefaultDate = (): string => {
-  const now = new Date()
-  return now.getFullYear() + '-' +
-         String(now.getMonth() + 1).padStart(2, '0') + '-' +
-         String(now.getDate()).padStart(2, '0')
-}
 
 export default function StrategyFormPanel({ 
   isOpen, 
@@ -49,15 +14,7 @@ export default function StrategyFormPanel({
   priorityOptions, 
   categoryOptions
 }: StrategyFormPanelProps) {
-  const [formData, setFormData] = useState<StrategyFormData>({
-    objective: '',
-    description: '',
-    start_date: '',
-    due_date: '',
-    status: '',
-    priority_quadrant: '',
-    category: ''
-  })
+  const [formData, setFormData] = useState<StrategyFormData>(getDefaultStrategyFormData())
 
   // Initialize form data when strategy changes
   useEffect(() => {
@@ -72,17 +29,7 @@ export default function StrategyFormPanel({
         category: strategy.category || ''
       })
     } else {
-      const defaultDate = getDefaultDate()
-      
-      setFormData({
-        objective: '',
-        description: '',
-        start_date: defaultDate,
-        due_date: defaultDate,
-        status: '',
-        priority_quadrant: '',
-        category: ''
-      })
+      setFormData(getDefaultStrategyFormData())
     }
   }, [strategy, isOpen])
 
