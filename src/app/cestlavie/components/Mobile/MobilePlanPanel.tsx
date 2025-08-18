@@ -5,29 +5,10 @@ import { TaskErrorBoundary, TaskLoadingSpinner, TaskErrorDisplay, ToastNotificat
 import MobilePlanCards from './MobilePlanCards'
 import PlanFormPanel from '../Life/PlanFormPanel'
 import RelationsTooltip from '../Life/RelationsTooltip'
+import { PlanRecord, MobilePlanPanelProps, MobilePlanPanelRef } from '../../types/plan'
+import { fetchSchemaOptions, openNotionPage, createFormCloseHandler, getPlanRelationsData } from '../../utils/planUtils'
+import { fetchAllPlanData, deletePlan, savePlan, updatePlanField } from '../../services/planService'
 
-interface PlanRecord {
-  id: string
-  objective: string
-  description: string
-  start_date: string
-  due_date: string
-  status: string
-  priority_quadrant: string
-  strategy?: string[]
-  task?: string[]
-  total_tasks: number
-  completed_tasks: number
-  display_order?: number
-}
-
-interface MobilePlanPanelProps {
-  onPlansUpdate?: (plans: PlanRecord[]) => void
-}
-
-interface MobilePlanPanelRef {
-  openCreateForm: () => void
-}
 
 const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ onPlansUpdate }, ref) => {
   const [plans, setPlans] = useState<PlanRecord[]>([])
@@ -55,57 +36,31 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
   
   // Data fetching - unified with web version and mobile Task/Strategy pattern
   useEffect(() => {
-    fetchPlans()
-    fetchStrategies()
-    fetchTasks()
-    fetchSchemaOptions()
+    loadInitialData()
   }, [onPlansUpdate])
 
-  const fetchSchemaOptions = async () => {
-    try {
-      const response = await fetch('/api/tasks?action=schema')
-      if (response.ok) {
-        const result = await response.json()
-        const schema = result.schema || {}
-        
-        if (schema.statusOptions && schema.statusOptions.length > 0) {
-          setStatusOptions(schema.statusOptions)
-        }
-        if (schema.priorityOptions && schema.priorityOptions.length > 0) {
-          setPriorityOptions(schema.priorityOptions)
-        }
-      }
-    } catch (err) {
-      console.warn('Failed to fetch schema options, using defaults:', err)
-    }
-  }
-
-  const fetchPlans = async () => {
+  const loadInitialData = async () => {
     try {
       setLoading(true)
       setError(null)
       
-      const response = await fetch('/api/plan')
+      const [planData, schemaOptions] = await Promise.all([
+        fetchAllPlanData(),
+        fetchSchemaOptions()
+      ])
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-      }
-      
-      const result = await response.json()
-      
-      if (result.error) {
-        throw new Error(result.error)
-      }
-      
-      const plansArray = result.data || []
-      setPlans(plansArray)
+      setPlans(planData.plans)
+      setStrategies(planData.strategies)
+      setTasks(planData.tasks)
+      setStatusOptions(schemaOptions.statusOptions)
+      setPriorityOptions(schemaOptions.priorityOptions)
       
       if (onPlansUpdate) {
-        onPlansUpdate(plansArray)
+        onPlansUpdate(planData.plans)
       }
     } catch (error) {
-      console.error('Error fetching plans:', error)
-      setError(error instanceof Error ? error.message : 'Failed to load plans')
+      console.error('Error loading initial data:', error)
+      setError(error instanceof Error ? error.message : 'Failed to load data')
       setPlans([])
       
       if (onPlansUpdate) {
@@ -116,46 +71,15 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
     }
   }
 
-  const fetchStrategies = async () => {
-    try {
-      const response = await fetch('/api/strategy')
-      if (response.ok) {
-        const result = await response.json()
-        setStrategies(result.data || [])
-      }
-    } catch (err) {
-      console.warn('Failed to fetch strategies:', err)
-    }
-  }
-
-  const fetchTasks = async () => {
-    try {
-      const response = await fetch('/api/tasks')
-      if (response.ok) {
-        const result = await response.json()
-        setTasks(result.data || [])
-      }
-    } catch (err) {
-      console.warn('Failed to fetch tasks:', err)
-    }
-  }
-
   const handleDeletePlan = useCallback(async (planId: string) => {
     try {
-      const response = await fetch(`/api/plan?id=${planId}`, {
-        method: 'DELETE'
-      })
+      await deletePlan(planId)
+      const updatedPlans = plans.filter(p => p.id !== planId)
+      setPlans(updatedPlans)
+      setToast({ message: 'Plan deleted successfully', type: 'success' })
       
-      if (response.ok) {
-        const updatedPlans = plans.filter(p => p.id !== planId)
-        setPlans(updatedPlans)
-        setToast({ message: 'Plan deleted successfully', type: 'success' })
-        
-        if (onPlansUpdate) {
-          onPlansUpdate(updatedPlans)
-        }
-      } else {
-        throw new Error('Failed to delete plan')
+      if (onPlansUpdate) {
+        onPlansUpdate(updatedPlans)
       }
     } catch (error) {
       console.error('Error deleting plan:', error)
@@ -164,32 +88,21 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
   }, [plans, onPlansUpdate])
 
   const handleRefresh = useCallback(() => {
-    fetchPlans()
+    loadInitialData()
   }, [])
 
   const handlePlanUpdate = useCallback(async (planId: string, field: 'status' | 'priority_quadrant', value: string) => {
     const plan = plans.find(p => p.id === planId)
     if (!plan) return
 
-    const updatedPlan = { ...plan, [field]: value }
-    
     try {
-      const response = await fetch('/api/plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedPlan)
-      })
-      
-      if (response.ok) {
-        setPlans(prev => prev.map(p => p.id === planId ? updatedPlan : p))
-        setToast({ message: `Plan ${field} updated successfully`, type: 'success' })
-      } else {
-        throw new Error(`Failed to update plan ${field}`)
-      }
+      await updatePlanField(plan, field, value)
+      const updatedPlan = { ...plan, [field]: value }
+      setPlans(prev => prev.map(p => p.id === planId ? updatedPlan : p))
+      setToast({ message: `Plan ${field} updated successfully`, type: 'success' })
     } catch (error) {
       console.error(`Failed to update plan ${field}:`, error)
       setToast({ message: `Failed to update plan ${field}`, type: 'error' })
-      throw error // Re-throw for error handling in component
     }
   }, [plans])
 
@@ -201,19 +114,11 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
         planData.id = editingPlan!.id
       }
       
-      const response = await fetch('/api/plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(planData)
-      })
-      
-      if (!response.ok) {
-        throw new Error(`Failed to ${isEditing ? 'update' : 'create'} plan`)
-      }
+      await savePlan(planData, isEditing ? editingPlan!.id : undefined)
       
       setFormPanelOpen(false)
       setEditingPlan(null)
-      fetchPlans() // Refresh data
+      loadInitialData() // Refresh data
       setToast({ 
         message: `Plan ${isEditing ? 'updated' : 'created'} successfully`, 
         type: 'success' 
@@ -249,10 +154,7 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
         <div className="mx-4">
           <MobilePlanCards
             plans={plans}
-            onPlanClick={(plan) => {
-              const notionPageUrl = `https://www.notion.so/${plan.id.replace(/-/g, '')}`
-              window.open(notionPageUrl, '_blank')
-            }}
+            onPlanClick={(plan) => openNotionPage(plan.id)}
             onPlanEdit={(plan) => {
               setEditingPlan(plan)
               setFormPanelOpen(true)
@@ -270,14 +172,11 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
         {/* Plan Form Panel */}
         <PlanFormPanel
           isOpen={formPanelOpen}
-          onClose={() => {
-            setFormPanelOpen(false)
-            setEditingPlan(null)
-          }}
+          onClose={createFormCloseHandler(setFormPanelOpen, setEditingPlan)}
           plan={editingPlan}
           onSave={handleSavePlan}
-          statusOptions={['Not Started', 'In Progress', 'Completed', 'On Hold']}
-          priorityOptions={['Q1 - Urgent Important', 'Q2 - Important Not Urgent', 'Q3 - Urgent Not Important', 'Q4 - Neither']}
+          statusOptions={statusOptions}
+          priorityOptions={priorityOptions}
           strategyOptions={strategies.map(strategy => ({
             id: strategy.id,
             objective: strategy.objective
@@ -290,28 +189,12 @@ const MobilePlanPanel = forwardRef<MobilePlanPanelRef, MobilePlanPanelProps>(({ 
             type="plan"
             isOpen={relationsTooltip.isOpen}
             onClose={() => setRelationsTooltip({ isOpen: false, plan: null })}
-            parentStrategyForPlan={(() => {
-              const plan = relationsTooltip.plan
-              // Direct access to plan's parent strategies using plan.strategy field
-              return plan.strategy 
-                ? strategies.filter(strategy => plan.strategy.includes(strategy.id)).map(strategy => ({
-                    id: strategy.id,
-                    objective: strategy.objective,
-                    status: strategy.status
-                  }))
-                : []
-            })()}
-            childTasks={(() => {
-              const plan = relationsTooltip.plan
-              // Direct access to plan's child tasks using plan.task field
-              return plan.task 
-                ? tasks.filter(task => plan.task.includes(task.id)).map(task => ({
-                    id: task.id,
-                    title: task.title,
-                    status: task.status,
-                    plan: [plan.id] // Maintain interface compatibility
-                  }))
-                : []
+            {...(() => {
+              const { parentStrategies, childTasks } = getPlanRelationsData(relationsTooltip.plan, strategies, tasks)
+              return {
+                parentStrategyForPlan: parentStrategies,
+                childTasks: childTasks
+              }
             })()}
           />
         )}

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import RelationsTooltip from './RelationsTooltip'
 import StrategyFormPanel from './StrategyFormPanel'
+import { formatDateRange, fetchSchemaOptions, openNotionPage, createFormCloseHandler } from '../../utils/planUtils'
+import { fetchPlans, fetchTasks } from '../../services/planService'
 
 interface StrategyRecord {
   id: string
@@ -36,79 +38,51 @@ export default function StrategyPanel() {
   const [priorityOptions, setPriorityOptions] = useState<string[]>(['Q1 - Urgent Important', 'Q2 - Important Not Urgent', 'Q3 - Urgent Not Important', 'Q4 - Neither'])
 
   useEffect(() => {
-    fetchStrategies()
-    fetchPlans()
-    fetchTasks()
-    fetchSchemaOptions()
+    loadInitialData()
   }, [])
 
-  const fetchSchemaOptions = async () => {
-    try {
-      const response = await fetch('/api/tasks?action=schema')
-      if (response.ok) {
-        const result = await response.json()
-        const schema = result.schema || {}
-        
-        if (schema.statusOptions && schema.statusOptions.length > 0) {
-          setStatusOptions(schema.statusOptions)
-        }
-        if (schema.priorityOptions && schema.priorityOptions.length > 0) {
-          setPriorityOptions(schema.priorityOptions)
-        }
-      }
-    } catch (err) {
-      console.warn('Failed to fetch schema options, using defaults:', err)
-    }
-  }
-  
-  const fetchPlans = async () => {
-    try {
-      const response = await fetch('/api/plan')
-      if (response.ok) {
-        const result = await response.json()
-        setPlans(result.data || [])
-      }
-    } catch (err) {
-      console.warn('Failed to fetch plans:', err)
-    }
-  }
-  
-  const fetchTasks = async () => {
-    try {
-      const response = await fetch('/api/tasks')
-      if (response.ok) {
-        const result = await response.json()
-        setTasks(result.data || [])
-      }
-    } catch (err) {
-      console.warn('Failed to fetch tasks:', err)
-    }
-  }
-
-  const fetchStrategies = async () => {
+  const loadInitialData = async () => {
     try {
       setLoading(true)
       setError(null)
       
-      const response = await fetch('/api/strategy')
+      const [strategies, plans, tasks, schemaOptions] = await Promise.all([
+        fetchStrategies(),
+        fetchPlans(),
+        fetchTasks(),
+        fetchSchemaOptions()
+      ])
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-      }
-      
-      const result = await response.json()
-      
-      if (result.error) {
-        throw new Error(result.error)
-      }
-      
-      setData(result.data || [])
+      if (strategies) setData(strategies)
+      setPlans(plans)
+      setTasks(tasks)
+      setStatusOptions(schemaOptions.statusOptions)
+      setPriorityOptions(schemaOptions.priorityOptions)
     } catch (err) {
-      console.error('Failed to fetch strategies:', err)
+      console.error('Failed to load initial data:', err)
       setError(err instanceof Error ? err.message : 'Unknown error occurred')
     } finally {
       setLoading(false)
     }
+  }
+
+  
+  
+
+  const fetchStrategies = async () => {
+    const response = await fetch('/api/strategy')
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+    
+    const result = await response.json()
+    
+    if (result.error) {
+      throw new Error(result.error)
+    }
+    
+    return result.data || []
   }
 
 
@@ -124,7 +98,8 @@ export default function StrategyPanel() {
         throw new Error('Failed to delete strategy')
       }
 
-      fetchStrategies()
+      const strategies = await fetchStrategies()
+      setData(strategies)
     } catch (err) {
       console.error('Failed to delete strategy:', err)
       setError(err instanceof Error ? err.message : 'Failed to delete strategy')
@@ -151,7 +126,8 @@ export default function StrategyPanel() {
       
       setFormPanelOpen(false)
       setEditingStrategy(null)
-      fetchStrategies()
+      const strategies = await fetchStrategies()
+      setData(strategies)
     } catch (err) {
       console.error('Failed to save strategy:', err)
       setError(err instanceof Error ? err.message : 'Failed to save strategy')
@@ -206,7 +182,7 @@ export default function StrategyPanel() {
               <h3 className="text-sm font-medium text-red-800">Failed to load strategies</h3>
               <p className="mt-2 text-sm text-red-700">{error}</p>
               <button
-                onClick={fetchStrategies}
+                onClick={loadInitialData}
                 className="mt-4 px-4 py-2 bg-red-600 text-white text-sm hover:bg-red-700 transition-all duration-200"
               >
                 Try Again
@@ -220,23 +196,6 @@ export default function StrategyPanel() {
 
   const sortedData = data.sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999))
 
-  const formatDateRange = (startDate: string, endDate: string): string => {
-    if (!startDate && !endDate) return 'No dates'
-    
-    try {
-      // Convert UTC dates to local timezone for display
-      const start = startDate ? new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''
-      const end = endDate ? new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''
-      
-      if (start && end) {
-        return `${start} - ${end}`
-      }
-      
-      return start || end
-    } catch (error) {
-      return 'Invalid date'
-    }
-  }
 
   return (
     <>
@@ -295,10 +254,7 @@ export default function StrategyPanel() {
                     <div className="flex-1">
                       <h3 
                         className="text-lg font-semibold text-purple-600 cursor-pointer hover:underline hover:text-purple-500 transition-colors mb-2"
-                        onClick={() => {
-                          const notionPageUrl = `https://www.notion.so/${strategy.id.replace(/-/g, '')}`
-                          window.open(notionPageUrl, '_blank')
-                        }}
+                        onClick={() => openNotionPage(strategy.id)}
                         title="Click to edit in Notion"
                       >
                         {strategy.objective || 'Untitled Strategy'}
@@ -435,10 +391,7 @@ export default function StrategyPanel() {
       {/* Strategy Form Panel */}
       <StrategyFormPanel
         isOpen={formPanelOpen}
-        onClose={() => {
-          setFormPanelOpen(false)
-          setEditingStrategy(null)
-        }}
+        onClose={createFormCloseHandler(setFormPanelOpen, setEditingStrategy)}
         strategy={editingStrategy}
         onSave={handleSaveStrategy}
         statusOptions={statusOptions}

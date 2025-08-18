@@ -2,31 +2,9 @@
 
 import { useMemo, useCallback, useState, useRef } from 'react'
 import BottomSheet from '../Life/BottomSheet'
+import { PlanRecord, MobilePlanCardsProps } from '../../types/plan'
+import { formatDateRange, openNotionPage } from '../../utils/planUtils'
 
-interface PlanRecord {
-  id: string
-  objective: string
-  description: string
-  start_date: string
-  due_date: string
-  status: string
-  priority_quadrant: string
-  total_tasks: number
-  completed_tasks: number
-  display_order?: number
-  parent_goal?: string[]
-}
-
-interface MobilePlanCardsProps {
-  plans: PlanRecord[]
-  onPlanClick?: (plan: PlanRecord) => void
-  onPlanEdit?: (plan: PlanRecord) => void
-  onPlanDelete?: (planId: string) => void
-  onPlanUpdate?: (planId: string, field: 'status' | 'priority_quadrant', value: string) => void
-  onPlanRelations?: (plan: PlanRecord) => void
-  statusOptions?: string[]
-  priorityOptions?: string[]
-}
 
 export default function MobilePlanCards({ 
   plans, 
@@ -60,28 +38,10 @@ export default function MobilePlanCards({
     return plans.sort((a, b) => (a.display_order ?? 999999) - (b.display_order ?? 999999))
   }, [plans])
 
-  const formatDateRange = useCallback((startDate: string, endDate: string): string => {
-    if (!startDate && !endDate) return 'No dates'
-    
-    try {
-      // Convert UTC dates to local timezone for display
-      const start = startDate ? new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''
-      const end = endDate ? new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''
-      
-      if (start && end) {
-        return `${start} - ${end}`
-      }
-      
-      return start || end
-    } catch (error) {
-      return 'Invalid date'
-    }
-  }, [])
 
   const handleNotionClick = useCallback((plan: PlanRecord, e: React.MouseEvent) => {
     e.stopPropagation()
-    const notionPageUrl = `https://www.notion.so/${plan.id.replace(/-/g, '')}`
-    window.open(notionPageUrl, '_blank')
+    openNotionPage(plan.id)
   }, [])
 
   const handleEditClick = useCallback((plan: PlanRecord, e: React.MouseEvent) => {
@@ -127,15 +87,11 @@ export default function MobilePlanCards({
   const handleBottomSheetSelect = useCallback(async (value: string) => {
     if (!bottomSheet.planId || !bottomSheet.field || !onPlanUpdate) return
 
-    const updateKey = `${bottomSheet.planId}-${bottomSheet.field}`
-    setUpdatingFields(prev => ({ ...prev, [updateKey]: true }))
-
     try {
       await onPlanUpdate(bottomSheet.planId, bottomSheet.field, value)
     } catch (error) {
       console.error('Failed to update plan field:', error)
     } finally {
-      setUpdatingFields(prev => ({ ...prev, [updateKey]: false }))
       setBottomSheet({ isOpen: false, planId: null, field: null, currentValue: '' })
     }
   }, [bottomSheet, onPlanUpdate])

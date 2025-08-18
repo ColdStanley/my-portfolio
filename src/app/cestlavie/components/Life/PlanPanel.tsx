@@ -3,39 +3,11 @@
 import { useEffect, useState } from 'react'
 import RelationsTooltip from './RelationsTooltip'
 import PlanFormPanel from './PlanFormPanel'
+import { PlanRecord } from '../../types/plan'
+import { formatDateRange, fetchSchemaOptions, openNotionPage, getPlanRelationsData, createFormCloseHandler } from '../../utils/planUtils'
+import { fetchPlans, fetchStrategies, fetchTasks, deletePlan, savePlan, updatePlanField } from '../../services/planService'
 
-interface PlanRecord {
-  id: string
-  objective: string
-  description: string
-  start_date: string
-  due_date: string
-  status: string
-  priority_quadrant: string
-  strategy?: string[]
-  task?: string[]
-  total_tasks: number
-  completed_tasks: number
-  display_order?: number
-}
 
-// Format date range for display using local timezone
-function formatDateRange(startDate: string, endDate: string): string {
-  if (!startDate && !endDate) return 'No dates'
-  
-  try {
-    const start = startDate ? new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''
-    const end = endDate ? new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''
-    
-    if (start && end) {
-      return `${start} - ${end}`
-    }
-    
-    return start || end
-  } catch (error) {
-    return 'Invalid date'
-  }
-}
 
 export default function PlanPanel() {
   const [data, setData] = useState<PlanRecord[]>([])
@@ -53,75 +25,28 @@ export default function PlanPanel() {
   const [priorityOptions, setPriorityOptions] = useState<string[]>(['Q1 - Urgent Important', 'Q2 - Important Not Urgent', 'Q3 - Urgent Not Important', 'Q4 - Neither'])
 
   useEffect(() => {
-    fetchPlans()
-    fetchStrategies()
-    fetchTasks()
-    fetchSchemaOptions()
+    loadInitialData()
   }, [])
 
-  const fetchSchemaOptions = async () => {
-    try {
-      const response = await fetch('/api/tasks?action=schema')
-      if (response.ok) {
-        const result = await response.json()
-        const schema = result.schema || {}
-        
-        if (schema.statusOptions && schema.statusOptions.length > 0) {
-          setStatusOptions(schema.statusOptions)
-        }
-        if (schema.priorityOptions && schema.priorityOptions.length > 0) {
-          setPriorityOptions(schema.priorityOptions)
-        }
-      }
-    } catch (err) {
-      console.warn('Failed to fetch schema options, using defaults:', err)
-    }
-  }
-  
-  const fetchStrategies = async () => {
-    try {
-      const response = await fetch('/api/strategy')
-      if (response.ok) {
-        const result = await response.json()
-        setStrategies(result.data || [])
-      }
-    } catch (err) {
-      console.warn('Failed to fetch strategies:', err)
-    }
-  }
-  
-  const fetchTasks = async () => {
-    try {
-      const response = await fetch('/api/tasks')
-      if (response.ok) {
-        const result = await response.json()
-        setTasks(result.data || [])
-      }
-    } catch (err) {
-      console.warn('Failed to fetch tasks:', err)
-    }
-  }
-
-  const fetchPlans = async () => {
+  const loadInitialData = async () => {
     try {
       setLoading(true)
       setError(null)
       
-      const response = await fetch('/api/plan')
+      const [plans, strategies, tasks, schemaOptions] = await Promise.all([
+        fetchPlans(),
+        fetchStrategies(),
+        fetchTasks(),
+        fetchSchemaOptions()
+      ])
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-      }
-      
-      const result = await response.json()
-      
-      if (result.error) {
-        throw new Error(result.error)
-      }
-      
-      setData(result.data || [])
+      setData(plans)
+      setStrategies(strategies)
+      setTasks(tasks)
+      setStatusOptions(schemaOptions.statusOptions)
+      setPriorityOptions(schemaOptions.priorityOptions)
     } catch (err) {
-      console.error('Failed to fetch plans:', err)
+      console.error('Failed to load initial data:', err)
       setError(err instanceof Error ? err.message : 'Unknown error occurred')
     } finally {
       setLoading(false)
@@ -133,15 +58,9 @@ export default function PlanPanel() {
     if (!confirm('Are you sure you want to delete this plan?')) return
 
     try {
-      const response = await fetch(`/api/plan?id=${planId}`, {
-        method: 'DELETE'
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to delete plan')
-      }
-
-      fetchPlans()
+      await deletePlan(planId)
+      const plans = await fetchPlans()
+      setData(plans)
     } catch (err) {
       console.error('Failed to delete plan:', err)
       setError(err instanceof Error ? err.message : 'Failed to delete plan')
@@ -152,23 +71,12 @@ export default function PlanPanel() {
     try {
       const isEditing = !!editingPlan
       
-      if (isEditing) {
-        planData.id = editingPlan!.id
-      }
-      
-      const response = await fetch('/api/plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(planData)
-      })
-      
-      if (!response.ok) {
-        throw new Error(`Failed to ${isEditing ? 'update' : 'create'} plan`)
-      }
+      await savePlan(planData, isEditing ? editingPlan!.id : undefined)
       
       setFormPanelOpen(false)
       setEditingPlan(null)
-      fetchPlans()
+      const plans = await fetchPlans()
+      setData(plans)
     } catch (err) {
       console.error('Failed to save plan:', err)
       setError(err instanceof Error ? err.message : 'Failed to save plan')
@@ -179,21 +87,10 @@ export default function PlanPanel() {
     const plan = data.find(p => p.id === planId)
     if (!plan) return
 
-
-    const updatedPlan = { ...plan, [field]: value }
-    
     try {
-      const response = await fetch('/api/plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedPlan)
-      })
-      
-      if (response.ok) {
-        setData(prev => prev.map(p => p.id === planId ? updatedPlan : p))
-      } else {
-        throw new Error(`Failed to update plan ${field}`)
-      }
+      await updatePlanField(plan, field, value)
+      const updatedPlan = { ...plan, [field]: value }
+      setData(prev => prev.map(p => p.id === planId ? updatedPlan : p))
     } catch (error) {
       console.error(`Failed to update plan ${field}:`, error)
       setError(`Failed to update plan ${field}`)
@@ -293,10 +190,7 @@ export default function PlanPanel() {
                     <div className="flex-1">
                       <h3 
                         className="text-lg font-semibold text-purple-600 cursor-pointer hover:underline hover:text-purple-500 transition-colors mb-2"
-                        onClick={() => {
-                          const notionPageUrl = `https://www.notion.so/${plan.id.replace(/-/g, '')}`
-                          window.open(notionPageUrl, '_blank')
-                        }}
+                        onClick={() => openNotionPage(plan.id)}
                         title="Click to edit in Notion"
                       >
                         {plan.objective || 'Untitled Plan'}
@@ -397,28 +291,12 @@ export default function PlanPanel() {
           type="plan"
           isOpen={relationsTooltip.isOpen}
           onClose={() => setRelationsTooltip({ isOpen: false, plan: null })}
-          parentStrategyForPlan={(() => {
-            const plan = relationsTooltip.plan
-            // Direct access to plan's parent strategies using plan.strategy field
-            return plan.strategy 
-              ? strategies.filter(strategy => plan.strategy.includes(strategy.id)).map(strategy => ({
-                  id: strategy.id,
-                  objective: strategy.objective,
-                  status: strategy.status
-                }))
-              : []
-          })()}
-          childTasks={(() => {
-            const plan = relationsTooltip.plan
-            // Direct access to plan's child tasks using plan.task field
-            return plan.task 
-              ? tasks.filter(task => plan.task.includes(task.id)).map(task => ({
-                  id: task.id,
-                  title: task.title,
-                  status: task.status,
-                  plan: [plan.id] // Maintain interface compatibility
-                }))
-              : []
+          {...(() => {
+            const { parentStrategies, childTasks } = getPlanRelationsData(relationsTooltip.plan, strategies, tasks)
+            return {
+              parentStrategyForPlan: parentStrategies,
+              childTasks: childTasks
+            }
           })()}
         />
       )}
@@ -426,10 +304,7 @@ export default function PlanPanel() {
       {/* Plan Form Panel */}
       <PlanFormPanel
         isOpen={formPanelOpen}
-        onClose={() => {
-          setFormPanelOpen(false)
-          setEditingPlan(null)
-        }}
+        onClose={createFormCloseHandler(setFormPanelOpen, setEditingPlan)}
         plan={editingPlan}
         onSave={handleSavePlan}
         statusOptions={statusOptions}

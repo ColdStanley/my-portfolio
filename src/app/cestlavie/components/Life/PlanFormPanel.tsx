@@ -1,17 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-
-interface PlanRecord {
-  id: string
-  objective: string
-  description: string
-  start_date: string
-  due_date: string
-  status: string
-  priority_quadrant: string
-  parent_goal?: string[]
-}
+import { getDefaultPlanFormData } from '../../utils/planUtils'
+import { PlanRecord } from '../../types/plan'
 
 interface PlanFormData {
   objective: string
@@ -38,12 +29,6 @@ interface PlanFormPanelProps {
   strategyOptions: StrategyOption[]
 }
 
-const getDefaultDate = (): string => {
-  const now = new Date()
-  return now.getFullYear() + '-' +
-         String(now.getMonth() + 1).padStart(2, '0') + '-' +
-         String(now.getDate()).padStart(2, '0')
-}
 
 export default function PlanFormPanel({ 
   isOpen, 
@@ -54,15 +39,7 @@ export default function PlanFormPanel({
   priorityOptions, 
   strategyOptions
 }: PlanFormPanelProps) {
-  const [formData, setFormData] = useState<PlanFormData>({
-    objective: '',
-    description: '',
-    start_date: '',
-    due_date: '',
-    status: '',
-    priority_quadrant: '',
-    parent_goal: []
-  })
+  const [formData, setFormData] = useState<PlanFormData>(getDefaultPlanFormData())
 
   // Initialize form data when plan changes
   useEffect(() => {
@@ -77,17 +54,7 @@ export default function PlanFormPanel({
         parent_goal: plan.parent_goal || []
       })
     } else {
-      const defaultDate = getDefaultDate()
-      
-      setFormData({
-        objective: '',
-        description: '',
-        start_date: defaultDate,
-        due_date: defaultDate,
-        status: '',
-        priority_quadrant: '',
-        parent_goal: []
-      })
+      setFormData(getDefaultPlanFormData())
     }
   }, [plan, isOpen])
 
