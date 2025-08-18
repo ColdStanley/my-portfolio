@@ -260,49 +260,65 @@ export default function MobileTaskCards({
               </button>
 
               {/* Strategy */}
-              {task.plan && task.plan[0] && (() => {
-                const plan = planOptions.find(p => p.id === task.plan[0])
-                if (plan && plan.parent_goal && plan.parent_goal[0]) {
-                  const strategy = strategyOptions.find(s => s.id === plan.parent_goal[0])
-                  if (strategy) {
+              {(() => {
+                if (task.plan && task.plan[0]) {
+                  const plan = planOptions.find(p => p.id === task.plan[0])
+                  if (plan && plan.parent_goal && plan.parent_goal[0]) {
+                    const strategy = strategyOptions.find(s => s.id === plan.parent_goal[0])
+                    if (strategy) {
+                      return (
+                        <span 
+                          className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 cursor-pointer col-span-2"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const notionPageUrl = `https://www.notion.so/${strategy.id.replace(/-/g, '')}`
+                            window.open(notionPageUrl, '_blank')
+                          }}
+                          title="Click to edit in Notion"
+                        >
+                          {strategy.objective}
+                        </span>
+                      )
+                    }
+                  }
+                }
+                return (
+                  <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 col-span-2">
+                    No Strategy
+                  </span>
+                )
+              })()}
+
+              {/* Plan */}
+              {(() => {
+                if (task.plan && task.plan[0]) {
+                  const plan = planOptions.find(p => p.id === task.plan[0])
+                  if (plan) {
                     return (
                       <span 
                         className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 cursor-pointer col-span-2"
                         onClick={(e) => {
                           e.stopPropagation()
-                          const notionPageUrl = `https://www.notion.so/${strategy.id.replace(/-/g, '')}`
+                          const notionPageUrl = `https://www.notion.so/${plan.id.replace(/-/g, '')}`
                           window.open(notionPageUrl, '_blank')
                         }}
                         title="Click to edit in Notion"
                       >
-                        {strategy.objective}
+                        {plan.objective}
                       </span>
                     )
                   }
                 }
-                return null
-              })()}
-
-              {/* Plan */}
-              {task.plan && task.plan[0] && (() => {
-                const plan = planOptions.find(p => p.id === task.plan[0])
-                if (plan) {
-                  return (
-                    <span 
-                      className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 cursor-pointer col-span-2"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        const notionPageUrl = `https://www.notion.so/${plan.id.replace(/-/g, '')}`
-                        window.open(notionPageUrl, '_blank')
-                      }}
-                      title="Click to edit in Notion"
-                    >
-                      {plan.objective}
-                    </span>
-                  )
-                }
-                return null
-              })()}
+                return (
+                  <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 col-span-2">
+                    No Plan
+                  </span>
+                )
+              })() || (
+                <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 col-span-2">
+                  No Plan
+                </span>
+              )}
             </div>
 
             {/* Note */}
