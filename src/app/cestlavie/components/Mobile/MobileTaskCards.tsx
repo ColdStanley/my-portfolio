@@ -2,7 +2,6 @@
 
 import { useMemo, useCallback, useState, useRef } from 'react'
 import DeleteConfirmTooltip from '../Life/DeleteConfirmTooltip'
-import BottomSheet from '../Life/BottomSheet'
 import { TaskRecord } from '../Life/taskReducer'
 import { extractTimeOnly, extractDateOnly } from '@/utils/dateUtils'
 
@@ -51,12 +50,6 @@ export default function MobileTaskCards({
     triggerElement: HTMLElement | null
   }>({ isOpen: false, task: null, triggerElement: null })
   
-  const [bottomSheet, setBottomSheet] = useState<{
-    isOpen: boolean
-    taskId: string | null
-    field: 'status' | 'priority_quadrant' | null
-    currentValue: string
-  }>({ isOpen: false, taskId: null, field: null, currentValue: '' })
   
   const [updatingFields, setUpdatingFields] = useState<{[key: string]: boolean}>({})
   
@@ -137,30 +130,20 @@ export default function MobileTaskCards({
     setDeleteTooltip({ isOpen: false, task: null, triggerElement: null })
   }, [deleteTooltip.task, onTaskDelete])
 
-  const handleFieldClick = useCallback((taskId: string, field: 'status' | 'priority_quadrant', currentValue: string) => {
-    setBottomSheet({
-      isOpen: true,
-      taskId,
-      field,
-      currentValue: currentValue || ''
-    })
-  }, [])
-
-  const handleBottomSheetSelect = useCallback(async (value: string) => {
-    if (!bottomSheet.taskId || !bottomSheet.field || !onTaskUpdate) return
-
-    const updateKey = `${bottomSheet.taskId}-${bottomSheet.field}`
+  const handleFieldUpdate = useCallback(async (taskId: string, field: 'status' | 'priority_quadrant', value: string) => {
+    if (!onTaskUpdate) return
+    
+    const updateKey = `${taskId}-${field}`
     setUpdatingFields(prev => ({ ...prev, [updateKey]: true }))
-
+    
     try {
-      await onTaskUpdate(bottomSheet.taskId, bottomSheet.field, value)
+      await onTaskUpdate(taskId, field, value)
     } catch (error) {
       console.error('Failed to update task field:', error)
     } finally {
       setUpdatingFields(prev => ({ ...prev, [updateKey]: false }))
-      setBottomSheet({ isOpen: false, taskId: null, field: null, currentValue: '' })
     }
-  }, [bottomSheet, onTaskUpdate])
+  }, [onTaskUpdate])
 
   if (selectedDateTasks.length === 0) {
     return (
@@ -225,41 +208,48 @@ export default function MobileTaskCards({
 
             {/* Labels Grid */}
             <div className="grid grid-cols-2 gap-2">
-              {/* Status - Clickable */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleFieldClick(task.id, 'status', task.status)
-                }}
-                disabled={updatingFields[`${task.id}-status`]}
-                className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
-              >
-                {task.status}
+              {/* Row 1, Col 1: Status - Dropdown Select */}
+              <div className="relative">
+                <select
+                  value={task.status}
+                  onChange={(e) => handleFieldUpdate(task.id, 'status', e.target.value)}
+                  disabled={updatingFields[`${task.id}-status`]}
+                  className="w-full px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 border-0 appearance-none cursor-pointer hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {statusOptions.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
                 {updatingFields[`${task.id}-status`] && (
                   <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
                     <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
                   </div>
                 )}
-              </button>
+              </div>
 
-              {/* Priority - Clickable */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleFieldClick(task.id, 'priority_quadrant', task.priority_quadrant || '')
-                }}
-                disabled={updatingFields[`${task.id}-priority_quadrant`]}
-                className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
-              >
-                {task.priority_quadrant || 'No Priority'}
+              {/* Row 1, Col 2: Priority - Dropdown Select */}
+              <div className="relative">
+                <select
+                  value={task.priority_quadrant || ''}
+                  onChange={(e) => handleFieldUpdate(task.id, 'priority_quadrant', e.target.value)}
+                  disabled={updatingFields[`${task.id}-priority_quadrant`]}
+                  className="w-full px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 border-0 appearance-none cursor-pointer hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <option value="">No Priority</option>
+                  {priorityOptions.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
                 {updatingFields[`${task.id}-priority_quadrant`] && (
                   <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
                     <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
                   </div>
                 )}
-              </button>
+              </div>
 
-              {/* Strategy */}
+              {/* Row 2, Col 1: Strategy */}
               {(() => {
                 if (task.plan && task.plan[0]) {
                   const plan = planOptions.find(p => p.id === task.plan[0])
@@ -268,7 +258,7 @@ export default function MobileTaskCards({
                     if (strategy) {
                       return (
                         <span 
-                          className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 cursor-pointer col-span-2"
+                          className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 cursor-pointer"
                           onClick={(e) => {
                             e.stopPropagation()
                             const notionPageUrl = `https://www.notion.so/${strategy.id.replace(/-/g, '')}`
@@ -283,20 +273,20 @@ export default function MobileTaskCards({
                   }
                 }
                 return (
-                  <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 col-span-2">
+                  <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
                     No Strategy
                   </span>
                 )
               })()}
 
-              {/* Plan */}
+              {/* Row 2, Col 2: Plan */}
               {(() => {
                 if (task.plan && task.plan[0]) {
                   const plan = planOptions.find(p => p.id === task.plan[0])
                   if (plan) {
                     return (
                       <span 
-                        className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 cursor-pointer col-span-2"
+                        className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 cursor-pointer"
                         onClick={(e) => {
                           e.stopPropagation()
                           const notionPageUrl = `https://www.notion.so/${plan.id.replace(/-/g, '')}`
@@ -310,12 +300,12 @@ export default function MobileTaskCards({
                   }
                 }
                 return (
-                  <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 col-span-2">
+                  <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
                     No Plan
                   </span>
                 )
               })() || (
-                <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600 col-span-2">
+                <span className="px-3 py-1.5 text-xs rounded-full font-medium bg-gray-100 text-gray-600">
                   No Plan
                 </span>
               )}
@@ -340,22 +330,6 @@ export default function MobileTaskCards({
         taskTitle={deleteTooltip.task?.title || ''}
       />
 
-      {/* Bottom Sheet for Status/Priority Selection */}
-      <BottomSheet
-        isOpen={bottomSheet.isOpen}
-        onClose={() => setBottomSheet({ isOpen: false, taskId: null, field: null, currentValue: '' })}
-        onSelect={handleBottomSheetSelect}
-        options={
-          bottomSheet.field === 'status'
-            ? statusOptions.map(option => ({ value: option, label: option }))
-            : bottomSheet.field === 'priority_quadrant'
-            ? [{ value: '', label: 'No Priority' }, ...priorityOptions.map(option => ({ value: option, label: option }))]
-            : []
-        }
-        currentValue={bottomSheet.currentValue}
-        title={`Select ${bottomSheet.field === 'status' ? 'Status' : 'Priority'}`}
-        loading={updatingFields[`${bottomSheet.taskId}-${bottomSheet.field}`]}
-      />
     </div>
   )
 }
