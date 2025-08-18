@@ -4,6 +4,7 @@ import { useMemo, useCallback, useState, useRef } from 'react'
 import DeleteConfirmTooltip from '../Life/DeleteConfirmTooltip'
 import BottomSheet from '../Life/BottomSheet'
 import { TaskRecord } from '../Life/taskReducer'
+import { extractTimeOnly, extractDateOnly } from '@/utils/dateUtils'
 
 interface PlanOption {
   id: string
@@ -18,6 +19,7 @@ interface StrategyOption {
 
 interface MobileTaskCardsProps {
   tasks: TaskRecord[]
+  selectedDate: string
   onTaskClick?: (task: TaskRecord) => void
   onTaskDelete?: (taskId: string) => void
   onTaskUpdate?: (taskId: string, field: 'status' | 'priority_quadrant', value: string) => void
@@ -31,6 +33,7 @@ interface MobileTaskCardsProps {
 
 export default function MobileTaskCards({ 
   tasks, 
+  selectedDate,
   onTaskClick,
   onTaskDelete,
   onTaskUpdate,
@@ -59,45 +62,54 @@ export default function MobileTaskCards({
   
   const deleteButtonRefs = useRef<{[taskId: string]: HTMLButtonElement}>({})
 
-  // Sort tasks by date (most recent first)
-  const sortedTasks = useMemo(() => {
-    return tasks.sort((a, b) => {
-      const aTime = a.start_date || a.end_date || ''
-      const bTime = b.start_date || b.end_date || ''
-      return bTime.localeCompare(aTime)
+  // Filter tasks for selected date and sort by time
+  const selectedDateTasks = useMemo(() => {
+    if (!selectedDate) return []
+    
+    return tasks.filter(task => {
+      if (!task.start_date && !task.end_date) return false
+      
+      const taskDate = task.start_date || task.end_date
+      if (!taskDate) return false
+      
+      // Extract date part from UTC date string
+      const taskDateString = extractDateOnly(taskDate)
+      return taskDateString === selectedDate
+    }).sort((a, b) => {
+      // Sort by status: completed tasks last
+      const aCompleted = a.status === 'Completed'
+      const bCompleted = b.status === 'Completed'
+      
+      if (aCompleted && !bCompleted) return 1
+      if (!aCompleted && bCompleted) return -1
+      
+      // If same completion status, sort by time
+      const aTime = a.start_date || a.end_date
+      const bTime = b.start_date || b.end_date
+      if (!aTime || !bTime) return 0
+      return aTime.localeCompare(bTime)
     })
-  }, [tasks])
+  }, [tasks, selectedDate])
 
   const formatTimeOnly = useCallback((startDate: string, endDate?: string) => {
     if (!startDate) return ''
     
-    const startTime = new Date(startDate).toLocaleTimeString('en-US', {
-      hour: '2-digit', 
-      minute: '2-digit', 
-      hour12: false
-    })
+    const startTime = extractTimeOnly(startDate)
     
     if (!endDate) {
       return startTime
     }
     
-    const endTime = new Date(endDate).toLocaleTimeString('en-US', {
-      hour: '2-digit', 
-      minute: '2-digit', 
-      hour12: false
-    })
+    const endTime = extractTimeOnly(endDate)
     
+    // Display as simple time range
     return `${startTime} - ${endTime}`
   }, [])
 
   const formatDateAndTime = useCallback((startDate: string, endDate?: string) => {
     if (!startDate) return ''
     
-    const date = new Date(startDate).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
-    })
-    
+    const date = extractDateOnly(startDate)
     const time = formatTimeOnly(startDate, endDate)
     return `${date} ${time}`
   }, [formatTimeOnly])
@@ -150,19 +162,19 @@ export default function MobileTaskCards({
     }
   }, [bottomSheet, onTaskUpdate])
 
-  if (sortedTasks.length === 0) {
+  if (selectedDateTasks.length === 0) {
     return (
       <div className="text-center py-8">
         <div className="text-gray-400 text-4xl mb-4">📋</div>
-        <h3 className="text-lg font-semibold text-gray-700 mb-2">No tasks found</h3>
-        <p className="text-gray-600">Create a new task to get started</p>
+        <h3 className="text-lg font-semibold text-gray-700 mb-2">No tasks scheduled</h3>
+        <p className="text-gray-600">This day is free. Would you like to add a task?</p>
       </div>
     )
   }
 
   return (
     <div className="space-y-3">
-      {sortedTasks.map(task => {
+      {selectedDateTasks.map(task => {
         const isCompleted = task.status === 'Completed'
         
         return (

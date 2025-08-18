@@ -282,6 +282,7 @@ const MobileTaskPanel = forwardRef<MobileTaskPanelRef, MobileTaskPanelProps>(({ 
         <div className="mx-4">
           <MobileTaskCards
             tasks={filteredTasks}
+            selectedDate={state.selectedDate}
             onTaskClick={(task) => actions.openFormPanel(task)}
             onTaskDelete={handleDeleteTask}
             onTaskUpdate={handleTaskUpdate}
