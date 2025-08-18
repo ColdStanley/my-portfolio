@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { TaskRecord } from './taskReducer'
+import { toDatetimeLocal } from '../../utils/timezone'
 
 
 interface TaskFormData {
@@ -82,8 +83,8 @@ export default function TaskFormPanel({
       setFormData({
         title: task.title || '',
         status: task.status || '',
-        start_date: task.start_date ? new Date(task.start_date).toISOString().slice(0, 16) : '',
-        end_date: task.end_date ? new Date(task.end_date).toISOString().slice(0, 16) : '',
+        start_date: task.start_date ? toDatetimeLocal(task.start_date) : '',
+        end_date: task.end_date ? toDatetimeLocal(task.end_date) : '',
         all_day: task.all_day || false,
         remind_before: task.remind_before || 15,
         plan: task.plan || [],

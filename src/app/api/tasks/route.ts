@@ -185,6 +185,43 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// 可选的Outlook同步功能
+async function syncToOutlook(action: 'create' | 'update' | 'delete', taskData: any) {
+  try {
+    // 创建和更新操作需要时间，删除操作只需要outlook_event_id
+    if (action !== 'delete' && (!taskData.start_date || !taskData.end_date)) {
+      return
+    }
+    
+    // 删除操作需要outlook_event_id
+    if (action === 'delete' && !taskData.outlook_event_id) {
+      return
+    }
+
+    const webhookUrl = process.env.N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/Sync%20Task'
+    
+    const payload = {
+      action,
+      data: taskData
+    }
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok) {
+      console.warn(`Outlook sync failed for ${action}:`, response.statusText)
+    } else {
+      console.log(`Outlook sync successful for ${action}`)
+    }
+  } catch (error) {
+    console.warn('Outlook sync error:', error)
+    // 不影响主要功能，只记录警告
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     // 获取用户的Notion配置
@@ -290,13 +327,38 @@ export async function POST(request: NextRequest) {
     }
 
     let response
+    let isNewTask = false
     
     if (id) {
+      // 更新现有任务前，先获取现有的outlook_event_id
+      let existingOutlookEventId = null
+      try {
+        const existingTask = await notion.pages.retrieve({ page_id: id })
+        const existingProperties = (existingTask as any).properties
+        if (existingProperties?.outlook_event_id?.rich_text?.[0]?.plain_text) {
+          existingOutlookEventId = existingProperties.outlook_event_id.rich_text[0].plain_text
+        }
+      } catch (retrieveError) {
+        console.warn('Could not retrieve existing task for Outlook sync:', retrieveError)
+      }
+
       // 更新现有任务
       response = await notion.pages.update({
         page_id: id,
         properties
       })
+      
+      // 异步同步到Outlook（更新），包含现有的event ID
+      const taskData = { 
+        id, 
+        outlook_event_id: existingOutlookEventId,
+        title, 
+        start_date, 
+        end_date, 
+        note, 
+        ...body 
+      }
+      syncToOutlook('update', taskData).catch(console.warn)
       
       return NextResponse.json({ success: true, id: response.id, updated: true })
     } else {
@@ -305,6 +367,12 @@ export async function POST(request: NextRequest) {
         parent: { database_id: config.database_id },
         properties
       })
+      
+      isNewTask = true
+      
+      // 异步同步到Outlook（创建）
+      const taskData = { id: response.id, title, start_date, end_date, note, ...body }
+      syncToOutlook('create', taskData).catch(console.warn)
       
       return NextResponse.json({ success: true, id: response.id, created: true })
     }
@@ -348,10 +416,28 @@ export async function DELETE(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // 获取任务信息（用于Outlook同步）
+    let outlookEventId = null
+    try {
+      const taskPage = await notion.pages.retrieve({ page_id: pageId })
+      const properties = (taskPage as any).properties
+      if (properties?.outlook_event_id?.rich_text?.[0]?.plain_text) {
+        outlookEventId = properties.outlook_event_id.rich_text[0].plain_text
+      }
+    } catch (retrieveError) {
+      console.warn('Could not retrieve task for Outlook sync:', retrieveError)
+    }
+
     await notion.pages.update({
       page_id: pageId,
       archived: true
     })
+
+    // 如果有outlook_event_id，则同步删除到Outlook
+    if (outlookEventId) {
+      const taskData = { id: pageId, outlook_event_id: outlookEventId }
+      syncToOutlook('delete', taskData).catch(console.warn)
+    }
 
     return NextResponse.json({ success: true })
 
