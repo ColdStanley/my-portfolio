@@ -180,10 +180,10 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
           try {
             const planResult = await planRes.value.json()
             const rawPlans = planResult.data || []
-            // Map plan data to ensure consistent field naming and include parent_goal
+            // Use plan data directly without field conversion
             planOptions = rawPlans.map((plan: any) => ({
               id: plan.id,
-              title: plan.objective || 'Untitled Plan',
+              objective: plan.objective || 'Untitled Plan',
               parent_goal: plan.parent_goal || []
             }))
           } catch (err) {
@@ -692,7 +692,7 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
                       <option value="all">All Plans</option>
                       <option value="none">No Plan</option>
                       {state.planOptions.map(plan => (
-                        <option key={plan.id} value={plan.id}>{plan.title}</option>
+                        <option key={plan.id} value={plan.id}>{plan.objective}</option>
                       ))}
                     </select>
                   </div>
@@ -777,7 +777,7 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
                 <option value="all">All Plans</option>
                 <option value="none">No Plan</option>
                 {state.planOptions.map(plan => (
-                  <option key={plan.id} value={plan.id}>{plan.title}</option>
+                  <option key={plan.id} value={plan.id}>{plan.objective}</option>
                 ))}
               </select>
               

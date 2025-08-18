@@ -19,7 +19,7 @@ interface TaskFormData {
 
 interface PlanOption {
   id: string
-  title: string
+  objective: string
   parent_goal?: string[]
 }
 
@@ -164,7 +164,7 @@ export default function TaskFormPanel({
               <option value="">Select a Plan First</option>
               {planOptions.map(plan => (
                 <option key={plan.id} value={plan.id}>
-                  {plan.title || 'Untitled Plan'}
+                  {plan.objective || 'Untitled Plan'}
                 </option>
               ))}
             </select>
@@ -340,7 +340,7 @@ export default function TaskFormPanel({
               <option value="">Select a Plan First</option>
               {planOptions.map(plan => (
                 <option key={plan.id} value={plan.id}>
-                  {plan.title || 'Untitled Plan'}
+                  {plan.objective || 'Untitled Plan'}
                 </option>
               ))}
             </select>

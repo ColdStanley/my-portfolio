@@ -16,7 +16,7 @@ export interface TaskRecord {
 
 interface PlanOption {
   id: string
-  title: string
+  objective: string
   parent_goal?: string[]
 }
 

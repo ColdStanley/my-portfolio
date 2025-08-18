@@ -8,7 +8,7 @@ import { extractTimeOnly, extractDateOnly } from '@/utils/dateUtils'
 
 interface PlanOption {
   id: string
-  title: string
+  objective: string
   parent_goal?: string[]
 }
 
@@ -297,7 +297,7 @@ export default function MobileTaskCards({
                       }}
                       title="Click to edit in Notion"
                     >
-                      {plan.title}
+                      {plan.objective}
                     </span>
                   )
                 }

@@ -9,7 +9,7 @@ import { TaskRecord } from './taskReducer'
 
 interface PlanOption {
   id: string
-  title: string
+  objective: string
   parent_goal?: string[]
 }
 
@@ -390,7 +390,7 @@ export default function TaskListView({
                                 }}
                                 title="Click to edit in Notion"
                               >
-                                {plan.title}
+                                {plan.objective}
                               </span>
                             )
                           }
@@ -446,7 +446,7 @@ export default function TaskListView({
               if (plan) {
                 return {
                   id: plan.id,
-                  objective: plan.title,
+                  objective: plan.objective,
                   status: 'Unknown',
                   total_tasks: 0,
                   completed_tasks: 0
