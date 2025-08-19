@@ -37,7 +37,7 @@ const tabs = [
 ]
 
 const lifeSubTabs = [
-  { key: 'task', label: 'Task', icon: '✅' },
+  { key: 'task', label: 'Task Manager', icon: '✅' },
 ]
 
 const studySubTabs = [

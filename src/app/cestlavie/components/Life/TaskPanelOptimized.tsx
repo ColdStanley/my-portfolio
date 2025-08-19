@@ -4,12 +4,11 @@ import { useEffect, useState, useMemo, useCallback } from 'react'
 import { TaskRecord, TaskFormData, PlanOption, StrategyOption } from '../../types/task'
 import { StrategyRecord } from '../../types/strategy'
 import { PlanRecord } from '../../types/plan'
-import { fetchAllTaskData, saveTask, deleteTask } from '../../services/taskService'
-import { fetchAllStrategyData, updateStrategyField } from '../../services/strategyService'
-import { fetchPlans, updatePlanField } from '../../services/planService'
+import { saveTask, deleteTask } from '../../services/taskService'
+import { updateStrategyField } from '../../services/strategyService'
+import { updatePlanField } from '../../services/planService'
 import { dataCache, CACHE_KEYS } from '../../utils/dataCache'
 import { getDefaultTaskFormData } from '../../utils/taskUtils'
-import { TaskErrorBoundary, TaskLoadingSpinner, TaskErrorDisplay, ToastNotification } from './ErrorBoundary'
 import TaskFormPanel from './TaskFormPanel'
 import TaskCalendarView from './TaskCalendarView'
 import TaskListView from './TaskListView'
@@ -174,14 +173,25 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
         }
       }
       
-      // Parallel data loading for better performance
-      const [taskData, strategyData, planData, strategySchemaData, planSchemaData] = await Promise.all([
-        fetchAllTaskData(),
-        fetchAllStrategyData(),
-        fetchPlans(),
+      // 优化：直接并行调用API，避免重复请求
+      const [tasksResponse, strategiesResponse, plansResponse, taskSchemaResponse, strategySchemaResponse, planSchemaResponse] = await Promise.all([
+        fetch('/api/tasks').then(res => res.json()),
+        fetch('/api/strategy').then(res => res.json()),
+        fetch('/api/plan').then(res => res.json()),
+        fetch('/api/tasks?action=schema').then(res => res.json()).catch(() => ({ schema: { statusOptions: [], priorityOptions: [] } })),
         fetch('/api/strategy?action=schema').then(res => res.json()).catch(() => ({ schema: { statusOptions: [], priorityOptions: [], categoryOptions: [] } })),
         fetch('/api/plan?action=schema').then(res => res.json()).catch(() => ({ schema: { statusOptions: [], priorityOptions: [] } }))
       ])
+      
+      // 处理响应数据
+      const taskData = {
+        tasks: tasksResponse.data || [],
+        schemaOptions: taskSchemaResponse.schema || { statusOptions: [], priorityOptions: [] }
+      }
+      const strategyData = {
+        strategies: strategiesResponse.data || []
+      }
+      const planData = plansResponse.data || []
       
       // Cache the data
       dataCache.set(CACHE_KEYS.TASKS, taskData)
@@ -202,8 +212,8 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
       setStrategyOptions(strategyOpts)
       
       // Set strategy schema options
-      setStrategyStatusOptions(strategySchemaData.schema?.statusOptions || [])
-      setStrategyCategoryOptions(strategySchemaData.schema?.categoryOptions || [])
+      setStrategyStatusOptions(strategySchemaResponse.schema?.statusOptions || [])
+      setStrategyCategoryOptions(strategySchemaResponse.schema?.categoryOptions || [])
       
       // Set plan data
       setPlans(planData)
@@ -214,8 +224,8 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
       setPlanOptions(planOpts)
       
       // Set plan schema options
-      setPlanStatusOptions(planSchemaData.schema?.statusOptions || [])
-      setPlanPriorityOptions(planSchemaData.schema?.priorityOptions || [])
+      setPlanStatusOptions(planSchemaResponse.schema?.statusOptions || [])
+      setPlanPriorityOptions(planSchemaResponse.schema?.priorityOptions || [])
       
     } catch (err) {
       console.error('Failed to load data:', err)
@@ -503,9 +513,9 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
   // Show loading spinner during auth loading or data loading
   if (authLoading || loading) {
     return (
-      <TaskErrorBoundary>
-        <TaskLoadingSpinner />
-      </TaskErrorBoundary>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+      </div>
     )
   }
 
@@ -516,16 +526,22 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
 
   if (error) {
     return (
-      <TaskErrorBoundary>
-        <TaskErrorDisplay error={error} onRetry={handleRefresh} />
-      </TaskErrorBoundary>
+      <div className="p-6 bg-red-50 text-red-700 rounded-lg">
+        <h3 className="font-semibold mb-2">Error Loading Data</h3>
+        <p className="mb-4">{error}</p>
+        <button 
+          onClick={handleRefresh}
+          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+        >
+          Retry
+        </button>
+      </div>
     )
   }
 
   return (
-    <TaskErrorBoundary>
-      <>
-        {/* Main Content Area - L-shaped Layout, Natural Content Flow */}
+    <>
+      {/* Main Content Area - L-shaped Layout, Natural Content Flow */}
         <div className="fixed top-32 left-[68px] right-4 bottom-4 overflow-y-auto">
           {error && (
             <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg">
@@ -533,48 +549,38 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
             </div>
           )}
 
-          {/* Breadcrumb Navigation */}
-          {drillDownMode !== 'all' && (
-            <div className="mb-4 p-3 bg-white/90 backdrop-blur-md rounded-lg shadow-sm">
-              <nav className="flex items-center gap-2 text-sm">
-                <button
-                  onClick={handleBackToAll}
-                  className="text-purple-600 hover:text-purple-800 hover:underline transition-colors"
-                >
-                  All
-                </button>
-                
-                {drillDownMode === 'strategy-plans' && selectedStrategyId && (
-                  <>
-                    <span className="text-gray-400">></span>
-                    <span className="text-gray-700">
-                      Strategy: {strategies.find(s => s.id === selectedStrategyId)?.objective || 'Unknown'}
-                    </span>
-                  </>
-                )}
-                
-                {drillDownMode === 'plan-tasks' && selectedPlanId && (
-                  <>
-                    {selectedStrategyId && (
-                      <>
-                        <span className="text-gray-400">></span>
-                        <button
-                          onClick={handleBackToStrategy}
-                          className="text-purple-600 hover:text-purple-800 hover:underline transition-colors"
-                        >
-                          Strategy: {strategies.find(s => s.id === selectedStrategyId)?.objective || 'Unknown'}
-                        </button>
-                      </>
-                    )}
-                    <span className="text-gray-400">></span>
-                    <span className="text-gray-700">
-                      Plan: {plans.find(p => p.id === selectedPlanId)?.objective || 'Unknown'}
-                    </span>
-                  </>
-                )}
-              </nav>
-            </div>
-          )}
+          {/* Breadcrumb Navigation - Always Visible */}
+          <div className="mb-4 p-3 bg-white/90 backdrop-blur-md rounded-lg shadow-sm">
+            <nav className="flex items-center gap-2 text-sm">
+              <button
+                onClick={handleBackToAll}
+                className={`transition-colors ${drillDownMode === 'all' ? 'text-gray-700 font-medium' : 'text-purple-600 hover:text-purple-800 hover:underline'}`}
+              >
+                All
+              </button>
+              
+              {selectedStrategyId && (
+                <>
+                  <span className="text-gray-400">></span>
+                  <button
+                    onClick={handleBackToStrategy}
+                    className={`transition-colors ${drillDownMode === 'strategy-plans' ? 'text-gray-700 font-medium' : 'text-purple-600 hover:text-purple-800 hover:underline'}`}
+                  >
+                    Strategy: {strategies.find(s => s.id === selectedStrategyId)?.objective || 'Unknown'}
+                  </button>
+                </>
+              )}
+              
+              {selectedPlanId && (
+                <>
+                  <span className="text-gray-400">></span>
+                  <span className="text-gray-700 font-medium">
+                    Plan: {plans.find(p => p.id === selectedPlanId)?.objective || 'Unknown'}
+                  </span>
+                </>
+              )}
+            </nav>
+          </div>
 
           {/* 3-Column Layout: Strategy + Plan + Calendar/Task - Equal Width (1/3 each) */}
           <div className="flex gap-6">
@@ -773,15 +779,24 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
           strategyOptions={strategyOptions}
         />
 
-        {/* Toast Notification */}
-        {toast && (
-          <ToastNotification
-            message={toast.message}
-            type={toast.type}
-            onClose={() => setToast(null)}
-          />
-        )}
-      </>
-    </TaskErrorBoundary>
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 ${
+          toast.type === 'success' 
+            ? 'bg-green-500 text-white' 
+            : 'bg-red-500 text-white'
+        }`}>
+          <div className="flex items-center justify-between">
+            <span>{toast.message}</span>
+            <button 
+              onClick={() => setToast(null)}
+              className="ml-4 text-white hover:text-gray-200 transition-colors"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   )
 }

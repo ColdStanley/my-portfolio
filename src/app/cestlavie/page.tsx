@@ -4,21 +4,18 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSimplifiedAuth } from '@/hooks/useSimplifiedAuth'
 import { TaskRecord } from './types/task'
-import { useIsMobile } from './hooks/useIsMobile'
 import Sidebar from './components/Sidebar'
 import TaskPanelOptimized from './components/Life/TaskPanelOptimized'
 import NotionConfigModal from './components/NotionConfigModal'
 import FrenchPanel from './components/Study/FrenchPanel'
-import MobileLayout from './components/Mobile/MobileLayout'
 
 export default function CestLaViePage() {
   const [activeTab, setActiveTab] = useState('life')
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showConfigModal, setShowConfigModal] = useState(false)
   const [tasks, setTasks] = useState<TaskRecord[]>([])
   const { user, loading, notionConfig } = useSimplifiedAuth()
   const router = useRouter()
-  const isMobile = useIsMobile()
 
   // Handle tab change with scroll reset
   const handleTabChange = (newTab: string) => {
@@ -86,46 +83,17 @@ export default function CestLaViePage() {
     return null
   }
 
-  // Mobile layout
-  if (isMobile) {
-    return (
-      <>
-        <MobileLayout />
-
-        {/* Notion配置模态框 */}
-        <NotionConfigModal
-          isOpen={showConfigModal}
-          onClose={() => setShowConfigModal(false)}
-          onConfigSaved={handleConfigSaved}
-        />
-      </>
-    )
-  }
-
-  // Desktop layout
   return (
     <>
       <div className="pt-16 min-h-screen flex relative">
-        {/* 移动端导航菜单按钮 - 悬浮设计 */}
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="md:hidden fixed top-20 right-4 z-50 p-2.5 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 hover:bg-gray-50/90 transition-all duration-200 hover:scale-110"
-          aria-label="Toggle menu"
-        >
-          <div className="w-5 h-5 flex flex-col justify-center space-y-1">
-            <div className={`w-full h-0.5 bg-purple-600 transition-all duration-300 ${mobileMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`}></div>
-            <div className={`w-full h-0.5 bg-purple-600 transition-all duration-300 ${mobileMenuOpen ? 'opacity-0' : ''}`}></div>
-            <div className={`w-full h-0.5 bg-purple-600 transition-all duration-300 ${mobileMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`}></div>
-          </div>
-        </button>
 
 
         {/* 侧边栏 */}
         <Sidebar 
           activeTab={activeTab} 
           setActiveTab={handleTabChange}
-          mobileMenuOpen={mobileMenuOpen}
-          setMobileMenuOpen={setMobileMenuOpen}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
           onConfigClick={() => setShowConfigModal(true)}
           tasks={tasks}
         />

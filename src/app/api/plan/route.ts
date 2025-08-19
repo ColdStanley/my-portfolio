@@ -54,8 +54,7 @@ export async function GET(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // 获取Tasks数据库配置（用于计算进度）
-    const { config: tasksConfig } = await getNotionDatabaseConfig('tasks')
+    // Tasks数据库配置已移除 - 不再计算进度以提升性能
     
     const notion = new Client({
       auth: planConfig.notion_api_key,
@@ -93,37 +92,9 @@ export async function GET(request: NextRequest) {
       ]
     })
 
-    // 获取所有Tasks来计算Progress (如果Tasks数据库已配置)
-    let taskResponse = null
-    if (tasksConfig) {
-      taskResponse = await notion.databases.query({
-        database_id: tasksConfig.database_id
-      })
-    }
-
-    const data = await Promise.all(response.results.map(async (page: any) => {
+    // 直接返回Plan数据，移除进度计算以提升性能
+    const data = response.results.map((page: any) => {
       const properties = page.properties
-      const planId = page.id
-      
-      // 计算该Plan下的Tasks进度
-      let totalTasks = 0
-      let completedTasks = 0
-      let calculatedProgress = 0
-      
-      if (taskResponse) {
-        const relatedTasks = taskResponse.results.filter((task: any) => {
-          const planRelations = task.properties.plan?.relation || []
-          return planRelations.some((plan: any) => plan.id === planId)
-        })
-        
-        totalTasks = relatedTasks.length
-        completedTasks = relatedTasks.filter((task: any) => {
-          const status = task.properties.status?.select?.name || ''
-          return status === 'Completed'
-        }).length
-        
-        calculatedProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
-      }
 
       return {
         id: page.id,
@@ -134,16 +105,16 @@ export async function GET(request: NextRequest) {
         due_date: extractDateValue(properties.due_date?.date),
         status: extractSelectValue(properties.status?.select),
         priority_quadrant: extractSelectValue(properties.priority_quadrant?.select),
-        progress: calculatedProgress,
+        progress: 0, // 进度字段保留但设为0，避免前端错误
         task: extractRelationArrayValue(properties.task?.relation),
         estimate_resources: extractTextContent(properties.estimate_resources?.rich_text),
         budget_money: extractNumberValue(properties.budget_money?.number),
         budget_time: extractNumberValue(properties.budget_time?.number),
         display_order: extractNumberValue(properties.display_order?.number),
-        total_tasks: totalTasks,
-        completed_tasks: completedTasks
+        total_tasks: 0, // 进度相关字段保留但设为0
+        completed_tasks: 0
       }
-    }))
+    })
 
     return NextResponse.json({ data })
 

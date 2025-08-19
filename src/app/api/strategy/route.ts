@@ -40,8 +40,7 @@ export async function GET(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // 获取Plan数据库配置（用于计算进度）
-    const { config: planConfig } = await getNotionDatabaseConfig('plan')
+    // Plan数据库配置已移除 - 不再计算进度以提升性能
     
     const notion = new Client({
       auth: strategyConfig.notion_api_key,
@@ -82,44 +81,16 @@ export async function GET(request: NextRequest) {
       ]
     })
 
-    // 获取所有Plans来计算Progress (如果Plan数据库已配置)
-    let planResponse = null
-    if (planConfig) {
-      planResponse = await notion.databases.query({
-        database_id: planConfig.database_id
-      })
-    }
-    
-    const data = await Promise.all(response.results.map(async (page: any) => {
+    // 直接返回Strategy数据，移除进度计算以提升性能
+    const data = response.results.map((page: any) => {
       const properties = page.properties
-      const strategyId = page.id
-      
-      // 计算该Strategy下的Plans进度
-      let totalPlans = 0
-      let completedPlans = 0
-      let calculatedProgress = 0
-      
-      if (planResponse) {
-        const relatedPlans = planResponse.results.filter((plan: any) => {
-          const parentGoals = plan.properties.parent_goal?.relation || []
-          return parentGoals.some((goal: any) => goal.id === strategyId)
-        })
-        
-        totalPlans = relatedPlans.length
-        completedPlans = relatedPlans.filter((plan: any) => {
-          const status = plan.properties.status?.select?.name || ''
-          return status === 'Completed'
-        }).length
-        
-        calculatedProgress = totalPlans > 0 ? Math.round((completedPlans / totalPlans) * 100) : 0
-      }
 
       return {
         id: page.id,
         objective: extractTitleContent(properties.objective?.title),
         description: extractTextContent(properties.description?.rich_text),
         key_results: extractTextContent(properties.key_results?.rich_text),
-        progress: calculatedProgress,
+        progress: 0, // 进度字段保留但设为0，避免前端错误
         start_date: extractDateValue(properties.start_date?.date),
         due_date: extractDateValue(properties.due_date?.date),
         status: extractSelectValue(properties.status?.select),
@@ -129,10 +100,10 @@ export async function GET(request: NextRequest) {
         order: extractNumberValue(properties.order?.number),
         plan: extractRelationValue(properties.plan?.relation),
         task: extractRelationValue(properties.task?.relation),
-        total_plans: totalPlans,
-        completed_plans: completedPlans
+        total_plans: 0, // 进度相关字段保留但设为0
+        completed_plans: 0
       }
-    }))
+    })
 
     return NextResponse.json({ data })
 
