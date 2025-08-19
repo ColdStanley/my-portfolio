@@ -6,7 +6,7 @@ export interface PlanRecord {
   due_date: string
   status: string
   priority_quadrant: string
-  strategy?: string[]
+  strategy?: string
   task?: string[]
   total_tasks: number
   completed_tasks: number
@@ -20,7 +20,7 @@ export interface PlanFormData {
   due_date: string
   status: string
   priority_quadrant: string
-  parent_goal: string[]
+  strategy?: string
 }
 
 export interface StrategyOption {

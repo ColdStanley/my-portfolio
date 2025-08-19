@@ -2,32 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { getDefaultPlanFormData } from '../../utils/planUtils'
-import { PlanRecord } from '../../types/plan'
-
-interface PlanFormData {
-  objective: string
-  description: string
-  start_date: string
-  due_date: string
-  status: string
-  priority_quadrant: string
-  parent_goal: string[]
-}
-
-interface StrategyOption {
-  id: string
-  objective: string
-}
-
-interface PlanFormPanelProps {
-  isOpen: boolean
-  onClose: () => void
-  plan?: PlanRecord | null
-  onSave: (plan: PlanFormData) => void
-  statusOptions: string[]
-  priorityOptions: string[]
-  strategyOptions: StrategyOption[]
-}
+import { PlanRecord, PlanFormData, PlanFormPanelProps, StrategyOption } from '../../types/plan'
 
 
 export default function PlanFormPanel({ 
@@ -39,7 +14,15 @@ export default function PlanFormPanel({
   priorityOptions, 
   strategyOptions
 }: PlanFormPanelProps) {
-  const [formData, setFormData] = useState<PlanFormData>(getDefaultPlanFormData())
+  const [formData, setFormData] = useState<PlanFormData>({
+    objective: '',
+    description: '',
+    start_date: '',
+    due_date: '',
+    status: '',
+    priority_quadrant: '',
+    strategy: ''
+  })
 
   // Initialize form data when plan changes
   useEffect(() => {
@@ -51,10 +34,18 @@ export default function PlanFormPanel({
         due_date: plan.due_date ? plan.due_date.split('T')[0] : '',
         status: plan.status || '',
         priority_quadrant: plan.priority_quadrant || '',
-        parent_goal: plan.parent_goal || []
+        strategy: plan.strategy || ''
       })
     } else {
-      setFormData(getDefaultPlanFormData())
+      setFormData({
+        objective: '',
+        description: '',
+        start_date: '',
+        due_date: '',
+        status: '',
+        priority_quadrant: '',
+        strategy: ''
+      })
     }
   }, [plan, isOpen])
 
@@ -74,7 +65,7 @@ export default function PlanFormPanel({
   const handleStrategyChange = useCallback((strategyId: string) => {
     setFormData(prev => ({ 
       ...prev, 
-      parent_goal: strategyId ? [strategyId] : [] 
+      strategy: strategyId 
     }))
   }, [])
 
@@ -107,23 +98,24 @@ export default function PlanFormPanel({
         <form onSubmit={handleSubmit} className="p-3 overflow-y-auto min-h-0 flex-1 space-y-3">
           {/* Strategy Selection */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Related Strategy</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Strategy *</label>
             <select
-              value={formData.parent_goal[0] || ''}
+              value={formData.strategy || ''}
               onChange={(e) => handleStrategyChange(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 rounded-md 
                         focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
                         bg-white text-gray-700 text-sm
                         hover:border-gray-300 transition-all duration-200"
+              required
             >
-              <option value="">Select Strategy (Optional)</option>
+              <option value="">Select Strategy</option>
               {strategyOptions.map(strategy => (
                 <option key={strategy.id} value={strategy.id}>
                   {strategy.objective || 'Untitled Strategy'}
                 </option>
               ))}
             </select>
-            <p className="text-xs text-gray-400 mt-1">Link this plan to a strategy</p>
+            <p className="text-xs text-gray-400 mt-1">Plan must belong to a Strategy</p>
           </div>
 
           {/* Plan Title */}
@@ -271,16 +263,17 @@ export default function PlanFormPanel({
         <form onSubmit={handleSubmit} className="p-4 overflow-y-auto min-h-0 flex-1 space-y-4">
           {/* Strategy Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">Related Strategy</label>
+            <label className="block text-sm font-medium text-gray-600 mb-2">Strategy *</label>
             <select
-              value={formData.parent_goal[0] || ''}
+              value={formData.strategy || ''}
               onChange={(e) => handleStrategyChange(e.target.value)}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
                         bg-white text-gray-700
                         hover:border-gray-300 transition-all duration-200"
+              required
             >
-              <option value="">Select Strategy (Optional)</option>
+              <option value="">Select Strategy</option>
               {strategyOptions.map(strategy => (
                 <option key={strategy.id} value={strategy.id}>
                   {strategy.objective || 'Untitled Strategy'}

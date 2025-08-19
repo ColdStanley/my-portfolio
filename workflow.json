@@ -1,0 +1,93 @@
+{
+  "name": "Outlook Job Links – Yesterday (Job_Opp)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "jobs/yesterday",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "language": "JavaScript",
+        "jsCode": "// 固定时间范围：昨天 00:00 → 今天 00:00 (UTC)\nconst now = new Date();\nconst utcMidnight = (d) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));\nconst todayStart = utcMidnight(now);\nconst yesterdayStart = new Date(todayStart.getTime() - 24*60*60*1000);\nreturn [{ json: { from: yesterdayStart.toISOString(), to: todayStart.toISOString() } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "name": "Code – setYesterdayRange"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "getAll",
+        "returnAll": true,
+        "output": "raw",
+        "additionalFields": {
+          "filters": "receivedDateTime ge {{$json[\"from\"]}} and receivedDateTime lt {{$json[\"to\"]}}",
+          "orderBy": "receivedDateTime desc",
+          "select": "id,subject,from,receivedDateTime,body,bodyPreview",
+          "folder": "other",
+          "otherFolderName": "Job_Opp"
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [740, 300],
+      "name": "Outlook – Get many messages"
+    },
+    {
+      "parameters": {
+        "language": "JavaScript",
+        "jsCode": "// 提取招聘链接\nconst allowHosts = [\n  'linkedin.com','jobs.linkedin.com','boards.greenhouse.io','greenhouse.io',\n  'lever.co','jobs.lever.co','workday','myworkdayjobs.com',\n  'smartrecruiters','indeed.com','monster.com'\n];\nconst out = [];\nconst urlRe = /https?:\\/\\/[^\\s\"'<>)+]+/gi;\nfor (const item of $input.all()) {\n  const body = item.json?.body?.content || item.json?.bodyPreview || '';\n  const matches = (body.match(urlRe) || []).map(u => u.replace(/[),.]+$/, ''));\n  for (const m of matches) {\n    try {\n      const u = new URL(m);\n      if (allowHosts.some(h => u.hostname.includes(h))) out.push({ json: { url: u.toString() } });\n    } catch {}\n  }\n}\nreturn out;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1020, 300],
+      "name": "Code – extractLinks"
+    },
+    {
+      "parameters": {
+        "language": "JavaScript",
+        "jsCode": "// 聚合去重并清理追踪参数\nconst seen = new Set();\nconst clean = (raw) => {\n  const url = new URL(raw);\n  ['utm_source','utm_medium','utm_campaign','utm_term','utm_content','trk','ref'].forEach(p=>url.searchParams.delete(p));\n  return url.toString();\n};\nconst urls = [];\nfor (const item of $input.all()) {\n  const v = clean(item.json.url);\n  if (!seen.has(v)) { seen.add(v); urls.push(v); }\n}\nreturn [{ json: { count: urls.length, urls } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1280, 300],
+      "name": "Code – aggregateAndDedupe"
+    },
+    {
+      "parameters": {
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1520, 300],
+      "name": "Respond to Webhook"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Code – setYesterdayRange", "type": "main", "index": 0 }]]
+    },
+    "Code – setYesterdayRange": {
+      "main": [[{ "node": "Outlook – Get many messages", "type": "main", "index": 0 }]]
+    },
+    "Outlook – Get many messages": {
+      "main": [[{ "node": "Code – extractLinks", "type": "main", "index": 0 }]]
+    },
+    "Code – extractLinks": {
+      "main": [[{ "node": "Code – aggregateAndDedupe", "type": "main", "index": 0 }]]
+    },
+    "Code – aggregateAndDedupe": {
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
+    }
+  }
+}

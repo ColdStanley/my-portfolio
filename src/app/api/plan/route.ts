@@ -24,7 +24,12 @@ function extractNumberValue(number: any): number {
   return number ?? 0
 }
 
-function extractRelationValue(relation: any[]): string[] {
+function extractRelationValue(relation: any[]): string {
+  if (!relation || !Array.isArray(relation) || relation.length === 0) return ''
+  return relation[0].id // 取第一个relation的id作为单个字符串
+}
+
+function extractRelationArrayValue(relation: any[]): string[] {
   if (!relation || !Array.isArray(relation)) return []
   return relation.map(item => item.id)
 }
@@ -130,7 +135,7 @@ export async function GET(request: NextRequest) {
         status: extractSelectValue(properties.status?.select),
         priority_quadrant: extractSelectValue(properties.priority_quadrant?.select),
         progress: calculatedProgress,
-        task: extractRelationValue(properties.task?.relation),
+        task: extractRelationArrayValue(properties.task?.relation),
         estimate_resources: extractTextContent(properties.estimate_resources?.rich_text),
         budget_money: extractNumberValue(properties.budget_money?.number),
         budget_time: extractNumberValue(properties.budget_time?.number),
@@ -196,8 +201,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (description) properties.description = { rich_text: [{ text: { content: description } }] }
-    if (strategy && strategy.length > 0) {
-      properties.strategy = { relation: strategy.map((id: string) => ({ id })) }
+    if (strategy) {
+      properties.strategy = { relation: [{ id: strategy }] }
     }
     if (start_date) properties.start_date = { date: { start: start_date } }
     if (due_date) properties.due_date = { date: { start: due_date } }
@@ -254,28 +259,61 @@ export async function DELETE(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // 获取Task数据库配置
+    const { config: taskConfig } = await getNotionDatabaseConfig('task')
+
     const notion = new Client({
       auth: planConfig.notion_api_key,
     })
 
     const { searchParams } = new URL(request.url)
-    const pageId = searchParams.get('id')
+    const planId = searchParams.get('id')
     
-    if (!pageId) {
+    if (!planId) {
       return NextResponse.json({ 
-        error: 'Page ID is required' 
+        error: 'Plan ID is required' 
       }, { status: 400 })
     }
 
+    let deletedTasks = 0
+
+    // Step 1: Delete all Tasks that belong to this Plan
+    if (taskConfig) {
+      const tasksResponse = await notion.databases.query({
+        database_id: taskConfig.database_id,
+        filter: {
+          property: 'plan',
+          relation: {
+            contains: planId
+          }
+        }
+      })
+
+      for (const task of tasksResponse.results) {
+        await notion.pages.update({
+          page_id: task.id,
+          archived: true
+        })
+        deletedTasks++
+      }
+    }
+
+    // Step 2: Delete the Plan itself
     await notion.pages.update({
-      page_id: pageId,
+      page_id: planId,
       archived: true
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ 
+      success: true,
+      cascadeDeleted: {
+        plan: 1,
+        tasks: deletedTasks
+      }
+    })
 
   } catch (error) {
-    console.error('Error deleting plan:', error)
+    console.error('Error deleting plan with cascade:', error)
     
     if (error instanceof Error) {
       return NextResponse.json({ 

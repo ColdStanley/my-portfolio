@@ -1,255 +1,171 @@
 'use client'
 
 import { useEffect, useState, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react'
-import { useTaskReducer, TaskRecord } from '../Life/taskReducer'
+import { TaskRecord, TaskFormData, MobileTaskPanelProps, MobileTaskPanelRef } from '../../types/task'
+import { fetchAllTaskData, saveTask, deleteTask } from '../../services/taskService'
+import { getDefaultTaskFormData } from '../../utils/taskUtils'
 import { TaskErrorBoundary, TaskLoadingSpinner, TaskErrorDisplay, ToastNotification } from '../Life/ErrorBoundary'
 import TaskFormPanel from '../Life/TaskFormPanel'
 import TaskCalendarView from '../Life/TaskCalendarView'
 import MobileTaskCards from './MobileTaskCards'
 import { extractDateOnly, getTodayDate, extractTime12Hour } from '@/utils/dateUtils'
 
-interface TaskFormData {
-  title: string
-  status: string
-  start_date: string
-  end_date: string
-  all_day: boolean
-  plan: string[]
-  priority_quadrant: string
-  note: string
-}
-
-interface MobileTaskPanelProps {
-  onTasksUpdate?: (tasks: TaskRecord[]) => void
-}
-
-interface MobileTaskPanelRef {
-  openCreateForm: () => void
-}
-
 const MobileTaskPanel = forwardRef<MobileTaskPanelRef, MobileTaskPanelProps>(({ onTasksUpdate }, ref) => {
-  const [state, actions] = useTaskReducer()
+  // State management - simplified from useTaskReducer
+  const [tasks, setTasks] = useState<TaskRecord[]>([])
+  const [statusOptions, setStatusOptions] = useState<string[]>([])
+  const [priorityOptions, setPriorityOptions] = useState<string[]>([])
+  const [planOptions, setPlanOptions] = useState<any[]>([])
+  const [strategyOptions, setStrategyOptions] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  
+  // Form state
+  const [formPanelOpen, setFormPanelOpen] = useState(false)
+  const [editingTask, setEditingTask] = useState<TaskRecord | null>(null)
+  
+  // Filter state
+  const [selectedStatus, setSelectedStatus] = useState('all')
+  const [selectedQuadrant, setSelectedQuadrant] = useState('all')
+  
+  // Calendar state
+  const [selectedDate, setSelectedDate] = useState(getTodayDate())
+  const [currentMonth, setCurrentMonth] = useState(new Date())
+  
+  // Toast notification
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null)
 
   // Expose openCreateForm method to parent component
   useImperativeHandle(ref, () => ({
     openCreateForm: () => {
-      actions.openFormPanel()
+      setEditingTask(null)
+      setFormPanelOpen(true)
     }
-  }), [actions])
+  }), [])
 
-  // Set default selected date to today for mobile
+  // Load all data on mount
   useEffect(() => {
-    if (!state.selectedDate) {
-      const today = getTodayDate()
-      actions.setSelectedDate(today)
+    loadAllData()
+  }, [])
+
+  // Call onTasksUpdate when tasks change
+  useEffect(() => {
+    if (onTasksUpdate && tasks.length > 0) {
+      onTasksUpdate(tasks)
     }
-  }, [state.selectedDate, actions])
+  }, [tasks, onTasksUpdate])
   
   // Memoized filtered data
   const filteredTasks = useMemo(() => {
-    let filtered = state.tasks
+    let filtered = tasks
     
-    if (state.selectedStatus !== 'all') {
-      filtered = filtered.filter(task => task.status === state.selectedStatus)
+    if (selectedStatus !== 'all') {
+      filtered = filtered.filter(task => task.status === selectedStatus)
     }
     
-    if (state.selectedQuadrant !== 'all') {
-      filtered = filtered.filter(task => task.priority_quadrant === state.selectedQuadrant)
-    }
-    
-    // Filter by plan - direct task.plan field lookup
-    if (state.selectedPlanFilter !== 'all') {
-      filtered = filtered.filter(task => {
-        if (state.selectedPlanFilter === 'none') {
-          // Show tasks with no plan
-          return !task.plan || task.plan.length === 0
-        } else {
-          // Show tasks linked to the selected plan
-          return task.plan && task.plan.includes(state.selectedPlanFilter)
-        }
-      })
+    if (selectedQuadrant !== 'all') {
+      filtered = filtered.filter(task => task.priority_quadrant === selectedQuadrant)
     }
     
     return filtered
-  }, [state.tasks, state.selectedStatus, state.selectedQuadrant, state.selectedPlanFilter])
+  }, [tasks, selectedStatus, selectedQuadrant])
 
-  // Simple data arrays - no complex indexing needed
-
-  // Utility functions
-  const formatTimeRange = useCallback((start: string, end: string, allDay: boolean) => {
-    if (allDay) return 'All Day'
-    
-    return `${extractTime12Hour(start)} - ${extractTime12Hour(end)}`
-  }, [])
-
-  const getPriorityColor = useCallback((priority: string) => {
-    switch (priority) {
-      case 'Important & Urgent': return 'bg-red-100 text-red-800 border-red-200'
-      case 'Important & Not Urgent': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      case 'Not Important & Urgent': return 'bg-blue-100 text-blue-800 border-blue-200'
-      case 'Not Important & Not Urgent': return 'bg-gray-100 text-gray-800 border-gray-200'
-      default: return 'bg-purple-100 text-purple-800 border-purple-200'
-    }
-  }, [])
-
-  // Data fetching
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        actions.setLoading(true)
-        actions.setError(null)
-        
-        const requests = [
-          fetch('/api/tasks'),
-          fetch('/api/sync-notion-schema'),
-          fetch('/api/plan'),
-          fetch('/api/strategy')
-        ]
-        
-        const results = await Promise.allSettled(requests)
-        const [tasksRes, schemaRes, planRes, strategyRes] = results
-        
-        let tasks: TaskRecord[] = []
-        let statusOptions: string[] = ['Not Started', 'In Progress', 'Completed']
-        let priorityOptions: string[] = ['Important & Urgent', 'Important & Not Urgent', 'Not Important & Urgent', 'Not Important & Not Urgent']
-        let planOptions: any[] = []
-        let strategyOptions: any[] = []
-        
-        if (tasksRes.status === 'fulfilled' && tasksRes.value.ok) {
-          const taskData = await tasksRes.value.json()
-          tasks = taskData.data || []
-        }
-        
-        if (schemaRes.status === 'fulfilled' && schemaRes.value.ok) {
-          try {
-            const schemaData = await schemaRes.value.json()
-            const statusProperty = schemaData.data?.properties?.Status
-            if (statusProperty?.type === 'select' && statusProperty.select?.options) {
-              statusOptions = statusProperty.select.options.map((opt: any) => opt.name)
-            }
-            
-            const priorityProperty = schemaData.data?.properties?.['Priority Quadrant']
-            if (priorityProperty?.type === 'select' && priorityProperty.select?.options) {
-              priorityOptions = priorityProperty.select.options.map((opt: any) => opt.name)
-            }
-          } catch (err) {
-            console.warn('Failed to parse schema data:', err)
-          }
-        }
-        
-        if (planRes.status === 'fulfilled' && planRes.value.ok) {
-          try {
-            const planResult = await planRes.value.json()
-            const rawPlans = planResult.data || []
-            planOptions = rawPlans.map((plan: any) => ({
-              id: plan.id,
-              title: plan.title || 'Untitled Plan'
-            }))
-          } catch (err) {
-            console.warn('Failed to parse plans data:', err)
-          }
-        }
-        
-        if (strategyRes.status === 'fulfilled' && strategyRes.value.ok) {
-          try {
-            const strategyResult = await strategyRes.value.json()
-            const rawStrategies = strategyResult.data || []
-            strategyOptions = rawStrategies.map((strategy: any) => ({
-              id: strategy.id,
-              objective: strategy.objective || 'Untitled Strategy'
-            }))
-          } catch (err) {
-            console.warn('Failed to parse strategies data:', err)
-          }
-        }
-        
-        actions.setTasks(tasks)
-        actions.setStatusOptions(statusOptions)
-        actions.setPriorityOptions(priorityOptions)
-        actions.setPlanOptions(planOptions)
-        actions.setStrategyOptions(strategyOptions)
-        
-        if (onTasksUpdate) {
-          onTasksUpdate(tasks)
-        }
-        
-      } catch (error) {
-        console.error('Error fetching data:', error)
-        actions.setError(error instanceof Error ? error.message : 'Failed to load task data')
-        
-        actions.setStatusOptions(['Not Started', 'In Progress', 'Completed'])
-        actions.setPriorityOptions(['Important & Urgent', 'Important & Not Urgent', 'Not Important & Urgent', 'Not Important & Not Urgent'])
-        actions.setTasks([])
-        actions.setPlanOptions([])
-        
-        if (onTasksUpdate) {
-          onTasksUpdate([])
-        }
-        
-      } finally {
-        actions.setLoading(false)
-      }
-    }
-    
-    fetchData()
-  }, [])
-
-  const handleDeleteTask = useCallback(async (taskId: string) => {
+  const loadAllData = async () => {
     try {
-      const response = await fetch(`/api/tasks?id=${taskId}`, {
-        method: 'DELETE'
+      setLoading(true)
+      setError(null)
+      
+      const { tasks, plans, strategies, schemaOptions } = await fetchAllTaskData()
+      
+      setTasks(tasks)
+      setStatusOptions(schemaOptions.statusOptions)
+      setPriorityOptions(schemaOptions.priorityOptions)
+      setPlanOptions(plans)
+      setStrategyOptions(strategies)
+      
+    } catch (err) {
+      console.error('Failed to load data:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load data')
+      
+      // Set default values on error
+      setStatusOptions(['Not Started', 'In Progress', 'Completed'])
+      setPriorityOptions(['Important & Urgent', 'Important & Not Urgent', 'Not Important & Urgent', 'Not Important & Not Urgent'])
+      setTasks([])
+      setPlanOptions([])
+      setStrategyOptions([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSaveTask = useCallback(async (taskData: TaskFormData) => {
+    try {
+      const isEditing = !!editingTask
+      
+      await saveTask(taskData, editingTask?.id)
+      
+      // Update local state
+      if (isEditing) {
+        const updatedTask = { ...editingTask!, ...taskData }
+        setTasks(prev => prev.map(task => task.id === updatedTask.id ? updatedTask : task))
+      } else {
+        // For new tasks, reload to get generated ID
+        await loadAllData()
+      }
+
+      setFormPanelOpen(false)
+      setEditingTask(null)
+      setToast({ 
+        message: isEditing ? 'Task updated successfully' : 'Task created successfully', 
+        type: 'success' 
       })
       
-      if (response.ok) {
-        actions.removeTask(taskId)
-        setToast({ message: 'Task deleted successfully', type: 'success' })
-        
-        if (onTasksUpdate) {
-          const updatedTasks = state.tasks.filter(t => t.id !== taskId)
-          onTasksUpdate(updatedTasks)
-        }
-      } else {
-        throw new Error('Failed to delete task')
-      }
-    } catch (error) {
-      console.error('Error deleting task:', error)
+    } catch (err) {
+      console.error('Failed to save task:', err)
+      setToast({ message: 'Failed to save task', type: 'error' })
+    }
+  }, [editingTask])
+
+  const handleDeleteTask = useCallback(async (taskId: string) => {
+    if (!confirm('Are you sure you want to delete this task?')) return
+
+    try {
+      await deleteTask(taskId)
+      setTasks(prev => prev.filter(task => task.id !== taskId))
+      setToast({ message: 'Task deleted successfully', type: 'success' })
+    } catch (err) {
+      console.error('Failed to delete task:', err)
       setToast({ message: 'Failed to delete task', type: 'error' })
     }
-  }, [state.tasks, onTasksUpdate])
-
-  const handleRefresh = useCallback(() => {
-    window.location.reload()
   }, [])
 
   const handleTaskUpdate = useCallback(async (taskId: string, field: 'status' | 'priority_quadrant', value: string) => {
-    const task = state.tasks.find(t => t.id === taskId)
+    const task = tasks.find(t => t.id === taskId)
     if (!task) return
 
-    const updatedTask = { ...task, [field]: value }
-    
     try {
-      const response = await fetch('/api/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedTask)
-      })
+      const updatedTask = { ...task, [field]: value }
+      await saveTask(updatedTask, taskId)
       
-      if (response.ok) {
-        actions.updateTask(updatedTask)
-        setToast({ message: `Task ${field} updated successfully`, type: 'success' })
-      } else {
-        throw new Error(`Failed to update task ${field}`)
-      }
-    } catch (error) {
-      console.error(`Failed to update task ${field}:`, error)
+      setTasks(prev => prev.map(t => t.id === taskId ? updatedTask : t))
+      setToast({ message: `Task ${field} updated successfully`, type: 'success' })
+    } catch (err) {
+      console.error(`Failed to update task ${field}:`, err)
       setToast({ message: `Failed to update task ${field}`, type: 'error' })
-      throw error // Re-throw for error handling in component
     }
-  }, [state.tasks, actions])
+  }, [tasks])
 
-  // Loading state
-  if (state.loading) {
+  const openFormPanel = useCallback((task?: TaskRecord) => {
+    setEditingTask(task || null)
+    setFormPanelOpen(true)
+  }, [])
+
+  const closeFormPanel = useCallback(() => {
+    setFormPanelOpen(false)
+    setEditingTask(null)
+  }, [])
+
+  if (loading) {
     return (
       <TaskErrorBoundary>
         <TaskLoadingSpinner />
@@ -257,84 +173,37 @@ const MobileTaskPanel = forwardRef<MobileTaskPanelRef, MobileTaskPanelProps>(({ 
     )
   }
 
-  // Error state
-  if (state.error) {
+  if (error) {
     return (
       <TaskErrorBoundary>
-        <TaskErrorDisplay error={state.error} onRetry={handleRefresh} />
+        <TaskErrorDisplay error={error} onRetry={loadAllData} />
       </TaskErrorBoundary>
     )
   }
 
   return (
     <TaskErrorBoundary>
-      <div className="w-full space-y-4 pb-32">
-        {/* Calendar View - Always Visible */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 mx-4">
-          <TaskCalendarView
-            tasks={filteredTasks}
-            currentMonth={state.currentMonth}
-            selectedDate={state.selectedDate}
-            onDateSelect={actions.setSelectedDate}
-            onMonthChange={actions.setCurrentMonth}
-            selectedPlanFilter={state.selectedPlanFilter}
-            onTaskClick={(task) => actions.openFormPanel(task)}
-            onTaskDelete={handleDeleteTask}
-            formatTimeRange={formatTimeRange}
-            getPriorityColor={getPriorityColor}
-            compact={true}
-          />
-        </div>
-
-        {/* Task Cards */}
-        <div className="mx-4">
-          <MobileTaskCards
-            tasks={filteredTasks}
-            selectedDate={state.selectedDate}
-            onTaskClick={(task) => actions.openFormPanel(task)}
-            onTaskDelete={handleDeleteTask}
-            onTaskUpdate={handleTaskUpdate}
-            formatTimeRange={formatTimeRange}
-            getPriorityColor={getPriorityColor}
-            plans={state.planOptions}
-            strategies={state.strategyOptions}
-            statusOptions={state.statusOptions}
-            priorityOptions={state.priorityOptions}
-          />
-        </div>
+      <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg mx-4">
+        {/* Mobile Task Cards */}
+        <MobileTaskCards
+          tasks={filteredTasks}
+          selectedDate={selectedDate}
+          onTaskClick={openFormPanel}
+          onTaskDelete={handleDeleteTask}
+          onTaskUpdate={handleTaskUpdate}
+          statusOptions={statusOptions}
+          priorityOptions={priorityOptions}
+        />
 
         {/* Task Form Panel */}
         <TaskFormPanel
-          isOpen={state.formPanelOpen}
-          onClose={actions.closeFormPanel}
-          task={state.editingTask}
-          statusOptions={state.statusOptions}
-          priorityOptions={state.priorityOptions}
-          allTasks={state.tasks}
-          onSave={(formData) => {
-            // Handle both create and update with unified logic
-            if (state.editingTask) {
-              // Update existing task
-              const updatedTask = { ...state.editingTask, ...formData }
-              actions.updateTask(updatedTask)
-              setToast({ message: 'Task updated successfully', type: 'success' })
-              
-              if (onTasksUpdate) {
-                const updatedTasks = state.tasks.map(t => t.id === updatedTask.id ? updatedTask : t)
-                onTasksUpdate(updatedTasks)
-              }
-            } else {
-              // Create new task - needs API call to get ID
-              const newTask = { ...formData, id: Date.now().toString() } // Temporary ID
-              actions.addTask(newTask)
-              setToast({ message: 'Task created successfully', type: 'success' })
-              
-              if (onTasksUpdate) {
-                onTasksUpdate([...state.tasks, newTask])
-              }
-            }
-            actions.closeFormPanel()
-          }}
+          isOpen={formPanelOpen}
+          onClose={closeFormPanel}
+          task={editingTask}
+          onSave={handleSaveTask}
+          statusOptions={statusOptions}
+          priorityOptions={priorityOptions}
+          allTasks={tasks}
         />
 
         {/* Toast Notification */}

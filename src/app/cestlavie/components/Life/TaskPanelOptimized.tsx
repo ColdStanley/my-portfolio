@@ -1,872 +1,738 @@
 'use client'
 
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { useTaskReducer, TaskRecord } from './taskReducer'
+import { TaskRecord, TaskFormData, PlanOption, StrategyOption } from '../../types/task'
+import { StrategyRecord } from '../../types/strategy'
+import { PlanRecord } from '../../types/plan'
+import { fetchAllTaskData, saveTask, deleteTask } from '../../services/taskService'
+import { fetchAllStrategyData, updateStrategyField } from '../../services/strategyService'
+import { fetchPlans, updatePlanField } from '../../services/planService'
+import { dataCache, CACHE_KEYS } from '../../utils/dataCache'
+import { getDefaultTaskFormData } from '../../utils/taskUtils'
 import { TaskErrorBoundary, TaskLoadingSpinner, TaskErrorDisplay, ToastNotification } from './ErrorBoundary'
 import TaskFormPanel from './TaskFormPanel'
 import TaskCalendarView from './TaskCalendarView'
 import TaskListView from './TaskListView'
-
-interface TaskFormData {
-  title: string
-  status: string
-  start_date: string
-  end_date: string
-  all_day: boolean
-  plan: string[]
-  priority_quadrant: string
-  note: string
-}
-
-// Utility functions - moved outside component to prevent recreation
-
-
-
-interface TaskRecord {
-  id: string
-  title: string
-  status: string
-  start_date: string
-  end_date: string
-  all_day: boolean
-  plan: string[]
-  priority_quadrant: string
-  note: string
-  next?: string
-  is_plan_critical?: boolean
-}
+import StrategyContent from './StrategyContent'
+import PlanContent from './PlanContent'
+import StrategyFormPanel from './StrategyFormPanel'
+import PlanFormPanel from './PlanFormPanel'
+import { saveStrategy } from '../../services/strategyService'
+import { savePlan } from '../../services/planService'
+import { StrategyRecord, StrategyFormData } from '../../types/strategy'
+import { PlanRecord, PlanFormData } from '../../types/plan'
+import type { User } from '@supabase/supabase-js'
 
 interface TaskPanelOptimizedProps {
   onTasksUpdate?: (tasks: TaskRecord[]) => void
+  user?: User | null
+  loading?: boolean
 }
 
-export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimizedProps) {
-  const [state, actions] = useTaskReducer()
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null)
-  const [mobileActiveTab, setMobileActiveTab] = useState<'calendar' | 'tasks'>('tasks')
+export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authLoading }: TaskPanelOptimizedProps) {
+  // State management - unified data management
+  const [tasks, setTasks] = useState<TaskRecord[]>([])
+  const [strategies, setStrategies] = useState<StrategyRecord[]>([])
+  const [plans, setPlans] = useState<PlanRecord[]>([])
+  const [statusOptions, setStatusOptions] = useState<string[]>([])
+  const [priorityOptions, setPriorityOptions] = useState<string[]>([])
+  const [planOptions, setPlanOptions] = useState<PlanOption[]>([])
+  const [strategyOptions, setStrategyOptions] = useState<StrategyOption[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
   
+  // Task Form state
+  const [formPanelOpen, setFormPanelOpen] = useState(false)
+  const [editingTask, setEditingTask] = useState<TaskRecord | null>(null)
   
-  // Memoized filtered data to prevent unnecessary recalculations
+  // Strategy Form state
+  const [strategyFormOpen, setStrategyFormOpen] = useState(false)
+  const [editingStrategy, setEditingStrategy] = useState<StrategyRecord | null>(null)
+  const [strategyStatusOptions, setStrategyStatusOptions] = useState<string[]>([])
+  const [strategyCategoryOptions, setStrategyCategoryOptions] = useState<string[]>([])
+  
+  // Plan Form state
+  const [planFormOpen, setPlanFormOpen] = useState(false)
+  const [editingPlan, setEditingPlan] = useState<PlanRecord | null>(null)
+  const [planStatusOptions, setPlanStatusOptions] = useState<string[]>([])
+  const [planPriorityOptions, setPlanPriorityOptions] = useState<string[]>([])
+  
+  // Filter state
+  const [selectedStatus, setSelectedStatus] = useState('all')
+  const [selectedQuadrant, setSelectedQuadrant] = useState('all')
+  const [selectedPlanFilter, setSelectedPlanFilter] = useState('all')
+  
+  // Calendar state
+  const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('en-CA'))
+  const [currentMonth, setCurrentMonth] = useState(new Date())
+
+  // Drill-down state
+  const [drillDownMode, setDrillDownMode] = useState<'all' | 'strategy-plans' | 'plan-tasks'>('all')
+  const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(null)
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
+
+  // Toast notification
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+
+  // Filtered tasks based on current filters
   const filteredTasks = useMemo(() => {
-    let filtered = state.tasks
-    
-    // Filter by status
-    if (state.selectedStatus !== 'all') {
-      filtered = filtered.filter(task => task.status === state.selectedStatus)
+    let filtered = tasks
+
+    if (selectedStatus !== 'all') {
+      filtered = filtered.filter(task => task.status === selectedStatus)
     }
-    
-    // Filter by quadrant
-    if (state.selectedQuadrant !== 'all') {
-      filtered = filtered.filter(task => task.priority_quadrant === state.selectedQuadrant)
+
+    if (selectedQuadrant !== 'all') {
+      filtered = filtered.filter(task => task.priority_quadrant === selectedQuadrant)
     }
-    
-      // Filter by plan - direct task.plan field lookup
-    if (state.selectedPlanFilter !== 'all') {
+
+    if (selectedPlanFilter !== 'all') {
       filtered = filtered.filter(task => {
-        if (state.selectedPlanFilter === 'none') {
-          // Show tasks with no plan
-          return !task.plan || task.plan.length === 0
+        if (selectedPlanFilter === 'none') {
+          return !task.plan
         } else {
-          // Show tasks linked to the selected plan
-          return task.plan && task.plan.includes(state.selectedPlanFilter)
+          return task.plan === selectedPlanFilter
         }
       })
     }
-    
+
     return filtered
-  }, [state.tasks, state.selectedStatus, state.selectedQuadrant, state.selectedPlanFilter])
+  }, [tasks, selectedStatus, selectedQuadrant, selectedPlanFilter])
 
-  // Simple data arrays - no complex indexing needed
+  // Filtered data based on drill-down mode
+  const displayedStrategies = useMemo(() => {
+    if (drillDownMode === 'strategy-plans' || drillDownMode === 'plan-tasks') {
+      return strategies.filter(s => s.id === selectedStrategyId)
+    }
+    return strategies
+  }, [strategies, drillDownMode, selectedStrategyId])
 
-  // Memoized week and month tasks
-  const thisWeekTasks = useMemo(() => {
-    const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    
-    const dayOfWeek = today.getDay()
-    const monday = new Date(today)
-    monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
-    
-    const sunday = new Date(monday)
-    sunday.setDate(monday.getDate() + 6)
-    
-    return filteredTasks.filter(task => {
-      if (!task.start_date) return false
-      // Parse date from Toronto timezone string 
-      const datePart = new Date(task.start_date).toLocaleDateString('en-CA')
-      const [year, month, day] = datePart.split('-').map(Number)
-      const taskDateOnly = new Date(year, month - 1, day)
-      return taskDateOnly >= monday && taskDateOnly <= sunday
-    }).sort((a, b) => {
-      return a.start_date.localeCompare(b.start_date)
-    })
-  }, [filteredTasks])
+  const displayedPlans = useMemo(() => {
+    if (drillDownMode === 'all') {
+      return plans
+    } else if (drillDownMode === 'strategy-plans' || drillDownMode === 'plan-tasks') {
+      return plans.filter(plan => plan.strategy === selectedStrategyId)
+    }
+    return plans
+  }, [plans, drillDownMode, selectedStrategyId])
 
-  const thisMonthTasks = useMemo(() => {
-    const now = new Date()
-    const year = now.getFullYear()
-    const month = now.getMonth()
-    
-    const firstDayOfMonth = new Date(year, month, 1)
-    const lastDayOfMonth = new Date(year, month + 1, 0)
-    
-    return filteredTasks.filter(task => {
-      if (!task.start_date) return false
-      // Parse date from Toronto timezone string
-      const datePart = new Date(task.start_date).toLocaleDateString('en-CA')
-      const [year, month, day] = datePart.split('-').map(Number)
-      const taskDateOnly = new Date(year, month - 1, day)
-      return taskDateOnly >= firstDayOfMonth && taskDateOnly <= lastDayOfMonth
-    }).sort((a, b) => {
-      return a.start_date.localeCompare(b.start_date)
-    })
-  }, [filteredTasks])
+  const displayedTasks = useMemo(() => {
+    if (drillDownMode === 'plan-tasks') {
+      return filteredTasks.filter(task => task.plan === selectedPlanId)
+    }
+    return filteredTasks
+  }, [filteredTasks, drillDownMode, selectedPlanId])
 
-  // Fetch data on component mount
+  // Load all data only after authentication is complete and user exists
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        actions.setLoading(true)
-        actions.setError(null)
-        
-        // Add timeout to prevent hanging requests
-        const fetchWithTimeout = (url: string, timeout = 10000) => {
-          return Promise.race([
-            fetch(url),
-            new Promise<Response>((_, reject) =>
-              setTimeout(() => reject(new Error('Request timeout')), timeout)
-            )
-          ])
-        }
-        
-        // Fetch data with error handling and fallbacks
-        const [tasksRes, schemaRes, planRes, strategyRes] = await Promise.allSettled([
-          fetchWithTimeout('/api/tasks'),
-          fetchWithTimeout('/api/tasks?action=schema'),
-          fetchWithTimeout('/api/plan'),
-          fetchWithTimeout('/api/strategy')
-        ])
-        
-        // Handle tasks data
-        let tasks: any[] = []
-        if (tasksRes.status === 'fulfilled' && tasksRes.value.ok) {
-          try {
-            const tasksResult = await tasksRes.value.json()
-            tasks = tasksResult.data || []
-          } catch (err) {
-            console.warn('Failed to parse tasks data:', err)
-          }
-        } else {
-          console.warn('Failed to fetch tasks:', tasksRes.status === 'rejected' ? tasksRes.reason : 'Request failed')
-        }
-        
-        // Handle schema data with fallbacks
-        let statusOptions: string[] = ['Not Started', 'In Progress', 'Completed', 'On Hold', 'Cancelled']
-        let priorityOptions: string[] = ['Important & Urgent', 'Important & Not Urgent', 'Not Important & Urgent', 'Not Important & Not Urgent']
-        
-        if (schemaRes.status === 'fulfilled' && schemaRes.value.ok) {
-          try {
-            const schemaResult = await schemaRes.value.json()
-            const schema = schemaResult.schema || {}
-            if (schema.statusOptions && schema.statusOptions.length > 0) {
-              statusOptions = schema.statusOptions
-            }
-            if (schema.priorityOptions && schema.priorityOptions.length > 0) {
-              priorityOptions = schema.priorityOptions
-            }
-          } catch (err) {
-            console.warn('Failed to parse schema data, using defaults:', err)
-          }
-        } else {
-          console.warn('Failed to fetch schema, using default options:', schemaRes.status === 'rejected' ? schemaRes.reason : 'Request failed')
-        }
-        
-        // Handle plans data
-        let planOptions: any[] = []
-        if (planRes.status === 'fulfilled' && planRes.value.ok) {
-          try {
-            const planResult = await planRes.value.json()
-            const rawPlans = planResult.data || []
-            // Use plan data directly without field conversion
-            planOptions = rawPlans.map((plan: any) => ({
-              id: plan.id,
-              objective: plan.objective || 'Untitled Plan',
-              strategy: plan.strategy || [],
-              task: plan.task || []
-            }))
-          } catch (err) {
-            console.warn('Failed to parse plans data:', err)
-          }
-        } else {
-          console.warn('Failed to fetch plans:', planRes.status === 'rejected' ? planRes.reason : 'Request failed')
-        }
-
-        // Handle strategies data
-        let strategyOptions: any[] = []
-        if (strategyRes.status === 'fulfilled' && strategyRes.value.ok) {
-          try {
-            const strategyResult = await strategyRes.value.json()
-            const rawStrategies = strategyResult.data || []
-            // Map strategy data
-            strategyOptions = rawStrategies.map((strategy: any) => ({
-              id: strategy.id,
-              objective: strategy.objective || 'Untitled Strategy'
-            }))
-          } catch (err) {
-            console.warn('Failed to parse strategies data:', err)
-          }
-        } else {
-          console.warn('Failed to fetch strategies:', strategyRes.status === 'rejected' ? strategyRes.reason : 'Request failed')
-        }
-        
-        // Set data even if some requests failed
-        actions.setTasks(tasks)
-        actions.setStatusOptions(statusOptions)
-        actions.setPriorityOptions(priorityOptions)
-        actions.setPlanOptions(planOptions)
-        actions.setStrategyOptions(strategyOptions)
-        
-        // Update parent component with tasks data
-        if (onTasksUpdate) {
-          onTasksUpdate(tasks)
-        }
-        
-        // Show warning if some data is missing but don't block the UI
-        const failedRequests = [tasksRes, schemaRes, planRes, strategyRes].filter(res => res.status === 'rejected').length
-        if (failedRequests > 0) {
-          setToast({ 
-            message: `${failedRequests} data source(s) failed to load. Some features may be limited.`, 
-            type: 'warning' 
-          })
-        }
-        
-      } catch (error) {
-        console.error('Error fetching data:', error)
-        actions.setError(error instanceof Error ? error.message : 'Failed to load task data')
-        
-        // Set fallback data to prevent completely broken UI
-        actions.setStatusOptions(['Not Started', 'In Progress', 'Completed'])
-        actions.setPriorityOptions(['Important & Urgent', 'Important & Not Urgent', 'Not Important & Urgent', 'Not Important & Not Urgent'])
-        actions.setTasks([])
-        actions.setPlanOptions([])
-        
-        // Update parent component with empty tasks
-        if (onTasksUpdate) {
-          onTasksUpdate([])
-        }
-        
-      } finally {
-        actions.setLoading(false)
-      }
+    if (!authLoading && user) {
+      loadAllData()
     }
-    
-    fetchData()
+  }, [authLoading, user])
+
+  // Call onTasksUpdate when tasks change
+  useEffect(() => {
+    if (onTasksUpdate && tasks.length > 0) {
+      onTasksUpdate(tasks)
+    }
+  }, [tasks, onTasksUpdate])
+
+  const loadAllData = async (forceRefresh = false) => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // Check cache first (skip if force refresh)
+      if (!forceRefresh) {
+        const cachedTasks = dataCache.get(CACHE_KEYS.TASKS)
+        const cachedStrategies = dataCache.get(CACHE_KEYS.STRATEGIES)
+        const cachedPlans = dataCache.get(CACHE_KEYS.PLANS)
+        
+        if (cachedTasks && cachedStrategies && cachedPlans) {
+          // Load from cache
+          setTasks(cachedTasks.tasks)
+          setStatusOptions(cachedTasks.schemaOptions.statusOptions)
+          setPriorityOptions(cachedTasks.schemaOptions.priorityOptions)
+          
+          setStrategies(cachedStrategies.strategies)
+          const strategyOpts = cachedStrategies.strategies.map((strategy: any) => ({
+            id: strategy.id,
+            objective: strategy.objective || 'Untitled Strategy'
+          }))
+          setStrategyOptions(strategyOpts)
+          
+          setPlans(cachedPlans)
+          const planOpts = cachedPlans.map((plan: any) => ({
+            id: plan.id,
+            objective: plan.objective || 'Untitled Plan'
+          }))
+          setPlanOptions(planOpts)
+          
+          setLoading(false)
+          return
+        }
+      }
+      
+      // Parallel data loading for better performance
+      const [taskData, strategyData, planData, strategySchemaData, planSchemaData] = await Promise.all([
+        fetchAllTaskData(),
+        fetchAllStrategyData(),
+        fetchPlans(),
+        fetch('/api/strategy?action=schema').then(res => res.json()).catch(() => ({ schema: { statusOptions: [], priorityOptions: [], categoryOptions: [] } })),
+        fetch('/api/plan?action=schema').then(res => res.json()).catch(() => ({ schema: { statusOptions: [], priorityOptions: [] } }))
+      ])
+      
+      // Cache the data
+      dataCache.set(CACHE_KEYS.TASKS, taskData)
+      dataCache.set(CACHE_KEYS.STRATEGIES, strategyData)
+      dataCache.set(CACHE_KEYS.PLANS, planData)
+      
+      // Set task data
+      setTasks(taskData.tasks)
+      setStatusOptions(taskData.schemaOptions.statusOptions)
+      setPriorityOptions(taskData.schemaOptions.priorityOptions)
+      
+      // Set strategy data
+      setStrategies(strategyData.strategies)
+      const strategyOpts = strategyData.strategies.map((strategy: any) => ({
+        id: strategy.id,
+        objective: strategy.objective || 'Untitled Strategy'
+      }))
+      setStrategyOptions(strategyOpts)
+      
+      // Set strategy schema options
+      setStrategyStatusOptions(strategySchemaData.schema?.statusOptions || [])
+      setStrategyCategoryOptions(strategySchemaData.schema?.categoryOptions || [])
+      
+      // Set plan data
+      setPlans(planData)
+      const planOpts = planData.map((plan: any) => ({
+        id: plan.id,
+        objective: plan.objective || 'Untitled Plan'
+      }))
+      setPlanOptions(planOpts)
+      
+      // Set plan schema options
+      setPlanStatusOptions(planSchemaData.schema?.statusOptions || [])
+      setPlanPriorityOptions(planSchemaData.schema?.priorityOptions || [])
+      
+    } catch (err) {
+      console.error('Failed to load data:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load data')
+      
+      // Set default values on error
+      setStatusOptions(['Not Started', 'In Progress', 'Completed', 'On Hold'])
+      setPriorityOptions(['Important & Urgent', 'Important & Not Urgent', 'Not Important & Urgent', 'Not Important & Not Urgent'])
+      setTasks([])
+      setStrategies([])
+      setPlans([])
+      setPlanOptions([])
+      setStrategyOptions([])
+      setStrategyStatusOptions([])
+      setStrategyCategoryOptions([])
+      setPlanStatusOptions([])
+      setPlanPriorityOptions([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
+    await loadAllData(true) // Force refresh on manual refresh
+    setRefreshing(false)
   }, [])
 
-  // Task execution operations
-
-
-
-  const handleTaskCopy = useCallback((task: any) => {
-    // Parse the original Toronto timezone dates
-    // Format: "2025-07-24T09:00:00-04:00"
-    const parseTorontoDate = (dateStr: string) => {
-      if (!dateStr) return null
-      // Extract date and time parts, ignoring timezone
-      const [datePart, timePart] = dateStr.split('T')
-      const [year, month, day] = datePart.split('-').map(Number)
-      const [hour, minute] = timePart.split(':').map(Number)
-      
-      return new Date(year, month - 1, day, hour, minute)
-    }
-    
-    const originalStart = parseTorontoDate(task.start_date)
-    const originalEnd = parseTorontoDate(task.end_date)
-    
-    if (!originalStart || !originalEnd) return
-    
-    // Add one day while keeping the same time
-    const nextDayStart = new Date(originalStart)
-    nextDayStart.setDate(nextDayStart.getDate() + 1)
-    
-    const nextDayEnd = new Date(originalEnd)
-    nextDayEnd.setDate(nextDayEnd.getDate() + 1)
-    
-    // Create a copy of the task with new dates and reset status
-    const copiedTask = {
-      ...task,
-      id: undefined, // Remove id so it creates a new task
-      title: `${task.title} (Copy)`,
-      start_date: nextDayStart.toISOString(),
-      end_date: nextDayEnd.toISOString(),
-      status: 'Not Started',
-      next: undefined,
-      is_plan_critical: false
-    }
-    
-    // Open form panel with the copied task data
-    actions.openFormPanel(copiedTask)
-  }, [actions])
-
-  const handleTaskComplete = useCallback(async (task: any) => {
+  const handleSaveTask = useCallback(async (taskData: TaskFormData) => {
     try {
-      // Simply update task status to Completed
-      const updatedTask = {
-        ...task,
-        status: 'Completed'
-      }
+      const isEditing = !!editingTask
       
-      const response = await fetch('/api/cestlavie/tasks', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedTask)
-      })
+      // Save task via service
+      await saveTask(taskData, editingTask?.id)
       
-      if (response.ok) {
-        const result = await response.json()
-        actions.updateTask(result.data)
-        setToast({ message: 'Task completed successfully', type: 'success' })
-        setTimeout(() => setToast(null), 3000)
-      }
-    } catch (error) {
-      console.error('Error completing task:', error)
-      setToast({ message: 'Failed to complete task', type: 'error' })
-      setTimeout(() => setToast(null), 3000)
-    }
-  }, [actions])
-
-  const handleTaskUpdate = useCallback(async (taskId: string, field: 'status' | 'priority_quadrant', value: string) => {
-    const task = state.tasks.find(t => t.id === taskId)
-    if (!task) return
-
-    const updatedTask = { ...task, [field]: value }
-    
-    try {
-      const response = await fetch('/api/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedTask)
-      })
+      // Invalidate cache since task data changed
+      dataCache.delete(CACHE_KEYS.TASKS)
       
-      if (response.ok) {
-        actions.updateTask(updatedTask)
-        setToast({ message: `Task ${field} updated successfully`, type: 'success' })
-        setTimeout(() => setToast(null), 3000)
-      } else {
-        throw new Error(`Failed to update task ${field}`)
-      }
-    } catch (error) {
-      console.error(`Failed to update task ${field}:`, error)
-      setToast({ message: `Failed to update task ${field}`, type: 'error' })
-      setTimeout(() => setToast(null), 3000)
-      throw error // Re-throw for error handling in component
-    }
-  }, [state.tasks, actions])
-
-  // Sync task to Outlook
-  const handleTaskSyncToOutlook = useCallback(async (task: TaskRecord) => {
-    try {
-      const response = await fetch('http://localhost:5678/webhook/Sync Task', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'create',
-          data: task
-        })
-      })
-      
-      if (response.ok) {
-        setToast({ message: 'Task synced to Outlook successfully', type: 'success' })
-        setTimeout(() => setToast(null), 3000)
-      } else {
-        throw new Error('Failed to sync task to Outlook')
-      }
-    } catch (error) {
-      console.error('Failed to sync task to Outlook:', error)
-      setToast({ message: 'Failed to sync task to Outlook', type: 'error' })
-      setTimeout(() => setToast(null), 3000)
-    }
-  }, [])
-
-  // Task CRUD operations
-  const handleSaveTask = useCallback(async (formData: TaskFormData) => {
-    try {
-      const taskData = {
-        ...formData
-      }
-      
-      const isEditing = !!state.editingTask
-      
-      // For editing tasks, we need to add the id to the data
+      // Update local state
       if (isEditing) {
-        taskData.id = state.editingTask!.id
-      }
-      
-      const url = '/api/tasks'
-      
-      const response = await fetch(url, {
-        method: 'POST', // Both create and update use POST
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(taskData)
-      })
-      
-      if (!response.ok) {
-        throw new Error(`Failed to ${isEditing ? 'update' : 'create'} task`)
-      }
-      
-      const result = await response.json()
-      
-      if (isEditing) {
-        // For updates, we need to refresh the task data or construct it
-        const updatedTask = { ...state.editingTask, ...taskData, id: state.editingTask!.id }
-        actions.updateTask(updatedTask)
+        const updatedTask = { ...editingTask!, ...taskData }
+        setTasks(prev => prev.map(task => task.id === updatedTask.id ? updatedTask : task))
       } else {
-        // For new tasks, construct the task object with the returned ID
-        const newTask = { ...taskData, id: result.id }
-        actions.addTask(newTask)
+        // For new tasks, we need to reload to get the generated ID
+        await loadAllData(true)
       }
+
+      setFormPanelOpen(false)
+      setEditingTask(null)
+      setToast({ message: isEditing ? 'Task updated successfully' : 'Task created successfully', type: 'success' })
       
-      actions.closeFormPanel()
-      
-      // Optionally refresh data in the background without blocking UI
-      setTimeout(() => {
-        fetch('/api/tasks')
-          .then(res => res.json())
-          .then(result => {
-            const tasks = result.data || []
-            actions.setTasks(tasks)
-            
-            // Update parent component with refreshed tasks
-            if (onTasksUpdate) {
-              onTasksUpdate(tasks)
-            }
-          })
-          .catch(err => console.warn('Background refresh failed:', err))
-      }, 500)
-      
-    } catch (error) {
-      console.error('Error saving task:', error)
-      setToast({ 
-        message: error instanceof Error ? error.message : 'Failed to save task', 
-        type: 'error' 
-      })
+    } catch (err) {
+      console.error('Failed to save task:', err)
+      setToast({ message: 'Failed to save task', type: 'error' })
     }
-  }, [state.editingTask, actions])
+  }, [editingTask])
 
   const handleDeleteTask = useCallback(async (taskId: string) => {
+    if (!confirm('Are you sure you want to delete this task?')) return
+
     try {
-      const response = await fetch(`/api/tasks?id=${taskId}`, {
+      await deleteTask(taskId)
+      // Invalidate cache since task data changed
+      dataCache.delete(CACHE_KEYS.TASKS)
+      setTasks(prev => prev.filter(task => task.id !== taskId))
+      setToast({ message: 'Task deleted successfully', type: 'success' })
+    } catch (err) {
+      console.error('Failed to delete task:', err)
+      setToast({ message: 'Failed to delete task', type: 'error' })
+    }
+  }, [])
+
+  const openFormPanel = useCallback((task?: TaskRecord) => {
+    setEditingTask(task || null)
+    setFormPanelOpen(true)
+  }, [])
+
+  const closeFormPanel = useCallback(() => {
+    setFormPanelOpen(false)
+    setEditingTask(null)
+  }, [])
+
+  // Strategy update handler
+  const handleStrategyUpdate = useCallback(async (strategyId: string, field: 'status' | 'priority_quadrant', value: string) => {
+    const strategy = strategies.find(s => s.id === strategyId)
+    if (!strategy) return
+
+    try {
+      await updateStrategyField(strategy, field, value)
+      // Invalidate cache since strategy data changed
+      dataCache.delete(CACHE_KEYS.STRATEGIES)
+      const updatedStrategy = { ...strategy, [field]: value }
+      setStrategies(prev => prev.map(s => s.id === strategyId ? updatedStrategy : s))
+    } catch (error) {
+      console.error(`Failed to update strategy ${field}:`, error)
+    }
+  }, [strategies])
+
+  // Plan update handler
+  const handlePlanUpdate = useCallback(async (planId: string, field: 'status' | 'priority_quadrant', value: string) => {
+    const plan = plans.find(p => p.id === planId)
+    if (!plan) return
+
+    try {
+      await updatePlanField(plan, field, value)
+      // Invalidate cache since plan data changed
+      dataCache.delete(CACHE_KEYS.PLANS)
+      const updatedPlan = { ...plan, [field]: value }
+      setPlans(prev => prev.map(p => p.id === planId ? updatedPlan : p))
+    } catch (error) {
+      console.error(`Failed to update plan ${field}:`, error)
+    }
+  }, [plans])
+
+  // Drill down handlers
+  const handleStrategyDrillDown = useCallback((strategyId: string) => {
+    setDrillDownMode('strategy-plans')
+    setSelectedStrategyId(strategyId)
+    setSelectedPlanId(null)
+  }, [])
+
+  const handlePlanDrillDown = useCallback((planId: string) => {
+    setDrillDownMode('plan-tasks')
+    setSelectedPlanId(planId)
+  }, [])
+
+  const handleBackToAll = useCallback(() => {
+    setDrillDownMode('all')
+    setSelectedStrategyId(null)
+    setSelectedPlanId(null)
+  }, [])
+
+  const handleBackToStrategy = useCallback(() => {
+    if (selectedStrategyId) {
+      setDrillDownMode('strategy-plans')
+      setSelectedPlanId(null)
+    }
+  }, [selectedStrategyId])
+
+  // Strategy edit/delete handlers
+  const handleStrategyEdit = useCallback((strategy: StrategyRecord) => {
+    // Open Strategy form for editing
+    openStrategyForm(strategy)
+  }, [])
+
+  const handleStrategyDelete = useCallback(async (strategyId: string) => {
+    try {
+      const response = await fetch(`/api/strategy?id=${strategyId}`, {
         method: 'DELETE'
       })
-      
-      if (!response.ok) {
-        throw new Error('Failed to delete task')
-      }
-      
-      actions.deleteTask(taskId)
-      
-    } catch (error) {
-      console.error('Error deleting task:', error)
-      setToast({ 
-        message: error instanceof Error ? error.message : 'Failed to delete task', 
-        type: 'error' 
-      })
-    }
-  }, [actions])
 
-  // Refresh data
-  const handleRefresh = useCallback(async () => {
-    try {
-      actions.setRefreshing(true)
-      const response = await fetch('/api/tasks')
-      
       if (!response.ok) {
-        throw new Error('Failed to refresh tasks')
+        throw new Error('Failed to delete strategy')
       }
-      
+
       const result = await response.json()
-      const tasks = result.data || []
-      actions.setTasks(tasks)
       
-      // Update parent component with refreshed tasks
-      if (onTasksUpdate) {
-        onTasksUpdate(tasks)
-      }
+      // Invalidate all related caches since cascade delete affects multiple entities
+      dataCache.delete(CACHE_KEYS.STRATEGIES)
+      dataCache.delete(CACHE_KEYS.PLANS)
+      dataCache.delete(CACHE_KEYS.TASKS)
       
+      // Remove strategy from local state
+      setStrategies(prev => prev.filter(s => s.id !== strategyId))
+      
+      // Force reload all data to get accurate counts after cascade delete
+      await loadAllData(true)
+      
+      const { cascadeDeleted } = result
+      const message = `Strategy deleted (${cascadeDeleted.plans} plans, ${cascadeDeleted.tasks} tasks also deleted)`
+      setToast({ message, type: 'success' })
     } catch (error) {
-      console.error('Error refreshing tasks:', error)
-      setToast({ 
-        message: error instanceof Error ? error.message : 'Failed to refresh tasks', 
-        type: 'error' 
+      console.error('Failed to delete strategy:', error)
+      setToast({ message: 'Failed to delete strategy', type: 'error' })
+    }
+  }, [])
+
+  // Plan edit/delete handlers
+  const handlePlanEdit = useCallback((plan: PlanRecord) => {
+    // Open Plan form for editing
+    openPlanForm(plan)
+  }, [])
+
+  const handlePlanDelete = useCallback(async (planId: string) => {
+    try {
+      const response = await fetch(`/api/plan?id=${planId}`, {
+        method: 'DELETE'
       })
-    } finally {
-      actions.setRefreshing(false)
-    }
-  }, [actions])
 
-  // Format helper functions
+      if (!response.ok) {
+        throw new Error('Failed to delete plan')
+      }
 
-  const getPriorityColor = useCallback((priority: string) => {
-    switch (priority) {
-      case '重要且紧急': return 'bg-red-100 text-red-800 border-red-300'
-      case '重要不紧急': return 'bg-orange-100 text-orange-800 border-orange-300'
-      case '不重要但紧急': return 'bg-yellow-100 text-yellow-800 border-yellow-300'
-      case '不重要不紧急': return 'bg-gray-100 text-gray-800 border-gray-300'
-      case 'Important & Urgent': return 'bg-red-100 text-red-800 border-red-300'
-      case 'Important & Not Urgent': return 'bg-orange-100 text-orange-800 border-orange-300'
-      case 'Not Important & Urgent': return 'bg-yellow-100 text-yellow-800 border-yellow-300'
-      case 'Not Important & Not Urgent': return 'bg-gray-100 text-gray-800 border-gray-300'
-      default: return 'bg-purple-100 text-purple-800 border-purple-200'
+      const result = await response.json()
+      
+      // Invalidate related caches since cascade delete affects tasks
+      dataCache.delete(CACHE_KEYS.PLANS)
+      dataCache.delete(CACHE_KEYS.TASKS)
+      
+      // Remove plan from local state
+      setPlans(prev => prev.filter(p => p.id !== planId))
+      
+      // Force reload all data to get accurate counts after cascade delete
+      await loadAllData(true)
+      
+      const { cascadeDeleted } = result
+      const message = `Plan deleted (${cascadeDeleted.tasks} tasks also deleted)`
+      setToast({ message, type: 'success' })
+    } catch (error) {
+      console.error('Failed to delete plan:', error)
+      setToast({ message: 'Failed to delete plan', type: 'error' })
     }
   }, [])
 
-  const formatTimeRange = useCallback((startDate: string, endDate?: string) => {
-    if (!startDate) return ''
-    
-    // Convert UTC to local timezone for display
-    const startDateTime = new Date(startDate)
-    const startTime = startDateTime.toLocaleTimeString('en-US', {
-      hour: '2-digit', 
-      minute: '2-digit', 
-      hour12: false
-    })
-    
-    // Get weekday and date
-    const weekday = startDateTime.toLocaleDateString('en-US', { weekday: 'short' })
-    const dateStr = startDateTime.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })
-    
-    if (!endDate) {
-      return `${dateStr} ${weekday} ${startTime}`
-    }
-    
-    const endTime = new Date(endDate).toLocaleTimeString('en-US', {
-      hour: '2-digit', 
-      minute: '2-digit', 
-      hour12: false
-    })
-    
-    // Since we don't support cross-day tasks, always same day
-    return `${dateStr} ${weekday} ${startTime} - ${endTime}`
+  // Strategy form handlers
+  const openStrategyForm = useCallback((strategy?: StrategyRecord) => {
+    setEditingStrategy(strategy || null)
+    setStrategyFormOpen(true)
   }, [])
 
-  // Loading state
-  if (state.loading) {
+  const closeStrategyForm = useCallback(() => {
+    setStrategyFormOpen(false)
+    setEditingStrategy(null)
+  }, [])
+
+  const handleSaveStrategy = useCallback(async (strategyData: StrategyFormData) => {
+    try {
+      const isEditing = !!editingStrategy
+      
+      // Save strategy via service
+      await saveStrategy(strategyData, editingStrategy?.id)
+      
+      // Invalidate cache since strategy data changed
+      dataCache.delete(CACHE_KEYS.STRATEGIES)
+      dataCache.delete(CACHE_KEYS.PLANS)
+      
+      // Reload all data to get updated relationships
+      await loadAllData(true)
+      
+      setStrategyFormOpen(false)
+      setEditingStrategy(null)
+      setToast({ message: isEditing ? 'Strategy updated successfully' : 'Strategy created successfully', type: 'success' })
+      
+    } catch (err) {
+      console.error('Failed to save strategy:', err)
+      setToast({ message: 'Failed to save strategy', type: 'error' })
+    }
+  }, [editingStrategy])
+
+  // Plan form handlers
+  const openPlanForm = useCallback((plan?: PlanRecord) => {
+    setEditingPlan(plan || null)
+    setPlanFormOpen(true)
+  }, [])
+
+  const closePlanForm = useCallback(() => {
+    setPlanFormOpen(false)
+    setEditingPlan(null)
+  }, [])
+
+  const handleSavePlan = useCallback(async (planData: PlanFormData) => {
+    try {
+      const isEditing = !!editingPlan
+      
+      // Save plan via service
+      await savePlan(planData, editingPlan?.id)
+      
+      // Invalidate cache since plan data changed
+      dataCache.delete(CACHE_KEYS.PLANS)
+      dataCache.delete(CACHE_KEYS.TASKS)
+      
+      // Reload all data to get updated relationships
+      await loadAllData(true)
+      
+      setPlanFormOpen(false)
+      setEditingPlan(null)
+      setToast({ message: isEditing ? 'Plan updated successfully' : 'Plan created successfully', type: 'success' })
+      
+    } catch (err) {
+      console.error('Failed to save plan:', err)
+      setToast({ message: 'Failed to save plan', type: 'error' })
+    }
+  }, [editingPlan])
+
+  // Show loading spinner during auth loading or data loading
+  if (authLoading || loading) {
     return (
       <TaskErrorBoundary>
-        <TaskLoadingSpinner message="Loading tasks..." />
+        <TaskLoadingSpinner />
       </TaskErrorBoundary>
     )
   }
 
-  // Error state
-  if (state.error) {
+  // Don't render if user is not authenticated
+  if (!user) {
+    return null
+  }
+
+  if (error) {
     return (
       <TaskErrorBoundary>
-        <TaskErrorDisplay error={state.error} onRetry={handleRefresh} />
+        <TaskErrorDisplay error={error} onRetry={handleRefresh} />
       </TaskErrorBoundary>
     )
   }
-
 
   return (
     <TaskErrorBoundary>
-      <div className="w-full py-8 space-y-6">
-        <div className="px-3 md:px-6">
-        
-        {/* Mobile Layout with Tab Switching */}
-        <div className="md:hidden mb-6">
-          {/* Mobile Tab Navigation */}
-          <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 mb-4">
-            <div className="flex">
-              <button
-                onClick={() => setMobileActiveTab('calendar')}
-                className={`flex-1 px-4 py-3 text-center font-medium transition-all duration-300 rounded-l-xl ${
-                  mobileActiveTab === 'calendar'
-                    ? 'bg-purple-500 text-white shadow-lg'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
-                }`}
-              >
-                <span className="text-base mr-2">📅</span>
-                Calendar
-              </button>
-              <button
-                onClick={() => setMobileActiveTab('tasks')}
-                className={`flex-1 px-4 py-3 text-center font-medium transition-all duration-300 rounded-r-xl ${
-                  mobileActiveTab === 'tasks'
-                    ? 'bg-purple-500 text-white shadow-lg'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
-                }`}
-              >
-                <span className="text-base mr-2">✅</span>
-                Tasks
-              </button>
+      <>
+        {/* Main Content Area - L-shaped Layout, Natural Content Flow */}
+        <div className="fixed top-32 left-[68px] right-4 bottom-4 overflow-y-auto">
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg">
+              {error}
             </div>
-          </div>
+          )}
 
-          {/* Mobile Tab Content */}
-          {mobileActiveTab === 'calendar' && (
-            <div className="space-y-4">
-              <div className="bg-white rounded-lg border border-purple-200">
-                <TaskCalendarView
-                  tasks={filteredTasks}
-                  currentMonth={state.currentMonth}
-                  selectedDate={state.selectedDate}
-                  onDateSelect={actions.setSelectedDate}
-                  onMonthChange={actions.setCurrentMonth}
-                  selectedPlanFilter={state.selectedPlanFilter}
-                  planOptions={state.planOptions}
-                  onTaskClick={(task) => actions.openFormPanel(task)}
-                  onTaskDelete={handleDeleteTask}
-                  formatTimeRange={formatTimeRange}
-                  getPriorityColor={getPriorityColor}
-                  compact={true}
+          {/* Breadcrumb Navigation */}
+          {drillDownMode !== 'all' && (
+            <div className="mb-4 p-3 bg-white/90 backdrop-blur-md rounded-lg shadow-sm">
+              <nav className="flex items-center gap-2 text-sm">
+                <button
+                  onClick={handleBackToAll}
+                  className="text-purple-600 hover:text-purple-800 hover:underline transition-colors"
+                >
+                  All
+                </button>
+                
+                {drillDownMode === 'strategy-plans' && selectedStrategyId && (
+                  <>
+                    <span className="text-gray-400">></span>
+                    <span className="text-gray-700">
+                      Strategy: {strategies.find(s => s.id === selectedStrategyId)?.objective || 'Unknown'}
+                    </span>
+                  </>
+                )}
+                
+                {drillDownMode === 'plan-tasks' && selectedPlanId && (
+                  <>
+                    {selectedStrategyId && (
+                      <>
+                        <span className="text-gray-400">></span>
+                        <button
+                          onClick={handleBackToStrategy}
+                          className="text-purple-600 hover:text-purple-800 hover:underline transition-colors"
+                        >
+                          Strategy: {strategies.find(s => s.id === selectedStrategyId)?.objective || 'Unknown'}
+                        </button>
+                      </>
+                    )}
+                    <span className="text-gray-400">></span>
+                    <span className="text-gray-700">
+                      Plan: {plans.find(p => p.id === selectedPlanId)?.objective || 'Unknown'}
+                    </span>
+                  </>
+                )}
+              </nav>
+            </div>
+          )}
+
+          {/* 3-Column Layout: Strategy + Plan + Calendar/Task - Equal Width (1/3 each) */}
+          <div className="flex gap-6">
+            {/* Left Column: Strategy - 1/3 width */}
+            <div className="flex-1 min-w-0">
+              <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base font-semibold text-purple-900">Strategy</h3>
+                  <button 
+                    onClick={() => openStrategyForm()}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200"
+                  >
+                    <span>🎯</span>
+                    <span>Add Strategy</span>
+                  </button>
+                </div>
+                <StrategyContent 
+                  strategies={displayedStrategies}
+                  loading={loading}
+                  error={error}
+                  onStrategyUpdate={handleStrategyUpdate}
+                  onStrategyEdit={handleStrategyEdit}
+                  onStrategyDelete={handleStrategyDelete}
+                  onStrategyDrillDown={handleStrategyDrillDown}
+                  statusOptions={strategyStatusOptions}
+                  priorityOptions={priorityOptions}
+                  categoryOptions={strategyCategoryOptions}
                 />
               </div>
+            </div>
 
-              {/* Quick Stats */}
-              <div className="bg-white rounded-lg border border-purple-200 p-4">
-                <h4 className="text-md font-semibold text-purple-500 mb-3">📈 Quick Stats</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-purple-900">
-                      {filteredTasks.filter(task => {
-                        if (!task.start_date) return false
-                        const taskDate = new Date(task.start_date).toLocaleDateString('en-CA')
-                        const today = new Date().toLocaleDateString('en-CA')
-                        return taskDate === today
-                      }).length}
-                    </div>
-                    <div className="text-xs text-gray-600">Today</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-purple-900">{thisWeekTasks.length}</div>
-                    <div className="text-xs text-gray-600">This Week</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-purple-900">{thisMonthTasks.length}</div>
-                    <div className="text-xs text-gray-600">This Month</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-purple-600">
-                      {filteredTasks.filter(task => task.status === 'Completed').length}
-                    </div>
-                    <div className="text-xs text-gray-600">Completed</div>
-                  </div>
+            {/* Middle Column: Plan - 1/3 width */}
+            <div className="flex-1 min-w-0">
+              <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base font-semibold text-purple-900">Plans</h3>
+                  <button 
+                    onClick={() => openPlanForm()}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200"
+                  >
+                    <span>📋</span>
+                    <span>Add Plan</span>
+                  </button>
                 </div>
+                <PlanContent 
+                  plans={displayedPlans}
+                  loading={loading}
+                  error={error}
+                  onPlanUpdate={handlePlanUpdate}
+                  onPlanEdit={handlePlanEdit}
+                  onPlanDelete={handlePlanDelete}
+                  onPlanDrillDown={handlePlanDrillDown}
+                  statusOptions={planStatusOptions}
+                  priorityOptions={planPriorityOptions}
+                />
               </div>
             </div>
-          )}
 
-          {mobileActiveTab === 'tasks' && (
-            <div className="space-y-4">
-              {/* Mobile Filters */}
-              <div className="bg-white rounded-lg border border-purple-200 p-4">
-                <h4 className="text-md font-semibold text-purple-500 mb-3">🔧 Filters</h4>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium text-purple-700 mb-1">Status</label>
-                    <select
-                      value={state.selectedStatus}
-                      onChange={(e) => actions.setSelectedStatus(e.target.value)}
-                      className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    >
-                      <option value="all">All Status</option>
-                      {state.statusOptions.map(status => (
-                        <option key={status} value={status}>{status}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-purple-700 mb-1">Priority</label>
-                    <select
-                      value={state.selectedQuadrant}
-                      onChange={(e) => actions.setSelectedQuadrant(e.target.value)}
-                      className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    >
-                      <option value="all">All Priorities</option>
-                      {state.priorityOptions.map(priority => (
-                        <option key={priority} value={priority}>{priority}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-purple-700 mb-1">Plan</label>
-                    <select
-                      value={state.selectedPlanFilter}
-                      onChange={(e) => actions.setSelectedPlanFilter(e.target.value)}
-                      className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    >
-                      <option value="all">All Plans</option>
-                      <option value="none">No Plan</option>
-                      {state.planOptions.map(plan => (
-                        <option key={plan.id} value={plan.id}>{plan.objective}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tasks Header with New Task Button */}
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-purple-500">
-                  {state.selectedDate ? `Tasks for ${new Date(state.selectedDate).toLocaleDateString()}` : 'All Tasks'}
-                </h3>
-                <button
-                  onClick={() => actions.openFormPanel()}
-                  className="px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors flex items-center gap-1"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  New
-                </button>
-              </div>
-
-              {/* Task List */}
-              <TaskListView
+            {/* Right Column: Calendar + Task - 1/3 width */}
+            <div className="flex-1 min-w-0 space-y-6">
+              {/* Calendar Module */}
+              <TaskCalendarView
                 tasks={filteredTasks}
-                selectedDate={state.selectedDate}
-                onTaskClick={(task) => actions.openFormPanel(task)}
-                onTaskDelete={handleDeleteTask}
-                onTaskComplete={handleTaskComplete}
-                onTaskCopy={handleTaskCopy}
-                onTaskUpdate={handleTaskUpdate}
-                onTaskSyncToOutlook={handleTaskSyncToOutlook}
-                onCreateTask={(date) => {
-                  actions.setSelectedDate(date)
-                  actions.openFormPanel()
-                }}
-                formatTimeRange={formatTimeRange}
-                getPriorityColor={getPriorityColor}
-                plans={state.planOptions}
-                strategies={state.strategyOptions}
-                statusOptions={state.statusOptions}
-                priorityOptions={state.priorityOptions}
+                currentMonth={currentMonth}
+                selectedDate={selectedDate}
+                onDateSelect={setSelectedDate}
+                onMonthChange={setCurrentMonth}
+                onTaskSelect={openFormPanel}
               />
-            </div>
-          )}
-        </div>
 
-        {/* Desktop Layout - 40:60 Split */}
-        <div className="hidden md:block">
-          {/* Top Controls Bar - 右对齐，与三杠同行 */}
-          <div className="fixed top-20 right-4 flex items-center gap-4 z-40">
-            
-            {/* Compact Filters */}
-            <div className="flex items-center gap-3">
-              <select
-                value={state.selectedStatus}
-                onChange={(e) => actions.setSelectedStatus(e.target.value)}
-                className="px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm w-32"
-              >
-                <option value="all">All Status</option>
-                {state.statusOptions.map(status => (
-                  <option key={status} value={status}>{status}</option>
-                ))}
-              </select>
-              
-              <select
-                value={state.selectedQuadrant}
-                onChange={(e) => actions.setSelectedQuadrant(e.target.value)}
-                className="px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm w-36"
-              >
-                <option value="all">All Priorities</option>
-                {state.priorityOptions.map(priority => (
-                  <option key={priority} value={priority}>{priority}</option>
-                ))}
-              </select>
-              
-              <select
-                value={state.selectedPlanFilter}
-                onChange={(e) => actions.setSelectedPlanFilter(e.target.value)}
-                className="px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm w-32"
-              >
-                <option value="all">All Plans</option>
-                <option value="none">No Plan</option>
-                {state.planOptions.map(plan => (
-                  <option key={plan.id} value={plan.id}>{plan.objective}</option>
-                ))}
-              </select>
-              
-              {/* Refresh Button */}
-              <button
-                onClick={handleRefresh}
-                disabled={state.refreshing}
-                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors flex items-center gap-1 text-sm"
-              >
-                <svg className={`w-4 h-4 ${state.refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Refresh
-              </button>
-            </div>
+              {/* Task Module */}
+              <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl">
+                {/* Task Module Header */}
+                <div className="p-4 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-semibold text-purple-900">Tasks</h3>
+                    <button
+                      onClick={() => openFormPanel()}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200"
+                    >
+                      <span>✅</span>
+                      <span>Add Task</span>
+                    </button>
+                  </div>
+                  
+                  {/* Task Filters - 2 rows layout */}
+                  <div className="mt-3 space-y-2">
+                    {/* First row */}
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={selectedStatus}
+                        onChange={(e) => setSelectedStatus(e.target.value)}
+                        className="flex-1 px-2 py-1 bg-white border border-purple-200 rounded text-xs text-purple-700 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                      >
+                        <option value="all">All Status</option>
+                        {statusOptions.map(status => (
+                          <option key={status} value={status}>{status}</option>
+                        ))}
+                      </select>
 
-            {/* Add New Task Button */}
-            <div className="ml-auto">
-              <button
-                onClick={() => actions.openFormPanel()}
-                className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Add New Task
-              </button>
-            </div>
-          </div>
+                      <select
+                        value={selectedQuadrant}
+                        onChange={(e) => setSelectedQuadrant(e.target.value)}
+                        className="flex-1 px-2 py-1 bg-white border border-purple-200 rounded text-xs text-purple-700 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                      >
+                        <option value="all">All Priorities</option>
+                        {priorityOptions.map(priority => (
+                          <option key={priority} value={priority}>{priority}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    {/* Second row */}
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={selectedPlanFilter}
+                        onChange={(e) => setSelectedPlanFilter(e.target.value)}
+                        className="flex-1 px-2 py-1 bg-white border border-purple-200 rounded text-xs text-purple-700 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                      >
+                        <option value="all">All Plans</option>
+                        <option value="none">No Plan</option>
+                        {planOptions.map(plan => (
+                          <option key={plan.id} value={plan.id}>{plan.objective}</option>
+                        ))}
+                      </select>
 
-          {/* Main Split Layout: Calendar (30%) | TaskList (70%) */}
-          <div className="fixed top-32 left-[68px] right-4 bottom-4 flex gap-6 overflow-y-auto bg-white p-6 z-30">
-            {/* Left: Calendar Section - 30% */}
-            <div className="w-3/10 space-y-6">
-              {/* Calendar */}
-              <div>
-                <div className="bg-white rounded-lg border border-purple-200">
-                  <TaskCalendarView
-                    tasks={filteredTasks}
-                    currentMonth={state.currentMonth}
-                    selectedDate={state.selectedDate}
-                    onDateSelect={actions.setSelectedDate}
-                    onMonthChange={actions.setCurrentMonth}
-                    selectedPlanFilter={state.selectedPlanFilter}
-                    planOptions={state.planOptions}
-                    onTaskClick={(task) => actions.openFormPanel(task)}
+                      <button
+                        onClick={handleRefresh}
+                        disabled={refreshing}
+                        className="flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded hover:bg-gray-200 transition-colors disabled:opacity-50"
+                      >
+                        <div className={`${refreshing ? 'animate-spin' : ''}`}>
+                          {refreshing ? '⟳' : '↻'}
+                        </div>
+                        <span>Refresh</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Task Content */}
+                <div className="p-4">
+                  <TaskListView
+                    tasks={displayedTasks}
+                    onTaskSelect={openFormPanel}
+                    onTaskUpdate={async (taskId, updates) => {
+                      const task = tasks.find(t => t.id === taskId)
+                      if (task) {
+                        const updatedTask = { ...task, ...updates }
+                        setTasks(prev => prev.map(t => t.id === taskId ? updatedTask : t))
+                      }
+                    }}
                     onTaskDelete={handleDeleteTask}
-                    formatTimeRange={formatTimeRange}
-                    getPriorityColor={getPriorityColor}
-                    compact={false}
+                    statusOptions={statusOptions}
+                    priorityOptions={priorityOptions}
+                    selectedDate={selectedDate}
                   />
                 </div>
-              </div>
-
-            </div>
-
-            {/* Right: TaskList Section - 70% */}
-            <div className="w-7/10 relative">
-              {/* TaskList Content - Direct display without header */}
-              <div>
-                <TaskListView
-                  tasks={filteredTasks}
-                  selectedDate={state.selectedDate}
-                  onTaskClick={(task) => actions.openFormPanel(task)}
-                  onTaskDelete={handleDeleteTask}
-                  onTaskComplete={handleTaskComplete}
-                  onTaskCopy={handleTaskCopy}
-                  onTaskUpdate={handleTaskUpdate}
-                  onTaskSyncToOutlook={handleTaskSyncToOutlook}
-                  onCreateTask={(date) => {
-                    actions.setSelectedDate(date)
-                    actions.openFormPanel()
-                  }}
-                  formatTimeRange={formatTimeRange}
-                  getPriorityColor={getPriorityColor}
-                  plans={state.planOptions}
-                  strategies={state.strategyOptions}
-                  statusOptions={state.statusOptions}
-                  priorityOptions={state.priorityOptions}
-                />
               </div>
             </div>
           </div>
@@ -874,15 +740,38 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
 
         {/* Task Form Panel */}
         <TaskFormPanel
-          isOpen={state.formPanelOpen}
-          onClose={actions.closeFormPanel}
-          task={state.editingTask}
+          isOpen={formPanelOpen}
+          onClose={closeFormPanel}
+          task={editingTask}
           onSave={handleSaveTask}
-          statusOptions={state.statusOptions}
-          priorityOptions={state.priorityOptions}
-          allTasks={state.tasks}
+          statusOptions={statusOptions}
+          priorityOptions={priorityOptions}
+          planOptions={planOptions}
+          strategyOptions={strategyOptions}
+          allTasks={tasks}
         />
 
+        {/* Strategy Form Panel */}
+        <StrategyFormPanel
+          isOpen={strategyFormOpen}
+          onClose={closeStrategyForm}
+          strategy={editingStrategy}
+          onSave={handleSaveStrategy}
+          statusOptions={strategyStatusOptions}
+          priorityOptions={priorityOptions}
+          categoryOptions={strategyCategoryOptions}
+        />
+
+        {/* Plan Form Panel */}
+        <PlanFormPanel
+          isOpen={planFormOpen}
+          onClose={closePlanForm}
+          plan={editingPlan}
+          onSave={handleSavePlan}
+          statusOptions={planStatusOptions}
+          priorityOptions={planPriorityOptions}
+          strategyOptions={strategyOptions}
+        />
 
         {/* Toast Notification */}
         {toast && (
@@ -892,8 +781,7 @@ export default function TaskPanelOptimized({ onTasksUpdate }: TaskPanelOptimized
             onClose={() => setToast(null)}
           />
         )}
-        </div>
-      </div>
+      </>
     </TaskErrorBoundary>
   )
 }

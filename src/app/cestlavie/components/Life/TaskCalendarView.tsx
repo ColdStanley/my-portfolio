@@ -1,23 +1,7 @@
 'use client'
 
 import { useMemo, useCallback } from 'react'
-import { TaskRecord } from './taskReducer'
-
-
-interface TaskCalendarViewProps {
-  tasks: TaskRecord[]
-  currentMonth: Date
-  selectedDate: string
-  onDateSelect: (date: string) => void
-  onMonthChange: (date: Date) => void
-  selectedPlanFilter: string
-  planOptions?: any[]
-  onTaskClick?: (task: TaskRecord) => void
-  onTaskDelete?: (taskId: string) => void
-  formatTimeRange?: (startDate: string, endDate?: string) => string
-  getPriorityColor?: (priority: string) => string
-  compact?: boolean  // New prop for compact mode
-}
+import { TaskRecord, TaskCalendarViewProps } from '../../types/task'
 
 export default function TaskCalendarView({ 
   tasks, 
@@ -25,32 +9,8 @@ export default function TaskCalendarView({
   selectedDate, 
   onDateSelect, 
   onMonthChange,
-  selectedPlanFilter,
-  planOptions = [],
-  onTaskClick,
-  onTaskDelete,
-  formatTimeRange,
-  getPriorityColor,
-  compact = false
+  onTaskSelect
 }: TaskCalendarViewProps) {
-  
-  // Filter tasks by plan - using Plan.linked_tasks reverse lookup
-  const filteredTasks = useMemo(() => {
-    if (selectedPlanFilter === 'all') return tasks
-    
-    return tasks.filter(task => {
-      if (selectedPlanFilter === 'none') {
-        // Show tasks that are not linked to any plan
-        return !planOptions.some(plan => 
-          plan.linked_tasks && plan.linked_tasks.includes(task.id)
-        )
-      } else {
-        // Show tasks linked to the selected plan
-        const selectedPlan = planOptions.find(p => p.id === selectedPlanFilter)
-        return selectedPlan && selectedPlan.linked_tasks && selectedPlan.linked_tasks.includes(task.id)
-      }
-    })
-  }, [tasks, selectedPlanFilter, planOptions])
 
   // Calendar helper functions
   const getDaysInMonth = useCallback((date: Date) => {
@@ -103,7 +63,7 @@ export default function TaskCalendarView({
   }, [])
 
   const getTasksForDate = useCallback((dateString: string) => {
-    const dateTasks = filteredTasks.filter(task => {
+    const dateTasks = tasks.filter(task => {
       if (!task.start_date && !task.end_date) return false
       
       const taskDate = task.start_date || task.end_date
@@ -128,7 +88,7 @@ export default function TaskCalendarView({
     })
     
     return dateTasks
-  }, [filteredTasks])
+  }, [tasks])
 
   const getTaskCountForDate = useCallback((dateString: string) => {
     return getTasksForDate(dateString).length
@@ -171,36 +131,41 @@ export default function TaskCalendarView({
 
 
   return (
-    <div className="bg-white rounded-lg border border-purple-200">
+    <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl p-4">
       {/* Calendar Header */}
-      <div className="p-4 border-b border-purple-200 flex items-center justify-between">
+      <div className="flex items-center justify-between mb-4">
         <button
           onClick={handlePrevMonth}
-          className="p-2 hover:bg-purple-50 rounded-md transition-colors"
+          className="p-1 hover:bg-purple-50 rounded-md transition-colors"
         >
-          ←
+          <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
         </button>
-        <h3 className="text-lg font-semibold text-purple-900">
-          {currentMonth.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
+        <h3 className="text-base font-semibold text-purple-900">
+          {currentMonth.toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}
         </h3>
         <button
           onClick={handleNextMonth}
-          className="p-2 hover:bg-purple-50 rounded-md transition-colors"
+          className="p-1 hover:bg-purple-50 rounded-md transition-colors"
         >
-          →
+          <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
         </button>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-1">
-        {/* Weekday Headers */}
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-          <div key={day} className="text-center text-sm font-medium text-purple-500 py-2">
+      {/* Weekday Headers */}
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+          <div key={index} className="text-center text-xs font-medium text-purple-500 py-1">
             {day}
           </div>
         ))}
-        
-        {/* Calendar Days */}
+      </div>
+      
+      {/* Calendar Days */}
+      <div className="grid grid-cols-7 gap-1">
         {calendarDays.map(({ date, isCurrentMonth, dateString }) => {
           const dayTasks = getTasksForDate(dateString)
           const isSelected = selectedDate === dateString
@@ -210,7 +175,7 @@ export default function TaskCalendarView({
             <div
               key={dateString}
               className={`
-                relative h-12 cursor-pointer transition-colors duration-200 rounded-lg
+                relative h-8 cursor-pointer transition-colors duration-200 rounded
                 ${isSelected 
                   ? 'bg-purple-500 text-white' 
                   : isCurrentDay 
@@ -220,27 +185,27 @@ export default function TaskCalendarView({
               `}
               onClick={() => onDateSelect(dateString)}
             >
-              {/* 日期数字 - 居中 */}
+              {/* Date Number */}
               <div className="flex items-center justify-center h-full">
-                <span className={`text-sm ${
+                <span className={`text-xs ${
                   isCurrentMonth ? '' : 'text-gray-400'
                 }`}>
                   {date.getDate()}
                 </span>
               </div>
               
-              {/* 任务数 - 左上角小标识 */}
+              {/* Task Count Indicator */}
               {dayTasks.length > 0 && (
-                <div className="absolute top-1 left-1">
+                <div className="absolute -top-0.5 -right-0.5">
                   <div className={`
-                    w-4 h-4 rounded-full text-xs font-medium
+                    w-3 h-3 rounded-full text-xs font-medium
                     flex items-center justify-center
                     ${isSelected 
                       ? 'bg-white text-purple-500' 
                       : 'bg-purple-500 text-white'
                     }
                   `}>
-                    {dayTasks.length}
+                    {dayTasks.length > 9 ? '9+' : dayTasks.length}
                   </div>
                 </div>
               )}
@@ -248,7 +213,6 @@ export default function TaskCalendarView({
           )
         })}
       </div>
-
     </div>
   )
 }

@@ -356,7 +356,7 @@ export default function NotionConfigModal({ isOpen, onClose, onConfigSaved }: No
                 {testResult && (
                   <div className={`p-4 rounded-xl border-2 ${
                     testResult.success 
-                      ? 'bg-green-50/50 border-green-200' 
+                      ? 'bg-purple-50/50 border-purple-200' 
                       : 'bg-red-50/50 border-red-200'
                   }`}>
                     <div className="flex items-center gap-3">
@@ -365,12 +365,12 @@ export default function NotionConfigModal({ isOpen, onClose, onConfigSaved }: No
                       </span>
                       <div>
                         <p className={`font-semibold ${
-                          testResult.success ? 'text-green-800' : 'text-red-800'
+                          testResult.success ? 'text-purple-800' : 'text-red-800'
                         }`}>
                           {testResult.success ? 'Connection verified' : 'Connection failed'}
                         </p>
                         <p className={`text-sm ${
-                          testResult.success ? 'text-green-600' : 'text-red-600'
+                          testResult.success ? 'text-purple-600' : 'text-red-600'
                         }`}>
                           {testResult.message}
                         </p>

@@ -9,7 +9,7 @@ interface TaskRecord {
   start_date: string
   end_date: string
   all_day: boolean
-  plan: string[]
+  plan?: string
   priority_quadrant: string
   note: string
   actual_start?: string
@@ -37,10 +37,7 @@ const tabs = [
 ]
 
 const lifeSubTabs = [
-  { key: 'strategy', label: 'Strategy', icon: '🎯' },
-  { key: 'plan', label: 'Plan', icon: '📋' },
   { key: 'task', label: 'Task', icon: '✅' },
-  { key: 'tbd', label: 'TBD', icon: '🔮' },
 ]
 
 const studySubTabs = [
@@ -66,7 +63,7 @@ export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMo
     // 切换Life展开状态
     setLifeExpanded(!lifeExpanded)
     // 如果当前不在life相关页面，则切换到life
-    if (!activeTab.startsWith('life') && !['strategy', 'plan', 'task', 'tbd'].includes(activeTab)) {
+    if (!activeTab.startsWith('life') && !['task'].includes(activeTab)) {
       setActiveTab('life')
     }
   }
@@ -167,7 +164,7 @@ export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMo
 
   // Auto-expand Life when activeTab is a life sub-tab
   useEffect(() => {
-    if (['strategy', 'plan', 'task', 'tbd'].includes(activeTab)) {
+    if (['task'].includes(activeTab)) {
       setLifeExpanded(true)
     }
   }, [activeTab])
@@ -242,7 +239,7 @@ export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMo
                     <button
                       onClick={handleLifeClick}
                       className={`w-full px-3 py-2 text-left text-sm transition-colors rounded-md flex items-center justify-between ${
-                        activeTab === tab.key || ['strategy', 'plan', 'task', 'tbd'].includes(activeTab)
+                        activeTab === tab.key || ['task'].includes(activeTab)
                           ? 'bg-purple-50 text-purple-700'
                           : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
                       }`}

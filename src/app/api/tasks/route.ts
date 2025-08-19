@@ -29,9 +29,9 @@ function extractCheckboxValue(checkbox: any): boolean {
   return checkbox === true
 }
 
-function extractRelationValue(relation: any[]): string[] {
-  if (!relation || !Array.isArray(relation)) return []
-  return relation.map(item => item.id)
+function extractRelationValue(relation: any[]): string {
+  if (!relation || !Array.isArray(relation) || relation.length === 0) return ''
+  return relation[0].id // 取第一个relation的id作为单个字符串
 }
 
 // Calculate hours between two dates
@@ -74,6 +74,9 @@ export async function GET(request: NextRequest) {
         const properties = databaseInfo.properties as any
         const statusOptions = properties.status?.select?.options?.map((opt: any) => opt.name) || []
         const priorityOptions = properties.priority_quadrant?.select?.options?.map((opt: any) => opt.name) || []
+
+        console.log('Tasks API: Extracted statusOptions:', statusOptions)
+        console.log('Tasks API: Extracted priorityOptions:', priorityOptions)
 
         return NextResponse.json({ 
           schema: {
@@ -265,8 +268,8 @@ export async function POST(request: NextRequest) {
     }
     if (typeof all_day === 'boolean') properties.all_day = { checkbox: all_day }
     if (typeof remind_before === 'number') properties.remind_before = { number: remind_before }
-    if (plan && plan.length > 0) {
-      properties.plan = { relation: plan.map((id: string) => ({ id })) }
+    if (plan) {
+      properties.plan = { relation: [{ id: plan }] }
     }
     if (priority_quadrant) properties.priority_quadrant = { select: { name: priority_quadrant } }
     if (note) properties.note = { rich_text: [{ text: { content: note } }] }

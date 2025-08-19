@@ -1,31 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { TaskRecord } from './taskReducer'
+import { TaskRecord, TaskFormData, TaskFormPanelProps, PlanOption, StrategyOption } from '../../types/task'
 import { toDatetimeLocal, toUTC, getDefaultStartTime, getDefaultEndTime } from '@/utils/dateUtils'
 
 
-interface TaskFormData {
-  title: string
-  status: string
-  start_date: string
-  end_date: string
-  all_day: boolean
-  remind_before: number
-  priority_quadrant: string
-  note: string
-}
-
-
-interface TaskFormPanelProps {
-  isOpen: boolean
-  onClose: () => void
-  task?: TaskRecord | null
-  onSave: (task: TaskFormData) => void
-  statusOptions: string[]
-  priorityOptions: string[]
-  allTasks: TaskRecord[]
-}
 
 // Utility functions - using dayjs utility
 
@@ -37,6 +16,8 @@ export default function TaskFormPanel({
   onSave, 
   statusOptions, 
   priorityOptions,
+  planOptions = [],
+  strategyOptions = [],
   allTasks 
 }: TaskFormPanelProps) {
   const [formData, setFormData] = useState<TaskFormData>({
@@ -46,6 +27,7 @@ export default function TaskFormPanel({
     end_date: '',
     all_day: false,
     remind_before: 15,
+    plan: '',
     priority_quadrant: '',
     note: ''
   })
@@ -62,6 +44,7 @@ export default function TaskFormPanel({
         end_date: task.end_date ? toDatetimeLocal(task.end_date) : '',
         all_day: task.all_day || false,
         remind_before: task.remind_before || 15,
+        plan: task.plan || '',
         priority_quadrant: task.priority_quadrant || '',
         note: task.note || ''
       })
@@ -76,13 +59,21 @@ export default function TaskFormPanel({
         end_date: defaultEnd,
         all_day: false,
         remind_before: 15,
+        plan: '',
         priority_quadrant: '',
         note: ''
       })
     }
   }, [task, isOpen])
 
-
+  // Get strategy for selected plan
+  const selectedPlanStrategy = useMemo(() => {
+    if (!formData.plan) return null
+    const selectedPlan = planOptions.find(plan => plan.id === formData.plan)
+    if (!selectedPlan || !selectedPlan.strategy) return null
+    const strategy = strategyOptions.find(s => s.id === selectedPlan.strategy)
+    return strategy?.objective || null
+  }, [formData.plan, planOptions, strategyOptions])
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault()
@@ -102,7 +93,7 @@ export default function TaskFormPanel({
     <>
       {/* Task Form Panel - Sidebar Style Drawer */}
       <div 
-        className={`hidden md:block fixed top-32 right-2 w-80 h-[calc(100vh-12rem)] bg-white border border-gray-200 rounded-xl shadow-lg z-50 transform transition-all duration-400 flex flex-col ${
+        className={`hidden md:block fixed top-32 right-2 w-80 h-[calc(100vh-12rem)] bg-white/95 backdrop-blur-md rounded-xl shadow-xl z-50 transform transition-all duration-400 flex flex-col ${
           isOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full shadow-lg'
         }`}
         style={{
@@ -112,7 +103,7 @@ export default function TaskFormPanel({
         }}
       >
         {/* Header with Close Button */}
-        <div className="flex justify-between items-center p-4 border-b border-gray-100 flex-shrink-0">
+        <div className="flex justify-between items-center p-4 flex-shrink-0">
           <h2 className="text-sm font-medium text-gray-800">
             {task ? 'Edit Task' : 'New Task'}
           </h2>
@@ -180,6 +171,37 @@ export default function TaskFormPanel({
                   <option key={priority} value={priority}>{priority}</option>
                 ))}
               </select>
+            </div>
+          </div>
+
+          {/* Plan & Strategy - 2 Column Layout */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Plan Selection */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Plan *</label>
+              <select
+                value={formData.plan}
+                onChange={(e) => setFormData(prev => ({ ...prev, plan: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 rounded-md 
+                          focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
+                          bg-white text-gray-700 text-sm
+                          hover:border-gray-300 transition-all duration-200"
+                required
+              >
+                <option value="">Select Plan</option>
+                {planOptions.map(plan => (
+                  <option key={plan.id} value={plan.id}>{plan.objective}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Strategy Display */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Strategy</label>
+              <div className="w-full px-3 py-2 border border-gray-200 rounded-md 
+                            bg-gray-50 text-gray-500 text-sm min-h-[2.375rem] flex items-center">
+                {selectedPlanStrategy || 'Auto-selected'}
+              </div>
             </div>
           </div>
 
@@ -266,7 +288,7 @@ export default function TaskFormPanel({
         }`}
       >
         {/* Mobile Header */}
-        <div className="flex justify-between items-center p-4 border-b border-gray-100 flex-shrink-0">
+        <div className="flex justify-between items-center p-4 flex-shrink-0">
           <h2 className="text-lg font-medium text-gray-800">
             {task ? 'Edit Task' : 'New Task'}
           </h2>
@@ -332,6 +354,34 @@ export default function TaskFormPanel({
                 <option key={priority} value={priority}>{priority}</option>
               ))}
             </select>
+          </div>
+
+          {/* Plan Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-2">Plan *</label>
+            <select
+              value={formData.plan}
+              onChange={(e) => setFormData(prev => ({ ...prev, plan: e.target.value }))}
+              className="w-full px-4 py-3 border border-gray-200 rounded-lg 
+                        focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
+                        bg-white text-gray-700
+                        hover:border-gray-300 transition-all duration-200"
+              required
+            >
+              <option value="">Select Plan</option>
+              {planOptions.map(plan => (
+                <option key={plan.id} value={plan.id}>{plan.objective}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Strategy Display */}
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-2">Strategy</label>
+            <div className="w-full px-4 py-3 border border-gray-200 rounded-lg 
+                          bg-gray-50 text-gray-500 min-h-[3rem] flex items-center">
+              {selectedPlanStrategy || 'Auto-selected based on Plan'}
+            </div>
           </div>
 
           {/* Time Range */}

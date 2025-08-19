@@ -2,18 +2,7 @@
 
 import { useMemo } from 'react'
 import PhotoUpload from './PhotoUpload'
-import { TaskRecord } from './taskReducer'
-
-
-interface PlanOption {
-  id: string
-  title: string
-}
-
-interface TaskChartsProps {
-  tasks: TaskRecord[]
-  planOptions: PlanOption[]
-}
+import { TaskRecord, TaskChartsProps, PlanOption } from '../../types/task'
 
 // Task Progress Distribution Chart Component
 function TaskProgressChart({ tasks }: { tasks: TaskRecord[] }) {
@@ -173,13 +162,13 @@ function TaskPlanChart({ tasks, planOptions }: { tasks: TaskRecord[], planOption
 export default function TaskCharts({ tasks, planOptions }: TaskChartsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <div className="bg-white p-4 rounded-lg border border-purple-200">
+      <div className="bg-white/90 backdrop-blur-md p-4 rounded-xl shadow-xl">
         <TaskProgressChart tasks={tasks} />
       </div>
-      <div className="bg-white p-4 rounded-lg border border-purple-200">
+      <div className="bg-white/90 backdrop-blur-md p-4 rounded-xl shadow-xl">
         <TaskPlanChart tasks={tasks} planOptions={planOptions} />
       </div>
-      <div className="bg-white p-4 rounded-lg border border-purple-200">
+      <div className="bg-white/90 backdrop-blur-md p-4 rounded-xl shadow-xl">
         <PhotoUpload />
       </div>
     </div>

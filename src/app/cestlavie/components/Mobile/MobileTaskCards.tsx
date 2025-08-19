@@ -2,33 +2,8 @@
 
 import { useMemo, useCallback, useState, useRef } from 'react'
 import DeleteConfirmTooltip from '../Life/DeleteConfirmTooltip'
-import { TaskRecord } from '../Life/taskReducer'
+import { TaskRecord, MobileTaskCardsProps } from '../../types/task'
 import { extractTimeOnly, extractDateOnly } from '@/utils/dateUtils'
-
-interface PlanOption {
-  id: string
-  objective: string
-  parent_goal?: string[]
-}
-
-interface StrategyOption {
-  id: string
-  objective: string
-}
-
-interface MobileTaskCardsProps {
-  tasks: TaskRecord[]
-  selectedDate: string
-  onTaskClick?: (task: TaskRecord) => void
-  onTaskDelete?: (taskId: string) => void
-  onTaskUpdate?: (taskId: string, field: 'status' | 'priority_quadrant', value: string) => void
-  formatTimeRange?: (startDate: string, endDate?: string) => string
-  getPriorityColor?: (priority: string) => string
-  plans?: PlanOption[]
-  strategies?: StrategyOption[]
-  statusOptions?: string[]
-  priorityOptions?: string[]
-}
 
 export default function MobileTaskCards({ 
   tasks, 
@@ -295,7 +270,7 @@ export default function MobileTaskCards({
 
             {/* Note */}
             {task.note && (
-              <div className="mt-3 pt-3 border-t border-gray-200">
+              <div className="mt-3 pt-3">
                 <p className="text-sm text-gray-600 leading-relaxed">{task.note}</p>
               </div>
             )}

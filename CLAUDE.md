@@ -868,6 +868,67 @@ className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl transition-all dura
 - **立体视觉 + 流畅动效 + 最少文案**: All UI components must feature 3D depth effects, smooth animations, and minimal text content
 - **State Preservation Rule (CRITICAL)**: NEVER use `window.location.reload()` or full page refreshes after user actions (save, delete, update). Always use targeted data refresh functions to maintain UI state, selected tabs, form data, and user context. Page refreshes reset all React state and destroy user workflow continuity.
 - **Clear Button Pattern**: All filter interfaces must use fixed-position Clear buttons to prevent layout jumping. Clear buttons should be always visible but disabled when no filters are active, following the pattern: `disabled={!hasAnyFilters}` with appropriate styling for enabled/disabled states.
+- **Database-Driven Options Rule (CRITICAL)**: ALL dropdown/select options MUST be fetched from database schema APIs, never hardcoded. Status, priority, category options should use `fetch('/api/[module]?action=schema')` pattern and be passed as props to components. Hardcoded option arrays like `['Not Started', 'In Progress', 'Completed']` are strictly forbidden.
+
+### Database-Driven Options Implementation Standards
+
+**MANDATORY PATTERN**: All select/dropdown options must follow this exact implementation:
+
+#### 1. API Schema Endpoint Pattern
+```typescript
+// ✅ Correct - Fetch from database schema
+const schemaResponse = await fetch('/api/strategy?action=schema')
+const { statusOptions, priorityOptions, categoryOptions } = schemaResponse.schema
+
+// ❌ Wrong - Hardcoded options
+const statusOptions = ['Not Started', 'In Progress', 'Completed']
+```
+
+#### 2. Component Props Pattern
+```typescript
+// ✅ Correct - Props-based options
+interface ComponentProps {
+  statusOptions: string[]
+  priorityOptions: string[]
+}
+
+// In render:
+{statusOptions.map(status => (
+  <option key={status} value={status}>{status}</option>
+))}
+
+// ❌ Wrong - Hardcoded in component
+<option value="Not Started">Not Started</option>
+<option value="In Progress">In Progress</option>
+```
+
+#### 3. Data Flow Pattern
+```
+Parent Component (loads schema) 
+    ↓ props
+Child Component (receives options) 
+    ↓ renders
+Dynamic Select Options
+```
+
+#### 4. API Implementation Requirements
+- All database APIs must support `?action=schema` parameter
+- Schema response format: `{ schema: { statusOptions: [], priorityOptions: [], categoryOptions: [] } }`
+- Fallback to empty arrays: `statusOptions = data?.schema?.statusOptions || []`
+
+#### 5. Forbidden Patterns
+- **❌ Never**: Hardcode option arrays in components
+- **❌ Never**: Use static option lists in any form
+- **❌ Never**: Bypass schema API calls for "convenience"
+- **❌ Never**: Mix hardcoded and dynamic options
+
+#### 6. Benefits
+- **Database Consistency**: Options match actual database constraints
+- **Admin Control**: Database admin can modify options without code changes  
+- **Multi-tenant Support**: Different users can have different option sets
+- **Data Integrity**: Prevents invalid option selections
+
+**Implementation Example**: See TaskPanelOptimized.tsx lines 153-155 for correct schema fetching pattern.
 
 ## Component Size Guidelines
 

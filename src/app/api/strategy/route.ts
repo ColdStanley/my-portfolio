@@ -272,28 +272,88 @@ export async function DELETE(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // 获取Plan和Task数据库配置
+    const { config: planConfig } = await getNotionDatabaseConfig('plan')
+    const { config: taskConfig } = await getNotionDatabaseConfig('task')
+
     const notion = new Client({
       auth: strategyConfig.notion_api_key,
     })
 
     const { searchParams } = new URL(request.url)
-    const pageId = searchParams.get('id')
+    const strategyId = searchParams.get('id')
     
-    if (!pageId) {
+    if (!strategyId) {
       return NextResponse.json({ 
-        error: 'Page ID is required' 
+        error: 'Strategy ID is required' 
       }, { status: 400 })
     }
 
+    let deletedPlans = 0
+    let deletedTasks = 0
+
+    // Step 1: Delete all Plans that belong to this Strategy
+    if (planConfig) {
+      const plansResponse = await notion.databases.query({
+        database_id: planConfig.database_id,
+        filter: {
+          property: 'strategy',
+          relation: {
+            contains: strategyId
+          }
+        }
+      })
+
+      for (const plan of plansResponse.results) {
+        const planId = plan.id
+
+        // Step 1a: Delete all Tasks that belong to this Plan
+        if (taskConfig) {
+          const tasksResponse = await notion.databases.query({
+            database_id: taskConfig.database_id,
+            filter: {
+              property: 'plan',
+              relation: {
+                contains: planId
+              }
+            }
+          })
+
+          for (const task of tasksResponse.results) {
+            await notion.pages.update({
+              page_id: task.id,
+              archived: true
+            })
+            deletedTasks++
+          }
+        }
+
+        // Step 1b: Delete the Plan
+        await notion.pages.update({
+          page_id: planId,
+          archived: true
+        })
+        deletedPlans++
+      }
+    }
+
+    // Step 2: Delete the Strategy itself
     await notion.pages.update({
-      page_id: pageId,
+      page_id: strategyId,
       archived: true
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ 
+      success: true, 
+      cascadeDeleted: {
+        strategy: 1,
+        plans: deletedPlans,
+        tasks: deletedTasks
+      }
+    })
 
   } catch (error) {
-    console.error('Error deleting strategy:', error)
+    console.error('Error deleting strategy with cascade:', error)
     
     if (error instanceof Error) {
       return NextResponse.json({ 

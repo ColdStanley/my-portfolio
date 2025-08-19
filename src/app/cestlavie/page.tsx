@@ -3,13 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSimplifiedAuth } from '@/hooks/useSimplifiedAuth'
-import { TaskRecord } from './components/Life/taskReducer'
+import { TaskRecord } from './types/task'
 import { useIsMobile } from './hooks/useIsMobile'
 import Sidebar from './components/Sidebar'
 import TaskPanelOptimized from './components/Life/TaskPanelOptimized'
 import NotionConfigModal from './components/NotionConfigModal'
-import StrategyPanel from './components/Life/StrategyPanel'
-import PlanPanel from './components/Life/PlanPanel'
 import FrenchPanel from './components/Study/FrenchPanel'
 import MobileLayout from './components/Mobile/MobileLayout'
 
@@ -135,11 +133,12 @@ export default function CestLaViePage() {
         {/* 主内容区域 - L形预留空间布局 */}
         <div className="flex-1 ml-[68px] mt-[52px]">
           {/* Life子导航路由逻辑 */}
-          {activeTab === 'strategy' && <StrategyPanel />}
-          {activeTab === 'plan' && <PlanPanel />}
-          {activeTab === 'tbd' && <div className="text-center text-gray-500 py-8">TBD module coming soon...</div>}
           {(activeTab === 'life' || activeTab === 'task') && (
-            <TaskPanelOptimized onTasksUpdate={setTasks} />
+            <TaskPanelOptimized 
+              onTasksUpdate={setTasks} 
+              user={user}
+              loading={loading}
+            />
           )}
           
           {activeTab === 'career' && (

@@ -1,28 +1,10 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-
-interface TaskRecord {
-  id: string
-  title: string
-  status: string
-  plan?: string[]
-}
-
-interface PlanRecord {
-  id: string
-  objective: string
-  status: string
-  total_tasks: number
-  completed_tasks: number
-}
-
-interface StrategyRecord {
-  id: string
-  objective: string
-  status: string
-  progress: number
-}
+import { TaskRecord } from '../../types/task'
+import { PlanRecord } from '../../types/plan'
+import { StrategyRecord } from '../../types/strategy'
+import { getTaskRelationsData } from '../../utils/taskUtils'
 
 interface RelationsTooltipProps {
   type: 'task' | 'plan' | 'strategy'

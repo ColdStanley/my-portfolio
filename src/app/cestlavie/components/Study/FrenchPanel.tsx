@@ -195,8 +195,8 @@ export default function FrenchPanel() {
               
               {/* Success Message */}
               {success && (
-                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-green-700 text-sm">{success}</p>
+                <div className="mt-3 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                  <p className="text-purple-700 text-sm">{success}</p>
                 </div>
               )}
             </div>
