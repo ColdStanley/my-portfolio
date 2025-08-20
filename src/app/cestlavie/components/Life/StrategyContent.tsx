@@ -84,8 +84,30 @@ export default function StrategyContent({
         </div>
       ) : (
         <div className="space-y-3">
-          {sortStrategiesByOrder(strategies).map((strategy) => (
-            <div key={strategy.id} className="relative p-3 bg-white/50 rounded-lg border border-purple-100 hover:bg-white/70 transition-colors">
+          {sortStrategiesByOrder(strategies).sort((a, b) => {
+            // Sort by status: completed strategies last
+            const aCompleted = a.status === 'Completed'
+            const bCompleted = b.status === 'Completed'
+            
+            if (aCompleted && !bCompleted) return 1
+            if (!aCompleted && bCompleted) return -1
+            
+            return 0
+          }).map((strategy) => {
+            const isCompleted = strategy.status === 'Completed'
+            
+            return (
+            <div key={strategy.id} className={`relative p-3 bg-white/50 rounded-lg border border-purple-100 hover:bg-white/70 transition-colors ${
+              isCompleted ? 'border-l-4 border-purple-500' : ''
+            }`}>
+              {/* Completion Check Icon - Right Top Corner */}
+              {isCompleted && (
+                <div className="absolute top-2 right-2 text-purple-500">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              )}
               {/* Drill Down Button - Right Top Corner */}
               {onStrategyDrillDown && (
                 <button
@@ -93,7 +115,9 @@ export default function StrategyContent({
                     e.stopPropagation()
                     onStrategyDrillDown(strategy.id)
                   }}
-                  className="absolute top-2 right-2 p-1 text-purple-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors z-10"
+                  className={`absolute top-2 p-1 text-purple-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors z-10 ${
+                    isCompleted ? 'right-8' : 'right-2'
+                  }`}
                   title="View Plans"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -177,7 +201,7 @@ export default function StrategyContent({
                 </div>
               </div>
             </div>
-          ))}
+          )})}
         </div>
       )}
     </>

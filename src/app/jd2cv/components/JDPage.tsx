@@ -28,6 +28,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
   const [viewingJD, setViewingJD] = useState<JDRecord | null>(null)
   const [deleteJD, setDeleteJD] = useState<JDRecord | null>(null)
   const [deleteButtonRef, setDeleteButtonRef] = useState<HTMLElement | null>(null)
+  const [searchInput, setSearchInput] = useState('')
   
   // Auto CV automation states
   const [finalCVState, setFinalCVState] = useState({
@@ -474,8 +475,14 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
         (!filters.score || jd.match_score?.toString() === filters.score)
       )
 
+      // Search term filter for comment
+      const passesSearchFilter = !filters.searchTerm || 
+        (jd.comment && jd.comment.toLowerCase().includes(filters.searchTerm.toLowerCase()))
+
+      const passesAllFilters = passesExistingFilters && passesSearchFilter
+
       // Time filter
-      if (!filters.time) return passesExistingFilters
+      if (!filters.time) return passesAllFilters
 
       const createdAt = new Date(jd.created_at)
       const now = new Date()
@@ -487,25 +494,25 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
           yesterday.setHours(0, 0, 0, 0)
           const today = new Date(now)
           today.setHours(0, 0, 0, 0)
-          return passesExistingFilters && createdAt >= yesterday && createdAt < today
+          return passesAllFilters && createdAt >= yesterday && createdAt < today
         }
         case 'past3days': {
           const threeDaysAgo = new Date(now)
           threeDaysAgo.setDate(now.getDate() - 3)
-          return passesExistingFilters && createdAt >= threeDaysAgo
+          return passesAllFilters && createdAt >= threeDaysAgo
         }
         case 'past7days': {
           const sevenDaysAgo = new Date(now)
           sevenDaysAgo.setDate(now.getDate() - 7)
-          return passesExistingFilters && createdAt >= sevenDaysAgo
+          return passesAllFilters && createdAt >= sevenDaysAgo
         }
         case 'past30days': {
           const thirtyDaysAgo = new Date(now)
           thirtyDaysAgo.setDate(now.getDate() - 30)
-          return passesExistingFilters && createdAt >= thirtyDaysAgo
+          return passesAllFilters && createdAt >= thirtyDaysAgo
         }
         default:
-          return passesExistingFilters
+          return passesAllFilters
       }
     })
 
@@ -1161,7 +1168,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
             <p className="text-sm text-gray-600 mt-1">
               {(() => {
                 const filteredCount = getFilteredAndSortedJDs().length
-                const hasFilters = filters.stage || filters.role || filters.firm || filters.score || filters.time || sortOrder
+                const hasFilters = filters.stage || filters.role || filters.firm || filters.score || filters.time || filters.searchTerm || sortOrder
                 return hasFilters 
                   ? `${filteredCount} of ${jds.length} job descriptions`
                   : `${jds.length} job descriptions`
@@ -1338,6 +1345,35 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                   </svg>
                 </div>
                   </div>
+                  </div>
+
+                  {/* Search Box */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search comments..."
+                      value={searchInput}
+                      onChange={(e) => setSearchInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleFilterChange('searchTerm', searchInput)
+                        }
+                      }}
+                      className="w-40 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    />
+                    {searchInput && (
+                      <button
+                        onClick={() => {
+                          setSearchInput('')
+                          handleFilterChange('searchTerm', '')
+                        }}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
 
                   {/* Sort Button */}

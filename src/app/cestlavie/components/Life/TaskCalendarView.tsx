@@ -209,6 +209,13 @@ export default function TaskCalendarView({
                   </div>
                 </div>
               )}
+              
+              {/* Outlook Sync Status - show warning dot if any tasks are not synced */}
+              {dayTasks.length > 0 && dayTasks.some(task => !task.outlook_event_id) && (
+                <div className="absolute -top-0.5 -left-0.5">
+                  <div className="w-2 h-2 bg-orange-400 rounded-full" title="Some tasks not synced to Outlook"></div>
+                </div>
+              )}
             </div>
           )
         })}

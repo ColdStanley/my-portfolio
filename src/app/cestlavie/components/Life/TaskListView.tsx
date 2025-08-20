@@ -1,8 +1,9 @@
 'use client'
 
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useState } from 'react'
 import { extractTimeOnly, extractDateOnly, formatDateDisplayName } from '@/utils/dateUtils'
 import { TaskRecord, TaskListViewProps, PlanOption, StrategyOption } from '../../types/task'
+import { syncTaskToOutlook } from '../../services/taskService'
 
 
 export default function TaskListView({ 
@@ -14,6 +15,9 @@ export default function TaskListView({
   statusOptions = ['Not Started', 'In Progress', 'Completed'],
   priorityOptions = ['Important & Urgent', 'Important & Not Urgent', 'Not Important & Urgent', 'Not Important & Not Urgent']
 }: TaskListViewProps) {
+  // State for managing sync loading status
+  const [syncingTasks, setSyncingTasks] = useState<Set<string>>(new Set())
+  const [syncError, setSyncError] = useState<string | null>(null)
 
   // Get tasks for selected date
   const selectedDateTasks = useMemo(() => {
@@ -87,6 +91,37 @@ export default function TaskListView({
     }
   }, [onTaskUpdate])
 
+  const handleManualSync = useCallback(async (task: TaskRecord, e: React.MouseEvent) => {
+    e.stopPropagation()
+    
+    // Clear any previous error
+    setSyncError(null)
+    
+    // Add task to syncing state
+    setSyncingTasks(prev => new Set(prev).add(task.id))
+    
+    try {
+      await syncTaskToOutlook(task.id)
+      
+      // Show success feedback (you might want to add a toast here)
+      console.log('Task synced successfully to Outlook')
+      
+      // The icon will disappear automatically after data refresh
+      // when n8n updates the outlook_event_id
+      
+    } catch (error) {
+      console.error('Failed to sync task to Outlook:', error)
+      setSyncError(error instanceof Error ? error.message : 'Failed to sync to Outlook')
+    } finally {
+      // Remove task from syncing state
+      setSyncingTasks(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(task.id)
+        return newSet
+      })
+    }
+  }, [])
+
   const dateDisplayName = selectedDate ? formatDateDisplayName(selectedDate) : ''
 
   return (
@@ -115,12 +150,20 @@ export default function TaskListView({
             return (
               <div
                 key={task.id}
-                className={`p-3 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl
+                className={`relative p-3 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl
                   ${isCompleted 
-                    ? 'bg-gradient-to-r from-purple-50 to-purple-100 opacity-75' 
+                    ? 'bg-white border-l-4 border-purple-500' 
                     : 'bg-white hover:bg-gradient-to-r hover:from-purple-25 hover:to-purple-50'
                   }`}
               >
+                {/* Completion Check Icon - Right Top Corner */}
+                {isCompleted && (
+                  <div className="absolute top-2 right-2 text-purple-500">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
                   {/* Task Content */}
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
@@ -132,9 +175,7 @@ export default function TaskListView({
                       )}
                       
                       {/* Title */}
-                      <h3 className={`text-sm font-semibold ${
-                        isCompleted ? 'text-purple-500 line-through' : 'text-purple-900'
-                      }`}>
+                      <h3 className="text-sm font-semibold text-purple-900">
                         {task.title}
                       </h3>
                       
@@ -170,6 +211,26 @@ export default function TaskListView({
 
                     {/* Actions */}
                     <div className="flex items-center gap-1 ml-3">
+                      {/* Outlook Sync Status Icon - show only if NOT synced */}
+                      {!task.outlook_event_id && (
+                        <button
+                          onClick={(e) => handleManualSync(task, e)}
+                          disabled={syncingTasks.has(task.id)}
+                          className="p-1 text-orange-400 bg-orange-50 rounded transition-colors hover:bg-orange-100 hover:text-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={syncingTasks.has(task.id) ? "Syncing to Outlook..." : "Click to sync to Outlook"}
+                        >
+                          {syncingTasks.has(task.id) ? (
+                            <svg className="w-3 h-3 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                          ) : (
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                            </svg>
+                          )}
+                        </button>
+                      )}
+                      
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
@@ -198,6 +259,28 @@ export default function TaskListView({
             })}
           </div>
         )}
+
+      {/* Error Message */}
+      {syncError && (
+        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <svg className="w-4 h-4 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm text-red-700">{syncError}</span>
+            </div>
+            <button
+              onClick={() => setSyncError(null)}
+              className="text-red-500 hover:text-red-700 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
     </>
   )

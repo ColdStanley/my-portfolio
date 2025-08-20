@@ -232,6 +232,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { 
       id, // 添加id字段来判断是否是编辑
+      action, // 添加action字段来处理特殊操作（如sync）
       title, 
       status, 
       start_date, 
@@ -320,6 +321,60 @@ export async function POST(request: NextRequest) {
 
     let response
     let isNewTask = false
+    
+    // 处理手动同步操作
+    if (action === 'sync' && id) {
+      try {
+        // 获取现有任务的完整数据
+        const existingTask = await notion.pages.retrieve({ page_id: id })
+        const existingProperties = (existingTask as any).properties
+        
+        // 检查是否已经有 outlook_event_id（避免重复同步）
+        if (existingProperties?.outlook_event_id?.rich_text?.[0]?.plain_text) {
+          return NextResponse.json({ 
+            success: false, 
+            message: 'Task is already synced to Outlook' 
+          }, { status: 400 })
+        }
+        
+        // 提取任务数据用于同步
+        const syncTaskData = {
+          id,
+          title: existingProperties.title?.title?.[0]?.plain_text || '',
+          start_date: existingProperties.start_date?.date?.start || '',
+          end_date: existingProperties.end_date?.date?.start || '',
+          note: existingProperties.note?.rich_text?.[0]?.plain_text || '',
+          status: existingProperties.status?.select?.name || '',
+          priority_quadrant: existingProperties.priority_quadrant?.select?.name || '',
+          all_day: existingProperties.all_day?.checkbox || false,
+          remind_before: existingProperties.remind_before?.number || 15
+        }
+        
+        // 验证必要的时间信息
+        if (!syncTaskData.start_date || !syncTaskData.end_date) {
+          return NextResponse.json({ 
+            success: false, 
+            message: 'Task must have start and end dates to sync to Outlook' 
+          }, { status: 400 })
+        }
+        
+        // 调用现有的同步函数（创建模式）
+        await syncToOutlook('create', syncTaskData)
+        
+        return NextResponse.json({ 
+          success: true, 
+          message: 'Task sync to Outlook initiated',
+          synced: true 
+        })
+        
+      } catch (syncError) {
+        console.error('Manual sync error:', syncError)
+        return NextResponse.json({ 
+          success: false, 
+          message: 'Failed to sync task to Outlook' 
+        }, { status: 500 })
+      }
+    }
     
     if (id) {
       // 更新现有任务前，先获取现有的outlook_event_id

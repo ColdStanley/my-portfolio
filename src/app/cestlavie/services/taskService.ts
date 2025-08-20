@@ -198,20 +198,27 @@ export async function fetchAllTaskData(): Promise<{
   return { tasks, plans, strategies, schemaOptions }
 }
 
+
 /**
- * Update Outlook event ID for task
+ * Manually sync task to Outlook
  */
-export async function updateTaskOutlookId(taskId: string, outlookEventId: string): Promise<void> {
-  const response = await fetch('/api/tasks/update-outlook-id', {
+export async function syncTaskToOutlook(taskId: string): Promise<void> {
+  const response = await fetch('/api/tasks', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      taskId,
-      outlookEventId
+      action: 'sync',
+      id: taskId
     })
   })
   
   if (!response.ok) {
-    throw new Error('Failed to update Outlook event ID')
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.message || 'Failed to sync task to Outlook')
+  }
+  
+  const result = await response.json()
+  if (!result.success) {
+    throw new Error(result.message || 'Sync failed')
   }
 }

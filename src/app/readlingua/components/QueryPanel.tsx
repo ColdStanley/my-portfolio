@@ -838,6 +838,30 @@ export default function QueryPanel() {
                   <span className="truncate">
                     {query.selected_text || (query.query_type === 'ask_ai' && query.user_question ? `Ask: ${query.user_question}` : 'No content')}
                   </span>
+                  
+                  {/* French Pronunciation Button for Query History Tags */}
+                  {query.selected_text && supportsPronunciation(query.selected_text) && deleteMode !== query.id && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handlePlayPronunciation(query.selected_text!)
+                      }}
+                      disabled={isPlaying}
+                      className="w-4 h-4 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-full flex items-center justify-center transition-colors disabled:opacity-50 flex-shrink-0"
+                      title="Play pronunciation"
+                    >
+                      {isPlaying ? (
+                        <svg className="w-2.5 h-2.5 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.787L4.866 13.1a.5.5 0 00-.316-.1H2a1 1 0 01-1-1V8a1 1 0 011-1h2.55a.5.5 0 00.316-.1l3.517-3.687zm7.316 1.19a1 1 0 011.414 0 8.97 8.97 0 010 12.684 1 1 0 11-1.414-1.414 6.97 6.97 0 000-9.856 1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0 4.985 4.985 0 010 7.072 1 1 0 11-1.415-1.414 2.985 2.985 0 000-4.244 1 1 0 010-1.414z" clipRule="evenodd"/>
+                        </svg>
+                      ) : (
+                        <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.787L4.866 13.1a.5.5 0 00-.316-.1H2a1 1 0 01-1-1V8a1 1 0 011-1h2.55a.5.5 0 00.316-.1l3.517-3.687zm7.316 1.19a1 1 0 011.414 0 8.97 8.97 0 010 12.684 1 1 0 11-1.414-1.414 6.97 6.97 0 000-9.856 1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0 4.985 4.985 0 010 7.072 1 1 0 11-1.415-1.414 2.985 2.985 0 000-4.244 1 1 0 010-1.414z" clipRule="evenodd"/>
+                        </svg>
+                      )}
+                    </button>
+                  )}
+                  
                   {deleteMode === query.id && (
                     <button
                       onClick={(e) => handleDeleteConfirm(query.id, e)}
