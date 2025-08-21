@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Sidebar from './components/Sidebar'
 import WebhookTester from './components/WebhookTester'
+import IELTSSpeaking from './components/IELTSSpeaking'
 
 export default function AIAgentGalaPage() {
   const [activeTab, setActiveTab] = useState('option1')
@@ -50,19 +51,16 @@ export default function AIAgentGalaPage() {
         )}
         
         {activeTab === 'option2' && (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-700 mb-2">Option 2</h2>
-              <p className="text-gray-500">Content for option 2 coming soon...</p>
-            </div>
+          <div className="h-[calc(100vh-100px)]">
+            <IELTSSpeaking />
           </div>
         )}
         
         {activeTab === 'option3' && (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-700 mb-2">Option 3</h2>
-              <p className="text-gray-500">Content for option 3 coming soon...</p>
+              <h2 className="text-2xl font-bold text-gray-700 mb-2">Agent 3</h2>
+              <p className="text-gray-500">Next AI agent coming soon...</p>
             </div>
           </div>
         )}

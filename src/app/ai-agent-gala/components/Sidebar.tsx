@@ -10,9 +10,9 @@ interface SidebarProps {
 }
 
 const tabs = [
-  { key: 'option1', label: '1' },
-  { key: 'option2', label: '2' },
-  { key: 'option3', label: '3' },
+  { key: 'option1', label: 'Test Lab' },
+  { key: 'option2', label: 'IELTS Speaking' },
+  { key: 'option3', label: 'Agent 3' },
 ]
 
 export default function Sidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }: SidebarProps) {
