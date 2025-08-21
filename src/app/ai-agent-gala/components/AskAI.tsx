@@ -250,9 +250,10 @@ export default function AskAI({ show }: AskAIProps) {
           {/* Centered Response Panel */}
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div 
-              className="bg-white/95 backdrop-blur-md rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col transform transition-all duration-300 scale-100 opacity-100"
+              className="bg-white/95 backdrop-blur-md rounded-xl shadow-2xl w-[600px] h-[500px] flex flex-col transform transition-all duration-500 ease-out animate-modal-enter"
               style={{
-                boxShadow: '0 8px 32px rgba(139, 92, 246, 0.2), 0 4px 16px rgba(0, 0, 0, 0.15)'
+                boxShadow: '0 8px 32px rgba(139, 92, 246, 0.2), 0 4px 16px rgba(0, 0, 0, 0.15)',
+                animation: 'modalEnter 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards'
               }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -283,14 +284,14 @@ export default function AskAI({ show }: AskAIProps) {
               {/* Response Content */}
               <div className="flex-1 overflow-y-auto p-4">
                 {isSearching ? (
-                  <div className="flex items-center justify-center py-8">
+                  <div className="flex items-center justify-center py-8 animate-fade-in">
                     <div className="flex items-center gap-3 text-gray-500">
                       <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
                       <span>AI is thinking...</span>
                     </div>
                   </div>
                 ) : hasError ? (
-                  <div className="flex items-center justify-center py-8">
+                  <div className="flex items-center justify-center py-8 animate-fade-in">
                     <div className="text-center">
                       <svg className="w-8 h-8 text-red-500 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
@@ -300,7 +301,7 @@ export default function AskAI({ show }: AskAIProps) {
                   </div>
                 ) : (
                   <div 
-                    className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none"
+                    className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none animate-content-enter"
                     style={{
                       '--tw-prose-body': '#374151',
                       '--tw-prose-headings': '#111827',
@@ -308,6 +309,7 @@ export default function AskAI({ show }: AskAIProps) {
                       '--tw-prose-bold': '#111827',
                       '--tw-prose-counters': '#6b7280',
                       '--tw-prose-bullets': '#d1d5db',
+                      animation: 'contentEnter 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards'
                     } as React.CSSProperties}
                     dangerouslySetInnerHTML={{ 
                       __html: parseMarkdownResponse(displayedResponse || 'No response received') 
@@ -315,12 +317,15 @@ export default function AskAI({ show }: AskAIProps) {
                   />
                 )}
                 
-                {/* Typing indicator */}
+                {/* Enhanced Typing indicator */}
                 {isTyping && !isSearching && (
-                  <div className="mt-2 flex items-center gap-1 text-purple-500">
-                    <div className="w-1 h-1 bg-current rounded-full animate-pulse"></div>
-                    <div className="w-1 h-1 bg-current rounded-full animate-pulse" style={{animationDelay: '0.1s'}}></div>
-                    <div className="w-1 h-1 bg-current rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                  <div className="mt-4 flex items-center gap-2 text-purple-500 animate-fade-in">
+                    <div className="flex gap-1">
+                      <div className="w-1.5 h-1.5 bg-current rounded-full animate-bounce"></div>
+                      <div className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                      <div className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                    </div>
+                    <span className="text-xs text-gray-400">AI is typing...</span>
                   </div>
                 )}
               </div>
@@ -349,12 +354,59 @@ export default function AskAI({ show }: AskAIProps) {
           </div>
 
           <style jsx>{`
+            @keyframes modalEnter {
+              0% {
+                opacity: 0;
+                transform: scale(0.95) translateY(10px);
+              }
+              100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+              }
+            }
+            
+            @keyframes contentEnter {
+              0% {
+                opacity: 0;
+                transform: translateY(8px);
+              }
+              100% {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+            
+            @keyframes fadeIn {
+              0% {
+                opacity: 0;
+              }
+              100% {
+                opacity: 1;
+              }
+            }
+            
+            .animate-fade-in {
+              animation: fadeIn 0.3s ease-out forwards;
+            }
+            
             .prose :global(p) {
               margin-bottom: 1rem;
+              opacity: 0;
+              animation: contentEnter 0.4s ease-out forwards;
             }
+            
+            .prose :global(p:nth-child(1)) { animation-delay: 0.1s; }
+            .prose :global(p:nth-child(2)) { animation-delay: 0.2s; }
+            .prose :global(p:nth-child(3)) { animation-delay: 0.3s; }
+            .prose :global(p:nth-child(4)) { animation-delay: 0.4s; }
+            .prose :global(p:nth-child(5)) { animation-delay: 0.5s; }
+            
             .prose :global(ul),
             .prose :global(ol) {
               margin: 0.75rem 0;
+              opacity: 0;
+              animation: contentEnter 0.4s ease-out forwards;
+              animation-delay: 0.2s;
             }
             .prose :global(li) {
               margin-bottom: 0.25rem;
@@ -373,6 +425,9 @@ export default function AskAI({ show }: AskAIProps) {
             .prose :global(h4) {
               margin: 1.25rem 0 0.75rem 0;
               font-weight: 600;
+              opacity: 0;
+              animation: contentEnter 0.4s ease-out forwards;
+              animation-delay: 0.15s;
             }
             .prose :global(br) {
               margin-bottom: 0.5rem;

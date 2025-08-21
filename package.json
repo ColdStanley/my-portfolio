@@ -21,7 +21,7 @@
     "@radix-ui/react-tooltip": "^1.2.7",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.50.0",
-    "@types/nodemailer": "^6.4.17",
+    "@types/nodemailer": "^6.4.19",
     "@types/uuid": "^10.0.0",
     "@vercel/blob": "^1.1.1",
     "class-variance-authority": "^0.7.1",

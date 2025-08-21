@@ -6,8 +6,8 @@ import WebhookTester from './components/WebhookTester'
 import IELTSSpeaking from './components/IELTSSpeaking'
 
 export default function AIAgentGalaPage() {
-  const [activeTab, setActiveTab] = useState('option1')
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState('option2') // Default to IELTS Speaking
+  const [sidebarOpen, setSidebarOpen] = useState(true) // Default sidebar open
 
   // Handle tab change with scroll reset
   const handleTabChange = (newTab: string) => {

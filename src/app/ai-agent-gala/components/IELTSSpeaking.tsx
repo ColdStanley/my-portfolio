@@ -18,6 +18,11 @@ export default function IELTSSpeaking() {
   const [selectionPosition, setSelectionPosition] = useState<{ x: number; y: number } | null>(null)
   const [showPronunciationButton, setShowPronunciationButton] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
+  
+  // Email sending states
+  const [showEmailPanel, setShowEmailPanel] = useState(false)
+  const [userEmail, setUserEmail] = useState('')
+  const [isSendingEmail, setIsSendingEmail] = useState(false)
 
   const questionWebhookUrl = 'http://localhost:5678/webhook/3bcd7132-a248-4700-af8c-e01d81a9d00a'
   const answerWebhookUrl = 'http://localhost:5678/webhook/682c8778-cd25-4c44-8c5b-421c599348ed'
@@ -212,6 +217,80 @@ export default function IELTSSpeaking() {
     }
   }, [])
 
+  // Email sending functionality
+  const collectStudyData = () => {
+    const studyData: any = {}
+    
+    // Collect question data
+    if (questionResponse && selectedPart) {
+      const formatted = formatQuestionResponse(questionResponse)
+      if (formatted) {
+        studyData.question = {
+          part: selectedPart,
+          content: formatted.question,
+          analysis: formatted.analysis
+        }
+      }
+    }
+    
+    // Collect answer data
+    if (answerResponse && userAnswer) {
+      const formatted = formatAnswerResponse(answerResponse)
+      if (formatted) {
+        studyData.userAnswer = {
+          content: userAnswer,
+          analysis: formatted.analysis
+        }
+      }
+    }
+    
+    // Note: Ask AI queries would be collected from a global store in real implementation
+    // For now, we'll just send what we have
+    
+    return studyData
+  }
+
+  const handleSendEmail = async () => {
+    if (!userEmail.trim() || isSendingEmail) return
+
+    setIsSendingEmail(true)
+    
+    try {
+      const studyData = collectStudyData()
+      
+      const response = await fetch('/api/send-study-record', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...studyData,
+          userEmail: userEmail.trim()
+        })
+      })
+
+      if (response.ok) {
+        alert('Study record sent successfully!')
+        setShowEmailPanel(false)
+        setUserEmail('')
+      } else {
+        alert('Failed to send email. Please try again.')
+      }
+    } catch (error) {
+      console.error('Email sending error:', error)
+      alert('Failed to send email. Please try again.')
+    } finally {
+      setIsSendingEmail(false)
+    }
+  }
+
+  const handleEmailKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSendEmail()
+    }
+  }
+
   return (
     <div 
       className="h-full bg-gradient-to-br from-slate-50 via-white to-purple-50/30 p-6 selectable-text"
@@ -222,6 +301,101 @@ export default function IELTSSpeaking() {
       
       {/* Ask AI Component - Hidden when IELTS Tips is showing */}
       <AskAI show={!isQuestionLoading && !isAnswerLoading} />
+      
+      {/* Email Sending Button - Above Ask AI */}
+      {!isQuestionLoading && !isAnswerLoading && (
+        <div className="fixed bottom-[88px] right-6 z-20">
+          <button
+            onClick={() => setShowEmailPanel(!showEmailPanel)}
+            className="w-12 h-12 bg-white/90 backdrop-blur-md rounded-full shadow-xl hover:shadow-2xl transition-all duration-200 flex items-center justify-center group"
+            style={{
+              boxShadow: '0 8px 32px rgba(139, 92, 246, 0.2), 0 4px 16px rgba(0, 0, 0, 0.1)'
+            }}
+            title="Send Study Record"
+          >
+            <svg 
+              className="w-5 h-5 text-purple-500 transition-transform duration-200" 
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </button>
+        </div>
+      )}
+      
+      {/* Email Input Panel */}
+      {showEmailPanel && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/10 backdrop-blur-sm z-40"
+            onClick={() => setShowEmailPanel(false)}
+          />
+          
+          {/* Email Panel */}
+          <div className="fixed bottom-[152px] right-6 z-50 bg-white/95 backdrop-blur-md rounded-xl shadow-2xl min-w-80 transform transition-all duration-200"
+            style={{
+              boxShadow: '0 8px 32px rgba(139, 92, 246, 0.2), 0 4px 16px rgba(0, 0, 0, 0.15)'
+            }}
+          >
+            <div className="p-4">
+              {/* Header */}
+              <div className="flex items-center gap-2 mb-3">
+                <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <span className="text-sm font-medium text-gray-700">Send Study Record</span>
+                <button
+                  onClick={() => setShowEmailPanel(false)}
+                  className="ml-auto p-1 hover:bg-gray-100 rounded transition-colors"
+                >
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Email Input */}
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  value={userEmail}
+                  onChange={(e) => setUserEmail(e.target.value)}
+                  onKeyPress={handleEmailKeyPress}
+                  placeholder="Enter your email..."
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-400"
+                  disabled={isSendingEmail}
+                  autoFocus
+                />
+                <button
+                  onClick={handleSendEmail}
+                  disabled={!userEmail.trim() || isSendingEmail}
+                  className="px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium whitespace-nowrap flex items-center gap-1.5 transition-all"
+                >
+                  {isSendingEmail ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                  )}
+                  Send
+                </button>
+              </div>
+
+              {/* Helper text */}
+              <div className="text-xs text-gray-400 mt-2 flex items-center gap-1">
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
+                </svg>
+                Send all current session data to your email
+              </div>
+            </div>
+          </div>
+        </>
+      )}
       
       <div className="h-full flex gap-6">
         
