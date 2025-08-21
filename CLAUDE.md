@@ -35,58 +35,67 @@ await aiApi.processQueryStream(
 
 ## UI Design Guidelines
 
-### Glass Morphism Design System (CRITICAL)
+### Modern Glass Morphism Design System (2025 UPDATE)
 
-**Purple-themed glass morphism throughout all components**
+**Purple-Indigo gradient theme with sophisticated glass effects throughout all components**
 
-#### Core Patterns
+#### Core Color Palette (CRITICAL)
+- **Primary Gradient**: `bg-gradient-to-r from-purple-600 to-indigo-600`
+- **Text Gradient**: `bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent`
 - **Background**: `bg-gradient-to-br from-slate-50 via-white to-purple-50/30`
+- **Hover Gradient**: `hover:from-purple-700 hover:to-indigo-700`
+
+#### Glass Morphism Patterns
 - **Main Containers**: `bg-white/90 backdrop-blur-md rounded-xl shadow-xl`
 - **Interactive Elements**: `bg-white/70 backdrop-blur-sm rounded-lg shadow-md`
+- **Navigation Dropdowns**: `bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-gray-100`
+- **Cards**: `bg-white/90 backdrop-blur-md rounded-xl shadow-xl border border-white/20`
 
-#### Tab Navigation Pattern
-
+#### Modern Button Styles
 ```tsx
-// Standard 3-tab layout
-<div className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl">
-  <div className="flex">
-    {tabs.map((tab, index) => (
-      <button
-        className={`flex-1 px-6 py-4 text-center font-medium transition-all duration-300 hover:scale-105 ${
-          activeTab === index ? 'bg-purple-500 text-white' : 'text-gray-600 hover:bg-white/50'
-        }`}
-      >
-        {tab.label}
-      </button>
-    ))}
-  </div>
-</div>
+// Primary gradient button
+<button className="px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl">
+  Primary Action
+</button>
+
+// Secondary glass button  
+<button className="px-6 py-2 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-purple-600 rounded-lg font-medium border border-purple-200 transition-all duration-300">
+  Secondary Action
+</button>
 ```
 
-#### Color Standards
-- **Primary Active**: `bg-purple-500 text-white`
-- **Secondary Active**: `bg-gray-100 text-gray-800`
-- **Primary Text**: `text-gray-600 hover:text-gray-800`
-- **Interactive Hover**: `hover:bg-gray-50`
+#### Navigation & Active States
+- **Active Navigation**: Use gradient text `bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent`
+- **Tab Active**: `bg-purple-600 text-white` (solid for clarity)
+- **Hover States**: `text-gray-600 hover:text-purple-600`
+- **Dropdown Items**: `hover:bg-purple-50/50 text-purple-600`
 
 ### Layout Standards
 
 #### Button Requirements (CRITICAL)
+- **Gradient Primary**: Always use `bg-gradient-to-r from-purple-600 to-indigo-600`
+- **Glass Secondary**: Use `bg-white/70 backdrop-blur-sm` with purple text
 - **Fixed Width**: All buttons in same interface: `w-32`, `w-40`
 - **Single Line Text**: Always use `whitespace-nowrap truncate`
 - **Standard Classes**: `px-6 py-2 rounded-lg font-medium`
 
 ```tsx
-// ✅ Correct
-<button className="w-32 px-6 py-2 bg-purple-500 text-white rounded-lg font-medium whitespace-nowrap">
+// ✅ Primary Button (Gradient)
+<button className="w-32 px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-medium whitespace-nowrap transition-all duration-300 shadow-lg hover:shadow-xl">
   Save
+</button>
+
+// ✅ Secondary Button (Glass)  
+<button className="w-32 px-6 py-2 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-purple-600 rounded-lg font-medium border border-purple-200 transition-all duration-300 whitespace-nowrap">
+  Cancel
 </button>
 ```
 
-#### Forbidden Patterns
-- **Colors**: Never use blue, green, red, yellow
-- **Backgrounds**: No solid colors - always use glass effect
+#### Forbidden Patterns (UPDATED)
+- **Colors**: Never use blue, green, red, yellow - ONLY purple-indigo gradients
+- **Backgrounds**: No solid colors - always use gradients or glass effects
 - **Buttons**: No variable widths, no text wrapping
+- **Old Purple**: Never use single `bg-purple-500` - always use gradients
 
 ## Left Sidebar Navigation (CRITICAL)
 
@@ -190,11 +199,13 @@ const [sidebarOpen, setSidebarOpen] = useState(false)
 
 ## Global Rules (CRITICAL - NEVER VIOLATE)
 
-- **Purple-Only Colors**: No blue, green, red, yellow
-- **No Emojis**: Never in UI text, buttons, labels
+- **Purple-Indigo Gradients Only**: No blue, green, red, yellow - ONLY purple-indigo gradients
+- **Linear-Style Design**: Use gradient text for logos and active states like Linear
+- **No Emojis**: Never in UI text, buttons, labels  
 - **State Preservation**: Never use `window.location.reload()` - use targeted refresh
 - **Database-Driven Options**: ALL dropdown options from database schema APIs
 - **Layout Stability**: No layout jumping - use disabled states vs hide/show
+- **Gradient Consistency**: All interactive elements must use the same purple-indigo gradient system
 
 ### Database Options Pattern (MANDATORY)
 
