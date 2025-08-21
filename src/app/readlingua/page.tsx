@@ -6,7 +6,60 @@ import DashboardTab from './components/DashboardTab'
 import LearningTab from './components/LearningTab'
 
 export default function ReadLinguaPage() {
-  const { activeTab, setActiveTab } = useReadLinguaStore()
+  const { 
+    activeTab, 
+    setActiveTab, 
+    selectedEmailContents,
+    showEmailPanel,
+    setShowEmailPanel,
+    clearEmailSelection,
+    isLoading
+  } = useReadLinguaStore()
+  
+  // Email states
+  const [userEmail, setUserEmail] = useState('')
+  const [isSendingEmail, setIsSendingEmail] = useState(false)
+
+  // Email sending functionality
+  const handleSendEmail = async () => {
+    if (!userEmail.trim() || isSendingEmail || selectedEmailContents.length === 0) return
+
+    setIsSendingEmail(true)
+    
+    try {
+      const response = await fetch('/api/readlingua/send-selected-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          selectedContents: selectedEmailContents,
+          userEmail: userEmail.trim()
+        })
+      })
+
+      if (response.ok) {
+        alert('Selected content sent successfully!')
+        setShowEmailPanel(false)
+        setUserEmail('')
+        clearEmailSelection()
+      } else {
+        alert('Failed to send email. Please try again.')
+      }
+    } catch (error) {
+      console.error('Email sending error:', error)
+      alert('Failed to send email. Please try again.')
+    } finally {
+      setIsSendingEmail(false)
+    }
+  }
+
+  const handleEmailKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSendEmail()
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
@@ -90,6 +143,118 @@ export default function ReadLinguaPage() {
         )}
         {activeTab === 'learning' && <LearningTab />}
       </div>
+
+      {/* Email Sending Button - Fixed position, above Ask AI button */}
+      {!isLoading && activeTab === 'learning' && (
+        <div className="hidden md:block fixed bottom-40 right-6 z-20">
+          <button
+            onClick={() => setShowEmailPanel(!showEmailPanel)}
+            className="w-12 h-12 bg-white/90 backdrop-blur-md rounded-full shadow-xl hover:shadow-2xl transition-all duration-200 flex items-center justify-center group relative"
+            style={{
+              boxShadow: '0 8px 32px rgba(139, 92, 246, 0.2), 0 4px 16px rgba(0, 0, 0, 0.1)'
+            }}
+            title="Send Selected Content"
+          >
+            <svg 
+              className="w-5 h-5 text-purple-500 transition-transform duration-200" 
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            
+            {/* Badge showing selected content count */}
+            {selectedEmailContents.length > 0 && (
+              <div className="absolute -top-2 -right-2 w-5 h-5 bg-purple-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                {selectedEmailContents.length}
+              </div>
+            )}
+          </button>
+        </div>
+      )}
+      
+      {/* Email Input Panel */}
+      {showEmailPanel && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/10 backdrop-blur-sm z-40"
+            onClick={() => setShowEmailPanel(false)}
+          />
+          
+          {/* Email Panel */}
+          <div className="fixed bottom-56 right-6 z-50 bg-white/95 backdrop-blur-md rounded-xl shadow-2xl min-w-80 transform transition-all duration-200"
+            style={{
+              boxShadow: '0 8px 32px rgba(139, 92, 246, 0.2), 0 4px 16px rgba(0, 0, 0, 0.15)'
+            }}
+          >
+            <div className="p-4">
+              {/* Header */}
+              <div className="flex items-center gap-2 mb-3">
+                <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <span className="text-sm font-medium text-gray-700">Send Selected Content</span>
+                <div className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
+                  {selectedEmailContents.length} items
+                </div>
+                <button
+                  onClick={() => setShowEmailPanel(false)}
+                  className="ml-auto p-1 hover:bg-gray-100 rounded transition-colors"
+                >
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {selectedEmailContents.length === 0 ? (
+                <div className="text-center text-gray-500 text-sm py-4">
+                  No content selected. Select text from query history to add to email.
+                </div>
+              ) : (
+                <>
+                  {/* Email Input */}
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      value={userEmail}
+                      onChange={(e) => setUserEmail(e.target.value)}
+                      onKeyPress={handleEmailKeyPress}
+                      placeholder="Enter your email..."
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-400"
+                      disabled={isSendingEmail}
+                      autoFocus
+                    />
+                    <button
+                      onClick={handleSendEmail}
+                      disabled={!userEmail.trim() || isSendingEmail || selectedEmailContents.length === 0}
+                      className="px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium whitespace-nowrap flex items-center gap-1.5 transition-all"
+                    >
+                      {isSendingEmail ? (
+                        <>
+                          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                          </svg>
+                          Sending...
+                        </>
+                      ) : (
+                        'Send'
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="mt-2 text-xs text-gray-600 text-center">
+                    Send all selected content to your email
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

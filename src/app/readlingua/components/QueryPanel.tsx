@@ -18,7 +18,8 @@ export default function QueryPanel() {
     generateDictationQuestions,
     submitQuizAnswer,
     isGeneratingQuiz,
-    selectedArticle
+    selectedArticle,
+    addToEmailSelection
   } = useReadLinguaStore()
   const [isPlaying, setIsPlaying] = useState(false)
   const [activeTab, setActiveTab] = useState<'quick' | 'standard' | 'deep' | 'ask_ai' | 'quiz'>('quick')
@@ -29,10 +30,10 @@ export default function QueryPanel() {
   const [activeTimers, setActiveTimers] = useState<{ [key: string]: NodeJS.Timeout }>({}) // Timer refs
   const [visibleQuestionIndex, setVisibleQuestionIndex] = useState(0) // Control which questions to show
   const [showingOriginalQuery, setShowingOriginalQuery] = useState(false) // Control whether showing original query in quiz
-  // Text selection pronunciation states
+  // Text selection states for pronunciation and email selection
   const [selectedText, setSelectedText] = useState('')
   const [selectionPosition, setSelectionPosition] = useState<{ x: number; y: number } | null>(null)
-  const [showPronunciationButton, setShowPronunciationButton] = useState(false)
+  const [showSelectionToolbar, setShowSelectionToolbar] = useState(false)
   
   // Get current questions based on mode
   const quizQuestions = getCurrentQuestions()
@@ -373,17 +374,17 @@ export default function QueryPanel() {
   const handleTextSelection = () => {
     const selection = window.getSelection()
     if (!selection || selection.rangeCount === 0) {
-      setShowPronunciationButton(false)
+      setShowSelectionToolbar(false)
       return
     }
 
     const selectedText = selection.toString().trim()
     if (!selectedText) {
-      setShowPronunciationButton(false)
+      setShowSelectionToolbar(false)
       return
     }
 
-    // Get selection position for floating button
+    // Get selection position for floating toolbar
     const range = selection.getRangeAt(0)
     const rect = range.getBoundingClientRect()
     
@@ -391,29 +392,45 @@ export default function QueryPanel() {
       setSelectedText(selectedText)
       setSelectionPosition({
         x: rect.right + 8, // Position slightly to the right of selection
-        y: rect.top + (rect.height / 2) - 12 // Center vertically
+        y: rect.top + (rect.height / 2) - 40 // Center vertically with toolbar height
       })
-      setShowPronunciationButton(true)
+      setShowSelectionToolbar(true)
     } else {
-      setShowPronunciationButton(false)
+      setShowSelectionToolbar(false)
     }
   }
 
   const handleSelectionPronunciation = () => {
     if (selectedText) {
       handlePlayPronunciation(selectedText)
-      // Hide button after click
-      setShowPronunciationButton(false)
+      // Hide toolbar after click
+      setShowSelectionToolbar(false)
       // Clear selection
       window.getSelection()?.removeAllRanges()
     }
   }
 
-  // Hide pronunciation button when clicking outside
+  const handleAddToEmail = () => {
+    if (selectedText) {
+      // Determine content type and source based on selection context
+      addToEmailSelection({
+        content: selectedText,
+        type: 'ai_response', // Could be enhanced to detect actual type
+        source: 'query_history'
+      })
+      
+      // Hide toolbar after selection
+      setShowSelectionToolbar(false)
+      // Clear text selection
+      window.getSelection()?.removeAllRanges()
+    }
+  }
+
+  // Hide selection toolbar when clicking outside
   const handleDocumentClick = (e: MouseEvent) => {
     const target = e.target as Element
-    if (!target.closest('.ai-response') && !target.closest('.pronunciation-button')) {
-      setShowPronunciationButton(false)
+    if (!target.closest('.ai-response') && !target.closest('.selection-toolbar')) {
+      setShowSelectionToolbar(false)
     }
   }
 
@@ -1054,31 +1071,46 @@ export default function QueryPanel() {
         </div>
       )}
 
-      {/* Floating Pronunciation Button for Text Selection */}
-      {showPronunciationButton && selectionPosition && (
+      {/* Floating Selection Toolbar for Text Selection */}
+      {showSelectionToolbar && selectionPosition && (
         <div
-          className="fixed z-50 pronunciation-button"
+          className="fixed z-50 selection-toolbar"
           style={{
             left: `${selectionPosition.x}px`,
             top: `${selectionPosition.y}px`,
           }}
         >
-          <button
-            onClick={handleSelectionPronunciation}
-            disabled={isPlaying}
-            className="w-6 h-6 bg-purple-400/80 hover:bg-purple-500/90 disabled:opacity-50 text-white rounded-full flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg"
-            title="Play pronunciation"
-          >
-            {isPlaying ? (
-              <svg className="w-3 h-3 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.787L4.866 13.1a.5.5 0 00-.316-.1H2a1 1 0 01-1-1V8a1 1 0 011-1h2.55a.5.5 0 00.316-.1l3.517-3.687zm7.316 1.19a1 1 0 011.414 0 8.97 8.97 0 010 12.684 1 1 0 11-1.414-1.414 6.97 6.97 0 000-9.856 1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0 4.985 4.985 0 010 7.072 1 1 0 11-1.415-1.414 2.985 2.985 0 000-4.244 1 1 0 010-1.414z" clipRule="evenodd"/>
-              </svg>
-            ) : (
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.787L4.866 13.1a.5.5 0 00-.316-.1H2a1 1 0 01-1-1V8a1 1 0 011-1h2.55a.5.5 0 00.316-.1l3.517-3.687zm7.316 1.19a1 1 0 011.414 0 8.97 8.97 0 010 12.684 1 1 0 11-1.414-1.414 6.97 6.97 0 000-9.856 1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0 4.985 4.985 0 010 7.072 1 1 0 11-1.415-1.414 2.985 2.985 0 000-4.244 1 1 0 010-1.414z" clipRule="evenodd"/>
-              </svg>
+          <div className="flex flex-col bg-white/95 backdrop-blur-md rounded-lg shadow-xl border border-white/20 overflow-hidden">
+            {/* Pronounce Button - Only show for English/French content */}
+            {supportsPronunciation(selectedText) && (
+              <button
+                onClick={handleSelectionPronunciation}
+                disabled={isPlaying}
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 text-white font-medium text-sm transition-all duration-200 whitespace-nowrap"
+                title="Play pronunciation"
+              >
+                {isPlaying ? (
+                  <>
+                    <svg className="w-3 h-3 animate-pulse inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.787L4.866 13.1a.5.5 0 00-.316-.1H2a1 1 0 01-1-1V8a1 1 0 011-1h2.55a.5.5 0 00.316-.1l3.517-3.687zm7.316 1.19a1 1 0 011.414 0 8.97 8.97 0 010 12.684 1 1 0 11-1.414-1.414 6.97 6.97 0 000-9.856 1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0 4.985 4.985 0 010 7.072 1 1 0 11-1.415-1.414 2.985 2.985 0 000-4.244 1 1 0 010-1.414z" clipRule="evenodd"/>
+                    </svg>
+                    Playing...
+                  </>
+                ) : (
+                  'Pronounce'
+                )}
+              </button>
             )}
-          </button>
+            
+            {/* Add to Email Button - Always show */}
+            <button
+              onClick={handleAddToEmail}
+              className="px-4 py-2 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-purple-600 border-t border-purple-200 font-medium text-sm transition-all duration-200 whitespace-nowrap"
+              title="Add selected text to email collection"
+            >
+              Add to Email
+            </button>
+          </div>
         </div>
       )}
     </div>

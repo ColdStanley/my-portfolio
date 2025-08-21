@@ -190,14 +190,6 @@ export default function AskAISearchBox({ onSearchSubmit, onShowFloatingPanel }: 
 
       {/* Ask AI Search Tooltip */}
       {isOpen && (
-        <>
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black/10 backdrop-blur-sm z-40"
-            onClick={() => setIsOpen(false)}
-          />
-          
-          {/* Search Content */}
           <div className="fixed bottom-40 right-6 z-50 bg-white/95 backdrop-blur-md rounded-xl shadow-2xl p-4 min-w-80 transform transition-all duration-200"
             style={{
               boxShadow: '0 8px 32px rgba(139, 92, 246, 0.2), 0 4px 16px rgba(0, 0, 0, 0.15)'
@@ -247,7 +239,6 @@ export default function AskAISearchBox({ onSearchSubmit, onShowFloatingPanel }: 
               Press Enter to search
             </div>
           </div>
-        </>
       )}
     </>
   )

@@ -206,6 +206,7 @@ const [sidebarOpen, setSidebarOpen] = useState(false)
 - **Database-Driven Options**: ALL dropdown options from database schema APIs
 - **Layout Stability**: No layout jumping - use disabled states vs hide/show
 - **Gradient Consistency**: All interactive elements must use the same purple-indigo gradient system
+- **No Background Overlays**: Avoid `backdrop-blur-sm bg-black/10` overlays - users should see background content
 
 ### Database Options Pattern (MANDATORY)
 
@@ -225,3 +226,23 @@ const statusOptions = ['Not Started', 'Completed']
 - `transform`, `perspective`, `filter`
 
 **Solution**: Use `bg-white/95` + `shadow-xl` instead of backdrop-blur
+
+### Modal/Overlay Design Rules (CRITICAL)
+
+**No Background Overlays:**
+```tsx
+// ❌ Wrong - Blocks background visibility
+{isOpen && (
+  <>
+    <div className="fixed inset-0 bg-black/10 backdrop-blur-sm z-40" />
+    <div className="modal-content">...</div>
+  </>
+)}
+
+// ✅ Correct - Transparent background, users can see content
+{isOpen && (
+  <div className="modal-content">...</div>
+)}
+```
+
+**Principle**: Users should always see background content for better UX

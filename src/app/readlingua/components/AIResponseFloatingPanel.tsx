@@ -257,14 +257,7 @@ export default function AIResponseFloatingPanel({
 
         {/* Content */}
         <div className="flex-1 p-4 overflow-y-auto min-h-0">
-          {isLoading ? (
-            /* Loading State */
-            <div className="flex flex-col items-center justify-center h-full text-gray-500">
-              <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-              <p className="text-sm">AI is analyzing...</p>
-              <p className="text-xs text-gray-400 mt-1">Please wait, AI is generating response</p>
-            </div>
-          ) : hasError ? (
+          {hasError ? (
             /* Error State */
             <div className="flex flex-col items-center justify-center h-full text-red-500">
               <svg className="w-8 h-8 mb-3" fill="currentColor" viewBox="0 0 20 20">
@@ -272,22 +265,43 @@ export default function AIResponseFloatingPanel({
               </svg>
               <p className="text-sm text-center max-w-md">{aiResponse || 'AI processing failed, please try again'}</p>
             </div>
+          ) : !aiResponse && isLoading ? (
+            /* Initial Loading State - Only show when no content yet */
+            <div className="flex flex-col items-center justify-center h-full text-gray-500">
+              <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+              <p className="text-sm">AI is thinking...</p>
+              <p className="text-xs text-gray-400 mt-1">Generating response</p>
+            </div>
           ) : (
-            /* AI Response Content */
-            <div 
-              className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none ai-response"
-              style={{
-                '--tw-prose-body': '#374151',
-                '--tw-prose-headings': '#111827',
-                '--tw-prose-links': '#7c3aed',
-                '--tw-prose-bold': '#111827',
-                '--tw-prose-counters': '#6b7280',
-                '--tw-prose-bullets': '#d1d5db',
-              } as React.CSSProperties}
-              dangerouslySetInnerHTML={{ 
-                __html: parseMarkdownResponse(aiResponse) 
-              }}
-            />
+            /* AI Response Content - Show streaming content */
+            <>
+              <div 
+                className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none ai-response"
+                style={{
+                  '--tw-prose-body': '#374151',
+                  '--tw-prose-headings': '#111827',
+                  '--tw-prose-links': '#7c3aed',
+                  '--tw-prose-bold': '#111827',
+                  '--tw-prose-counters': '#6b7280',
+                  '--tw-prose-bullets': '#d1d5db',
+                } as React.CSSProperties}
+                dangerouslySetInnerHTML={{ 
+                  __html: parseMarkdownResponse(aiResponse) 
+                }}
+              />
+              
+              {/* Streaming Indicator - Show typing effect when still loading */}
+              {isLoading && (
+                <div className="flex items-center gap-1 mt-3 text-purple-500">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                  </div>
+                  <span className="text-xs text-purple-600 ml-1">AI is writing...</span>
+                </div>
+              )}
+            </>
           )}
         </div>
 

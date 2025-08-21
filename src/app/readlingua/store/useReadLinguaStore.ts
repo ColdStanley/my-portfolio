@@ -59,6 +59,15 @@ export interface AITooltip {
   createdAt: number
 }
 
+export interface SelectedEmailContent {
+  id: string
+  content: string
+  type: 'query_response' | 'ai_response' | 'user_query'
+  source: 'query_history'
+  timestamp: string
+  queryId?: string
+}
+
 interface ReadLinguaState {
   // Tab management
   activeTab: 'dashboard' | 'learning'
@@ -108,6 +117,14 @@ interface ReadLinguaState {
   updateAITooltip: (id: string, updates: Partial<AITooltip>) => void
   removeAITooltip: (id: string) => void
   clearAllTooltips: () => void
+  
+  // Email Selection
+  selectedEmailContents: SelectedEmailContent[]
+  addToEmailSelection: (content: Omit<SelectedEmailContent, 'id' | 'timestamp'>) => void
+  removeFromEmailSelection: (id: string) => void
+  clearEmailSelection: () => void
+  showEmailPanel: boolean
+  setShowEmailPanel: (show: boolean) => void
   
   // UI states
   isLoading: boolean
@@ -1255,6 +1272,31 @@ export const useReadLinguaStore = create<ReadLinguaState>((set) => ({
   })),
   
   clearAllTooltips: () => set({ aiTooltips: [] }),
+  
+  // Email Selection
+  selectedEmailContents: [],
+  
+  addToEmailSelection: (content) => set((state) => {
+    const id = `email-content-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    const timestamp = new Date().toISOString()
+    
+    const newContent: SelectedEmailContent = {
+      ...content,
+      id,
+      timestamp
+    }
+    
+    return { selectedEmailContents: [...state.selectedEmailContents, newContent] }
+  }),
+  
+  removeFromEmailSelection: (id) => set((state) => ({
+    selectedEmailContents: state.selectedEmailContents.filter(content => content.id !== id)
+  })),
+  
+  clearEmailSelection: () => set({ selectedEmailContents: [] }),
+  
+  showEmailPanel: false,
+  setShowEmailPanel: (show) => set({ showEmailPanel: show }),
   
   // UI states
   isLoading: false,

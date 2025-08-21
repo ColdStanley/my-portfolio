@@ -20,6 +20,7 @@ export default function HomePage() {
         {/* Background Effects */}
         <GridBackground />
         <WorkflowNetwork />
+        <LightSculpture />
         
         {/* Custom Navigation for new homepage */}
         <NewNavbar />
@@ -283,24 +284,6 @@ function ProjectSection({ title, description, benefits, buttonText, href, gradie
                   transformStyle: 'preserve-3d'
                 }}
               >
-                {/* Code Rain Background */}
-                <div className="absolute inset-0 overflow-hidden opacity-10">
-                  <motion.div
-                    animate={{ y: ['0%', '100%'] }}
-                    transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
-                    className="text-xs font-mono text-purple-600 whitespace-pre-line leading-4"
-                  >
-                    {`const solution = await ai.solve(problem);
-function optimize(workflow) {
-  return workflow.map(task => 
-    task.automate ? ai.process(task) : task
-  );
-}
-// Intelligent automation
-const results = optimize(tasks);
-console.log('Efficiency improved:', results);`}
-                  </motion.div>
-                </div>
 
                 <div className={`w-full h-64 bg-gradient-to-br ${gradient} rounded-xl mb-6 flex items-center justify-center relative z-10`}>
                   <div className="text-white text-6xl font-bold opacity-20">
@@ -673,6 +656,213 @@ function WorkflowNetwork() {
           <div className="absolute inset-0 bg-purple-400 rounded-full animate-ping opacity-30" />
         </motion.div>
       ))}
+    </div>
+  )
+}
+
+// Light Sculpture Effect
+function LightSculpture() {
+  const [mousePosition, setMousePosition] = useState({ x: 0.5, y: 0.5 })
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({
+        x: e.clientX / window.innerWidth,
+        y: e.clientY / window.innerHeight
+      })
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    return () => window.removeEventListener('mousemove', handleMouseMove)
+  }, [])
+
+  return (
+    <div 
+      className="fixed inset-0 pointer-events-none overflow-hidden"
+      style={{ 
+        perspective: '1000px',
+        zIndex: -1
+      }}
+    >
+      {/* Light Ribbons */}
+      {[...Array(8)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute"
+          style={{
+            width: '400px',
+            height: '2px',
+            background: `linear-gradient(90deg, 
+              transparent, 
+              rgba(139, 92, 246, ${0.1 + (i * 0.02)}), 
+              rgba(99, 102, 241, ${0.15 + (i * 0.02)}), 
+              rgba(139, 92, 246, ${0.1 + (i * 0.02)}), 
+              transparent
+            )`,
+            borderRadius: '1px',
+            transformStyle: 'preserve-3d'
+          }}
+          animate={{
+            x: ['-50%', '150%'],
+            y: ['20%', '80%'],
+            rotateX: [0, 360],
+            rotateY: [0, 180],
+            rotateZ: [0, 360]
+          }}
+          transition={{
+            duration: 20 + (i * 3),
+            repeat: Infinity,
+            ease: 'linear',
+            delay: i * 2
+          }}
+        />
+      ))}
+
+      {/* Flowing Light Streams */}
+      {[...Array(5)].map((_, i) => (
+        <motion.div
+          key={`stream-${i}`}
+          className="absolute"
+          style={{
+            width: '1px',
+            height: '300px',
+            background: `linear-gradient(180deg, 
+              transparent, 
+              rgba(139, 92, 246, 0.2), 
+              rgba(99, 102, 241, 0.3), 
+              rgba(139, 92, 246, 0.2), 
+              transparent
+            )`,
+            transformStyle: 'preserve-3d'
+          }}
+          animate={{
+            x: ['10%', '90%'],
+            y: ['0%', '100%'],
+            rotateX: mousePosition.y * 45 - 22.5,
+            rotateY: mousePosition.x * 45 - 22.5,
+            scaleY: [0.5, 1.5, 0.5]
+          }}
+          transition={{
+            x: { duration: 15 + (i * 2), repeat: Infinity, ease: 'easeInOut' },
+            y: { duration: 12 + (i * 1.5), repeat: Infinity, ease: 'easeInOut' },
+            scaleY: { duration: 8, repeat: Infinity, ease: 'easeInOut' },
+            rotateX: { duration: 0.1 },
+            rotateY: { duration: 0.1 }
+          }}
+        />
+      ))}
+
+      {/* Floating Light Orbs */}
+      {[...Array(12)].map((_, i) => (
+        <motion.div
+          key={`orb-${i}`}
+          className="absolute rounded-full"
+          style={{
+            width: `${10 + (i * 3)}px`,
+            height: `${10 + (i * 3)}px`,
+            background: `radial-gradient(circle, 
+              rgba(139, 92, 246, ${0.15 - (i * 0.01)}), 
+              rgba(99, 102, 241, ${0.1 - (i * 0.005)}), 
+              transparent
+            )`,
+            filter: 'blur(1px)',
+            transformStyle: 'preserve-3d'
+          }}
+          animate={{
+            x: ['5%', '95%'],
+            y: ['10%', '90%'],
+            z: [0, 100, 0],
+            rotateX: [0, 360],
+            rotateY: [0, 360],
+            scale: [0.8, 1.2, 0.8]
+          }}
+          transition={{
+            duration: 25 + (i * 2),
+            repeat: Infinity,
+            ease: 'easeInOut',
+            delay: i * 1.5
+          }}
+        />
+      ))}
+
+      {/* Central Art Piece */}
+      <motion.div
+        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+        style={{ transformStyle: 'preserve-3d' }}
+        animate={{
+          rotateX: [0, 360],
+          rotateY: [0, 360],
+          scale: [0.8, 1.1, 0.8]
+        }}
+        transition={{
+          duration: 30,
+          repeat: Infinity,
+          ease: 'easeInOut'
+        }}
+      >
+        {/* Rotating Light Ring */}
+        <motion.div
+          className="w-32 h-32 rounded-full border border-purple-300/20"
+          style={{
+            background: 'conic-gradient(from 0deg, transparent, rgba(139, 92, 246, 0.1), transparent)',
+            transformStyle: 'preserve-3d'
+          }}
+          animate={{
+            rotateZ: [0, 360]
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: 'linear'
+          }}
+        />
+        
+        {/* Inner Flowing Elements */}
+        {[...Array(6)].map((_, i) => (
+          <motion.div
+            key={`inner-${i}`}
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+            style={{
+              width: '2px',
+              height: '60px',
+              background: `linear-gradient(180deg, 
+                transparent, 
+                rgba(99, 102, 241, 0.3), 
+                transparent
+              )`,
+              transformOrigin: 'center bottom',
+              transformStyle: 'preserve-3d'
+            }}
+            animate={{
+              rotateZ: [0, 360],
+              scaleY: [0.5, 1, 0.5]
+            }}
+            transition={{
+              rotateZ: { duration: 15, repeat: Infinity, ease: 'linear', delay: i * 2.5 },
+              scaleY: { duration: 4, repeat: Infinity, ease: 'easeInOut', delay: i * 0.5 }
+            }}
+          />
+        ))}
+      </motion.div>
+
+      {/* Ambient Glow */}
+      <motion.div
+        className="absolute inset-0"
+        style={{
+          background: `radial-gradient(ellipse at ${mousePosition.x * 100}% ${mousePosition.y * 100}%, 
+            rgba(139, 92, 246, 0.05) 0%, 
+            transparent 70%
+          )`
+        }}
+        animate={{
+          opacity: [0.3, 0.6, 0.3]
+        }}
+        transition={{
+          duration: 8,
+          repeat: Infinity,
+          ease: 'easeInOut'
+        }}
+      />
     </div>
   )
 }
