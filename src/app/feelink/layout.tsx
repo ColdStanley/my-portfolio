@@ -2,7 +2,7 @@ import React from 'react'
 import FeelinkLayoutWrapper from '@/components/feelink/FeelinkLayoutWrapper'
 
 export const metadata = {
-  title: 'Say I love you, apologize, bless, and thank – through an image with quotes.',
+  title: "Feelink | Stanley's Portfolio",
   description:
     'Express your feelings in a gentle and creative way. Upload an image, generate a quote, and share your message of love, apology, gratitude, or blessing.',
   openGraph: {

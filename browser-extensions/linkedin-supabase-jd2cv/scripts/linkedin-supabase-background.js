@@ -106,7 +106,8 @@ async function syncJobDataToSupabase(jobData) {
       user_id: userId,
       title: jobData.title,
       company: jobData.company,
-      full_job_description: jobData.full_job_description?.replace(/\r\n/g, '\n').replace(/\r/g, '\n') || ''
+      full_job_description: jobData.full_job_description?.replace(/\r\n/g, '\n').replace(/\r/g, '\n') || '',
+      comment: jobData.comment || ''
     };
 
     const saveResponse = await fetch(saveUrl, {

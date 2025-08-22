@@ -8,7 +8,7 @@ import PageTransition from '@/components/PageTransition'
 import { CardItem, HighlightItem } from '@/types/common'
 
 export const metadata = {
-  title: "StanleyHi",
+  title: "Portfolio | Stanley's Portfolio",
   description: "Discover Stanley's personal projects in technology, learning, and life stories, presented with a touch of creativity and music."
 }
 

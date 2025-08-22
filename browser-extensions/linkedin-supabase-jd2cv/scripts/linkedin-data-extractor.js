@@ -75,13 +75,15 @@ function extractLinkedInJobData() {
     const jobData = {
       title: jobTitle,
       company: companyName,
-      full_job_description: jobDescription
+      full_job_description: jobDescription,
+      comment: window.location.href
     };
 
     console.log('✅ LinkedIn job data extracted:', {
       title: jobData.title,
       company: jobData.company,
-      descriptionLength: jobData.full_job_description.length
+      descriptionLength: jobData.full_job_description.length,
+      linkedinUrl: jobData.comment
     });
 
     return jobData;

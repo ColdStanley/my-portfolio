@@ -7,7 +7,7 @@ import SideNavigation from './components/SideNavigation'
 import MobileTabNavigation from './components/MobileTabNavigation'
 
 export const metadata: Metadata = {
-  title: 'IELTS Speaking 高分范文 · 雅思口语题库精选',
+  title: "IELTS Speaking | Stanley's Portfolio",
   description:
     'Explore high-scoring sample answers (Band 6–8) for real IELTS Speaking questions. 真实雅思口语题库，涵盖高分范文、关键词解释与表达训练。',
   openGraph: {

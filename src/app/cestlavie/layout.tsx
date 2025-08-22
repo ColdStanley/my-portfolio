@@ -1,8 +1,11 @@
-'use client'
-
+import type { Metadata } from 'next'
 import { ReactNode } from 'react'
 
-// 简化后不再需要GlobalAuthListener，认证逻辑直接在组件中处理
+export const metadata: Metadata = {
+  title: "C'est La Vie | Stanley's Portfolio",
+  description: "Life Management System - Strategy, Plan, and Task management integrated with Notion for seamless productivity.",
+}
+
 export default function CestLaVieLayout({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
