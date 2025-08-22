@@ -10,6 +10,7 @@ import NotionConfigModal from './components/NotionConfigModal'
 import FrenchPanel from './components/Study/FrenchPanel'
 import NewNavbar from '@/components/NewNavbar'
 import FooterSection from '@/components/FooterSection'
+import PageTransition from '@/components/PageTransition'
 
 export default function CestLaViePage() {
   const [activeTab, setActiveTab] = useState('life')
@@ -88,7 +89,8 @@ export default function CestLaViePage() {
   return (
     <>
       <NewNavbar />
-      <div className="pt-16 min-h-screen flex relative">
+      <PageTransition>
+        <div className="pt-16 min-h-screen flex relative">
 
 
         {/* 侧边栏 */}
@@ -143,6 +145,7 @@ export default function CestLaViePage() {
         onConfigSaved={handleConfigSaved}
       />
       <FooterSection hasSidebar />
+      </PageTransition>
     </>
   )
 }

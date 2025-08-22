@@ -5,6 +5,7 @@ import FeelinkHeader from '@/components/feelink/FeelinkHeader'
 import FeelinkTemplateCard from '@/components/feelink/FeelinkTemplateCard'
 import NewNavbar from '@/components/NewNavbar'
 import FooterSection from '@/components/FooterSection'
+import PageTransition from '@/components/PageTransition'
 
 interface FeelinkTemplate {
   id: string
@@ -90,7 +91,8 @@ export default function FeelinkPage() {
   return (
     <>
       <NewNavbar />
-      <div className="min-h-screen py-12 px-4 sm:px-6 md:px-10 bg-gradient-to-b from-white to-purple-50 animate-fade-in scroll-smooth">
+      <PageTransition>
+        <div className="min-h-screen py-12 px-4 sm:px-6 md:px-10 bg-gradient-to-b from-white to-purple-50 animate-fade-in scroll-smooth">
       {/* 顶部 Header 区块 */}
       <FeelinkHeader />
 
@@ -182,6 +184,7 @@ export default function FeelinkPage() {
       `}</style>
     </div>
     <FooterSection />
+      </PageTransition>
     </>
   )
 }

@@ -13,6 +13,7 @@ import { useStarredExperiences } from './hooks/useStarredExperiences'
 import DeleteTooltip from './components/DeleteTooltip'
 import NewNavbar from '@/components/NewNavbar'
 import FooterSection from '@/components/FooterSection'
+import PageTransition from '@/components/PageTransition'
 import { motion } from 'framer-motion'
 
 export default function JD2CV() {
@@ -229,10 +230,11 @@ export default function JD2CV() {
         }
       `}</style>
       
-      <div 
-        className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30"
-        onClick={showIntroAnimation ? skipIntroAnimation : undefined}
-      >
+      <PageTransition>
+        <div 
+          className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30"
+          onClick={showIntroAnimation ? skipIntroAnimation : undefined}
+        >
         {/* Custom Navigation */}
         <NewNavbar />
 
@@ -249,7 +251,7 @@ export default function JD2CV() {
         )}
 
         {/* Fixed Tab Navigation */}
-        <div className="fixed top-[88px] left-0 right-0 z-50 bg-gradient-to-br from-slate-50 via-white to-purple-50/30 pb-4 border-b border-gray-100/50">
+        <div className="fixed top-[104px] left-0 right-0 z-50 bg-gradient-to-br from-slate-50 via-white to-purple-50/30 pb-4 border-b border-gray-100/50">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-4">
           <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20">
             <div className="flex">
@@ -324,6 +326,7 @@ export default function JD2CV() {
         {/* Footer Section */}
         <FooterSection />
       </div>
+      </PageTransition>
     </>
   )
 }

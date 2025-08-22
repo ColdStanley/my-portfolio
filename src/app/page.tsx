@@ -5,11 +5,15 @@ import { motion, useInView, useAnimation, useMotionValue, useSpring } from 'fram
 import Link from 'next/link'
 import NewNavbar from '@/components/NewNavbar'
 import FooterSection from '@/components/FooterSection'
+import PageTransition from '@/components/PageTransition'
+import GlobalLoader from '@/components/GlobalLoader'
 
 export default function HomePage() {
   return (
     <>
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 relative overflow-hidden">
+      <GlobalLoader />
+      <PageTransition>
+        <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 relative overflow-hidden">
         {/* Background Effects */}
         <GridBackground />
         <WorkflowNetwork />
@@ -80,6 +84,7 @@ export default function HomePage() {
         <FooterSection />
       </div>
     </main>
+      </PageTransition>
     </>
   )
 }

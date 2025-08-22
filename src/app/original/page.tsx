@@ -4,6 +4,7 @@ import LogoCarouselRow from '@/components/LogoCarouselRow'
 import HomeCardsSection from '@/components/HomeCardsSection'
 import NewNavbar from '@/components/NewNavbar'
 import FooterSection from '@/components/FooterSection'
+import PageTransition from '@/components/PageTransition'
 import { CardItem, HighlightItem } from '@/types/common'
 
 export const metadata = {
@@ -103,7 +104,8 @@ export default async function HomePage() {
   return (
     <>
       <NewNavbar />
-      <main className="min-h-screen bg-white pt-1">
+      <PageTransition>
+        <main className="min-h-screen bg-white pt-1">
         {/* 顶部内容区域：Hero + Latest */}
         <section className="flex flex-col gap-8 items-start max-w-7xl px-6 mx-auto">
           <HeroImageGrid />
@@ -120,6 +122,7 @@ export default async function HomePage() {
         <HomeCardsSection initialCards={cards} />
       </main>
       <FooterSection />
+      </PageTransition>
     </>
   )
 }

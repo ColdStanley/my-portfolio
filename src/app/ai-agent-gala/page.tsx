@@ -6,6 +6,7 @@ import WebhookTester from './components/WebhookTester'
 import IELTSSpeaking from './components/IELTSSpeaking'
 import NewNavbar from '@/components/NewNavbar'
 import FooterSection from '@/components/FooterSection'
+import PageTransition from '@/components/PageTransition'
 
 export default function AIAgentGalaPage() {
   const [activeTab, setActiveTab] = useState('option2') // Default to IELTS Speaking
@@ -48,7 +49,8 @@ export default function AIAgentGalaPage() {
       
       <NewNavbar />
       
-      <div className="pt-16 min-h-screen flex relative">
+      <PageTransition>
+        <div className="pt-16 min-h-screen flex relative">
       {/* 侧边栏 */}
       <Sidebar 
         activeTab={activeTab} 
@@ -83,6 +85,7 @@ export default function AIAgentGalaPage() {
     </div>
     
     <FooterSection hasSidebar />
+      </PageTransition>
     </>
   )
 }

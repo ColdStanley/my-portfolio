@@ -6,6 +6,7 @@ import DashboardTab from './components/DashboardTab'
 import LearningTab from './components/LearningTab'
 import NewNavbar from '@/components/NewNavbar'
 import FooterSection from '@/components/FooterSection'
+import PageTransition from '@/components/PageTransition'
 
 export default function ReadLinguaPage() {
   const { 
@@ -77,9 +78,10 @@ export default function ReadLinguaPage() {
       
       <NewNavbar />
       
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
+      <PageTransition>
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
       {/* Desktop Tab Navigation - Fixed at top */}
-      <div className="hidden md:block max-w-7xl mx-auto px-4 py-6">
+      <div className="hidden md:block max-w-7xl mx-auto px-4 py-6 pt-20">
         <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 mb-6">
           <div className="flex">
             <button
@@ -273,6 +275,7 @@ export default function ReadLinguaPage() {
       
       <FooterSection />
     </div>
+      </PageTransition>
     </>
   )
 }

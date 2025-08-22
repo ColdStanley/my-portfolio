@@ -205,7 +205,7 @@ export default function NewNavbar() {
                           className="absolute top-full left-0 mt-2 w-48 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50"
                         >
                           {item.items.map((subItem) => (
-                            <Link key={subItem.name} href={subItem.href}>
+                            <Link key={subItem.name} href={subItem.href} prefetch={true}>
                               <motion.div
                                 whileHover={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}
                                 className="px-4 py-3 text-gray-700 hover:text-purple-600 transition-colors duration-200 border-b border-gray-100 last:border-b-0"
@@ -219,7 +219,7 @@ export default function NewNavbar() {
                     </AnimatePresence>
                   </div>
                 ) : (
-                  <Link href={item.href}>
+                  <Link href={item.href} prefetch={true}>
                     <motion.span
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
@@ -373,7 +373,7 @@ export default function NewNavbar() {
                         </div>
                         <div className="ml-4 space-y-2">
                           {item.items.map((subItem) => (
-                            <Link key={subItem.name} href={subItem.href} onClick={() => setMobileMenuOpen(false)}>
+                            <Link key={subItem.name} href={subItem.href} prefetch={true} onClick={() => setMobileMenuOpen(false)}>
                               <div className="py-2 text-gray-600 hover:text-purple-600 transition-colors duration-200">
                                 {subItem.name}
                               </div>
@@ -382,7 +382,7 @@ export default function NewNavbar() {
                         </div>
                       </div>
                     ) : (
-                      <Link href={item.href} onClick={() => setMobileMenuOpen(false)}>
+                      <Link href={item.href} prefetch={true} onClick={() => setMobileMenuOpen(false)}>
                         <motion.span
                           whileTap={{ scale: 0.95 }}
                           className={`block font-medium py-2 transition-colors duration-200 ${
