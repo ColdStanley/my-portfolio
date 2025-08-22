@@ -1451,13 +1451,10 @@ function ExperienceOptimizationCard({ experience, jdKeywords, selectedJD, index,
       // Direct send without duplicate check confirmation
       
       // 发送到PDF modules
-      console.log('Sending draft:', draft) // 调试日志
       const result = addToPDFModules(draft)
-      console.log('Send result:', result) // 调试日志
       
       if (result.ok) {
         // Flying animation provides sufficient feedback
-        console.log('Successfully sent to CV Builder:', result.id)
       } else {
         console.error('Send failed:', result.error) // 调试日志
         alert(result.error || 'Failed to send to Quick PDF')
@@ -1620,13 +1617,10 @@ function ExperienceOptimizationCard({ experience, jdKeywords, selectedJD, index,
       // Direct send without duplicate check confirmation
       
       // 发送到PDF modules
-      console.log('Sending original draft:', draft) // 调试日志
       const result = addToPDFModules(draft)
-      console.log('Send result:', result) // 调试日志
       
       if (result.ok) {
         // Flying animation provides sufficient feedback
-        console.log('Successfully sent to CV Builder:', result.id)
       } else {
         console.error('Send failed:', result.error) // 调试日志
         alert(result.error || 'Failed to send to Quick PDF')

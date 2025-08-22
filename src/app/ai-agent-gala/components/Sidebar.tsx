@@ -12,7 +12,7 @@ interface SidebarProps {
 const tabs = [
   { key: 'option1', label: 'Test Lab' },
   { key: 'option2', label: 'IELTS Speaking' },
-  { key: 'option3', label: 'Agent 3' },
+  { key: 'option3', label: 'JD2CV 2.0' },
 ]
 
 export default function Sidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }: SidebarProps) {

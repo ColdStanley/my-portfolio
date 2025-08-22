@@ -34,7 +34,12 @@ export async function POST(request: NextRequest) {
         user_id: userId,
         title: jdData.title,
         company: jdData.company,
-        full_job_description: jdData.full_job_description || ''
+        full_job_description: jdData.full_job_description || '',
+        application_stage: jdData.application_stage || null,
+        role_group: jdData.role_group || null,
+        firm_type: jdData.firm_type || null,
+        comment: jdData.comment || null,
+        match_score: jdData.match_score || 3
       }])
       .select()
       .single()

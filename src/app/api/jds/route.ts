@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
         title,
         company,
         full_job_description: full_job_description || '',
-        application_stage: application_stage || '',
+        application_stage: application_stage || null,
         role_group: role_group || '',
         firm_type: firm_type || '',
         comment: comment || '',

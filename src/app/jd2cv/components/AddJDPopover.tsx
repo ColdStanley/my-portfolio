@@ -6,15 +6,13 @@ interface AddJDPopoverProps {
   onClose: () => void
   onSave: (data: CreateJDRequest) => Promise<void>
   userId: string
-  stageOptions: string[]
 }
 
 export default function AddJDPopover({
   isOpen,
   onClose,
   onSave,
-  userId,
-  stageOptions
+  userId
 }: AddJDPopoverProps) {
   const [formData, setFormData] = useState<CreateJDRequest>({
     title: '',
@@ -166,16 +164,13 @@ export default function AddJDPopover({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Application Stage</label>
-                <select
+                <input
+                  type="text"
                   value={formData.application_stage}
                   onChange={(e) => setFormData(prev => ({ ...prev, application_stage: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                >
-                  <option value="">Select stage...</option>
-                  {stageOptions.map(stage => (
-                    <option key={stage} value={stage}>{stage}</option>
-                  ))}
-                </select>
+                  placeholder="e.g. Applied, Interview"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Role Group</label>

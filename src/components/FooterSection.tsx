@@ -4,7 +4,7 @@ interface FooterSectionProps {
 
 export default function FooterSection({ hasSidebar = false }: FooterSectionProps) {
   return (
-    <footer className={`bg-gradient-to-br from-slate-50 via-white to-purple-50/30 py-16 px-6 border-t border-gray-100 ${
+    <footer className={`bg-gradient-to-br from-slate-50 via-white to-purple-50/30 py-16 px-6 border-t border-gray-100 relative z-10 ${
       hasSidebar ? 'ml-[68px]' : ''
     }`}>
       <div className="max-w-6xl mx-auto">

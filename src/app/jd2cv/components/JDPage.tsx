@@ -82,7 +82,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('JD record change detected:', payload)
           // Refresh data when any change is detected
           loadJDs()
         }
@@ -150,7 +149,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
       })
 
       const result = await response.json()
-      console.log('Update response:', { response: response.status, result })
       if (!result.success) {
         // Rollback on failure
         loadJDs()
@@ -453,13 +451,13 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
   const getUniqueValues = (field: string) => {
     const values = jds.map(jd => {
       switch(field) {
-        case 'stage': return jd.application_stage || ''
-        case 'role': return jd.role_group || ''
-        case 'firm': return jd.firm_type || ''
-        case 'score': return jd.match_score?.toString() || ''
-        default: return ''
+        case 'stage': return jd.application_stage || null
+        case 'role': return jd.role_group || null
+        case 'firm': return jd.firm_type || null
+        case 'score': return jd.match_score?.toString() || null
+        default: return null
       }
-    }).filter(value => value !== '')
+    }).filter(value => value !== null && value !== '')
     
     return [...new Set(values)].sort()
   }
@@ -469,7 +467,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
     let filteredJDs = jds.filter(jd => {
       // Existing filters
       const passesExistingFilters = (
-        (!filters.stage || jd.application_stage === filters.stage) &&
+        (!filters.stage || (filters.stage === 'null' ? !jd.application_stage : jd.application_stage === filters.stage)) &&
         (!filters.role || jd.role_group === filters.role) &&
         (!filters.firm || jd.firm_type === filters.firm) &&
         (!filters.score || jd.match_score?.toString() === filters.score)
@@ -1040,8 +1038,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
   // 批量专用的JD分析函数 - 不更新单个Auto CV状态
   const batchStep1_AnalyzeJD = async (jd: JDRecord) => {
     try {
-      console.log(`🔄 Starting analysis for JD: ${jd.title}`)
-      
       const response = await fetch('/api/jd2cv/analyze-jd', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1050,8 +1046,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
           userId: user.id
         })
       })
-      
-      console.log(`📡 API Response status: ${response.status}`)
       
       if (!response.ok) {
         const errorText = await response.text()
@@ -1074,7 +1068,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
       }
       
       const result = await response.json()
-      console.log(`✅ JD analysis completed for: ${jd.title}`)
       return result
     } catch (error: any) {
       console.error('❌ batchStep1_AnalyzeJD error:', error)
@@ -1258,6 +1251,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                   className="w-32 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 appearance-none cursor-pointer"
                 >
                   <option value="">All Stages</option>
+                  <option value="null">Not Set</option>
                   {getUniqueValues('stage').map(stage => (
                     <option key={stage} value={stage}>{stage}</option>
                   ))}
@@ -1453,7 +1447,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                   // TODO: 添加批量删除功能
                   if (confirm(`Are you sure you want to delete ${getSelectedCount()} selected JDs?`)) {
                     // handleBatchDelete()
-                    console.log('Batch delete not implemented yet')
+                    // Batch delete not implemented yet
                   }
                 }}
                 disabled={isBatchProcessing}
@@ -1639,7 +1633,8 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                         {/* Input Row - align with Company */}
                         <div className="grid grid-cols-4 gap-2 h-9">
                           <div className="relative">
-                            <select
+                            <input
+                              type="text"
                               value={jd.application_stage || ''}
                               onChange={(e) => {
                                 handleUpdateField(jd.id, 'application_stage', e.target.value)
@@ -1654,18 +1649,9 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                                   }
                                 }
                               }}
-                              className="w-full h-9 px-3 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 appearance-none pr-8 cursor-pointer"
-                            >
-                              <option value="" className="text-gray-400">Select...</option>
-                              {APPLICATION_STAGES.map((stage) => (
-                                <option key={stage} value={stage}>{stage}</option>
-                              ))}
-                            </select>
-                            <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                              </svg>
-                            </div>
+                              className="w-full h-9 px-3 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                              placeholder="Not Set"
+                            />
                           </div>
                           <input
                             type="text"
@@ -1719,6 +1705,24 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                       <div className="flex flex-col justify-between h-[4.5rem] items-end">
                         {/* Actions Row - align with Title */}
                         <div className="flex items-center gap-1 h-9">
+                          <button
+                            onClick={() => {
+                              // Save JD data to localStorage for JD2CV 2.0
+                              localStorage.setItem('jd2cv-transfer', JSON.stringify({
+                                title: jd.title,
+                                company: jd.company,
+                                description: jd.full_job_description || ''
+                              }))
+                              // Navigate to AI Agent Gala with JD2CV 2.0 tab
+                              window.location.href = '/ai-agent-gala?tab=option3&from=jd2cv1'
+                            }}
+                            className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
+                            title="Generate with AI (JD2CV 2.0)"
+                          >
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M13 10V3L4 14h7v7l9-11h-7z" clipRule="evenodd" />
+                            </svg>
+                          </button>
                           <button
                             onClick={() => setViewingJD(jd)}
                             className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
