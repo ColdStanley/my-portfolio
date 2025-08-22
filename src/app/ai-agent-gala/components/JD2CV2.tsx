@@ -390,7 +390,7 @@ export default function JD2CV2() {
   }
 
   return (
-    <div className="h-full bg-gradient-to-br from-slate-50 via-white to-purple-50/30 p-6 pb-60 overflow-y-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 p-6 pb-60">
       <div className="max-w-4xl mx-auto flex flex-col gap-6">
         
         {/* Header */}

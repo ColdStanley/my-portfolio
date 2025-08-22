@@ -90,19 +90,19 @@ export default function AIAgentGalaPage() {
       {/* 主内容区域 - L形预留空间布局 */}
       <div className="flex-1 ml-[68px] mt-[52px]">
         {activeTab === 'option1' && (
-          <div className="h-[calc(100vh-180px)]">
+          <div>
             <WebhookTester />
           </div>
         )}
         
         {activeTab === 'option2' && (
-          <div className="h-[calc(100vh-180px)]">
+          <div>
             <IELTSSpeaking />
           </div>
         )}
         
         {activeTab === 'option3' && (
-          <div className="h-[calc(100vh-180px)]">
+          <div>
             <JD2CV2 />
           </div>
         )}

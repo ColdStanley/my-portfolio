@@ -69,11 +69,11 @@ export default function BottomAggregateNavigation({
     setExpandedTab(null) // Close after selection
   }
 
-  // Calculate fixed positions for main buttons
+  // Calculate fixed positions for main buttons (smaller size)
   const getMainButtonPosition = (index: number) => {
     const baseBottom = 24 // 6 * 4px = 24px (bottom-6)
-    const buttonHeight = 56 // 14 * 4px = 56px (w-14 h-14)
-    const gap = 16 // 4 * 4px = 16px (gap-4)
+    const buttonHeight = 48 // 12 * 4px = 48px (w-12 h-12)
+    const gap = 12 // 3 * 4px = 12px (gap-3)
     return baseBottom + index * (buttonHeight + gap)
   }
 
@@ -88,31 +88,25 @@ export default function BottomAggregateNavigation({
               <motion.div
                 initial={{ 
                   opacity: 0, 
-                  scale: 0.8, 
-                  x: 30,
-                  filter: 'blur(8px)'
+                  x: 20
                 }}
                 animate={{ 
                   opacity: 1, 
-                  scale: 1, 
-                  x: 0,
-                  filter: 'blur(0px)'
+                  x: 0
                 }}
                 exit={{ 
                   opacity: 0, 
-                  scale: 0.9, 
-                  x: 15,
-                  filter: 'blur(4px)'
+                  x: 10
                 }}
                 transition={{ 
-                  duration: 0.4, 
-                  ease: [0.16, 1, 0.3, 1] // More sophisticated easing
+                  duration: 0.3, 
+                  ease: [0.16, 1, 0.3, 1]
                 }}
-                className="fixed z-50 flex items-center justify-end gap-3"
+                className="fixed z-50 flex items-center justify-end gap-2"
                 style={{
-                  bottom: `${getMainButtonPosition(index) + 7}px`, // Vertically center align with main button (56px/2 - 40px/2 = 8px offset)
-                  right: '88px', // 24px (right-6) + 56px (button width) + 8px (gap)
-                  height: '40px' // Match sub-button height for perfect alignment
+                  bottom: `${getMainButtonPosition(index) + 6}px`, // Vertically center align with main button (48px/2 - 36px/2 = 6px offset)
+                  right: '80px', // 24px (right-6) + 48px (button width) + 8px (gap)
+                  height: '36px' // Match sub-button height for perfect alignment
                 }}
               >
                 {tab.subTabs.map((subTab, subIndex) => (
@@ -120,56 +114,36 @@ export default function BottomAggregateNavigation({
                     key={subTab.key}
                     initial={{ 
                       opacity: 0, 
-                      scale: 0.6, 
-                      x: 25,
-                      y: 10,
-                      rotateY: 45,
-                      filter: 'blur(6px)'
+                      x: 15
                     }}
                     animate={{ 
                       opacity: 1, 
-                      scale: 1, 
-                      x: 0,
-                      y: 0,
-                      rotateY: 0,
-                      filter: 'blur(0px)'
+                      x: 0
                     }}
                     exit={{
                       opacity: 0,
-                      scale: 0.8,
-                      x: 15,
-                      y: 5,
-                      rotateY: 20,
-                      filter: 'blur(3px)'
+                      x: 10
                     }}
                     transition={{ 
-                      duration: 0.4, 
-                      delay: subIndex * 0.08, // Slightly longer stagger for smoother effect
-                      ease: [0.16, 1, 0.3, 1],
-                      type: "spring",
-                      damping: 20,
-                      stiffness: 300
+                      duration: 0.3, 
+                      delay: subIndex * 0.05,
+                      ease: [0.16, 1, 0.3, 1]
                     }}
                     whileHover={{
-                      scale: 1.05,
-                      y: -2,
-                      boxShadow: '0 8px 25px rgba(139, 92, 246, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1)',
+                      scale: 1.02,
+                      y: -1,
                       transition: { duration: 0.2 }
                     }}
                     whileTap={{
-                      scale: 0.95,
-                      y: 0,
+                      scale: 0.98,
                       transition: { duration: 0.1 }
                     }}
                     onClick={() => handleSubTabClick(subTab.key)}
-                    className={`h-10 px-4 rounded-lg font-medium whitespace-nowrap transition-all duration-300 ${
+                    className={`h-9 px-3 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 font-medium text-sm whitespace-nowrap transition-all duration-300 ${
                       activeSubTab === subTab.key
-                        ? 'bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 border-2 border-purple-600 shadow-lg'
-                        : 'bg-white/95 backdrop-blur-md text-gray-700 border border-gray-200/60 shadow-md hover:bg-white hover:border-purple-300 hover:text-purple-600'
+                        ? 'text-purple-700 border-purple-200 shadow-purple-100'
+                        : 'text-gray-700 hover:text-purple-600 hover:border-purple-200'
                     }`}
-                    style={{
-                      transformStyle: 'preserve-3d'
-                    }}
                   >
                     {subTab.label}
                   </motion.button>
@@ -203,7 +177,7 @@ export default function BottomAggregateNavigation({
               damping: 15,
               stiffness: 200
             }}
-            className={`fixed w-14 h-14 rounded-full font-medium flex items-center justify-center text-sm z-50 transition-all duration-300 ${
+            className={`fixed w-12 h-12 rounded-full font-medium flex items-center justify-center text-xs z-50 transition-all duration-300 ${
               activeMainTab === tab.key || expandedTab === tab.key
                 ? 'bg-gradient-to-br from-purple-600 via-purple-600 to-indigo-600 text-white border-2 border-white/20'
                 : 'bg-white/95 backdrop-blur-md text-gray-700 border border-gray-200/80 hover:bg-white hover:text-purple-600 hover:border-purple-300'

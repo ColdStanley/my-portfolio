@@ -292,3 +292,62 @@ const statusOptions = ['Not Started', 'Completed']
 ```
 
 **Principle**: Users should always see background content for better UX
+
+## Scrolling Standards (CRITICAL)
+
+### Single-Layer Scrolling Rule
+
+**MANDATORY: Use only ONE scrolling container per page to prevent scrolling conflicts**
+
+#### Problem Pattern (FORBIDDEN)
+```tsx
+// ❌ Double scrolling containers cause conflicts
+<div className="h-[calc(100vh-180px)] overflow-y-auto">  {/* Outer scroll */}
+  <Component className="h-full overflow-y-auto">        {/* Inner scroll */}
+    {/* Content gets trapped between layers */}
+  </Component>
+</div>
+```
+
+#### Correct Pattern (REQUIRED)
+```tsx
+// ✅ Single page-level scrolling
+<div>  {/* No height restriction */}
+  <Component className="min-h-screen pb-60">  {/* No overflow-y-auto */}
+    {/* Content flows naturally with page scroll */}
+  </Component>
+</div>
+```
+
+### Implementation Rules
+
+1. **Remove Outer Height Constraints**:
+   - Never use `h-[calc(100vh-...)]` on containers
+   - Use simple `<div>` without height restrictions
+
+2. **Component Scrolling**:
+   - Replace `h-full overflow-y-auto` with `min-h-screen`
+   - Use adequate bottom padding (`pb-60` = 240px) for footer clearance
+   - Let browser handle page-level scrolling
+
+3. **User Experience**:
+   - Default scroll wheel actions should work immediately
+   - No need to click-focus before scrolling
+   - Content should be fully accessible without footer blocking
+
+### Standard Implementation
+```tsx
+// Page container - no height limits
+<div className="flex-1 ml-[68px] mt-[52px]">
+  <div>  {/* Simple wrapper */}
+    <YourComponent />
+  </div>
+</div>
+
+// Component - page-level layout
+<div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 p-6 pb-60">
+  {/* Your content */}
+</div>
+```
+
+**Principle**: One scroll container = predictable user experience
