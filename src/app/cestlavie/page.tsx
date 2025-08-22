@@ -11,14 +11,38 @@ import FrenchPanel from './components/Study/FrenchPanel'
 import NewNavbar from '@/components/NewNavbar'
 import FooterSection from '@/components/FooterSection'
 import PageTransition from '@/components/PageTransition'
+import BottomAggregateNavigation from '@/components/mobile/BottomAggregateNavigation'
 
 export default function CestLaViePage() {
   const [activeTab, setActiveTab] = useState('life')
+  const [activeSubTab, setActiveSubTab] = useState('task')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showConfigModal, setShowConfigModal] = useState(false)
   const [tasks, setTasks] = useState<TaskRecord[]>([])
   const { user, loading, notionConfig } = useSimplifiedAuth()
   const router = useRouter()
+
+  // Mobile navigation configuration
+  const mobileNavTabs = [
+    {
+      key: 'life',
+      label: 'Life',
+      subTabs: [
+        { key: 'task', label: 'Task Manager' }
+      ]
+    },
+    {
+      key: 'career',
+      label: 'Career'
+    },
+    {
+      key: 'study',
+      label: 'Study',
+      subTabs: [
+        { key: 'french', label: 'French' }
+      ]
+    }
+  ]
 
   // Handle tab change with scroll reset
   const handleTabChange = (newTab: string) => {
@@ -43,6 +67,16 @@ export default function CestLaViePage() {
       // Also scroll window to top as fallback
       window.scrollTo(0, 0)
     }, 50) // Slightly longer timeout to ensure DOM is updated
+  }
+
+  // Handle mobile navigation
+  const handleMobileMainTabChange = (tabKey: string) => {
+    setActiveTab(tabKey)
+  }
+
+  const handleMobileSubTabChange = (subTabKey: string) => {
+    setActiveSubTab(subTabKey)
+    setActiveTab(subTabKey) // Also update the main activeTab for content rendering
   }
 
   // 检查用户认证状态
@@ -93,18 +127,29 @@ export default function CestLaViePage() {
         <div className="pt-16 min-h-screen flex relative">
 
 
-        {/* 侧边栏 */}
-        <Sidebar 
-          activeTab={activeTab} 
-          setActiveTab={handleTabChange}
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
-          onConfigClick={() => setShowConfigModal(true)}
-          tasks={tasks}
+        {/* 桌面端侧边栏 */}
+        <div className="hidden md:block">
+          <Sidebar 
+            activeTab={activeTab} 
+            setActiveTab={handleTabChange}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
+            onConfigClick={() => setShowConfigModal(true)}
+            tasks={tasks}
+          />
+        </div>
+        
+        {/* 移动端底部聚合导航 */}
+        <BottomAggregateNavigation
+          mainTabs={mobileNavTabs}
+          activeMainTab={activeTab}
+          activeSubTab={activeSubTab}
+          onMainTabChange={handleMobileMainTabChange}
+          onSubTabChange={handleMobileSubTabChange}
         />
         
-        {/* 主内容区域 - L形预留空间布局 */}
-        <div className="flex-1 ml-[68px] mt-[52px]">
+        {/* 主内容区域 - 响应式布局 */}
+        <div className="flex-1 ml-0 mt-0 md:ml-[68px] md:mt-[52px]">
           {/* Life子导航路由逻辑 */}
           {(activeTab === 'life' || activeTab === 'task') && (
             <TaskPanelOptimized 

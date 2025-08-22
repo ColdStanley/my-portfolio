@@ -131,6 +131,52 @@ const [sidebarOpen, setSidebarOpen] = useState(false)
 - **52px vertical**: Visual balance from top
 - **Universal**: Apply to ALL main content areas
 
+## Mobile Layout Standards (NEW)
+
+### Responsive Navigation Pattern
+- **Desktop**: Left sidebar + L-shaped layout with `ml-[68px] mt-[52px]`
+- **Mobile**: Bottom aggregate navigation + full-screen layout
+- **Breakpoint**: Use `md:` prefix for desktop-specific styles
+
+### Mobile-First Rules
+- Remove L-shaped spacing on mobile: `ml-0 md:ml-[68px] mt-0 md:mt-[52px]`
+- Replace left sidebar with `BottomAggregateNavigation` component
+- Use `hidden md:block` for desktop-only features (filters, breadcrumbs, drill-down)
+
+## Bottom Aggregate Navigation (MOBILE STANDARD)
+
+### Position & Layout
+- **Position**: `fixed bottom-6 right-6` 
+- **Direction**: Vertical main buttons, horizontal sub-tab expansion to left
+- **Structure**: Main tabs stacked vertically (Life bottom, Study top)
+- **Safe Area**: Account for mobile gesture areas
+
+### Button Specifications
+- **Main Buttons**: 56px circle (`w-14 h-14`), purple gradient when active
+- **Sub Buttons**: 40px height (`h-10`), glass effect, text-only labels
+- **Spacing**: 16px gap between main buttons (`gap-4`)
+
+### Animation Standards
+- **Sub-tab Expand**: Scale + TranslateX from right to left
+- **Timing**: 300ms expand with bounce easing `[0.34, 1.56, 0.64, 1]`
+- **Stagger**: 50ms delay between multiple sub-buttons
+- **Main Button**: Scale 1.1 + enhanced shadow when expanded
+
+### Usage Pattern
+```tsx
+<BottomAggregateNavigation
+  mainTabs={[
+    { key: 'life', label: 'Life', subTabs: [{ key: 'task', label: 'Task Manager' }] },
+    { key: 'career', label: 'Career' },
+    { key: 'study', label: 'Study', subTabs: [{ key: 'french', label: 'French' }] }
+  ]}
+  activeMainTab={activeMain}
+  activeSubTab={activeSub}
+  onMainTabChange={setActiveMain}
+  onSubTabChange={setActiveSub}
+/>
+```
+
 ## Control Bar Pattern (CRITICAL)
 
 **Fixed position control bar for Life pages**

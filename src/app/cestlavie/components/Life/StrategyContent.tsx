@@ -14,6 +14,7 @@ interface StrategyContentProps {
   onStrategyEdit?: (strategy: StrategyRecord) => void
   onStrategyDelete?: (strategyId: string) => void
   onStrategyDrillDown?: (strategyId: string) => void
+  enableDrillDown?: boolean
   statusOptions?: string[]
   priorityOptions?: string[]
   categoryOptions?: string[]
@@ -28,6 +29,7 @@ export default function StrategyContent({
   onStrategyEdit,
   onStrategyDelete,
   onStrategyDrillDown,
+  enableDrillDown = true,
   statusOptions = [],
   priorityOptions = [],
   categoryOptions = []
@@ -108,8 +110,8 @@ export default function StrategyContent({
                   </svg>
                 </div>
               )}
-              {/* Drill Down Button - Right Top Corner */}
-              {onStrategyDrillDown && (
+              {/* Drill Down Button - Right Top Corner - Desktop Only */}
+              {onStrategyDrillDown && enableDrillDown && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation()

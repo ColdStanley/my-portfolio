@@ -13,6 +13,7 @@ interface PlanContentProps {
   onPlanEdit?: (plan: PlanRecord) => void
   onPlanDelete?: (planId: string) => void
   onPlanDrillDown?: (planId: string) => void
+  enableDrillDown?: boolean
   statusOptions?: string[]
   priorityOptions?: string[]
 }
@@ -26,6 +27,7 @@ export default function PlanContent({
   onPlanEdit,
   onPlanDelete,
   onPlanDrillDown,
+  enableDrillDown = true,
   statusOptions = [],
   priorityOptions = []
 }: PlanContentProps) {
@@ -107,8 +109,8 @@ export default function PlanContent({
                   </svg>
                 </div>
               )}
-              {/* Drill Down Button - Right Top Corner */}
-              {onPlanDrillDown && (
+              {/* Drill Down Button - Right Top Corner - Desktop Only */}
+              {onPlanDrillDown && enableDrillDown && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation()

@@ -541,16 +541,16 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
 
   return (
     <>
-      {/* Main Content Area - L-shaped Layout, Natural Content Flow */}
-        <div className="fixed top-32 left-[68px] right-4 bottom-4 overflow-y-auto">
+      {/* Main Content Area - Responsive Layout */}
+        <div className="fixed top-16 left-4 right-4 bottom-4 md:top-32 md:left-[68px] overflow-y-auto">
           {error && (
             <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg">
               {error}
             </div>
           )}
 
-          {/* Breadcrumb Navigation - Always Visible */}
-          <div className="mb-4 p-3 bg-white/90 backdrop-blur-md rounded-lg shadow-sm">
+          {/* Breadcrumb Navigation - Desktop Only */}
+          <div className="hidden md:block mb-4 p-3 bg-white/90 backdrop-blur-md rounded-lg shadow-sm">
             <nav className="flex items-center gap-2 text-sm">
               <button
                 onClick={handleBackToAll}
@@ -605,6 +605,7 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
                   onStrategyEdit={handleStrategyEdit}
                   onStrategyDelete={handleStrategyDelete}
                   onStrategyDrillDown={handleStrategyDrillDown}
+                  enableDrillDown={typeof window !== 'undefined' && window.innerWidth >= 768}
                   statusOptions={strategyStatusOptions}
                   priorityOptions={priorityOptions}
                   categoryOptions={strategyCategoryOptions}
@@ -633,6 +634,7 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
                   onPlanEdit={handlePlanEdit}
                   onPlanDelete={handlePlanDelete}
                   onPlanDrillDown={handlePlanDrillDown}
+                  enableDrillDown={typeof window !== 'undefined' && window.innerWidth >= 768}
                   statusOptions={planStatusOptions}
                   priorityOptions={planPriorityOptions}
                 />
@@ -666,8 +668,8 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
                     </button>
                   </div>
                   
-                  {/* Task Filters - 2 rows layout */}
-                  <div className="mt-3 space-y-2">
+                  {/* Task Filters - Desktop Only */}
+                  <div className="hidden md:block mt-3 space-y-2">
                     {/* First row */}
                     <div className="flex items-center gap-2">
                       <select
@@ -742,6 +744,9 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
               </div>
             </div>
           </div>
+          
+          {/* 移动端底部留出安全距离，避免被底部聚合导航遮挡 */}
+          <div className="pb-20 md:pb-4"></div>
         </div>
 
         {/* Task Form Panel */}
