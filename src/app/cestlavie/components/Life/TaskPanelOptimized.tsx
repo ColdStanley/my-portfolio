@@ -582,68 +582,11 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
             </nav>
           </div>
 
-          {/* 3-Column Layout: Strategy + Plan + Calendar/Task - Equal Width (1/3 each) */}
-          <div className="flex gap-6">
-            {/* Left Column: Strategy - 1/3 width */}
-            <div className="flex-1 min-w-0">
-              <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base font-semibold text-purple-900">Strategy</h3>
-                  <button 
-                    onClick={() => openStrategyForm()}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200"
-                  >
-                    <span>🎯</span>
-                    <span>Add Strategy</span>
-                  </button>
-                </div>
-                <StrategyContent 
-                  strategies={displayedStrategies}
-                  loading={loading}
-                  error={error}
-                  onStrategyUpdate={handleStrategyUpdate}
-                  onStrategyEdit={handleStrategyEdit}
-                  onStrategyDelete={handleStrategyDelete}
-                  onStrategyDrillDown={handleStrategyDrillDown}
-                  enableDrillDown={typeof window !== 'undefined' && window.innerWidth >= 768}
-                  statusOptions={strategyStatusOptions}
-                  priorityOptions={priorityOptions}
-                  categoryOptions={strategyCategoryOptions}
-                />
-              </div>
-            </div>
-
-            {/* Middle Column: Plan - 1/3 width */}
-            <div className="flex-1 min-w-0">
-              <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base font-semibold text-purple-900">Plans</h3>
-                  <button 
-                    onClick={() => openPlanForm()}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200"
-                  >
-                    <span>📋</span>
-                    <span>Add Plan</span>
-                  </button>
-                </div>
-                <PlanContent 
-                  plans={displayedPlans}
-                  loading={loading}
-                  error={error}
-                  onPlanUpdate={handlePlanUpdate}
-                  onPlanEdit={handlePlanEdit}
-                  onPlanDelete={handlePlanDelete}
-                  onPlanDrillDown={handlePlanDrillDown}
-                  enableDrillDown={typeof window !== 'undefined' && window.innerWidth >= 768}
-                  statusOptions={planStatusOptions}
-                  priorityOptions={planPriorityOptions}
-                />
-              </div>
-            </div>
-
-            {/* Right Column: Calendar + Task - 1/3 width */}
-            <div className="flex-1 min-w-0 space-y-6">
-              {/* Calendar Module */}
+          {/* Responsive Layout: Mobile vertical stack, Desktop 3-column */}
+          <div className="flex flex-col space-y-6 md:flex-row md:space-y-0 md:gap-6">
+            
+            {/* Calendar Module - Mobile first, Desktop right column with Task */}
+            <div className="order-1 md:order-3 md:flex-1 md:min-w-0 md:space-y-6">
               <TaskCalendarView
                 tasks={filteredTasks}
                 currentMonth={currentMonth}
@@ -653,8 +596,8 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
                 onTaskSelect={openFormPanel}
               />
 
-              {/* Task Module */}
-              <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl">
+              {/* Task Module - Mobile second, grouped with Calendar on desktop */}
+              <div className="order-2 bg-white/90 backdrop-blur-md rounded-xl shadow-xl">
                 {/* Task Module Header */}
                 <div className="p-4 border-b border-gray-200">
                   <div className="flex items-center justify-between">
@@ -688,7 +631,7 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
                         onChange={(e) => setSelectedQuadrant(e.target.value)}
                         className="flex-1 px-2 py-1 bg-white border border-purple-200 rounded text-xs text-purple-700 focus:outline-none focus:ring-1 focus:ring-purple-500"
                       >
-                        <option value="all">All Priorities</option>
+                        <option value="all">All Quadrants</option>
                         {priorityOptions.map(priority => (
                           <option key={priority} value={priority}>{priority}</option>
                         ))}
@@ -741,6 +684,63 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
                     selectedDate={selectedDate}
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Plan Module - Mobile third, Desktop middle column */}
+            <div className="order-3 md:order-2 md:flex-1 md:min-w-0">
+              <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl">
+                <div className="p-3 border-b border-gray-200 flex items-center justify-between">
+                  <h3 className="text-base font-semibold text-purple-900">Plans</h3>
+                  <button 
+                    onClick={() => openPlanForm()}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200"
+                  >
+                    <span>📋</span>
+                    <span>Add Plan</span>
+                  </button>
+                </div>
+                <PlanContent 
+                  plans={displayedPlans}
+                  loading={loading}
+                  error={error}
+                  onPlanUpdate={handlePlanUpdate}
+                  onPlanEdit={handlePlanEdit}
+                  onPlanDelete={handlePlanDelete}
+                  onPlanDrillDown={handlePlanDrillDown}
+                  enableDrillDown={typeof window !== 'undefined' && window.innerWidth >= 768}
+                  statusOptions={planStatusOptions}
+                  priorityOptions={planPriorityOptions}
+                />
+              </div>
+            </div>
+
+            {/* Strategy Module - Mobile fourth (last), Desktop left column */}
+            <div className="order-4 md:order-1 md:flex-1 md:min-w-0">
+              <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl">
+                <div className="p-3 border-b border-gray-200 flex items-center justify-between">
+                  <h3 className="text-base font-semibold text-purple-900">Strategy</h3>
+                  <button 
+                    onClick={() => openStrategyForm()}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200"
+                  >
+                    <span>🎯</span>
+                    <span>Add Strategy</span>
+                  </button>
+                </div>
+                <StrategyContent 
+                  strategies={displayedStrategies}
+                  loading={loading}
+                  error={error}
+                  onStrategyUpdate={handleStrategyUpdate}
+                  onStrategyEdit={handleStrategyEdit}
+                  onStrategyDelete={handleStrategyDelete}
+                  onStrategyDrillDown={handleStrategyDrillDown}
+                  enableDrillDown={typeof window !== 'undefined' && window.innerWidth >= 768}
+                  statusOptions={strategyStatusOptions}
+                  priorityOptions={priorityOptions}
+                  categoryOptions={strategyCategoryOptions}
+                />
               </div>
             </div>
           </div>

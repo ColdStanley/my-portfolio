@@ -69,71 +69,85 @@ export default function BottomAggregateNavigation({
     setExpandedTab(null) // Close after selection
   }
 
+  // Calculate fixed positions for main buttons
+  const getMainButtonPosition = (index: number) => {
+    const baseBottom = 24 // 6 * 4px = 24px (bottom-6)
+    const buttonHeight = 56 // 14 * 4px = 56px (w-14 h-14)
+    const gap = 16 // 4 * 4px = 16px (gap-4)
+    return baseBottom + index * (buttonHeight + gap)
+  }
+
   return (
     <div className={`md:hidden aggregate-navigation ${className}`}>
-      {/* Main Tab Buttons - Vertical Stack */}
-      <div className="fixed bottom-6 right-6 flex flex-col-reverse gap-4 z-50">
-        {mainTabs.map((tab, index) => (
-          <div key={tab.key} className="relative flex items-center gap-3">
-            {/* Sub-tab expansion to the left */}
-            <AnimatePresence>
-              {expandedTab === tab.key && tab.subTabs && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0, x: 20 }}
-                  animate={{ opacity: 1, scale: 1, x: 0 }}
-                  exit={{ opacity: 0, scale: 0.8, x: 10 }}
-                  transition={{ 
-                    duration: 0.3, 
-                    ease: [0.34, 1.56, 0.64, 1] 
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  {tab.subTabs.map((subTab, subIndex) => (
-                    <motion.button
-                      key={subTab.key}
-                      initial={{ opacity: 0, scale: 0, x: 20 }}
-                      animate={{ opacity: 1, scale: 1, x: 0 }}
-                      transition={{ 
-                        duration: 0.3, 
-                        delay: subIndex * 0.05,
-                        ease: [0.34, 1.56, 0.64, 1] 
-                      }}
-                      onClick={() => handleSubTabClick(subTab.key)}
-                      className={`h-10 px-4 rounded-lg font-medium transition-all duration-200 whitespace-nowrap shadow-lg ${
-                        activeSubTab === subTab.key
-                          ? 'bg-purple-50 text-purple-700 border-2 border-purple-600'
-                          : 'bg-white/90 backdrop-blur-md text-gray-700 border border-gray-200 hover:bg-white hover:shadow-xl'
-                      }`}
-                    >
-                      {subTab.label}
-                    </motion.button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+      {/* Main Tab Buttons - Fixed Individual Positions */}
+      {mainTabs.map((tab, index) => (
+        <div key={tab.key}>
+          {/* Sub-tab expansion - Absolute positioned relative to main button */}
+          <AnimatePresence>
+            {expandedTab === tab.key && tab.subTabs && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0, x: 20 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.8, x: 10 }}
+                transition={{ 
+                  duration: 0.3, 
+                  ease: [0.34, 1.56, 0.64, 1] 
+                }}
+                className="fixed z-50 flex items-center gap-2"
+                style={{
+                  bottom: `${getMainButtonPosition(index)}px`,
+                  right: '120px' // 24px (right-6) + 56px (button width) + 40px (gap)
+                }}
+              >
+                {tab.subTabs.map((subTab, subIndex) => (
+                  <motion.button
+                    key={subTab.key}
+                    initial={{ opacity: 0, scale: 0, x: 20 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    transition={{ 
+                      duration: 0.3, 
+                      delay: subIndex * 0.05,
+                      ease: [0.34, 1.56, 0.64, 1] 
+                    }}
+                    onClick={() => handleSubTabClick(subTab.key)}
+                    className={`h-10 px-4 rounded-lg font-medium transition-all duration-200 whitespace-nowrap shadow-lg ${
+                      activeSubTab === subTab.key
+                        ? 'bg-purple-50 text-purple-700 border-2 border-purple-600'
+                        : 'bg-white/90 backdrop-blur-md text-gray-700 border border-gray-200 hover:bg-white hover:shadow-xl'
+                    }`}
+                  >
+                    {subTab.label}
+                  </motion.button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-            {/* Main Tab Button */}
-            <motion.button
-              onClick={() => handleMainTabClick(tab)}
-              whileTap={{ scale: 0.95 }}
-              animate={{
-                scale: expandedTab === tab.key ? 1.1 : 1,
-                boxShadow: expandedTab === tab.key 
-                  ? '0 0 20px rgba(139, 92, 246, 0.4), 0 8px 32px rgba(0, 0, 0, 0.12)'
-                  : '0 4px 20px rgba(0, 0, 0, 0.1)'
-              }}
-              transition={{ duration: 0.2 }}
-              className={`w-14 h-14 rounded-full font-medium transition-all duration-200 flex items-center justify-center text-sm ${
-                activeMainTab === tab.key || expandedTab === tab.key
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white'
-                  : 'bg-white/90 backdrop-blur-md text-gray-700 border border-gray-200 hover:bg-white'
-              }`}
-            >
-              {tab.label}
-            </motion.button>
-          </div>
-        ))}
-      </div>
+          {/* Main Tab Button - Fixed Position */}
+          <motion.button
+            onClick={() => handleMainTabClick(tab)}
+            whileTap={{ scale: 0.95 }}
+            animate={{
+              scale: expandedTab === tab.key ? 1.1 : 1,
+              boxShadow: expandedTab === tab.key 
+                ? '0 0 20px rgba(139, 92, 246, 0.4), 0 8px 32px rgba(0, 0, 0, 0.12)'
+                : '0 4px 20px rgba(0, 0, 0, 0.1)'
+            }}
+            transition={{ duration: 0.2 }}
+            className={`fixed w-14 h-14 rounded-full font-medium transition-all duration-200 flex items-center justify-center text-sm z-50 ${
+              activeMainTab === tab.key || expandedTab === tab.key
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white'
+                : 'bg-white/90 backdrop-blur-md text-gray-700 border border-gray-200 hover:bg-white'
+            }`}
+            style={{
+              bottom: `${getMainButtonPosition(index)}px`,
+              right: '24px' // right-6
+            }}
+          >
+            {tab.label}
+          </motion.button>
+        </div>
+      ))}
     </div>
   )
 }
