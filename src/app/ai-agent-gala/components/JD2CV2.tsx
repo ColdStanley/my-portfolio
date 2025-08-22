@@ -300,19 +300,42 @@ export default function JD2CV2() {
 
       const aiExperienceRaw = await webhookResponse.text()
       
-      // Parse JSON response to extract the actual content
-      let aiExperience = aiExperienceRaw
-      try {
-        const parsedResponse = JSON.parse(aiExperienceRaw)
-        if (parsedResponse.output) {
-          aiExperience = parsedResponse.output
-          setCurrentStep('merging')
-          setStepNumber(3)
+      // Enhanced parsing to handle both single and double nested JSON responses
+      const parseAIResponse = (rawResponse: string): string => {
+        try {
+          const firstParse = JSON.parse(rawResponse)
+          
+          // Priority check for output field
+          if (firstParse.output !== undefined) {
+            const outputValue = firstParse.output
+            
+            // If output is string, attempt second parsing
+            if (typeof outputValue === 'string') {
+              try {
+                const secondParse = JSON.parse(outputValue)
+                // Use strict check instead of || operator
+                return secondParse.output !== undefined ? secondParse.output : outputValue
+              } catch {
+                // Second parse failed, it's normal text content
+                return outputValue
+              }
+            }
+            
+            // Output is not string, convert directly
+            return String(outputValue)
+          }
+          
+          // No output field, return string representation of parsed object
+          return String(firstParse)
+        } catch {
+          // Not JSON, return original text
+          return rawResponse
         }
-      } catch (error) {
-        setCurrentStep('merging')
-        setStepNumber(3)
       }
+
+      const aiExperience = parseAIResponse(aiExperienceRaw)
+      setCurrentStep('merging')
+      setStepNumber(3)
 
       // Step 3: Merge data (personal info + AI experience)
       const completeResumeData = {

@@ -30,6 +30,9 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
   const [deleteButtonRef, setDeleteButtonRef] = useState<HTMLElement | null>(null)
   const [searchInput, setSearchInput] = useState('')
   
+  // JD Transfer states for visual feedback
+  const [transferredJDs, setTransferredJDs] = useState<Set<string>>(new Set())
+  
   // Auto CV automation states
   const [finalCVState, setFinalCVState] = useState({
     isProcessing: false,
@@ -1713,11 +1716,16 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                                 company: jd.company,
                                 description: jd.full_job_description || ''
                               }))
-                              // Navigate to AI Agent Gala with JD2CV 2.0 tab
-                              window.location.href = '/ai-agent-gala?tab=option3&from=jd2cv1'
+                              // Add visual feedback - mark as transferred
+                              setTransferredJDs(prev => new Set(prev).add(jd.id))
+                              // No page navigation - user manually goes to JD2CV 2.0
                             }}
-                            className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
-                            title="Generate with AI (JD2CV 2.0)"
+                            className={`p-2 rounded transition-colors ${
+                              transferredJDs.has(jd.id)
+                                ? 'text-purple-600 bg-purple-100 hover:bg-purple-200'
+                                : 'text-gray-400 hover:text-purple-600 hover:bg-purple-50'
+                            }`}
+                            title={transferredJDs.has(jd.id) ? "Data ready for JD2CV 2.0" : "Generate with AI (JD2CV 2.0)"}
                           >
                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M13 10V3L4 14h7v7l9-11h-7z" clipRule="evenodd" />
