@@ -4,19 +4,12 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, useInView, useAnimation, useMotionValue, useSpring } from 'framer-motion'
 import Link from 'next/link'
 import NewNavbar from '@/components/NewNavbar'
+import FooterSection from '@/components/FooterSection'
 
 export default function HomePage() {
   return (
     <>
-      {/* Hide global navbar and footer for this page */}
-      <style jsx global>{`
-        body > nav,
-        body > footer {
-          display: none !important;
-        }
-      `}</style>
-      
-      <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 relative overflow-hidden">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 relative overflow-hidden">
         {/* Background Effects */}
         <GridBackground />
         <WorkflowNetwork />
@@ -327,27 +320,6 @@ function ProjectSection({ title, description, benefits, buttonText, href, gradie
               />
             </div>
           </motion.div>
-        </motion.div>
-      </div>
-    </section>
-  )
-}
-
-function FooterSection() {
-  return (
-    <section className="py-20 px-6 bg-gradient-to-br from-white/80 via-purple-50/30 to-white/80 backdrop-blur-sm border-t border-purple-100/50">
-      <div className="max-w-4xl mx-auto text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-          className="text-gray-500 text-sm space-y-3"
-        >
-          <p className="text-base">© 2025 Stanley. Built with passion for innovation and efficiency.</p>
-          <p className="leading-relaxed">
-            Powered by ChatGPT, DeepSeek, Gemini, Claude, N8N, AI Agents, Webhooks, Supabase, Notion API, Next.js 15, TypeScript, Tailwind CSS, and Framer Motion.
-          </p>
         </motion.div>
       </div>
     </section>

@@ -11,6 +11,9 @@ import { CVModuleDraft } from '@/shared/types'
 import { extractBullets, generateModuleTitle } from '@/shared/utils'
 import { useStarredExperiences } from './hooks/useStarredExperiences'
 import DeleteTooltip from './components/DeleteTooltip'
+import NewNavbar from '@/components/NewNavbar'
+import FooterSection from '@/components/FooterSection'
+import { motion } from 'framer-motion'
 
 export default function JD2CV() {
   const [activeTab, setActiveTab] = useState(0)
@@ -143,10 +146,15 @@ export default function JD2CV() {
   ]
 
   return (
-    <div 
-      className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30"
-      onClick={showIntroAnimation ? skipIntroAnimation : undefined}
-    >
+    <>
+      {/* Hide global navbar and footer for this page */}
+      <style jsx global>{`
+        body > nav,
+        body > footer {
+          display: none !important;
+        }
+      `}</style>
+      
       {/* CSS Animations for Intro */}
       <style jsx>{`
         @keyframes pulseGlow {
@@ -220,40 +228,28 @@ export default function JD2CV() {
           }
         }
       `}</style>
-      {/* Header */}
-      <div className="bg-white/95 backdrop-blur-md shadow-lg">
-        <div className="max-w-[1400px] mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-800">JD2CV</h1>
-            <div className="text-sm text-gray-600">
-              <span className="font-medium">User ID:</span>
-              <code className="ml-2 px-2 py-1 bg-gray-100 rounded text-xs font-mono">{user.id}</code>
-              <button
-                onClick={() => navigator.clipboard.writeText(user.id)}
-                className="ml-2 text-purple-500 hover:text-purple-600 text-xs"
-                title="Copy User ID"
-              >
-                Copy
-              </button>
-            </div>
+      
+      <div 
+        className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30"
+        onClick={showIntroAnimation ? skipIntroAnimation : undefined}
+      >
+        {/* Custom Navigation */}
+        <NewNavbar />
+
+        {/* Skip Intro Button */}
+        {showIntroAnimation && (
+          <div className="fixed top-4 right-4 z-[100]">
+            <button
+              onClick={skipIntroAnimation}
+              className="px-3 py-1.5 bg-white/90 hover:bg-white text-gray-600 hover:text-gray-800 rounded-lg text-sm font-medium shadow-lg backdrop-blur-sm border border-white/20 transition-all"
+            >
+              Skip intro
+            </button>
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* Skip Intro Button */}
-      {showIntroAnimation && (
-        <div className="fixed top-4 right-4 z-[100]">
-          <button
-            onClick={skipIntroAnimation}
-            className="px-3 py-1.5 bg-white/90 hover:bg-white text-gray-600 hover:text-gray-800 rounded-lg text-sm font-medium shadow-lg backdrop-blur-sm border border-white/20 transition-all"
-          >
-            Skip intro
-          </button>
-        </div>
-      )}
-
-      {/* Fixed Tab Navigation */}
-      <div className="fixed top-[88px] left-0 right-0 z-50 bg-gradient-to-br from-slate-50 via-white to-purple-50/30 pb-4 border-b border-gray-100/50">
+        {/* Fixed Tab Navigation */}
+        <div className="fixed top-[88px] left-0 right-0 z-50 bg-gradient-to-br from-slate-50 via-white to-purple-50/30 pb-4 border-b border-gray-100/50">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-4">
           <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20">
             <div className="flex">
@@ -310,21 +306,25 @@ export default function JD2CV() {
             {activeTab === 2 && <div className="w-full"></div>}
           </div>
         </div>
-      </div>
-
-      {/* Main Content - with top padding to account for fixed nav */}
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-[180px] pb-6">
-        {/* Tab Content */}
-        <div className="space-y-6">
-          {activeTab === 0 && <JDPage user={user} globalLoading={loading} />}
-          {activeTab === 1 && <CVLibraryContent user={user} />}
-          {activeTab === 2 && <WorkspaceContent globalLoading={loading} />}
         </div>
+
+        {/* Main Content - with top padding to account for fixed nav */}
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-[180px] pb-6">
+          {/* Tab Content */}
+          <div className="space-y-6">
+            {activeTab === 0 && <JDPage user={user} globalLoading={loading} />}
+            {activeTab === 1 && <CVLibraryContent user={user} />}
+            {activeTab === 2 && <WorkspaceContent globalLoading={loading} />}
+          </div>
+        </div>
+
+
+        {/* PDF Setup Modal - TODO: Create simplified inline setup */}
+        
+        {/* Footer Section */}
+        <FooterSection />
       </div>
-
-
-      {/* PDF Setup Modal - TODO: Create simplified inline setup */}
-    </div>
+    </>
   )
 }
 

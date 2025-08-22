@@ -4,6 +4,16 @@ import { useState, useEffect } from 'react'
 import SimpleVoiceRecorder from './SimpleVoiceRecorder'
 import IELTSTips from './IELTSTips'
 import AskAI from './AskAI'
+import TextSelectionToolbar from './TextSelectionToolbar'
+
+interface SelectedEmailContent {
+  id: string
+  content: string
+  type: 'query_response' | 'ai_response' | 'user_query'
+  source: 'query_history'
+  timestamp: string
+  queryId?: string
+}
 
 export default function IELTSSpeaking() {
   const [questionResponse, setQuestionResponse] = useState('')
@@ -13,19 +23,42 @@ export default function IELTSSpeaking() {
   const [userAnswer, setUserAnswer] = useState('')
   const [selectedPart, setSelectedPart] = useState<string | null>(null)
   
-  // Text selection pronunciation states
+  // Text selection states  
   const [selectedText, setSelectedText] = useState('')
   const [selectionPosition, setSelectionPosition] = useState<{ x: number; y: number } | null>(null)
-  const [showPronunciationButton, setShowPronunciationButton] = useState(false)
+  const [showSelectionToolbar, setShowSelectionToolbar] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   
-  // Email sending states
+  // Email collection states (like Readlingua)
+  const [selectedEmailContents, setSelectedEmailContents] = useState<SelectedEmailContent[]>([])
   const [showEmailPanel, setShowEmailPanel] = useState(false)
   const [userEmail, setUserEmail] = useState('')
   const [isSendingEmail, setIsSendingEmail] = useState(false)
 
   const questionWebhookUrl = 'http://localhost:5678/webhook/3bcd7132-a248-4700-af8c-e01d81a9d00a'
   const answerWebhookUrl = 'http://localhost:5678/webhook/682c8778-cd25-4c44-8c5b-421c599348ed'
+
+  // Email collection functions (copied from Readlingua)
+  const addToEmailSelection = (content: Omit<SelectedEmailContent, 'id' | 'timestamp'>) => {
+    const id = `email-content-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    const timestamp = new Date().toISOString()
+    
+    const newContent: SelectedEmailContent = {
+      ...content,
+      id,
+      timestamp
+    }
+    
+    setSelectedEmailContents(prev => [...prev, newContent])
+  }
+
+  const removeFromEmailSelection = (id: string) => {
+    setSelectedEmailContents(prev => prev.filter(content => content.id !== id))
+  }
+
+  const clearEmailSelection = () => {
+    setSelectedEmailContents([])
+  }
 
   // Parse and format question response
   const formatQuestionResponse = (rawResponse: string) => {
@@ -161,51 +194,60 @@ export default function IELTSSpeaking() {
     }
   }
 
-  // Handle text selection for pronunciation
+  // Handle text selection for toolbar (updated from Readlingua)
   const handleTextSelection = () => {
     const selection = window.getSelection()
-    if (!selection || selection.rangeCount === 0) {
-      setShowPronunciationButton(false)
-      return
-    }
-
-    const selectedText = selection.toString().trim()
-    if (!selectedText) {
-      setShowPronunciationButton(false)
-      return
-    }
-
-    // Get selection position for floating button
-    const range = selection.getRangeAt(0)
-    const rect = range.getBoundingClientRect()
+    const text = selection?.toString().trim()
     
-    if (rect.width > 0 && rect.height > 0) {
-      setSelectedText(selectedText)
-      setSelectionPosition({
-        x: rect.right + 8, // Position slightly to the right of selection
-        y: rect.top + (rect.height / 2) - 12 // Center vertically
-      })
-      setShowPronunciationButton(true)
+    if (text && text.length > 0) {
+      const range = selection?.getRangeAt(0)
+      const rect = range?.getBoundingClientRect()
+      
+      if (rect) {
+        setSelectedText(text)
+        // Use viewport coordinates directly for fixed positioning
+        setSelectionPosition({
+          x: rect.left + rect.width / 2,
+          y: rect.top
+        })
+        setShowSelectionToolbar(true)
+      }
     } else {
-      setShowPronunciationButton(false)
+      setShowSelectionToolbar(false)
     }
   }
 
-  const handleSelectionPronunciation = () => {
+  const handleSelectionPronunciation = async () => {
     if (selectedText) {
-      handlePlayPronunciation(selectedText)
-      // Hide button after click
-      setShowPronunciationButton(false)
+      await handlePlayPronunciation(selectedText)
+      // Hide toolbar after click
+      setShowSelectionToolbar(false)
       // Clear selection
       window.getSelection()?.removeAllRanges()
     }
   }
 
-  // Hide pronunciation button when clicking outside
+  const handleAddToEmail = () => {
+    if (selectedText) {
+      // Add selected text to email collection (like Readlingua)
+      addToEmailSelection({
+        content: selectedText,
+        type: 'ai_response', // Could be enhanced to detect actual type
+        source: 'query_history'
+      })
+      
+      // Hide toolbar after selection
+      setShowSelectionToolbar(false)
+      // Clear text selection
+      window.getSelection()?.removeAllRanges()
+    }
+  }
+
+  // Hide selection toolbar when clicking outside
   const handleDocumentClick = (e: MouseEvent) => {
     const target = e.target as Element
-    if (!target.closest('.pronunciation-button') && !target.closest('.selectable-text')) {
-      setShowPronunciationButton(false)
+    if (!target.closest('.selection-toolbar') && !target.closest('.selectable-text')) {
+      setShowSelectionToolbar(false)
     }
   }
 
@@ -251,28 +293,27 @@ export default function IELTSSpeaking() {
   }
 
   const handleSendEmail = async () => {
-    if (!userEmail.trim() || isSendingEmail) return
+    if (!userEmail.trim() || isSendingEmail || selectedEmailContents.length === 0) return
 
     setIsSendingEmail(true)
     
     try {
-      const studyData = collectStudyData()
-      
-      const response = await fetch('/api/send-study-record', {
+      const response = await fetch('/api/readlingua/send-selected-content', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...studyData,
+          selectedContents: selectedEmailContents,
           userEmail: userEmail.trim()
         })
       })
 
       if (response.ok) {
-        alert('Study record sent successfully!')
+        alert('Selected content sent successfully!')
         setShowEmailPanel(false)
         setUserEmail('')
+        clearEmailSelection()
       } else {
         alert('Failed to send email. Please try again.')
       }
@@ -302,16 +343,16 @@ export default function IELTSSpeaking() {
       {/* Ask AI Component - Hidden when IELTS Tips is showing */}
       <AskAI show={!isQuestionLoading && !isAnswerLoading} />
       
-      {/* Email Sending Button - Above Ask AI */}
+      {/* Email Collection Button - Above Ask AI (like Readlingua) */}
       {!isQuestionLoading && !isAnswerLoading && (
         <div className="fixed bottom-[88px] right-6 z-20">
           <button
             onClick={() => setShowEmailPanel(!showEmailPanel)}
-            className="w-12 h-12 bg-white/90 backdrop-blur-md rounded-full shadow-xl hover:shadow-2xl transition-all duration-200 flex items-center justify-center group"
+            className="w-12 h-12 bg-white/90 backdrop-blur-md rounded-full shadow-xl hover:shadow-2xl transition-all duration-200 flex items-center justify-center group relative"
             style={{
               boxShadow: '0 8px 32px rgba(139, 92, 246, 0.2), 0 4px 16px rgba(0, 0, 0, 0.1)'
             }}
-            title="Send Study Record"
+            title="Send Selected Content"
           >
             <svg 
               className="w-5 h-5 text-purple-500 transition-transform duration-200" 
@@ -321,6 +362,13 @@ export default function IELTSSpeaking() {
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
+            
+            {/* Badge showing selected content count (like Readlingua) */}
+            {selectedEmailContents.length > 0 && (
+              <div className="absolute -top-2 -right-2 w-5 h-5 bg-purple-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                {selectedEmailContents.length}
+              </div>
+            )}
           </button>
         </div>
       )}
@@ -346,7 +394,10 @@ export default function IELTSSpeaking() {
                 <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
-                <span className="text-sm font-medium text-gray-700">Send Study Record</span>
+                <span className="text-sm font-medium text-gray-700">Send Selected Content</span>
+                <div className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
+                  {selectedEmailContents.length} items
+                </div>
                 <button
                   onClick={() => setShowEmailPanel(false)}
                   className="ml-auto p-1 hover:bg-gray-100 rounded transition-colors"
@@ -356,42 +407,53 @@ export default function IELTSSpeaking() {
                   </svg>
                 </button>
               </div>
-
-              {/* Email Input */}
-              <div className="flex gap-2">
-                <input
-                  type="email"
-                  value={userEmail}
-                  onChange={(e) => setUserEmail(e.target.value)}
-                  onKeyPress={handleEmailKeyPress}
-                  placeholder="Enter your email..."
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-400"
-                  disabled={isSendingEmail}
-                  autoFocus
-                />
-                <button
-                  onClick={handleSendEmail}
-                  disabled={!userEmail.trim() || isSendingEmail}
-                  className="px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium whitespace-nowrap flex items-center gap-1.5 transition-all"
-                >
-                  {isSendingEmail ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                    </svg>
-                  )}
-                  Send
-                </button>
-              </div>
-
-              {/* Helper text */}
-              <div className="text-xs text-gray-400 mt-2 flex items-center gap-1">
-                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
-                </svg>
-                Send all current session data to your email
-              </div>
+              
+              {selectedEmailContents.length === 0 ? (
+                <div className="text-center text-gray-500 text-sm py-4">
+                  No content selected. Select text to add to email collection.
+                </div>
+              ) : (
+                <>
+                  {/* Email Input */}
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      value={userEmail}
+                      onChange={(e) => setUserEmail(e.target.value)}
+                      onKeyPress={handleEmailKeyPress}
+                      placeholder="Enter your email..."
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-400"
+                      disabled={isSendingEmail}
+                      autoFocus
+                    />
+                    <button
+                      onClick={handleSendEmail}
+                      disabled={!userEmail.trim() || isSendingEmail || selectedEmailContents.length === 0}
+                      className="px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium whitespace-nowrap flex items-center gap-1.5 transition-all"
+                    >
+                      {isSendingEmail ? (
+                        <>
+                          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                          </svg>
+                          Sending
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                          </svg>
+                          Send
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <div className="mt-2 text-xs text-gray-600 text-center">
+                    Send all selected content to your email
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </>
@@ -548,32 +610,17 @@ export default function IELTSSpeaking() {
         </div>
       </div>
 
-      {/* Floating Pronunciation Button for Text Selection */}
-      {showPronunciationButton && selectionPosition && (
-        <div
-          className="fixed z-50 pronunciation-button"
-          style={{
-            left: `${selectionPosition.x}px`,
-            top: `${selectionPosition.y}px`,
-          }}
-        >
-          <button
-            onClick={handleSelectionPronunciation}
-            disabled={isPlaying}
-            className="w-6 h-6 bg-purple-400/70 hover:bg-purple-500/80 disabled:opacity-30 text-white rounded-full flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg"
-            title="Play pronunciation"
-          >
-            {isPlaying ? (
-              <svg className="w-3 h-3 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.787L4.866 13.1a.5.5 0 00-.316-.1H2a1 1 0 01-1-1V8a1 1 0 011-1h2.55a.5.5 0 00.316-.1l3.517-3.687zm7.316 1.19a1 1 0 011.414 0 8.97 8.97 0 010 12.684 1 1 0 11-1.414-1.414 6.97 6.97 0 000-9.856 1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0 4.985 4.985 0 010 7.072 1 1 0 11-1.415-1.414 2.985 2.985 0 000-4.244 1 1 0 010-1.414z" clipRule="evenodd"/>
-              </svg>
-            ) : (
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.787L4.866 13.1a.5.5 0 00-.316-.1H2a1 1 0 01-1-1V8a1 1 0 011-1h2.55a.5.5 0 00.316-.1l3.517-3.687zm7.316 1.19a1 1 0 011.414 0 8.97 8.97 0 010 12.684 1 1 0 11-1.414-1.414 6.97 6.97 0 000-9.856 1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0 4.985 4.985 0 010 7.072 1 1 0 11-1.415-1.414 2.985 2.985 0 000-4.244 1 1 0 010-1.414z" clipRule="evenodd"/>
-              </svg>
-            )}
-          </button>
-        </div>
+      {/* Text Selection Toolbar (like Readlingua) */}
+      {showSelectionToolbar && selectionPosition && (
+        <TextSelectionToolbar
+          position={selectionPosition}
+          selectedText={selectedText}
+          onPlayPronunciation={handleSelectionPronunciation}
+          onAddToEmail={handleAddToEmail}
+          onClose={() => setShowSelectionToolbar(false)}
+          supportsPronunciation={true}
+          isPlaying={isPlaying}
+        />
       )}
     </div>
   )

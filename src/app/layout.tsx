@@ -1,8 +1,6 @@
 import type { Metadata } from "next"
 import { Geist, Geist_Mono, Quicksand, Dancing_Script, PT_Serif, Cormorant_Garamond } from "next/font/google"
 import "./globals.css"
-import NavBar from "../components/NavBar"
-import Footer from "../components/Footer"
 import { Toaster } from "sonner"
 import Script from "next/script"
 
@@ -92,10 +90,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body className="pt-12 font-sans bg-white text-gray-900">
-        <NavBar />
+      <body className="font-sans bg-white text-gray-900">
         {children}
-        <Footer />
         {/* ✅ Toast 支持（不影响现有样式） */}
         <Toaster richColors position="top-center" />
       </body>

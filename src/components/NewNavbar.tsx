@@ -4,12 +4,16 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useSimplifiedAuth } from '@/hooks/useSimplifiedAuth'
+import { supabase } from '@/lib/supabaseClient'
 
 export default function NewNavbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const [showUserDropdown, setShowUserDropdown] = useState(false)
   const pathname = usePathname()
+  const { user, profile, isAdmin } = useSimplifiedAuth()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -17,6 +21,20 @@ export default function NewNavbar() {
     }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element
+      if (!target.closest('.dropdown-container')) {
+        setOpenDropdown(null)
+        setShowUserDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
   const navItems = [
@@ -89,6 +107,39 @@ export default function NewNavbar() {
     return item.items.some((subItem: any) => pathname === subItem.href)
   }
 
+  const handleLogout = async () => {
+    try {
+      console.log('开始logout...')
+      
+      // 清除所有Supabase session
+      const { error } = await supabase.auth.signOut({ scope: 'global' })
+      if (error) {
+        console.error('SignOut error:', error)
+      } else {
+        console.log('Supabase signOut 完成')
+      }
+      
+      // 清除所有本地存储
+      localStorage.clear()
+      sessionStorage.clear()
+      
+      // 清除所有cookies（可选）
+      document.cookie.split(";").forEach(function(c) { 
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+      })
+      
+      console.log('清理完成，准备重定向')
+      
+      // 使用replace而不是href，避免浏览器后退
+      window.location.replace('/')
+      
+    } catch (error) {
+      console.error('Logout错误:', error)
+      // 即使出错也尝试重定向
+      window.location.replace('/')
+    }
+  }
+
   return (
     <motion.nav
       initial={{ y: -100 }}
@@ -116,7 +167,7 @@ export default function NewNavbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => (
-              <div key={item.name} className="relative">
+              <div key={item.name} className="relative dropdown-container">
                 {item.type === 'dropdown' ? (
                   <div
                     onMouseEnter={() => setOpenDropdown(item.name)}
@@ -186,8 +237,8 @@ export default function NewNavbar() {
             ))}
           </div>
 
-          {/* CTA Button */}
-          <div className="hidden md:block">
+          {/* CTA & User Authentication */}
+          <div className="hidden md:flex items-center gap-4">
             <motion.button
               onClick={exploreProjects}
               whileHover={{ scale: 1.05 }}
@@ -196,6 +247,83 @@ export default function NewNavbar() {
             >
               Explore Projects
             </motion.button>
+            
+            {user ? (
+              <div className="relative dropdown-container">
+                <motion.button
+                  onClick={() => setShowUserDropdown(!showUserDropdown)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center gap-2 px-4 py-2 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-purple-600 rounded-lg font-medium border border-purple-200 transition-all duration-300"
+                >
+                  <span className="text-sm">{user.email?.split('@')[0]}</span>
+                  <motion.svg
+                    animate={{ rotate: showUserDropdown ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </motion.svg>
+                </motion.button>
+
+                <AnimatePresence>
+                  {showUserDropdown && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute top-full right-0 mt-2 w-56 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50"
+                    >
+                      <div className="p-4 border-b border-gray-100">
+                        <p className="text-sm text-gray-600 mb-1">Signed in as</p>
+                        <p className="text-sm font-medium text-gray-900">{user.email}</p>
+                        <p className="text-xs text-purple-600 mt-1">
+                          {profile?.role?.toUpperCase() || 'USER'}
+                        </p>
+                      </div>
+                      
+                      <div className="py-2">
+                        <Link
+                          href="/membership"
+                          className="block px-4 py-3 text-sm text-gray-700 hover:bg-purple-50/50 hover:text-purple-600 transition-colors duration-200"
+                          onClick={() => setShowUserDropdown(false)}
+                        >
+                          My Membership
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setShowUserDropdown(false)
+                            handleLogout()
+                          }}
+                          className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50/50 hover:text-red-700 transition-colors duration-200"
+                        >
+                          Sign Out
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/auth/login"
+                  className="text-sm font-medium bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent hover:from-purple-700 hover:to-indigo-700 transition-all duration-200"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/register"
+                  className="px-4 py-2 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-purple-600 rounded-lg font-medium border border-purple-200 transition-all duration-300 text-sm"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -269,7 +397,54 @@ export default function NewNavbar() {
                     )}
                   </div>
                 ))}
-                <div className="pt-4 border-t border-gray-200">
+                
+                {/* Mobile User Authentication */}
+                <div className="pt-4 border-t border-gray-200 space-y-3">
+                  {user ? (
+                    <div className="space-y-3">
+                      <div className="p-3 bg-purple-50/50 rounded-lg">
+                        <p className="text-sm text-gray-600 mb-1">Signed in as</p>
+                        <p className="text-sm font-medium text-gray-900">{user.email}</p>
+                        <p className="text-xs text-purple-600 mt-1">
+                          {profile?.role?.toUpperCase() || 'USER'}
+                        </p>
+                      </div>
+                      <Link
+                        href="/membership"
+                        className="block w-full py-2 text-sm text-purple-600 hover:text-purple-700 transition-colors duration-200"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        My Membership
+                      </Link>
+                      <button
+                        onClick={() => {
+                          setMobileMenuOpen(false)
+                          handleLogout()
+                        }}
+                        className="w-full py-2 text-sm text-red-600 hover:text-red-700 transition-colors duration-200 text-left"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <Link
+                        href="/auth/login"
+                        className="block w-full py-2 text-sm font-medium bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        Sign In
+                      </Link>
+                      <Link
+                        href="/register"
+                        className="block w-full px-4 py-2 bg-white/70 backdrop-blur-sm text-purple-600 rounded-lg font-medium border border-purple-200 transition-all duration-300 text-sm text-center"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        Register
+                      </Link>
+                    </div>
+                  )}
+                  
                   <motion.button
                     onClick={() => {
                       setMobileMenuOpen(false)

@@ -8,6 +8,8 @@ import Sidebar from './components/Sidebar'
 import TaskPanelOptimized from './components/Life/TaskPanelOptimized'
 import NotionConfigModal from './components/NotionConfigModal'
 import FrenchPanel from './components/Study/FrenchPanel'
+import NewNavbar from '@/components/NewNavbar'
+import FooterSection from '@/components/FooterSection'
 
 export default function CestLaViePage() {
   const [activeTab, setActiveTab] = useState('life')
@@ -85,6 +87,7 @@ export default function CestLaViePage() {
 
   return (
     <>
+      <NewNavbar />
       <div className="pt-16 min-h-screen flex relative">
 
 
@@ -139,6 +142,7 @@ export default function CestLaViePage() {
         onClose={() => setShowConfigModal(false)}
         onConfigSaved={handleConfigSaved}
       />
+      <FooterSection hasSidebar />
     </>
   )
 }

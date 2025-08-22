@@ -4,6 +4,8 @@ import { useState } from 'react'
 import Sidebar from './components/Sidebar'
 import WebhookTester from './components/WebhookTester'
 import IELTSSpeaking from './components/IELTSSpeaking'
+import NewNavbar from '@/components/NewNavbar'
+import FooterSection from '@/components/FooterSection'
 
 export default function AIAgentGalaPage() {
   const [activeTab, setActiveTab] = useState('option2') // Default to IELTS Speaking
@@ -33,7 +35,20 @@ export default function AIAgentGalaPage() {
   }
 
   return (
-    <div className="pt-16 min-h-screen flex relative">
+    <>
+      {/* Hide global navbar/footer */}
+      <style jsx global>{`
+        nav[role="banner"], 
+        footer[role="contentinfo"],
+        .navbar,
+        .footer {
+          display: none !important;
+        }
+      `}</style>
+      
+      <NewNavbar />
+      
+      <div className="pt-16 min-h-screen flex relative">
       {/* 侧边栏 */}
       <Sidebar 
         activeTab={activeTab} 
@@ -66,5 +81,8 @@ export default function AIAgentGalaPage() {
         )}
       </div>
     </div>
+    
+    <FooterSection hasSidebar />
+    </>
   )
 }

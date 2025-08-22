@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
           content: prompt
         }
       ],
-      max_tokens: 800,
+      max_tokens: 4000,
       temperature: 0.7,
       stream: true,
     })
