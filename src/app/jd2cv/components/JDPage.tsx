@@ -841,9 +841,11 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+      console.log('File upload triggered', event.target.files)
       const file = event.target.files?.[0]
       if (!file) return
 
+      console.log('File selected:', file.name, file.type)
       if (file.type !== 'application/pdf') {
         alert('Only PDF files are allowed')
         return
@@ -919,35 +921,30 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
             </button>
           </>
         ) : (
-          // No PDF - show upload button
-          <>
+          // No PDF - show upload button using label approach
+          <label className="text-xs text-gray-500 hover:text-purple-600 transition-colors flex items-center gap-1 px-2 py-1 rounded hover:bg-purple-50 w-full justify-center cursor-pointer">
             <input
               ref={fileInputRef}
               type="file"
               accept=".pdf"
               onChange={handleFileUpload}
+              disabled={isUploading}
               className="hidden"
             />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-              className="text-xs text-gray-500 hover:text-purple-600 transition-colors flex items-center gap-1 px-2 py-1 rounded hover:bg-purple-50 w-full justify-center"
-            >
-              {isUploading ? (
-                <>
-                  <div className="animate-spin rounded-full h-3 w-3 border-b border-purple-500"></div>
-                  <span>Uploading...</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                  </svg>
-                  <span>Upload</span>
-                </>
-              )}
-            </button>
-          </>
+            {isUploading ? (
+              <>
+                <div className="animate-spin rounded-full h-3 w-3 border-b border-purple-500"></div>
+                <span>Uploading...</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                </svg>
+                <span>Upload</span>
+              </>
+            )}
+          </label>
         )}
       </div>
     )
