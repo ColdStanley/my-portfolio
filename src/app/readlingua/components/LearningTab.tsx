@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState, memo, useCallback } from 'react'
 import { useReadLinguaStore } from '../store/useReadLinguaStore'
 import { queryApi } from '../utils/apiClient'
 import { supabase } from '../utils/supabaseClient'
@@ -11,14 +11,15 @@ import SettingsPanel from './SettingsPanel'
 import AskAISearchBox from './AskAISearchBox'
 import MultipleAITooltips from './MultipleAITooltips'
 
-export default function LearningTab() {
+const LearningTab = memo(() => {
   const { selectedArticle, queries, setQueries, setSelectedQuery, showQueryPanel, setShowQueryPanel, setShowPromptManager, addAITooltip, updateAITooltip } = useReadLinguaStore()
   const [isPlaying, setIsPlaying] = useState(false)
 
   // Store tooltip IDs for streaming updates 
   const [streamingTooltips, setStreamingTooltips] = useState<Map<string, string>>(new Map())
 
-  const handleShowFloatingPanel = (data: {
+  // 优化：使用useCallback稳定函数引用
+  const handleShowFloatingPanel = useCallback((data: {
     queryType: string
     aiResponse: string
     isLoading: boolean
@@ -70,9 +71,9 @@ export default function LearningTab() {
     }
     
     return tooltipId
-  }
+  }, [addAITooltip, updateAITooltip, streamingTooltips])
 
-  const handlePlayPronunciation = async (text: string) => {
+  const handlePlayPronunciation = useCallback(async (text: string) => {
     if (isPlaying || !selectedArticle) return
     
     setIsPlaying(true)
@@ -112,7 +113,7 @@ export default function LearningTab() {
       console.error('Error playing pronunciation:', error)
       setIsPlaying(false)
     }
-  }
+  }, [isPlaying, selectedArticle])
 
   useEffect(() => {
     if (selectedArticle) {
@@ -221,4 +222,8 @@ export default function LearningTab() {
       </div>
     </div>
   )
-}
+})
+
+LearningTab.displayName = 'LearningTab'
+
+export default LearningTab

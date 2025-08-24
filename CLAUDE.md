@@ -351,3 +351,49 @@ const statusOptions = ['Not Started', 'Completed']
 ```
 
 **Principle**: One scroll container = predictable user experience
+
+## Text Selection Toolbar Animation (CRITICAL)
+
+**Smooth scaling animation for contextual toolbars triggered by text selection**
+
+### Animation Specifications
+
+```tsx
+// Standard toolbar animation pattern
+style={{
+  transform: `translate(-50%, -100%) scale(${showToolbar ? 1 : 0.85})`,
+  opacity: showToolbar ? 1 : 0,
+  transition: 'all 0.15s ease-out',
+  pointerEvents: showToolbar ? 'auto' : 'none'
+}}
+```
+
+### Implementation Rules
+
+1. **Scale Transition**: 85% to 100% scale on show/hide
+2. **Timing**: 0.15s ease-out transition for snappy feel
+3. **Combined Effects**: Always combine scale with opacity changes
+4. **DOM Presence**: Keep element in DOM, control visibility via CSS
+5. **Interaction Control**: Use `pointer-events: none` when hidden
+6. **Positioning**: Center above selected text with `translate(-50%, -100%)`
+
+### Usage Pattern
+```tsx
+const [showToolbar, setShowToolbar] = useState(false)
+
+// Trigger on text selection
+const handleMouseUp = () => {
+  const selection = window.getSelection()
+  if (selection?.toString().trim()) {
+    setShowToolbar(true)
+  }
+}
+
+// Auto-hide after action
+const handleAction = () => {
+  // Perform action
+  setShowToolbar(false)
+}
+```
+
+**Principle**: Subtle scale + opacity creates professional appearance/disappearance effect

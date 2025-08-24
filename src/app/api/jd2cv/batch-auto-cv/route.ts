@@ -832,15 +832,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 批量处理所有JD
-    const results = []
-    for (let i = 0; i < jds.length; i++) {
-      const jd = jds[i]
+    // 批量处理所有JD - 并行处理优化
+    console.log(`🔄 [Batch Auto CV] Starting parallel processing for ${jds.length} JDs`)
+    
+    const processPromises = jds.map(async (jd, i) => {
       console.log(`🔄 [Batch Auto CV] Processing JD ${i + 1}/${jds.length}: ${jd.title}`)
-      
-      const result = await processSingleJD(jd, userId, config, starredExperiences)
-      results.push(result)
-    }
+      return await processSingleJD(jd, userId, config, starredExperiences)
+    })
+    
+    // 并行执行所有处理任务
+    const results = await Promise.all(processPromises)
 
     const successCount = results.filter(r => r.success).length
     const failureCount = results.filter(r => !r.success).length

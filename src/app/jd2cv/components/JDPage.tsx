@@ -12,8 +12,8 @@ import ViewJDTooltip from './ViewJDTooltip'
 import DeleteTooltip from './DeleteTooltip'
 import CommentTooltip from './CommentTooltip'
 import CommentInlineEdit from './CommentInlineEdit'
-import StatsPanel from './StatsPanel'
 import EnhancedBatchProgressModal from './EnhancedBatchProgressModal'
+import AppliedStatsFloatingButton from './AppliedStatsFloatingButton'
 import { extractBullets, generateModuleTitle } from '@/shared/utils'
 
 interface JDPageProps {
@@ -63,9 +63,21 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
     getSelectedCount 
   } = useBatchSelectionStore()
 
-  // Load JDs on mount and setup realtime subscription
+  // Load JDs on mount and setup optimized refresh mechanism
   useEffect(() => {
     loadJDs()
+
+    let refreshTimeout: NodeJS.Timeout | null = null
+
+    // 防抖刷新函数
+    const debouncedRefresh = () => {
+      if (refreshTimeout) {
+        clearTimeout(refreshTimeout)
+      }
+      refreshTimeout = setTimeout(() => {
+        loadJDs()
+      }, 1200) // 1.2秒防抖，确保用户操作完成
+    }
 
     // Setup Supabase Realtime subscription for automatic refresh
     const supabase = createClient(
@@ -85,22 +97,20 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          // Refresh data when any change is detected
-          loadJDs()
+          // 防抖刷新，避免频繁更新
+          debouncedRefresh()
         }
       )
       .subscribe()
 
-    // Page focus listener as backup refresh mechanism
-    const handlePageFocus = () => {
-      loadJDs()
-    }
-    window.addEventListener('focus', handlePageFocus)
+    // 移除页面聚焦刷新 - 只在数据库内容变化时刷新
 
-    // Cleanup subscription and listener on unmount
+    // Cleanup subscription on unmount
     return () => {
+      if (refreshTimeout) {
+        clearTimeout(refreshTimeout)
+      }
       subscription.unsubscribe()
-      window.removeEventListener('focus', handlePageFocus)
     }
   }, [user.id])
 
@@ -1463,8 +1473,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
         </div>
       )}
 
-      {/* Stats Panel */}
-      <StatsPanel jds={jds} />
 
       {/* JD List */}
       {(() => {
@@ -1869,6 +1877,9 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
           }
         }}
       />
+
+      {/* Applied Stats Floating Button */}
+      <AppliedStatsFloatingButton jds={jds} />
     </div>
   )
 }

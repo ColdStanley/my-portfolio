@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState, memo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useReadLinguaStore } from '../store/useReadLinguaStore'
 
@@ -11,12 +11,12 @@ interface TextSelectionToolbarProps {
   onClose: () => void
 }
 
-export default function TextSelectionToolbar({
+const TextSelectionToolbar = memo<TextSelectionToolbarProps>(({
   position,
   selectedText,
   onQuerySubmit,
   onClose
-}: TextSelectionToolbarProps) {
+}) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Check if text language supports pronunciation - use article language setting  
@@ -32,14 +32,15 @@ export default function TextSelectionToolbar({
     return selectedArticle.source_language === 'english' || selectedArticle.source_language === 'french'
   }
 
-  const handleQueryType = async (queryType: string) => {
+  // 优化：使用useCallback稳定函数引用
+  const handleQueryType = useCallback(async (queryType: string) => {
     setIsSubmitting(true)
     try {
       await onQuerySubmit(queryType)
     } finally {
       setIsSubmitting(false)
     }
-  }
+  }, [onQuerySubmit])
 
   // Calculate optimal tooltip position
   const calculatePosition = () => {
@@ -174,4 +175,17 @@ export default function TextSelectionToolbar({
   )
   
   return typeof document !== 'undefined' ? createPortal(tooltipContent, document.body) : null
-}
+}, (prevProps, nextProps) => {
+  // 自定义比较函数 - 只在相关props改变时重渲染
+  return (
+    prevProps.position.x === nextProps.position.x &&
+    prevProps.position.y === nextProps.position.y &&
+    prevProps.selectedText === nextProps.selectedText &&
+    prevProps.onQuerySubmit === nextProps.onQuerySubmit &&
+    prevProps.onClose === nextProps.onClose
+  )
+})
+
+TextSelectionToolbar.displayName = 'TextSelectionToolbar'
+
+export default TextSelectionToolbar

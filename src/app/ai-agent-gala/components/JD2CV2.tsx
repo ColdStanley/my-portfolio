@@ -283,7 +283,7 @@ export default function JD2CV2() {
       setStepNumber(2)
 
       // Step 2: Call n8n webhook to get AI-generated experience
-      const webhookResponse = await fetch('http://localhost:5678/webhook/cf88dabc-821e-4ce5-b78a-d2699bfa1851', {
+      const webhookResponse = await fetch('https://agentworkflow.stanleyhi.com/webhook/cf88dabc-821e-4ce5-b78a-d2699bfa1851', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

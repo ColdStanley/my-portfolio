@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { marked } from 'marked'
-import { useReadLinguaStore, QuizQuestion } from '../store/useReadLinguaStore'
+import { useReadLinguaStore } from '../store/useReadLinguaStore'
 import { queryApi } from '../utils/apiClient'
 import { supabase } from '../utils/supabaseClient'
+import SimpleQuiz from './SimpleQuiz'
 
 export default function QueryPanel() {
   const { 
@@ -13,11 +14,6 @@ export default function QueryPanel() {
     setSelectedQuery, 
     setShowQueryPanel, 
     removeQuery,
-    dictationQuestions,
-    getCurrentQuestions,
-    generateDictationQuestions,
-    submitQuizAnswer,
-    isGeneratingQuiz,
     selectedArticle,
     addToEmailSelection
   } = useReadLinguaStore()
@@ -25,33 +21,32 @@ export default function QueryPanel() {
   const [activeTab, setActiveTab] = useState<'quick' | 'standard' | 'deep' | 'ask_ai' | 'quiz'>('quick')
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
   const [deleteMode, setDeleteMode] = useState<string | null>(null)
-  const [quizAnswers, setQuizAnswers] = useState<{ [key: string]: string }>({})
-  const [quizTimers, setQuizTimers] = useState<{ [key: string]: number }>({}) // Remaining time for each question
-  const [activeTimers, setActiveTimers] = useState<{ [key: string]: NodeJS.Timeout }>({}) // Timer refs
-  const [visibleQuestionIndex, setVisibleQuestionIndex] = useState(0) // Control which questions to show
-  const [showingOriginalQuery, setShowingOriginalQuery] = useState(false) // Control whether showing original query in quiz
   // Text selection states for pronunciation and email selection
   const [selectedText, setSelectedText] = useState('')
   const [selectionPosition, setSelectionPosition] = useState<{ x: number; y: number } | null>(null)
   const [showSelectionToolbar, setShowSelectionToolbar] = useState(false)
-  
-  // Get current questions based on mode
-  const quizQuestions = getCurrentQuestions()
 
 
-  // Auto-generate dictation quiz when conditions are met
-  useEffect(() => {
-    if (
-      activeTab === 'quiz' &&
-      !isGeneratingQuiz &&
-      dictationQuestions.length === 0 &&
-      queries.length > 0 &&
-      selectedArticle &&
-      ['english', 'french'].includes(selectedArticle.source_language)
-    ) {
-      generateDictationQuestions()
+  // Tab change handler - simplified
+  const handleTabChange = (tabId: 'quick' | 'standard' | 'deep' | 'ask_ai' | 'quiz') => {
+    setActiveTab(tabId)
+    
+    // Auto-select first query in the new tab, or clear if no queries
+    if (tabId === 'quiz') {
+      // Quiz tab - clear query selection
+      setSelectedQuery(null)
+    } else {
+      // Get first query of the new tab type
+      const tabQueries = queries.filter(q => q.query_type === tabId && q.selected_text)
+      if (tabQueries.length > 0) {
+        // Auto-select first query
+        setSelectedQuery(tabQueries[0])
+      } else {
+        // No queries in this tab, clear selection
+        setSelectedQuery(null)
+      }
     }
-  }, [activeTab, queries.length, isGeneratingQuiz, dictationQuestions.length, generateDictationQuestions, selectedArticle])
+  }
 
   const handleQueryClick = (query: any) => {
     setSelectedQuery(query)
@@ -187,27 +182,6 @@ export default function QueryPanel() {
     { id: 'quiz' as const, label: 'Quiz', count: 0 },
   ]
 
-  const handleTabChange = (tabId: 'quick' | 'standard' | 'deep' | 'ask_ai' | 'quiz') => {
-    setActiveTab(tabId)
-    
-    // Auto-select first query in the new tab, or clear if no queries
-    if (tabId === 'quiz') {
-      // Quiz tab - clear query selection, reset states
-      setSelectedQuery(null)
-      setShowingOriginalQuery(false)
-      // Note: Quiz generation now handled by useEffect based on data availability
-    } else {
-      // Get first query of the new tab type
-      const tabQueries = queries.filter(q => q.query_type === tabId && q.selected_text)
-      if (tabQueries.length > 0) {
-        // Auto-select first query
-        setSelectedQuery(tabQueries[0])
-      } else {
-        // No queries in this tab, clear selection
-        setSelectedQuery(null)
-      }
-    }
-  }
 
 
   // Check if text language supports pronunciation
@@ -221,109 +195,6 @@ export default function QueryPanel() {
     return selectedArticle.source_language === 'english' || selectedArticle.source_language === 'french'
   }
 
-  // Quiz functions
-  const startQuizTimer = (questionIndex: number) => {
-    // Clear existing timer if any
-    if (activeTimers[questionIndex]) {
-      clearInterval(activeTimers[questionIndex])
-    }
-
-    // Initialize timer at 30 seconds
-    setQuizTimers(prev => ({ ...prev, [questionIndex]: 30 }))
-
-    // Start countdown
-    const timer = setInterval(() => {
-      setQuizTimers(prev => {
-        const currentTime = prev[questionIndex]
-        if (currentTime <= 1) {
-          // Time's up - auto submit as incorrect
-          clearInterval(timer)
-          setActiveTimers(prev => {
-            const newTimers = { ...prev }
-            delete newTimers[questionIndex]
-            return newTimers
-          })
-          // Schedule submission for next tick to avoid render-during-render
-          setTimeout(() => {
-            submitQuizAnswer(questionIndex, '') // Submit empty answer (incorrect)
-          }, 0)
-          return { ...prev, [questionIndex]: 0 }
-        }
-        return { ...prev, [questionIndex]: currentTime - 1 }
-      })
-    }, 1000)
-
-    // Store timer reference
-    setActiveTimers(prev => ({ ...prev, [questionIndex]: timer }))
-  }
-
-  const clearQuizTimer = (questionIndex: number) => {
-    if (activeTimers[questionIndex]) {
-      clearInterval(activeTimers[questionIndex])
-      setActiveTimers(prev => {
-        const newTimers = { ...prev }
-        delete newTimers[questionIndex]
-        return newTimers
-      })
-      setQuizTimers(prev => {
-        const newTimers = { ...prev }
-        delete newTimers[questionIndex]
-        return newTimers
-      })
-    }
-  }
-
-  const handleQuizSubmit = (questionIndex: number) => {
-    const answer = quizAnswers[questionIndex] || ''
-    if (answer.trim()) {
-      clearQuizTimer(questionIndex)
-      submitQuizAnswer(questionIndex, answer.trim())
-      // Clear the answer after submission
-      setQuizAnswers(prev => ({
-        ...prev,
-        [questionIndex]: ''
-      }))
-    }
-  }
-
-  const handleQuizAnswerChange = (questionIndex: number, value: string) => {
-    setQuizAnswers(prev => ({
-      ...prev,
-      [questionIndex]: value
-    }))
-  }
-
-  const handleQuizQuestionClick = (question: QuizQuestion) => {
-    // Show original query within quiz interface
-    setSelectedQuery(question.originalQuery)
-    setShowingOriginalQuery(true)
-  }
-
-  const handleBackToQuiz = () => {
-    setShowingOriginalQuery(false)
-    setSelectedQuery(null)
-  }
-
-  // Clean up timers on unmount or tab change
-  useEffect(() => {
-    return () => {
-      // Clear all active timers on unmount
-      Object.values(activeTimers).forEach(timer => {
-        if (timer) clearInterval(timer)
-      })
-    }
-  }, [])
-
-  useEffect(() => {
-    // Clear timers when switching away from quiz tab
-    if (activeTab !== 'quiz') {
-      Object.values(activeTimers).forEach(timer => {
-        if (timer) clearInterval(timer)
-      })
-      setActiveTimers({})
-      setQuizTimers({})
-    }
-  }, [activeTab])
 
   const handlePlayPronunciation = async (text: string) => {
     if (isPlaying) return
@@ -500,318 +371,8 @@ export default function QueryPanel() {
 
       {/* Tab Content */}
       {activeTab === 'quiz' ? (
-        /* Quiz Content */
-        <div className="flex-1 bg-gray-50 min-h-0 flex flex-col">
-          {/* Quiz Header */}
-          <div className="flex-shrink-0 bg-white border-b border-gray-100 px-4 py-3">
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.787L4.866 13.1a.5.5 0 00-.316-.1H2a1 1 0 01-1-1V8a1 1 0 011-1h2.55a.5.5 0 00.316-.1l3.517-3.687zm7.316 1.19a1 1 0 011.414 0 8.97 8.97 0 010 12.684 1 1 0 11-1.414-1.414 6.97 6.97 0 000-9.856 1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0 4.985 4.985 0 010 7.072 1 1 0 11-1.415-1.414 2.985 2.985 0 000-4.244 1 1 0 010-1.414z" clipRule="evenodd"/>
-              </svg>
-              <span className="text-sm font-medium text-gray-700">Dictation Practice</span>
-            </div>
-          </div>
-
-          {/* Regenerate Button */}
-          <div className="p-2 bg-white border-b border-gray-100 flex justify-end">
-            <button
-              onClick={generateDictationQuestions}
-              className="px-3 py-1.5 text-xs rounded bg-purple-500 hover:bg-purple-600 text-white flex items-center gap-1.5 font-medium whitespace-nowrap"
-              disabled={isGeneratingQuiz || queries.length === 0}
-              title={queries.length === 0 ? 'First analyze text with Quick/Standard/Deep modes' : 'Regenerate dictation quiz based on current queries'}
-            >
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd"/>
-              </svg>
-              Regenerate
-            </button>
-          </div>
-          
-          {/* Quiz Content */}
-          {isGeneratingQuiz ? (
-            /* Loading State */
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-              <p className="text-sm text-gray-600">Generating Quiz Questions...</p>
-              <p className="text-xs text-gray-400 mt-1">This may take a moment</p>
-            </div>
-          ) : quizQuestions.length === 0 ? (
-            /* Empty State */
-            <div className="text-center py-8 px-4">
-              <svg className="w-12 h-12 mx-auto text-gray-300 mb-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd"/>
-              </svg>
-              <h3 className="text-lg font-medium text-gray-700 mb-2">
-                No Dictation Questions Available
-              </h3>
-              <div className="max-w-xs mx-auto">
-                <p className="text-sm text-gray-500 mb-3">
-                  {queries.length === 0 
-                    ? 'No analysis data found.' 
-                    : 'No queries suitable for dictation practice found.'
-                  }
-                </p>
-                {queries.length === 0 ? (
-                  <div className="text-xs text-gray-400 space-y-1">
-                    <p><strong>Step 1:</strong> Select text in the article</p>
-                    <p><strong>Step 2:</strong> Click Quick, Standard, or Deep analysis</p>
-                    <p><strong>Step 3:</strong> Click Regenerate button above</p>
-                  </div>
-                ) : (
-                  <div className="text-xs text-gray-400 space-y-1">
-                    <p>Current queries: <strong>{queries.length}</strong></p>
-                    <p>Valid for dictation: <strong>{
-                      queries.filter(q => q.query_type !== 'ask_ai' && q.selected_text?.trim()).length
-                    }</strong></p>
-                    <p className="mt-2">
-                      {selectedArticle && !['english', 'french'].includes(selectedArticle.source_language)
-                        ? '⚠️ Article language not supported for dictation'
-                        : 'Click Regenerate button to retry'
-                      }
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : showingOriginalQuery && selectedQuery ? (
-            /* Show Original Query in Quiz Context */
-            <div className="flex-1 bg-gray-50 min-h-0 flex flex-col">
-              {/* Back to Quiz Button */}
-              <div className="p-3 bg-white border-b border-gray-100">
-                <button
-                  onClick={handleBackToQuiz}
-                  className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium text-sm"
-                >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd"/>
-                  </svg>
-                  Back to Quiz
-                </button>
-              </div>
-              
-              {/* Original Query Display */}
-              <div className="flex-1 overflow-y-auto p-3">
-                <div className="bg-white rounded-lg p-4 shadow-sm">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="text-sm text-gray-500 font-medium">
-                      Original Query
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {getQueryTypeLabel(selectedQuery.query_type)} | {new Date(selectedQuery.created_at).toLocaleString([], { 
-                        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
-                      })}
-                    </div>
-                  </div>
-                  
-                  {selectedQuery.selected_text && (
-                    <div className="mb-4">
-                      <div className="text-lg font-bold text-gray-900 mb-2">
-                        {selectedQuery.selected_text}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {selectedQuery.user_question && (
-                    <div className="text-sm text-purple-700 italic mb-3">
-                      Q: {selectedQuery.user_question}
-                    </div>
-                  )}
-                  
-                  <div 
-                    className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none"
-                    style={{
-                      '--tw-prose-body': '#374151',
-                      '--tw-prose-headings': '#111827',
-                      '--tw-prose-links': '#7c3aed',
-                      '--tw-prose-bold': '#111827',
-                      '--tw-prose-counters': '#6b7280',
-                      '--tw-prose-bullets': '#d1d5db',
-                    } as React.CSSProperties}
-                    dangerouslySetInnerHTML={{ 
-                      __html: parseMarkdownResponse(selectedQuery.ai_response) 
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* Quiz Questions - Progressive Display */
-            <div className="flex-1 overflow-y-auto">
-              {/* Progress Bar */}
-              <div className="px-4 py-3 bg-white border-b border-gray-100">
-                <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-                  <span>Progress</span>
-                  <span>{quizQuestions.filter(q => q.isAnswered).length} of {quizQuestions.length} completed</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-purple-500 h-2 rounded-full transition-all duration-300" 
-                    style={{width: `${(quizQuestions.filter(q => q.isAnswered).length / quizQuestions.length) * 100}%`}} 
-                  />
-                </div>
-              </div>
-
-              <div className="p-3 space-y-4">
-                {quizQuestions.map((question, index) => {
-                // Show question if it's within visible range
-                const shouldShow = index <= visibleQuestionIndex
-                
-                if (!shouldShow) return null
-                
-                return (
-                  <div
-                    key={question.id}
-                    className="bg-white rounded-lg p-4 shadow-sm border border-gray-100"
-                  >
-                    {/* Question Header */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="text-sm text-gray-500 font-medium">
-                        Question {index + 1}/{quizQuestions.length}
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {/* Timer Progress Bar */}
-                        {!question.isAnswered && (
-                          <div className="w-24 bg-gray-200 rounded-full h-2">
-                            <div 
-                              className={`h-2 rounded-full transition-all duration-1000 ${
-                                (quizTimers[index] || 30) <= 5 ? 'bg-red-500' : 'bg-purple-500'
-                              }`}
-                              style={{width: `${((quizTimers[index] || 30) / 30) * 100}%`}}
-                            />
-                          </div>
-                        )}
-                        <button
-                          onClick={() => handleQuizQuestionClick(question)}
-                          className="text-xs text-purple-600 hover:text-purple-800 hover:underline"
-                        >
-                          View original query →
-                        </button>
-                      </div>
-                    </div>
-                    
-                    {/* Question Text - Dictation Mode */}
-                    <div className="mb-4">
-                      <div className="text-base text-gray-900 mb-3 leading-relaxed">
-                        {question.question}
-                      </div>
-                      {/* Audio Player for Dictation */}
-                      <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
-                        <button
-                          onClick={() => handlePlayPronunciation(question.answer)}
-                          disabled={isPlaying}
-                          className="w-10 h-10 bg-purple-500 hover:bg-purple-600 disabled:opacity-50 text-white rounded-full flex items-center justify-center transition-colors"
-                          title="Play audio"
-                        >
-                          {isPlaying ? (
-                            <svg className="w-5 h-5 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.787L4.866 13.1a.5.5 0 00-.316-.1H2a1 1 0 01-1-1V8a1 1 0 011-1h2.55a.5.5 0 00.316-.1l3.517-3.687zm7.316 1.19a1 1 0 011.414 0 8.97 8.97 0 010 12.684 1 1 0 11-1.414-1.414 6.97 6.97 0 000-9.856 1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0 4.985 4.985 0 010 7.072 1 1 0 11-1.415-1.414 2.985 2.985 0 000-4.244 1 1 0 010-1.414z" clipRule="evenodd"/>
-                            </svg>
-                          ) : (
-                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd"/>
-                            </svg>
-                          )}
-                        </button>
-                        <div className="flex-1">
-                          <p className="text-sm text-purple-700 font-medium">Click to listen</p>
-                          <p className="text-xs text-purple-600">Type what you hear in the input below</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Answer Input or Result */}
-                    {!question.isAnswered ? (
-                      <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value={quizAnswers[index] || ''}
-                            onChange={(e) => handleQuizAnswerChange(index, e.target.value)}
-                            placeholder="Type what you hear..."
-                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                            onKeyPress={(e) => {
-                              if (e.key === 'Enter') {
-                                handleQuizSubmit(index)
-                              }
-                            }}
-                            onFocus={() => {
-                              // Start timer when user focuses on input
-                              if (!activeTimers[index]) {
-                                startQuizTimer(index)
-                              }
-                            }}
-                            autoFocus={shouldShow && !question.isAnswered && index === visibleQuestionIndex}
-                          />
-                          <button
-                            onClick={() => handleQuizSubmit(index)}
-                            disabled={!quizAnswers[index]?.trim()}
-                            className="px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium whitespace-nowrap"
-                          >
-                            Submit
-                          </button>
-                      </div>
-                    ) : (
-                      /* Answer Result */
-                      <div className="space-y-3 answer-reveal">
-                        {/* Correct Answer */}
-                        <div className={`p-3 rounded-lg ${
-                          question.isCorrect 
-                            ? 'bg-purple-100 text-purple-700' 
-                            : 'bg-purple-50 text-purple-600'
-                        }`}>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">
-                              Answer: {question.answer}
-                            </span>
-                              {supportsPronunciation(question.answer) && (
-                                <button
-                                  onClick={() => handlePlayPronunciation(question.answer)}
-                                  disabled={isPlaying}
-                                  className="w-5 h-5 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-full flex items-center justify-center transition-colors disabled:opacity-50"
-                                  title="Play pronunciation"
-                                >
-                                  {isPlaying ? (
-                                    <svg className="w-3 h-3 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.787L4.866 13.1a.5.5 0 00-.316-.1H2a1 1 0 01-1-1V8a1 1 0 011-1h2.55a.5.5 0 00.316-.1l3.517-3.687zm7.316 1.19a1 1 0 011.414 0 8.97 8.97 0 010 12.684 1 1 0 11-1.414-1.414 6.97 6.97 0 000-9.856 1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0 4.985 4.985 0 010 7.072 1 1 0 11-1.415-1.414 2.985 2.985 0 000-4.244 1 1 0 010-1.414z" clipRule="evenodd"/>
-                                    </svg>
-                                  ) : (
-                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.787L4.866 13.1a.5.5 0 00-.316-.1H2a1 1 0 01-1-1V8a1 1 0 011-1h2.55a.5.5 0 00.316-.1l3.517-3.687zm7.316 1.19a1 1 0 011.414 0 8.97 8.97 0 010 12.684 1 1 0 11-1.414-1.414 6.97 6.97 0 000-9.856 1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0 4.985 4.985 0 010 7.072 1 1 0 11-1.415-1.414 2.985 2.985 0 000-4.244 1 1 0 010-1.414z" clipRule="evenodd"/>
-                                    </svg>
-                                  )}
-                                </button>
-                              )}
-                          </div>
-                          {!question.isCorrect && question.userAnswer && (
-                            <div className="text-sm opacity-75 mt-1">
-                              Your answer: {question.userAnswer}
-                            </div>
-                          )}
-                        </div>
-                        
-
-                        {/* Next Question Button */}
-                        {question.isAnswered && index < quizQuestions.length - 1 && index === visibleQuestionIndex && (
-                          <div className="flex justify-end mt-3">
-                            <button
-                              onClick={() => setVisibleQuestionIndex(prev => prev + 1)}
-                              className="px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded text-xs font-medium whitespace-nowrap flex items-center gap-1.5"
-                            >
-                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
-                              </svg>
-                              Next
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )
-                })}
-              </div>
-            </div>
-          )}
-        </div>
+        /* Simplified Quiz Content */
+        <SimpleQuiz />
       ) : (
         /* Regular Query Tab Content */
         <div className="flex-shrink-0 p-3 max-h-64 overflow-y-auto bg-gray-50/50">

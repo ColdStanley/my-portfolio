@@ -245,13 +245,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 批量优化所有experience
-    const results = []
-    for (const experience of experiences) {
+    // 批量优化所有experience - 并行处理优化
+    console.log(`🔄 [Batch Optimize CV] Starting parallel processing for ${experiences.length} experiences`)
+    
+    const optimizationPromises = experiences.map(async (experience) => {
       console.log(`🔄 [Batch Optimize CV] Processing ${experience.title} at ${experience.company}`)
-      const result = await optimizeSingleExperience(experience, jdKeywords, userId, aiModel)
-      results.push(result)
-    }
+      return await optimizeSingleExperience(experience, jdKeywords, userId, aiModel)
+    })
+    
+    // 并行执行所有优化任务
+    const results = await Promise.all(optimizationPromises)
 
     const successCount = results.filter(r => r.success).length
     const failureCount = results.filter(r => !r.success).length

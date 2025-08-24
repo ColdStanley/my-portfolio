@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Bilibili Uploader Analyzer",
+  "version": "1.0.0",
+  "description": "Analyze Bilibili UP主 channel data and content statistics",
+  
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  
+  "host_permissions": [
+    "*://space.bilibili.com/*"
+  ],
+  
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Bilibili Uploader Analyzer"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": ["*://space.bilibili.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

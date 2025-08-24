@@ -133,11 +133,14 @@ async function callDeepSeek(prompt: string, temperature: number = 0.3) {
   }
 }
 
+// 简单的内存缓存避免重复查询
+let promptsCache = new Map()
+
 // 批量分析JD的核心逻辑
-async function analyzeSingleJD(jdRecord: any, userId: string, aiModel: string = 'deepseek') {
+async function analyzeSingleJD(jdRecord: any, userId: string, aiModel: string = 'deepseek', cachedPrompts?: any) {
   try {
-    // Get user prompts
-    const prompts = await getUserPrompts(userId, aiModel)
+    // Get user prompts - 使用缓存避免重复查询
+    const prompts = cachedPrompts || await getUserPrompts(userId, aiModel)
 
     // Step 1: Extract key sentences
     const keySentencesPrompt = prompts.keySentences
@@ -215,13 +218,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 批量分析所有JD
-    const results = []
-    for (const jdRecord of jdRecords) {
+    // 批量分析所有JD - 并行处理优化
+    console.log(`🔄 [Batch Analyze JD] Starting parallel processing for ${jdRecords.length} JDs`)
+    
+    // 缓存用户prompts，避免重复查询
+    const cachedPrompts = await getUserPrompts(userId, aiModel)
+    
+    const analysisPromises = jdRecords.map(async (jdRecord) => {
       console.log(`🔄 [Batch Analyze JD] Processing ${jdRecord.title}`)
-      const result = await analyzeSingleJD(jdRecord, userId, aiModel)
-      results.push(result)
-    }
+      return await analyzeSingleJD(jdRecord, userId, aiModel, cachedPrompts)
+    })
+    
+    // 并行执行所有分析任务
+    const results = await Promise.all(analysisPromises)
 
     const successCount = results.filter(r => r.success).length
     const failureCount = results.filter(r => !r.success).length

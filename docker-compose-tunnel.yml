@@ -1,0 +1,12 @@
+services:
+  cloudflare-tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: stanleyhi_n8n_tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token eyJhIjoiZWEwNGE5NjQxYTMyNWI5YWIxZDc5NzQ5NDMxNjEwODIiLCJ0IjoiYWNhODA2OWYtMzRiYi00OTA1LWE1YTQtNjFkZWY2MTMwNzBkIiwicyI6Ik5ETXdPV1ZoWWpjdE56Z3pNaTAwTmpWbExXRm1OMkl0TkdZd01HWmtZamhrT1dZeiJ9
+    network_mode: host
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

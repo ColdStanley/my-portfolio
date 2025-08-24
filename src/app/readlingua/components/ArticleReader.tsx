@@ -1,18 +1,18 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { marked } from 'marked'
+import React, { useState, useRef, useMemo, memo } from 'react'
 import { Article, useReadLinguaStore } from '../store/useReadLinguaStore'
 import { aiApi, queryApi } from '../utils/apiClient'
 import { supabase } from '../utils/supabaseClient'
 import TextSelectionToolbar from './TextSelectionToolbar'
 import FlagIcon from './FlagIcon'
+import { formatArticleContent } from '../utils/contentCache'
 
 interface ArticleReaderProps {
   article: Article
 }
 
-export default function ArticleReader({ article }: ArticleReaderProps) {
+const ArticleReader = memo<ArticleReaderProps>(({ article }) => {
   const [selectedText, setSelectedText] = useState('')
   const [selectionPosition, setSelectionPosition] = useState({ x: 0, y: 0 })
   const [showToolbar, setShowToolbar] = useState(false)
@@ -196,52 +196,10 @@ export default function ArticleReader({ article }: ArticleReaderProps) {
     }
   }
 
-  const formatArticleContent = () => {
-    // Clean the content first - remove any existing HTML highlights
-    let content = article.content
-      .replace(/<span[^>]*data-highlight-id[^>]*>([^<]*)<\/span>/g, '$1')
-      .replace(/class="bg-purple-[^"]*"/g, '')
-      .replace(/data-highlight-id="[^"]*"/g, '')
-      .replace(/data-query-id="[^"]*"/g, '')
-    
-    // Remove any malformed HTML artifacts
-    content = content.replace(/>\s*class="[^"]*"\s*</g, '><')
-                    .replace(/^\s*class="[^"]*"\s*/g, '')
-                    .replace(/\s*class="[^"]*"\s*$/g, '')
-    
-    // Parse Markdown to HTML
-    try {
-      // Configure marked options for better rendering
-      content = marked.parse(content, {
-        breaks: true,        // Convert line breaks to <br>
-        gfm: true,          // GitHub Flavored Markdown
-      })
-    } catch (error) {
-      console.warn('Markdown parsing failed, using plain text:', error)
-      // Fallback: convert line breaks manually if markdown parsing fails
-      content = content
-        .replace(/\n\n+/g, '</p><p class="mb-4">')
-        .replace(/\n/g, '<br>')
-        .replace(/^/, '<p class="mb-4">')
-        .replace(/$/, '</p>')
-    }
-    
-    const highlights = queries.filter(q => q.text_position && q.selected_text)
-    
-    // Apply highlights by finding text matches instead of using positions
-    highlights.forEach((query) => {
-      if (query.selected_text && query.text_position?.highlight_id) {
-        const searchText = query.selected_text.trim()
-        if (searchText && content.includes(searchText)) {
-          const highlightSpan = `<span class="article-highlight cursor-pointer" data-highlight-id="${query.text_position.highlight_id}" data-query-id="${query.id}">${searchText}</span>`
-          // Only replace the first occurrence to avoid duplicates
-          content = content.replace(searchText, highlightSpan)
-        }
-      }
-    })
-
-    return content
-  }
+  // 优化：使用缓存的内容格式化，避免每次渲染都重新处理
+  const formattedContent = useMemo(() => {
+    return formatArticleContent(article.id, article.content, queries)
+  }, [article.id, article.content, queries])
 
 
 
@@ -286,7 +244,7 @@ export default function ArticleReader({ article }: ArticleReaderProps) {
           }}
           onMouseUp={handleTextSelection}
           onClick={handleHighlightClick}
-          dangerouslySetInnerHTML={{ __html: formatArticleContent() }}
+          dangerouslySetInnerHTML={{ __html: formattedContent }}
         />
       </div>
 
@@ -359,4 +317,17 @@ export default function ArticleReader({ article }: ArticleReaderProps) {
       `}</style>
     </div>
   )
-}
+}, (prevProps, nextProps) => {
+  // 自定义比较函数 - 只在article内容真正改变时重渲染
+  return (
+    prevProps.article.id === nextProps.article.id &&
+    prevProps.article.content === nextProps.article.content &&
+    prevProps.article.title === nextProps.article.title &&
+    prevProps.article.source_language === nextProps.article.source_language &&
+    prevProps.article.native_language === nextProps.article.native_language
+  )
+})
+
+ArticleReader.displayName = 'ArticleReader'
+
+export default ArticleReader

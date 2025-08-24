@@ -1,0 +1,414 @@
+{
+  "name": "Paragraphe Magique",
+  "nodes": [
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "ce37a283-fa58-445b-92ee-fd0a4112ead3",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=你是一位法语学习助手。请根据以下法语自然段生成2–3道练习题（句子重排/填空）。\n\n  严格按照以下JSON格式输出，不要添加任何其他文字、代码块标记或解释：\n  [\n    {\"type\": \"reorder/fillblank\", \"question\": \"中文题干\", \"answer\": \"中文或法语答案\"}\n  ]\n\n  自然段：{{$json.body.content}}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        288,
+        480
+      ],
+      "id": "929d2d5d-1e43-4df3-a52a-5240d27bd801",
+      "name": "Exercises Generator"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        288,
+        640
+      ],
+      "id": "798da419-babe-428b-800e-2def7d9368a8",
+      "name": "DeepSeek Model 5",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "p6DB6HAUv2VP5Jy6",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=你是一位法语学习助手。请识别以下法语自然段中出现的重要语法点。\n\n  严格按照以下JSON格式输出，不要添加任何其他文字、代码块标记或解释：\n  [\n    {\"point\": \"语法点名称\", \"explanation\": \"中文语法说明\", \"example\": \"中法例句\"}\n  ]\n\n  自然段：{{$json.body.content}}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        272,
+        176
+      ],
+      "id": "0c06f797-28a0-4c09-9715-003a9b6e12a5",
+      "name": "Grammar Analysis"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        272,
+        352
+      ],
+      "id": "b53a6d65-1eb0-492a-85a2-bdcd690c84d0",
+      "name": "DeepSeek Model 4",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "p6DB6HAUv2VP5Jy6",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=你是一位法语学习助手。请从以下法语自然段中提取5–10个高频单词并提供详细解释。\n\n  严格按照以下JSON格式输出，不要添加任何其他文字、代码块标记或解释：\n  [\n    {\"word\": \"单词\", \"ipa\": \"音标\", \"meaning\": \"中文释义\", \"usage\": \"常见用法说明\", \"example\": \"中法例句\"}\n  ]\n\n  自然段：{{$json.body.content}}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        272,
+        -112
+      ],
+      "id": "837b07ff-c875-4b9d-ad3b-c6b9a47c43f3",
+      "name": "Words Analysis"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        272,
+        48
+      ],
+      "id": "b8525251-6b5e-4377-bd9f-c80becddd757",
+      "name": "DeepSeek Model 3",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "p6DB6HAUv2VP5Jy6",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=\n  你是一位法语学习助手。请从以下法语自然段中提取常见法语词组，分成三类（逻辑类、描写类、动作类）。\n\n  严格按照以下JSON格式输出，不要添加任何其他文字、代码块标记或解释：\n  [\n    {\"phrase\": \"词组\", \"type\": \"逻辑/描写/动作\", \"meaning\": \"中文释义\", \"example\": \"中法例句\"}\n  ]\n\n  自然段：{{$json.body.content}}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        272,
+        -400
+      ],
+      "id": "cbc33c81-fcdc-45d2-a522-b6b3157ef1a6",
+      "name": "Phrases Analysis"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        272,
+        -224
+      ],
+      "id": "3b6a143f-de4a-4fa8-9eff-d3af3aed704c",
+      "name": "DeepSeek Model 2",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "p6DB6HAUv2VP5Jy6",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=你是一位法语学习助手。请分析以下法语自然段的主旨、组织方式和句子角色。\n\n  严格按照以下JSON格式输出，不要添加任何其他文字、代码块标记或解释：\n  {\n    \"summary\": \"简明扼要分析一下段落结构，要直击重点\",\n    \"organization\": \"该段落的内容（句子）是通过什么逻辑、用什么方式、哪些关键词汇（重点）来构造该结构的。\",\n  }\n\n  自然段：{{$json.body.content}}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        272,
+        -688
+      ],
+      "id": "8e832be1-5dad-4f7a-b885-787cad55a4fd",
+      "name": "Paragraph Analysis"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        272,
+        -528
+      ],
+      "id": "2c793e15-2357-40b7-8149-7bcc39fad188",
+      "name": "DeepSeek Model 1",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "p6DB6HAUv2VP5Jy6",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "db4fdebb-d836-420c-8a43-a04c08b83c22",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -752,
+        -96
+      ],
+      "webhookMethods": {
+        "default": {
+          "POST": true
+        }
+      },
+      "webhookId": "57e814ce-9cd5-4425-8295-424738359d0f"
+    },
+    {
+      "parameters": {
+        "jsCode": "const out = {\n  paragraph: $items(\"Paragraph Analysis\")[0].json,\n  phrases: $items(\"Phrases Analysis\")[0].json,\n  words: $items(\"Words Analysis\")[0].json,\n  grammar: $items(\"Grammar Analysis\")[0].json,\n  exercises: $items(\"Exercises Generator\")[0].json,\n};\nreturn [{ json: out }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        -160
+      ],
+      "id": "abaa084c-3ff9-4c98-b7bc-509f49500598",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "numberInputs": 5
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1472,
+        -208
+      ],
+      "id": "1100736b-c545-4f61-9d67-de5a6ca43de7",
+      "name": "Merge"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Exercises Generator": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "DeepSeek Model 5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Exercises Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Grammar Analysis": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "DeepSeek Model 4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Grammar Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Words Analysis": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "DeepSeek Model 3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Words Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Phrases Analysis": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "DeepSeek Model 2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Phrases Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Paragraph Analysis": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Model 1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Paragraph Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Exercises Generator",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Grammar Analysis",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Words Analysis",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Phrases Analysis",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Paragraph Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a28a1ada-4e54-44ec-aa52-8293da2be0d8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4c844779e57f062ed2d65cae41537d8794946978b58b8ba423f134ec33dbef0d"
+  },
+  "id": "U1H48Kag9XAStrmD",
+  "tags": []
+}

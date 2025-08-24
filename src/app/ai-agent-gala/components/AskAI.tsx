@@ -5,9 +5,11 @@ import { marked } from 'marked'
 
 interface AskAIProps {
   show: boolean
+  onMouseEnter?: () => void
+  onMouseLeave?: () => void
 }
 
-export default function AskAI({ show }: AskAIProps) {
+export default function AskAI({ show, onMouseEnter, onMouseLeave }: AskAIProps) {
   const [question, setQuestion] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
@@ -222,11 +224,12 @@ export default function AskAI({ show }: AskAIProps) {
       <div className="fixed bottom-6 right-6 z-20">
         <button
           onClick={() => setIsOpen(!isOpen)}
+          onMouseEnter={onMouseEnter}
+          onMouseLeave={onMouseLeave}
           className="w-12 h-12 bg-white/90 backdrop-blur-md rounded-full shadow-xl hover:shadow-2xl transition-all duration-200 flex items-center justify-center group"
           style={{
             boxShadow: '0 8px 32px rgba(139, 92, 246, 0.2), 0 4px 16px rgba(0, 0, 0, 0.1)'
           }}
-          title="Ask AI"
         >
           <svg 
             className="w-5 h-5 text-purple-500 transition-transform duration-200" 

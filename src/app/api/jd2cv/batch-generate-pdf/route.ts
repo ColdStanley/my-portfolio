@@ -440,7 +440,11 @@ function generateComprehensiveHTML(data: PDFGenerationRequest): string {
 }
 
 // 批量生成单个JD的PDF的核心逻辑
-async function generateSingleJDPDF(jd: any, pdfModules: any[], config: any) {
+// 优化版本：接受共享的browser实例
+async function generateSingleJDPDF(jd: any, pdfModules: any[], config: any, sharedBrowser?: any) {
+  let browser = sharedBrowser
+  let shouldCloseBrowser = false
+  
   try {
     // 准备experience modules
     const experienceModules = pdfModules.map(module => ({
@@ -460,16 +464,19 @@ async function generateSingleJDPDF(jd: any, pdfModules: any[], config: any) {
     // Generate HTML content
     const html = generateComprehensiveHTML(pdfRequest)
 
-    // Launch Puppeteer
-    const browser = await puppeteer.launch({
-      headless: 'new',
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu'
-      ]
-    })
+    // 如果没有共享browser，创建新的（向后兼容）
+    if (!browser) {
+      browser = await puppeteer.launch({
+        headless: 'new',
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu'
+        ]
+      })
+      shouldCloseBrowser = true
+    }
 
     const page = await browser.newPage()
 
@@ -488,7 +495,13 @@ async function generateSingleJDPDF(jd: any, pdfModules: any[], config: any) {
         margin: { top: 0, right: 0, bottom: 0, left: 0 }
       })
 
-      await browser.close()
+      // 关闭页面但保留browser（如果是共享的）
+      await page.close()
+      
+      // 只有非共享browser才需要关闭
+      if (shouldCloseBrowser) {
+        await browser.close()
+      }
 
       // Check file size (should be < 2MB for reasonable download)
       const sizeInMB = pdf.length / (1024 * 1024)
@@ -541,7 +554,13 @@ async function generateSingleJDPDF(jd: any, pdfModules: any[], config: any) {
       }
 
     } catch (pdfError) {
-      await browser.close()
+      // 错误时也要正确处理browser关闭
+      if (page) {
+        await page.close()
+      }
+      if (shouldCloseBrowser && browser) {
+        await browser.close()
+      }
       throw pdfError
     }
 
@@ -580,16 +599,41 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 批量生成所有JD的PDF
-    const results = []
-    for (const jdData of jdsData) {
-      console.log(`🔄 [Batch Generate PDF] Processing PDF for ${jdData.jd.title}`)
-      const result = await generateSingleJDPDF(jdData.jd, jdData.pdfModules, config)
-      results.push(result)
+    // 批量生成所有JD的PDF - 性能优化版本
+    console.log(`🔄 [Batch Generate PDF] Starting optimized batch processing for ${jdsData.length} JDs`)
+    
+    // 创建共享browser实例
+    const sharedBrowser = await puppeteer.launch({
+      headless: 'new',
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu'
+      ]
+    })
+    
+    try {
+      // 并行处理所有PDF生成
+      const pdfPromises = jdsData.map(async (jdData) => {
+        console.log(`🔄 [Batch Generate PDF] Processing PDF for ${jdData.jd.title}`)
+        return await generateSingleJDPDF(jdData.jd, jdData.pdfModules, config, sharedBrowser)
+      })
+      
+      // 等待所有PDF生成完成
+      const results = await Promise.all(pdfPromises)
+      
+      // 关闭共享browser
+      await sharedBrowser.close()
+      
+      const successCount = results.filter(r => r.success).length
+      const failureCount = results.filter(r => !r.success).length
+      
+    } catch (error) {
+      // 错误时关闭共享browser
+      await sharedBrowser.close()
+      throw error
     }
-
-    const successCount = results.filter(r => r.success).length
-    const failureCount = results.filter(r => !r.success).length
 
     return NextResponse.json({
       success: true,
