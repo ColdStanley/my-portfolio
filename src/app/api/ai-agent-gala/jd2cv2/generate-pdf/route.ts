@@ -125,9 +125,44 @@ function convertMarkdownToHTML(text: string): string {
     .replace(/\n/g, '<br>')
 }
 
+// Parse AI experience text into company sections
+function parseExperienceIntoSections(aiText: string): string[] {
+  try {
+    // Strategy 1: Split by company headers (bold company name pattern)
+    // Look for patterns like: **Company Name | Position | Date Range**
+    let sections = aiText.split(/\n\n(?=\*\*.*?\|.*?\|.*?\*\*)/)
+    
+    if (sections.length > 1) {
+      return sections.filter(section => section.trim().length > 0)
+    }
+    
+    // Strategy 2: Split by double line breaks (paragraph separation)
+    sections = aiText.split(/\n\n+/)
+    
+    if (sections.length > 2) {
+      return sections.filter(section => section.trim().length > 50) // Filter out short fragments
+    }
+    
+    // Strategy 3: Split by company/position indicators
+    sections = aiText.split(/(?=\n[A-Z][^a-z]*?\s*\|)/)
+    
+    if (sections.length > 1) {
+      return sections.filter(section => section.trim().length > 0)
+    }
+    
+    // Fallback: return as single section if parsing fails
+    return [aiText]
+    
+  } catch (error) {
+    console.error('Experience parsing failed:', error)
+    return [aiText] // Fallback to single section
+  }
+}
+
 function generateResumeHTML(personalInfo: PersonalInfo, aiExperience: string, format: string): string {
-  // Convert markdown formatting in AI experience
-  const formattedAiExperience = convertMarkdownToHTML(aiExperience)
+  // Parse AI experience into sections and convert markdown
+  const experienceSections = parseExperienceIntoSections(aiExperience)
+  const formattedExperienceSections = experienceSections.map(section => convertMarkdownToHTML(section))
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -292,6 +327,18 @@ function generateResumeHTML(personalInfo: PersonalInfo, aiExperience: string, fo
       line-height: 1.6;
     }
     
+    .experience-company {
+      page-break-inside: avoid;
+      break-inside: avoid;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+    }
+    
+    .experience-company:not(:last-child) {
+      border-bottom: 1px solid #e5e7eb;
+      margin-bottom: 12px;
+    }
+    
     .ai-experience strong {
       font-weight: 700;
       color: #1f2937;
@@ -356,7 +403,13 @@ function generateResumeHTML(personalInfo: PersonalInfo, aiExperience: string, fo
     <!-- Professional Experience -->
     <div class="section">
       <h2 class="section-title">Professional Experience</h2>
-      <div class="ai-experience">${formattedAiExperience}</div>
+      <div class="ai-experience">
+        ${formattedExperienceSections.map(section => `
+          <div class="experience-company">
+            ${section}
+          </div>
+        `).join('')}
+      </div>
     </div>
 
     <!-- Technical Skills -->

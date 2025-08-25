@@ -61,11 +61,11 @@ export default function StrategyFormPanel({
       >
         {/* Header with Close Button */}
         <div className="flex justify-between items-center p-4 border-b border-gray-100 flex-shrink-0">
-          <h2 className="text-sm font-medium text-gray-800">
+          <h2 className="text-sm font-medium text-purple-800">
             {strategy ? 'Edit Strategy' : 'New Strategy'}
           </h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded transition-colors">
-            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button onClick={onClose} className="p-1 hover:bg-purple-700/100 rounded transition-colors">
+            <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -75,14 +75,14 @@ export default function StrategyFormPanel({
         <form onSubmit={handleSubmit} className="p-3 overflow-y-auto min-h-0 flex-1 space-y-3">
           {/* Strategy Title */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Strategy Title *</label>
+            <label className="block text-xs font-medium text-purple-600 mb-1">Strategy Title *</label>
             <input
               type="text"
               value={formData.objective}
               onChange={(e) => setFormData(prev => ({ ...prev, objective: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-200 rounded-md 
                         focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700 text-sm
+                        bg-white text-purple-700 text-sm
                         hover:border-gray-300 transition-all duration-200"
               required
               placeholder="Enter strategy objective..."
@@ -93,13 +93,13 @@ export default function StrategyFormPanel({
           <div className="grid grid-cols-2 gap-3">
             {/* Status */}
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Status *</label>
+              <label className="block text-xs font-medium text-purple-600 mb-1">Status *</label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-200 rounded-md 
                           focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                          bg-white text-gray-700 text-sm
+                          bg-white text-purple-700 text-sm
                           hover:border-gray-300 transition-all duration-200"
                 required
               >
@@ -112,13 +112,13 @@ export default function StrategyFormPanel({
 
             {/* Priority Quadrant */}
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Priority *</label>
+              <label className="block text-xs font-medium text-purple-600 mb-1">Priority *</label>
               <select
                 value={formData.priority_quadrant}
                 onChange={(e) => setFormData(prev => ({ ...prev, priority_quadrant: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-200 rounded-md 
                           focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                          bg-white text-gray-700 text-sm
+                          bg-white text-purple-700 text-sm
                           hover:border-gray-300 transition-all duration-200"
                 required
               >
@@ -132,13 +132,13 @@ export default function StrategyFormPanel({
 
           {/* Category */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
+            <label className="block text-xs font-medium text-purple-600 mb-1">Category</label>
             <select
               value={formData.category}
               onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-200 rounded-md 
                         focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700 text-sm
+                        bg-white text-purple-700 text-sm
                         hover:border-gray-300 transition-all duration-200"
             >
               <option value="">Select Category</option>
@@ -151,9 +151,9 @@ export default function StrategyFormPanel({
           {/* Date Range - 2 Row Layout */}
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-xs font-medium text-purple-600 mb-1">
                 Start Date *
-                <span className="text-xs text-gray-400 ml-1">(Strategy start date)</span>
+                <span className="text-xs text-purple-400 ml-1">(Strategy start date)</span>
               </label>
               <input
                 type="date"
@@ -161,15 +161,15 @@ export default function StrategyFormPanel({
                 onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-200 rounded-md 
                           focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                          bg-white text-gray-700 text-sm
+                          bg-white text-purple-700 text-sm
                           hover:border-gray-300 transition-all duration-200"
                 required
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-xs font-medium text-purple-600 mb-1">
                 Due Date *
-                <span className="text-xs text-gray-400 ml-1">(Strategy deadline)</span>
+                <span className="text-xs text-purple-400 ml-1">(Strategy deadline)</span>
               </label>
               <input
                 type="date"
@@ -177,7 +177,7 @@ export default function StrategyFormPanel({
                 onChange={(e) => setFormData(prev => ({ ...prev, due_date: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-200 rounded-md 
                           focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                          bg-white text-gray-700 text-sm
+                          bg-white text-purple-700 text-sm
                           hover:border-gray-300 transition-all duration-200"
                 required
               />
@@ -186,14 +186,14 @@ export default function StrategyFormPanel({
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+            <label className="block text-xs font-medium text-purple-600 mb-1">Description</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={2}
               className="w-full px-3 py-2 border border-gray-200 rounded-md 
                         focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700 text-sm max-h-20
+                        bg-white text-purple-700 text-sm max-h-20
                         hover:border-gray-300 transition-all duration-200 resize-none"
               placeholder="Describe the strategy details..."
             />
@@ -203,7 +203,7 @@ export default function StrategyFormPanel({
           <div>
             <button
               type="submit"
-              className="w-full bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 
                         rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500
                         transition-colors duration-200 font-medium text-sm
                         shadow-sm hover:shadow-md"
@@ -222,11 +222,11 @@ export default function StrategyFormPanel({
       >
         {/* Mobile Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-100 flex-shrink-0">
-          <h2 className="text-lg font-medium text-gray-800">
+          <h2 className="text-lg font-medium text-purple-800">
             {strategy ? 'Edit Strategy' : 'New Strategy'}
           </h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded transition-colors">
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button onClick={onClose} className="p-1 hover:bg-purple-700/100 rounded transition-colors">
+            <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -236,14 +236,14 @@ export default function StrategyFormPanel({
         <form onSubmit={handleSubmit} className="p-4 overflow-y-auto min-h-0 flex-1 space-y-4">
           {/* Strategy Title */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">Strategy Title *</label>
+            <label className="block text-sm font-medium text-purple-600 mb-2">Strategy Title *</label>
             <input
               type="text"
               value={formData.objective}
               onChange={(e) => setFormData(prev => ({ ...prev, objective: e.target.value }))}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700
+                        bg-white text-purple-700
                         hover:border-gray-300 transition-all duration-200"
               required
               placeholder="Enter strategy objective..."
@@ -252,13 +252,13 @@ export default function StrategyFormPanel({
 
           {/* Status */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">Status *</label>
+            <label className="block text-sm font-medium text-purple-600 mb-2">Status *</label>
             <select
               value={formData.status}
               onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700
+                        bg-white text-purple-700
                         hover:border-gray-300 transition-all duration-200"
               required
             >
@@ -271,13 +271,13 @@ export default function StrategyFormPanel({
 
           {/* Priority */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">Priority *</label>
+            <label className="block text-sm font-medium text-purple-600 mb-2">Priority *</label>
             <select
               value={formData.priority_quadrant}
               onChange={(e) => setFormData(prev => ({ ...prev, priority_quadrant: e.target.value }))}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700
+                        bg-white text-purple-700
                         hover:border-gray-300 transition-all duration-200"
               required
             >
@@ -290,13 +290,13 @@ export default function StrategyFormPanel({
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">Category</label>
+            <label className="block text-sm font-medium text-purple-600 mb-2">Category</label>
             <select
               value={formData.category}
               onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700
+                        bg-white text-purple-700
                         hover:border-gray-300 transition-all duration-200"
             >
               <option value="">Select Category</option>
@@ -309,9 +309,9 @@ export default function StrategyFormPanel({
           {/* Date Range */}
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-2">
+              <label className="block text-sm font-medium text-purple-600 mb-2">
                 Start Date *
-                <span className="text-xs text-gray-400 ml-2">(Strategy start date)</span>
+                <span className="text-xs text-purple-400 ml-2">(Strategy start date)</span>
               </label>
               <input
                 type="date"
@@ -319,15 +319,15 @@ export default function StrategyFormPanel({
                 onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
                 className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                           focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                          bg-white text-gray-700
+                          bg-white text-purple-700
                           hover:border-gray-300 transition-all duration-200"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-2">
+              <label className="block text-sm font-medium text-purple-600 mb-2">
                 Due Date *
-                <span className="text-xs text-gray-400 ml-2">(Strategy deadline)</span>
+                <span className="text-xs text-purple-400 ml-2">(Strategy deadline)</span>
               </label>
               <input
                 type="date"
@@ -335,7 +335,7 @@ export default function StrategyFormPanel({
                 onChange={(e) => setFormData(prev => ({ ...prev, due_date: e.target.value }))}
                 className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                           focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                          bg-white text-gray-700
+                          bg-white text-purple-700
                           hover:border-gray-300 transition-all duration-200"
                 required
               />
@@ -344,14 +344,14 @@ export default function StrategyFormPanel({
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">Description</label>
+            <label className="block text-sm font-medium text-purple-600 mb-2">Description</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={3}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700 max-h-24
+                        bg-white text-purple-700 max-h-24
                         hover:border-gray-300 transition-all duration-200 resize-none"
               placeholder="Describe the strategy details..."
             />
@@ -361,7 +361,7 @@ export default function StrategyFormPanel({
           <div className="pb-6">
             <button
               type="submit"
-              className="w-full bg-purple-500 hover:bg-purple-600 text-white py-3 px-6 
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 
                         rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500
                         transition-colors duration-200 font-medium
                         shadow-md hover:shadow-lg"

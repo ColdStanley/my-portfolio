@@ -2,9 +2,16 @@ import { Article, Query } from '../store/useReadLinguaStore'
 
 // Article API calls
 export const articleApi = {
-  // Fetch user articles
-  async getArticles(userId: string): Promise<Article[]> {
-    const response = await fetch(`/api/readlingua/articles?user_id=${userId}`)
+  // Fetch user articles with optional language filters
+  async getArticles(userId: string, filters?: {
+    source_language?: string
+    native_language?: string
+  }): Promise<Article[]> {
+    const params = new URLSearchParams({ user_id: userId })
+    if (filters?.source_language) params.append('source_language', filters.source_language)
+    if (filters?.native_language) params.append('native_language', filters.native_language)
+    
+    const response = await fetch(`/api/readlingua/articles?${params.toString()}`)
     if (!response.ok) throw new Error('Failed to fetch articles')
     const data = await response.json()
     return data.articles

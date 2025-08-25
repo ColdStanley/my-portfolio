@@ -74,6 +74,16 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
   // Toast notification
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
+  // Auto-dismiss toast after 3 seconds
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => {
+        setToast(null)
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [toast])
+
   // Filtered tasks based on current filters
   const filteredTasks = useMemo(() => {
     let filtered = tasks
@@ -298,14 +308,23 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
     }
   }, [])
 
-  const openFormPanel = useCallback((task?: TaskRecord) => {
+  const openFormPanel = useCallback((task?: TaskRecord, defaultPlanId?: string) => {
     setEditingTask(task || null)
     setFormPanelOpen(true)
+    // Store default plan ID for new tasks
+    if (!task && defaultPlanId) {
+      // We'll pass this to TaskFormPanel via a new prop
+      (window as any).__defaultPlanId = defaultPlanId
+    }
   }, [])
 
   const closeFormPanel = useCallback(() => {
     setFormPanelOpen(false)
     setEditingTask(null)
+    // Clear default plan ID
+    if ((window as any).__defaultPlanId) {
+      delete (window as any).__defaultPlanId
+    }
   }, [])
 
   // Strategy update handler
@@ -476,14 +495,23 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
   }, [editingStrategy])
 
   // Plan form handlers
-  const openPlanForm = useCallback((plan?: PlanRecord) => {
+  const openPlanForm = useCallback((plan?: PlanRecord, defaultStrategyId?: string) => {
     setEditingPlan(plan || null)
     setPlanFormOpen(true)
+    // Store default strategy ID for new plans
+    if (!plan && defaultStrategyId) {
+      // We'll pass this to PlanFormPanel via a new prop
+      (window as any).__defaultStrategyId = defaultStrategyId
+    }
   }, [])
 
   const closePlanForm = useCallback(() => {
     setPlanFormOpen(false)
     setEditingPlan(null)
+    // Clear default strategy ID
+    if ((window as any).__defaultStrategyId) {
+      delete (window as any).__defaultStrategyId
+    }
   }, [])
 
   const handleSavePlan = useCallback(async (planData: PlanFormData) => {
@@ -604,9 +632,8 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
                     <h3 className="text-base font-semibold text-purple-900">Tasks</h3>
                     <button
                       onClick={() => openFormPanel()}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200"
+                      className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-all duration-200"
                     >
-                      <span>✅</span>
                       <span>Add Task</span>
                     </button>
                   </div>
@@ -694,9 +721,8 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
                   <h3 className="text-base font-semibold text-purple-900">Plans</h3>
                   <button 
                     onClick={() => openPlanForm()}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-all duration-200"
                   >
-                    <span>📋</span>
                     <span>Add Plan</span>
                   </button>
                 </div>
@@ -708,6 +734,7 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
                   onPlanEdit={handlePlanEdit}
                   onPlanDelete={handlePlanDelete}
                   onPlanDrillDown={handlePlanDrillDown}
+                  onAddTaskFromPlan={(planId) => openFormPanel(undefined, planId)}
                   enableDrillDown={typeof window !== 'undefined' && window.innerWidth >= 768}
                   statusOptions={planStatusOptions}
                   priorityOptions={planPriorityOptions}
@@ -722,9 +749,8 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
                   <h3 className="text-base font-semibold text-purple-900">Strategy</h3>
                   <button 
                     onClick={() => openStrategyForm()}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-all duration-200"
                   >
-                    <span>🎯</span>
                     <span>Add Strategy</span>
                   </button>
                 </div>
@@ -736,6 +762,7 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
                   onStrategyEdit={handleStrategyEdit}
                   onStrategyDelete={handleStrategyDelete}
                   onStrategyDrillDown={handleStrategyDrillDown}
+                  onAddPlanFromStrategy={(strategyId) => openPlanForm(undefined, strategyId)}
                   enableDrillDown={typeof window !== 'undefined' && window.innerWidth >= 768}
                   statusOptions={strategyStatusOptions}
                   priorityOptions={priorityOptions}
@@ -786,16 +813,21 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
 
       {/* Toast Notification */}
       {toast && (
-        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 ${
+        <div className={`fixed top-6 right-6 z-50 px-3 py-2 rounded-lg shadow-xl backdrop-blur-md transition-all duration-300 text-sm ${
           toast.type === 'success' 
-            ? 'bg-green-500 text-white' 
-            : 'bg-red-500 text-white'
+            ? 'bg-purple-600/90 text-white border border-purple-500/20' 
+            : 'bg-purple-900/90 text-white border border-purple-800/20'
         }`}>
-          <div className="flex items-center justify-between">
-            <span>{toast.message}</span>
+          <div className="flex items-center gap-2">
+            {toast.type === 'success' && (
+              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            )}
+            <span className="font-medium">{toast.message}</span>
             <button 
               onClick={() => setToast(null)}
-              className="ml-4 text-white hover:text-gray-200 transition-colors"
+              className="ml-2 text-white/80 hover:text-white transition-colors text-lg font-semibold leading-none"
             >
               ×
             </button>

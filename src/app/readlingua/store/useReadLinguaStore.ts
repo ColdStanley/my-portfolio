@@ -63,9 +63,15 @@ interface ReadLinguaState {
   activeTab: 'dashboard' | 'learning'
   setActiveTab: (tab: 'dashboard' | 'learning') => void
   
-  // Articles
+  // Articles with cache management
   articles: Article[]
   setArticles: (articles: Article[]) => void
+  addArticle: (article: Article) => void
+  updateArticle: (article: Article) => void
+  removeArticle: (articleId: string) => void
+  articlesLastFetched: number | null
+  setArticlesLastFetched: (timestamp: number) => void
+  shouldRefreshArticles: (maxAge?: number) => boolean
   selectedArticle: Article | null
   setSelectedArticle: (article: Article | null) => void
   
@@ -118,9 +124,24 @@ export const useReadLinguaStore = create<ReadLinguaState>((set, get) => ({
   activeTab: 'dashboard',
   setActiveTab: (tab) => set({ activeTab: tab }),
   
-  // Articles
+  // Articles with cache management
   articles: [],
-  setArticles: (articles) => set({ articles }),
+  setArticles: (articles) => set({ articles, articlesLastFetched: Date.now() }),
+  addArticle: (article) => set((state) => ({ articles: [...state.articles, article] })),
+  updateArticle: (article) => set((state) => ({
+    articles: state.articles.map(a => a.id === article.id ? article : a),
+    selectedArticle: state.selectedArticle?.id === article.id ? article : state.selectedArticle
+  })),
+  removeArticle: (articleId) => set((state) => ({
+    articles: state.articles.filter(a => a.id !== articleId),
+    selectedArticle: state.selectedArticle?.id === articleId ? null : state.selectedArticle
+  })),
+  articlesLastFetched: null,
+  setArticlesLastFetched: (timestamp) => set({ articlesLastFetched: timestamp }),
+  shouldRefreshArticles: (maxAge = 5 * 60 * 1000) => { // 5 minutes default
+    const state = get()
+    return !state.articlesLastFetched || (Date.now() - state.articlesLastFetched) > maxAge
+  },
   selectedArticle: null,
   setSelectedArticle: (article) => set((state) => ({ 
     selectedArticle: article,

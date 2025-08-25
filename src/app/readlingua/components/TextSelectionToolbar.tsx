@@ -47,13 +47,30 @@ const TextSelectionToolbar = memo<TextSelectionToolbarProps>(({
 
   // 优化：使用useCallback稳定函数引用
   const handleQueryType = useCallback(async (queryType: string) => {
+    if (queryType === 'copy') {
+      try {
+        await navigator.clipboard.writeText(selectedText)
+        handleClose() // Direct close without flash effect
+      } catch (error) {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea')
+        textArea.value = selectedText
+        document.body.appendChild(textArea)
+        textArea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textArea)
+        handleClose() // Direct close without flash effect
+      }
+      return
+    }
+    
     setIsSubmitting(true)
     try {
       await onQuerySubmit(queryType)
     } finally {
       setIsSubmitting(false)
     }
-  }, [onQuerySubmit])
+  }, [onQuerySubmit, selectedText, handleClose])
 
   // Calculate optimal tooltip position
   const calculatePosition = () => {
@@ -97,7 +114,8 @@ const TextSelectionToolbar = memo<TextSelectionToolbarProps>(({
         ...tooltipStyle,
         position: 'fixed',
         zIndex: 9999,
-        boxShadow: '0 4px 20px rgba(139, 92, 246, 0.2), 0 2px 10px rgba(0, 0, 0, 0.1)'
+        boxShadow: '0 4px 20px rgba(139, 92, 246, 0.2), 0 2px 10px rgba(0, 0, 0, 0.1)',
+        width: '120px'
       }}
     >
       
@@ -123,6 +141,12 @@ const TextSelectionToolbar = memo<TextSelectionToolbarProps>(({
           className="w-full px-3 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md font-medium text-xs shadow-sm hover:shadow-md transition-all duration-200"
         >
           Deep
+        </button>
+        <button
+          onClick={() => handleQueryType('copy')}
+          className="w-full px-3 py-2 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-purple-600 rounded-md font-medium text-xs border border-purple-200 shadow-sm hover:shadow-md transition-all duration-200"
+        >
+          Copy
         </button>
       </div>
       

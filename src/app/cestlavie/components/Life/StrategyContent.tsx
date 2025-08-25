@@ -14,6 +14,7 @@ interface StrategyContentProps {
   onStrategyEdit?: (strategy: StrategyRecord) => void
   onStrategyDelete?: (strategyId: string) => void
   onStrategyDrillDown?: (strategyId: string) => void
+  onAddPlanFromStrategy?: (strategyId: string) => void
   enableDrillDown?: boolean
   statusOptions?: string[]
   priorityOptions?: string[]
@@ -29,6 +30,7 @@ export default function StrategyContent({
   onStrategyEdit,
   onStrategyDelete,
   onStrategyDrillDown,
+  onAddPlanFromStrategy,
   enableDrillDown = true,
   statusOptions = [],
   priorityOptions = [],
@@ -55,7 +57,7 @@ export default function StrategyContent({
     return (
       <div className="text-center py-6">
         <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mb-2"></div>
-        <p className="text-xs text-gray-500">Loading strategies...</p>
+        <p className="text-xs text-purple-600">Loading strategies...</p>
       </div>
     )
   }
@@ -64,7 +66,7 @@ export default function StrategyContent({
     return (
       <div className="text-center py-6">
         <div className="text-red-500 text-sm mb-2">Error loading strategies</div>
-        <p className="text-xs text-gray-500">{error}</p>
+        <p className="text-xs text-purple-600">{error}</p>
       </div>
     )
   }
@@ -72,13 +74,13 @@ export default function StrategyContent({
   return (
     <>
       {strategies.length === 0 ? (
-        <div className="text-center py-6 text-gray-500">
+        <div className="text-center py-6 text-purple-900">
           <div className="text-lg mb-2">🎯</div>
           <p className="text-sm mb-3">No strategies yet</p>
           {onAddStrategy && (
             <button 
               onClick={onAddStrategy}
-              className="px-3 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600 transition-colors"
+              className="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
             >
               Create First Strategy
             </button>
@@ -99,12 +101,12 @@ export default function StrategyContent({
             const isCompleted = strategy.status === 'Completed'
             
             return (
-            <div key={strategy.id} className={`relative p-3 bg-white/50 rounded-lg border border-purple-100 hover:bg-white/70 transition-colors ${
-              isCompleted ? 'border-l-4 border-purple-500' : ''
+            <div key={strategy.id} className={`relative p-3 bg-purple-600/20 rounded-lg shadow-lg hover:bg-purple-600/25 transition-colors ${
+              isCompleted ? 'border-l-4 border-purple-600' : ''
             }`}>
               {/* Completion Check Icon - Right Top Corner */}
               {isCompleted && (
-                <div className="absolute top-2 right-2 text-purple-500">
+                <div className="absolute top-2 right-2 text-purple-600">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
@@ -117,7 +119,7 @@ export default function StrategyContent({
                     e.stopPropagation()
                     onStrategyDrillDown(strategy.id)
                   }}
-                  className={`absolute top-2 p-1 text-purple-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors z-10 ${
+                  className={`absolute top-2 p-1 text-purple-600 hover:text-purple-700 hover:bg-purple-600/10 rounded transition-colors z-10 ${
                     isCompleted ? 'right-8' : 'right-2'
                   }`}
                   title="View Plans"
@@ -129,13 +131,13 @@ export default function StrategyContent({
               )}
 
               {/* Time */}
-              <div className="text-xs text-purple-500 font-medium mb-1 pr-8">
+              <div className="text-xs text-purple-600 font-medium mb-1 pr-8">
                 {formatDateRange(strategy.start_date, strategy.due_date)}
               </div>
               
               {/* Title */}
               <h4 
-                className="text-sm font-semibold text-purple-900 cursor-pointer hover:text-purple-700 transition-colors line-clamp-2 mb-2 pr-8"
+                className="text-sm font-semibold text-purple-900 cursor-pointer hover:text-purple-800 transition-colors line-clamp-2 mb-2 pr-8"
                 onClick={() => openNotionPage(strategy.id)}
                 title="Click to open in Notion"
               >
@@ -148,7 +150,7 @@ export default function StrategyContent({
                   <select
                     value={strategy.status || ''}
                     onChange={(e) => handleStrategyUpdate(strategy.id, 'status', e.target.value)}
-                    className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded border-0 text-xs cursor-pointer hover:bg-purple-100 transition-colors"
+                    className="px-2 py-0.5 bg-purple-600/10 text-purple-900 rounded border-0 text-xs cursor-pointer hover:bg-purple-600/15 transition-colors"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <option value="">No Status</option>
@@ -160,7 +162,7 @@ export default function StrategyContent({
                   <select
                     value={strategy.priority_quadrant || ''}
                     onChange={(e) => handleStrategyUpdate(strategy.id, 'priority_quadrant', e.target.value)}
-                    className="px-2 py-0.5 bg-gray-50 text-gray-700 rounded border-0 text-xs cursor-pointer hover:bg-gray-100 transition-colors"
+                    className="px-2 py-0.5 bg-purple-600/10 text-purple-900 rounded border-0 text-xs cursor-pointer hover:bg-purple-600/15 transition-colors"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <option value="">No Priority</option>
@@ -172,13 +174,27 @@ export default function StrategyContent({
 
                 {/* Action Buttons */}
                 <div className="flex items-center gap-1">
+                  {onAddPlanFromStrategy && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onAddPlanFromStrategy(strategy.id)
+                      }}
+                      className="p-1 text-purple-600 hover:text-purple-700 hover:bg-purple-600/10 rounded transition-colors"
+                      title="Add Plan to this Strategy"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                    </button>
+                  )}
                   {onStrategyEdit && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
                         onStrategyEdit(strategy)
                       }}
-                      className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                      className="p-1 text-purple-600 hover:text-purple-700 hover:bg-purple-600/10 rounded transition-colors"
                       title="Edit"
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -192,7 +208,7 @@ export default function StrategyContent({
                         e.stopPropagation()
                         onStrategyDelete(strategy.id)
                       }}
-                      className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                      className="p-1 text-purple-600 hover:text-purple-700 hover:bg-purple-600/10 rounded transition-colors"
                       title="Delete"
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

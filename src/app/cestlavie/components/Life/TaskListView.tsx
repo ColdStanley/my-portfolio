@@ -131,7 +131,7 @@ export default function TaskListView({
         <h4 className="text-sm font-medium text-purple-900 mb-1">
           {selectedDate ? dateDisplayName : 'Select Date'}
         </h4>
-        <p className="text-xs text-gray-600">
+        <p className="text-xs text-purple-600">
           {selectedDateTasks.length} task{selectedDateTasks.length !== 1 ? 's' : ''}
         </p>
       </div>
@@ -139,8 +139,8 @@ export default function TaskListView({
       {/* Task List */}
       {selectedDateTasks.length === 0 ? (
         <div className="text-center py-8">
-          <div className="text-gray-400 text-2xl mb-2">📋</div>
-          <p className="text-gray-600 text-sm">No tasks for this date</p>
+          <div className="text-purple-600 text-2xl mb-2">📋</div>
+          <p className="text-purple-900 text-sm">No tasks for this date</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -150,15 +150,15 @@ export default function TaskListView({
             return (
               <div
                 key={task.id}
-                className={`relative p-3 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl
+                className={`relative p-3 rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl
                   ${isCompleted 
-                    ? 'bg-white border-l-4 border-purple-500' 
-                    : 'bg-white hover:bg-gradient-to-r hover:from-purple-25 hover:to-purple-50'
+                    ? 'bg-purple-600/5 text-purple-800 border-l-4 border-purple-600' 
+                    : 'bg-purple-600/5 text-purple-800 hover:bg-purple-600/10'
                   }`}
               >
                 {/* Completion Check Icon - Right Top Corner */}
                 {isCompleted && (
-                  <div className="absolute top-2 right-2 text-purple-500">
+                  <div className="absolute top-2 right-2 text-purple-600">
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
@@ -169,7 +169,7 @@ export default function TaskListView({
                     <div className="flex-1 min-w-0">
                       {/* Time */}
                       {(task.start_date || task.end_date) && (
-                        <div className="text-xs font-semibold text-purple-500 mb-1">
+                        <div className="text-xs font-semibold text-purple-600 mb-1">
                           {formatTimeOnly(task.start_date, task.end_date)}
                         </div>
                       )}
@@ -184,7 +184,7 @@ export default function TaskListView({
                         <select
                           value={task.status || ''}
                           onChange={(e) => handleFieldUpdate(task.id, 'status', e.target.value)}
-                          className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded border-0 text-xs cursor-pointer hover:bg-purple-100 transition-colors"
+                          className="px-2 py-0.5 bg-purple-600/10 text-purple-900 rounded border-0 text-xs cursor-pointer hover:bg-purple-600/15 transition-colors"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <option value="">No Status</option>
@@ -196,7 +196,7 @@ export default function TaskListView({
                         <select
                           value={task.priority_quadrant || ''}
                           onChange={(e) => handleFieldUpdate(task.id, 'priority_quadrant', e.target.value)}
-                          className="px-2 py-0.5 bg-gray-50 text-gray-700 rounded border-0 text-xs cursor-pointer hover:bg-gray-100 transition-colors"
+                          className="px-2 py-0.5 bg-purple-600/10 text-purple-900 rounded border-0 text-xs cursor-pointer hover:bg-purple-600/15 transition-colors"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <option value="">No Priority</option>
@@ -216,7 +216,7 @@ export default function TaskListView({
                         <button
                           onClick={(e) => handleManualSync(task, e)}
                           disabled={syncingTasks.has(task.id)}
-                          className="p-1 text-orange-400 bg-orange-50 rounded transition-colors hover:bg-orange-100 hover:text-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="p-1 text-purple-600 bg-purple-600/10 rounded transition-colors hover:bg-purple-600/15 hover:text-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
                           title={syncingTasks.has(task.id) ? "Syncing to Outlook..." : "Click to sync to Outlook"}
                         >
                           {syncingTasks.has(task.id) ? (
@@ -236,7 +236,7 @@ export default function TaskListView({
                           e.stopPropagation()
                           onTaskSelect && onTaskSelect(task)
                         }}
-                        className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        className="p-1 text-purple-600 hover:text-purple-700 hover:bg-purple-600/10 rounded transition-colors"
                         title="Edit"
                       >
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -245,7 +245,7 @@ export default function TaskListView({
                       </button>
                       <button
                         onClick={(e) => handleDeleteClick(task, e)}
-                        className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                        className="p-1 text-purple-600 hover:text-purple-700 hover:bg-purple-600/10 rounded transition-colors"
                         title="Delete"
                       >
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

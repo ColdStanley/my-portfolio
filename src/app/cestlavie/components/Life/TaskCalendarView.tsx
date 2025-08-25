@@ -136,7 +136,7 @@ export default function TaskCalendarView({
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={handlePrevMonth}
-          className="p-1 hover:bg-purple-50 rounded-md transition-colors"
+          className="p-1 hover:bg-purple-60 rounded-md transition-colors"
         >
           <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -147,7 +147,7 @@ export default function TaskCalendarView({
         </h3>
         <button
           onClick={handleNextMonth}
-          className="p-1 hover:bg-purple-50 rounded-md transition-colors"
+          className="p-1 hover:bg-purple-60 rounded-md transition-colors"
         >
           <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -158,7 +158,7 @@ export default function TaskCalendarView({
       {/* Weekday Headers */}
       <div className="grid grid-cols-7 gap-1 mb-2">
         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
-          <div key={index} className="text-center text-xs font-medium text-purple-500 py-1">
+          <div key={index} className="text-center text-xs font-medium text-purple-600 py-1">
             {day}
           </div>
         ))}
@@ -177,7 +177,7 @@ export default function TaskCalendarView({
               className={`
                 relative h-8 cursor-pointer transition-colors duration-200 rounded
                 ${isSelected 
-                  ? 'bg-purple-500 text-white' 
+                  ? 'bg-purple-600 text-white' 
                   : isCurrentDay 
                   ? 'bg-purple-100 text-purple-700'
                   : 'hover:bg-gray-50'
@@ -201,8 +201,8 @@ export default function TaskCalendarView({
                     w-3 h-3 rounded-full text-xs font-medium
                     flex items-center justify-center
                     ${isSelected 
-                      ? 'bg-white text-purple-500' 
-                      : 'bg-purple-500 text-white'
+                      ? 'bg-white text-purple-600' 
+                      : 'bg-purple-600 text-white'
                     }
                   `}>
                     {dayTasks.length > 9 ? '9+' : dayTasks.length}
@@ -213,7 +213,7 @@ export default function TaskCalendarView({
               {/* Outlook Sync Status - show warning dot if any tasks are not synced */}
               {dayTasks.length > 0 && dayTasks.some(task => !task.outlook_event_id) && (
                 <div className="absolute -top-0.5 -left-0.5">
-                  <div className="w-2 h-2 bg-orange-400 rounded-full" title="Some tasks not synced to Outlook"></div>
+                  <div className="w-2 h-2 bg-purple-600 rounded-full" title="Some tasks not synced to Outlook"></div>
                 </div>
               )}
             </div>

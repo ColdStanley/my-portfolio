@@ -132,6 +132,7 @@ export default function QueryPanel() {
 
   const getQueryTypeLabel = (type: string) => {
     const labels = {
+      copy: 'Copy',
       quick: 'Quick',
       standard: 'Standard', 
       deep: 'Deep',
@@ -142,6 +143,7 @@ export default function QueryPanel() {
 
   const getQueryTypeColor = (type: string) => {
     const colors = {
+      copy: 'bg-gray-100 text-gray-700',
       quick: 'bg-purple-100 text-purple-700',
       standard: 'bg-purple-200 text-purple-800',
       deep: 'bg-purple-300 text-purple-900',

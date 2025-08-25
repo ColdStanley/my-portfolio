@@ -52,6 +52,9 @@ export default function TaskFormPanel({
       const defaultStart = getDefaultStartTime()
       const defaultEnd = getDefaultEndTime()
       
+      // Check for default plan ID from window
+      const defaultPlanId = (window as any).__defaultPlanId || ''
+      
       setFormData({
         title: '',
         status: '',
@@ -59,7 +62,7 @@ export default function TaskFormPanel({
         end_date: defaultEnd,
         all_day: false,
         remind_before: 15,
-        plan: '',
+        plan: defaultPlanId,
         priority_quadrant: '',
         note: ''
       })
@@ -104,11 +107,11 @@ export default function TaskFormPanel({
       >
         {/* Header with Close Button */}
         <div className="flex justify-between items-center p-4 flex-shrink-0">
-          <h2 className="text-sm font-medium text-gray-800">
+          <h2 className="text-sm font-medium text-purple-800">
             {task ? 'Edit Task' : 'New Task'}
           </h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded transition-colors">
-            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button onClick={onClose} className="p-1 hover:bg-purple-700/100 rounded transition-colors">
+            <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -119,14 +122,14 @@ export default function TaskFormPanel({
 
           {/* Task Title */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Task Title *</label>
+            <label className="block text-xs font-medium text-purple-600 mb-1">Task Title *</label>
             <input
               type="text"
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-200 rounded-md 
                         focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700 text-sm
+                        bg-white text-purple-700 text-sm
                         hover:border-gray-300 transition-all duration-200"
               required
               placeholder="Enter task title..."
@@ -137,13 +140,13 @@ export default function TaskFormPanel({
           <div className="grid grid-cols-2 gap-3">
             {/* Status */}
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Status *</label>
+              <label className="block text-xs font-medium text-purple-600 mb-1">Status *</label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-200 rounded-md 
                           focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                          bg-white text-gray-700 text-sm
+                          bg-white text-purple-700 text-sm
                           hover:border-gray-300 transition-all duration-200"
                 required
               >
@@ -156,13 +159,13 @@ export default function TaskFormPanel({
 
             {/* Priority Quadrant */}
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Priority *</label>
+              <label className="block text-xs font-medium text-purple-600 mb-1">Priority *</label>
               <select
                 value={formData.priority_quadrant}
                 onChange={(e) => setFormData(prev => ({ ...prev, priority_quadrant: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-200 rounded-md 
                           focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                          bg-white text-gray-700 text-sm
+                          bg-white text-purple-700 text-sm
                           hover:border-gray-300 transition-all duration-200"
                 required
               >
@@ -178,13 +181,13 @@ export default function TaskFormPanel({
           <div className="grid grid-cols-2 gap-3">
             {/* Plan Selection */}
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Plan *</label>
+              <label className="block text-xs font-medium text-purple-600 mb-1">Plan *</label>
               <select
                 value={formData.plan}
                 onChange={(e) => setFormData(prev => ({ ...prev, plan: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-200 rounded-md 
                           focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                          bg-white text-gray-700 text-sm
+                          bg-white text-purple-700 text-sm
                           hover:border-gray-300 transition-all duration-200"
                 required
               >
@@ -197,9 +200,9 @@ export default function TaskFormPanel({
 
             {/* Strategy Display */}
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Strategy</label>
+              <label className="block text-xs font-medium text-purple-600 mb-1">Strategy</label>
               <div className="w-full px-3 py-2 border border-gray-200 rounded-md 
-                            bg-gray-50 text-gray-500 text-sm min-h-[2.375rem] flex items-center">
+                            bg-purple-600/50 text-purple-500 text-sm min-h-[2.375rem] flex items-center">
                 {selectedPlanStrategy || 'Auto-selected'}
               </div>
             </div>
@@ -208,7 +211,7 @@ export default function TaskFormPanel({
           {/* Time Range - 2 Row Layout */}
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-xs font-medium text-purple-600 mb-1">
                 Start Time *
               </label>
               <input
@@ -225,14 +228,14 @@ export default function TaskFormPanel({
                 }}
                 className="w-full px-3 py-2 border border-gray-200 rounded-md 
                           focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                          bg-white text-gray-700 text-sm
+                          bg-white text-purple-700 text-sm
                           hover:border-gray-300 transition-all duration-200"
                 required
                 step="60"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-xs font-medium text-purple-600 mb-1">
                 End Time *
               </label>
               <input
@@ -241,7 +244,7 @@ export default function TaskFormPanel({
                 onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-200 rounded-md 
                           focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                          bg-white text-gray-700 text-sm
+                          bg-white text-purple-700 text-sm
                           hover:border-gray-300 transition-all duration-200"
                 required
                 step="60"
@@ -253,14 +256,14 @@ export default function TaskFormPanel({
 
           {/* Notes */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Notes</label>
+            <label className="block text-xs font-medium text-purple-600 mb-1">Notes</label>
             <textarea
               value={formData.note}
               onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
               rows={2}
               className="w-full px-3 py-2 border border-gray-200 rounded-md 
                         focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700 text-sm max-h-20
+                        bg-white text-purple-700 text-sm max-h-20
                         hover:border-gray-300 transition-all duration-200 resize-none"
               placeholder="Add task notes or description..."
             />
@@ -270,7 +273,7 @@ export default function TaskFormPanel({
           <div>
             <button
               type="submit"
-              className="w-full bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 
                         rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500
                         transition-colors duration-200 font-medium text-sm
                         shadow-sm hover:shadow-md"
@@ -289,11 +292,11 @@ export default function TaskFormPanel({
       >
         {/* Mobile Header */}
         <div className="flex justify-between items-center p-4 flex-shrink-0">
-          <h2 className="text-lg font-medium text-gray-800">
+          <h2 className="text-lg font-medium text-purple-800">
             {task ? 'Edit Task' : 'New Task'}
           </h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded transition-colors">
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button onClick={onClose} className="p-1 hover:bg-purple-700/100 rounded transition-colors">
+            <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -304,14 +307,14 @@ export default function TaskFormPanel({
 
           {/* Task Title */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">Task Title *</label>
+            <label className="block text-sm font-medium text-purple-600 mb-2">Task Title *</label>
             <input
               type="text"
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700
+                        bg-white text-purple-700
                         hover:border-gray-300 transition-all duration-200"
               required
               placeholder="Enter task title..."
@@ -320,13 +323,13 @@ export default function TaskFormPanel({
 
           {/* Status */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">Status *</label>
+            <label className="block text-sm font-medium text-purple-600 mb-2">Status *</label>
             <select
               value={formData.status}
               onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700
+                        bg-white text-purple-700
                         hover:border-gray-300 transition-all duration-200"
               required
             >
@@ -339,13 +342,13 @@ export default function TaskFormPanel({
 
           {/* Priority Quadrant */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">Priority *</label>
+            <label className="block text-sm font-medium text-purple-600 mb-2">Priority *</label>
             <select
               value={formData.priority_quadrant}
               onChange={(e) => setFormData(prev => ({ ...prev, priority_quadrant: e.target.value }))}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700
+                        bg-white text-purple-700
                         hover:border-gray-300 transition-all duration-200"
               required
             >
@@ -358,13 +361,13 @@ export default function TaskFormPanel({
 
           {/* Plan Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">Plan *</label>
+            <label className="block text-sm font-medium text-purple-600 mb-2">Plan *</label>
             <select
               value={formData.plan}
               onChange={(e) => setFormData(prev => ({ ...prev, plan: e.target.value }))}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700
+                        bg-white text-purple-700
                         hover:border-gray-300 transition-all duration-200"
               required
             >
@@ -377,9 +380,9 @@ export default function TaskFormPanel({
 
           {/* Strategy Display */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">Strategy</label>
+            <label className="block text-sm font-medium text-purple-600 mb-2">Strategy</label>
             <div className="w-full px-4 py-3 border border-gray-200 rounded-lg 
-                          bg-gray-50 text-gray-500 min-h-[3rem] flex items-center">
+                          bg-purple-600/50 text-purple-500 min-h-[3rem] flex items-center">
               {selectedPlanStrategy || 'Auto-selected based on Plan'}
             </div>
           </div>
@@ -387,7 +390,7 @@ export default function TaskFormPanel({
           {/* Time Range */}
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-2">
+              <label className="block text-sm font-medium text-purple-600 mb-2">
                 Start Time *
               </label>
               <input
@@ -403,14 +406,14 @@ export default function TaskFormPanel({
                 }}
                 className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                           focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                          bg-white text-gray-700
+                          bg-white text-purple-700
                           hover:border-gray-300 transition-all duration-200"
                 required
                 step="60"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-2">
+              <label className="block text-sm font-medium text-purple-600 mb-2">
                 End Time *
               </label>
               <input
@@ -419,7 +422,7 @@ export default function TaskFormPanel({
                 onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
                 className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                           focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                          bg-white text-gray-700
+                          bg-white text-purple-700
                           hover:border-gray-300 transition-all duration-200"
                 required
                 step="60"
@@ -430,14 +433,14 @@ export default function TaskFormPanel({
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">Notes</label>
+            <label className="block text-sm font-medium text-purple-600 mb-2">Notes</label>
             <textarea
               value={formData.note}
               onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
               rows={3}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700 max-h-24
+                        bg-white text-purple-700 max-h-24
                         hover:border-gray-300 transition-all duration-200 resize-none"
               placeholder="Add task notes or description..."
             />
@@ -447,7 +450,7 @@ export default function TaskFormPanel({
           <div className="pb-6">
             <button
               type="submit"
-              className="w-full bg-purple-500 hover:bg-purple-600 text-white py-3 px-6 
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 
                         rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500
                         transition-colors duration-200 font-medium
                         shadow-md hover:shadow-lg"

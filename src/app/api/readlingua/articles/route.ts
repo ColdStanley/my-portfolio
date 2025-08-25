@@ -11,11 +11,13 @@ function normalizeUserId(userId: string): string {
   return userId || 'anonymous'
 }
 
-// GET - Fetch user articles
+// GET - Fetch user articles with optional language filters
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('user_id')
+    const sourceLanguage = searchParams.get('source_language')
+    const nativeLanguage = searchParams.get('native_language')
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID required' }, { status: 400 })
@@ -24,10 +26,21 @@ export async function GET(request: NextRequest) {
     // Normalize user ID
     const finalUserId = normalizeUserId(userId)
 
-    const { data: articles, error } = await supabase
+    // Build query with optional language filters
+    let query = supabase
       .from('readlingua_articles')
       .select('*')
       .eq('user_id', finalUserId)
+    
+    // Add language filters if provided
+    if (sourceLanguage) {
+      query = query.eq('source_language', sourceLanguage)
+    }
+    if (nativeLanguage) {
+      query = query.eq('native_language', nativeLanguage)
+    }
+    
+    const { data: articles, error } = await query
       .order('created_at', { ascending: false })
 
     if (error) throw error

@@ -37,6 +37,9 @@ export default function PlanFormPanel({
         strategy: plan.strategy || ''
       })
     } else {
+      // Check for default strategy ID from window
+      const defaultStrategyId = (window as any).__defaultStrategyId || ''
+      
       setFormData({
         objective: '',
         description: '',
@@ -44,7 +47,7 @@ export default function PlanFormPanel({
         due_date: '',
         status: '',
         priority_quadrant: '',
-        strategy: ''
+        strategy: defaultStrategyId
       })
     }
   }, [plan, isOpen])
@@ -84,11 +87,11 @@ export default function PlanFormPanel({
       >
         {/* Header with Close Button */}
         <div className="flex justify-between items-center p-4 border-b border-gray-100 flex-shrink-0">
-          <h2 className="text-sm font-medium text-gray-800">
+          <h2 className="text-sm font-medium text-purple-800">
             {plan ? 'Edit Plan' : 'New Plan'}
           </h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded transition-colors">
-            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button onClick={onClose} className="p-1 hover:bg-purple-700/100 rounded transition-colors">
+            <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -98,13 +101,13 @@ export default function PlanFormPanel({
         <form onSubmit={handleSubmit} className="p-3 overflow-y-auto min-h-0 flex-1 space-y-3">
           {/* Strategy Selection */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Strategy *</label>
+            <label className="block text-xs font-medium text-purple-600 mb-1">Strategy *</label>
             <select
               value={formData.strategy || ''}
               onChange={(e) => handleStrategyChange(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 rounded-md 
                         focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700 text-sm
+                        bg-white text-purple-700 text-sm
                         hover:border-gray-300 transition-all duration-200"
               required
             >
@@ -115,19 +118,19 @@ export default function PlanFormPanel({
                 </option>
               ))}
             </select>
-            <p className="text-xs text-gray-400 mt-1">Plan must belong to a Strategy</p>
+            <p className="text-xs text-purple-400 mt-1">Plan must belong to a Strategy</p>
           </div>
 
           {/* Plan Title */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Plan Title *</label>
+            <label className="block text-xs font-medium text-purple-600 mb-1">Plan Title *</label>
             <input
               type="text"
               value={formData.objective}
               onChange={(e) => setFormData(prev => ({ ...prev, objective: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-200 rounded-md 
                         focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700 text-sm
+                        bg-white text-purple-700 text-sm
                         hover:border-gray-300 transition-all duration-200"
               required
               placeholder="Enter plan objective..."
@@ -138,13 +141,13 @@ export default function PlanFormPanel({
           <div className="grid grid-cols-2 gap-3">
             {/* Status */}
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Status *</label>
+              <label className="block text-xs font-medium text-purple-600 mb-1">Status *</label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-200 rounded-md 
                           focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                          bg-white text-gray-700 text-sm
+                          bg-white text-purple-700 text-sm
                           hover:border-gray-300 transition-all duration-200"
                 required
               >
@@ -157,13 +160,13 @@ export default function PlanFormPanel({
 
             {/* Priority Quadrant */}
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Priority *</label>
+              <label className="block text-xs font-medium text-purple-600 mb-1">Priority *</label>
               <select
                 value={formData.priority_quadrant}
                 onChange={(e) => setFormData(prev => ({ ...prev, priority_quadrant: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-200 rounded-md 
                           focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                          bg-white text-gray-700 text-sm
+                          bg-white text-purple-700 text-sm
                           hover:border-gray-300 transition-all duration-200"
                 required
               >
@@ -178,9 +181,9 @@ export default function PlanFormPanel({
           {/* Date Range - 2 Row Layout */}
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-xs font-medium text-purple-600 mb-1">
                 Start Date *
-                <span className="text-xs text-gray-400 ml-1">(Plan start date)</span>
+                <span className="text-xs text-purple-400 ml-1">(Plan start date)</span>
               </label>
               <input
                 type="date"
@@ -188,15 +191,15 @@ export default function PlanFormPanel({
                 onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-200 rounded-md 
                           focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                          bg-white text-gray-700 text-sm
+                          bg-white text-purple-700 text-sm
                           hover:border-gray-300 transition-all duration-200"
                 required
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-xs font-medium text-purple-600 mb-1">
                 Due Date *
-                <span className="text-xs text-gray-400 ml-1">(Plan deadline)</span>
+                <span className="text-xs text-purple-400 ml-1">(Plan deadline)</span>
               </label>
               <input
                 type="date"
@@ -204,7 +207,7 @@ export default function PlanFormPanel({
                 onChange={(e) => setFormData(prev => ({ ...prev, due_date: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-200 rounded-md 
                           focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                          bg-white text-gray-700 text-sm
+                          bg-white text-purple-700 text-sm
                           hover:border-gray-300 transition-all duration-200"
                 required
               />
@@ -213,14 +216,14 @@ export default function PlanFormPanel({
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+            <label className="block text-xs font-medium text-purple-600 mb-1">Description</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={2}
               className="w-full px-3 py-2 border border-gray-200 rounded-md 
                         focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700 text-sm max-h-20
+                        bg-white text-purple-700 text-sm max-h-20
                         hover:border-gray-300 transition-all duration-200 resize-none"
               placeholder="Describe the plan details..."
             />
@@ -230,7 +233,7 @@ export default function PlanFormPanel({
           <div>
             <button
               type="submit"
-              className="w-full bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 
                         rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500
                         transition-colors duration-200 font-medium text-sm
                         shadow-sm hover:shadow-md"
@@ -249,11 +252,11 @@ export default function PlanFormPanel({
       >
         {/* Mobile Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-100 flex-shrink-0">
-          <h2 className="text-lg font-medium text-gray-800">
+          <h2 className="text-lg font-medium text-purple-800">
             {plan ? 'Edit Plan' : 'New Plan'}
           </h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded transition-colors">
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button onClick={onClose} className="p-1 hover:bg-purple-700/100 rounded transition-colors">
+            <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -263,13 +266,13 @@ export default function PlanFormPanel({
         <form onSubmit={handleSubmit} className="p-4 overflow-y-auto min-h-0 flex-1 space-y-4">
           {/* Strategy Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">Strategy *</label>
+            <label className="block text-sm font-medium text-purple-600 mb-2">Strategy *</label>
             <select
               value={formData.strategy || ''}
               onChange={(e) => handleStrategyChange(e.target.value)}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700
+                        bg-white text-purple-700
                         hover:border-gray-300 transition-all duration-200"
               required
             >
@@ -280,19 +283,19 @@ export default function PlanFormPanel({
                 </option>
               ))}
             </select>
-            <p className="text-xs text-gray-400 mt-1">Link this plan to a strategy</p>
+            <p className="text-xs text-purple-400 mt-1">Link this plan to a strategy</p>
           </div>
 
           {/* Plan Title */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">Plan Title *</label>
+            <label className="block text-sm font-medium text-purple-600 mb-2">Plan Title *</label>
             <input
               type="text"
               value={formData.objective}
               onChange={(e) => setFormData(prev => ({ ...prev, objective: e.target.value }))}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700
+                        bg-white text-purple-700
                         hover:border-gray-300 transition-all duration-200"
               required
               placeholder="Enter plan objective..."
@@ -301,13 +304,13 @@ export default function PlanFormPanel({
 
           {/* Status */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">Status *</label>
+            <label className="block text-sm font-medium text-purple-600 mb-2">Status *</label>
             <select
               value={formData.status}
               onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700
+                        bg-white text-purple-700
                         hover:border-gray-300 transition-all duration-200"
               required
             >
@@ -320,13 +323,13 @@ export default function PlanFormPanel({
 
           {/* Priority */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">Priority *</label>
+            <label className="block text-sm font-medium text-purple-600 mb-2">Priority *</label>
             <select
               value={formData.priority_quadrant}
               onChange={(e) => setFormData(prev => ({ ...prev, priority_quadrant: e.target.value }))}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700
+                        bg-white text-purple-700
                         hover:border-gray-300 transition-all duration-200"
               required
             >
@@ -340,9 +343,9 @@ export default function PlanFormPanel({
           {/* Date Range */}
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-2">
+              <label className="block text-sm font-medium text-purple-600 mb-2">
                 Start Date *
-                <span className="text-xs text-gray-400 ml-2">(Plan start date)</span>
+                <span className="text-xs text-purple-400 ml-2">(Plan start date)</span>
               </label>
               <input
                 type="date"
@@ -350,15 +353,15 @@ export default function PlanFormPanel({
                 onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
                 className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                           focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                          bg-white text-gray-700
+                          bg-white text-purple-700
                           hover:border-gray-300 transition-all duration-200"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-2">
+              <label className="block text-sm font-medium text-purple-600 mb-2">
                 Due Date *
-                <span className="text-xs text-gray-400 ml-2">(Plan deadline)</span>
+                <span className="text-xs text-purple-400 ml-2">(Plan deadline)</span>
               </label>
               <input
                 type="date"
@@ -366,7 +369,7 @@ export default function PlanFormPanel({
                 onChange={(e) => setFormData(prev => ({ ...prev, due_date: e.target.value }))}
                 className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                           focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                          bg-white text-gray-700
+                          bg-white text-purple-700
                           hover:border-gray-300 transition-all duration-200"
                 required
               />
@@ -375,14 +378,14 @@ export default function PlanFormPanel({
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-2">Description</label>
+            <label className="block text-sm font-medium text-purple-600 mb-2">Description</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={3}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg 
                         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                        bg-white text-gray-700 max-h-24
+                        bg-white text-purple-700 max-h-24
                         hover:border-gray-300 transition-all duration-200 resize-none"
               placeholder="Describe the plan details..."
             />
@@ -392,7 +395,7 @@ export default function PlanFormPanel({
           <div className="pb-6">
             <button
               type="submit"
-              className="w-full bg-purple-500 hover:bg-purple-600 text-white py-3 px-6 
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 
                         rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500
                         transition-colors duration-200 font-medium
                         shadow-md hover:shadow-lg"

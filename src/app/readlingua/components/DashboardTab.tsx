@@ -10,22 +10,38 @@ import FlagIcon from './FlagIcon'
 
 export default function DashboardTab() {
   const [activeSubTab, setActiveSubTab] = useState<'upload' | 'articles'>('upload')
-  const { articles, setArticles, setSelectedArticle, setActiveTab } = useReadLinguaStore()
+  const { 
+    articles, 
+    setArticles, 
+    shouldRefreshArticles, 
+    setSelectedArticle, 
+    setActiveTab,
+    addArticle
+  } = useReadLinguaStore()
   const [nativeLanguage, setNativeLanguage] = useState('chinese')
   const [learningLanguage, setLearningLanguage] = useState('english')
+  const [isLoading, setIsLoading] = useState(false)
 
   // Filter articles based on selected languages
   const filteredArticles = articles.filter(article => 
     article.native_language === nativeLanguage && article.source_language === learningLanguage
   )
 
+  // Load articles on mount and when refresh is needed
   useEffect(() => {
-    // Load articles from Supabase
-    loadArticles()
-  }, [nativeLanguage, learningLanguage])
+    if (shouldRefreshArticles()) {
+      loadArticles()
+    }
+  }, [])
+
+  // Refresh articles when new article is uploaded
+  const handleArticleUploaded = (newArticle: any) => {
+    addArticle(newArticle)
+  }
 
   const loadArticles = async () => {
     try {
+      setIsLoading(true)
       let userId = 'anonymous'
       
       // Try to get authenticated user, but don't require it
@@ -42,6 +58,8 @@ export default function DashboardTab() {
       setArticles(userArticles)
     } catch (error) {
       console.error('Error loading articles:', error)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -180,16 +198,37 @@ export default function DashboardTab() {
                   <span className="hidden md:inline">Browse</span>
                   <span className="md:hidden">Articles</span>
                 </h2>
-                <div className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
-                  {filteredArticles.length}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={loadArticles}
+                    disabled={isLoading}
+                    className="p-1.5 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50"
+                    title="Refresh articles"
+                  >
+                    <svg className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </button>
+                  <div className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                    {filteredArticles.length}
+                  </div>
                 </div>
               </div>
               
               <div className="flex-1 overflow-y-auto">
-                <ArticleList 
-                  articles={filteredArticles}
-                  onArticleSelect={handleArticleSelect}
-                />
+                {isLoading ? (
+                  <div className="flex items-center justify-center h-32">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-sm text-gray-500">Loading articles...</span>
+                    </div>
+                  </div>
+                ) : (
+                  <ArticleList 
+                    articles={filteredArticles}
+                    onArticleSelect={handleArticleSelect}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -212,6 +251,7 @@ export default function DashboardTab() {
               <UploadForm 
                 defaultNativeLanguage={nativeLanguage}
                 defaultSourceLanguage={learningLanguage}
+                onArticleUploaded={handleArticleUploaded}
               />
             </div>
           </div>

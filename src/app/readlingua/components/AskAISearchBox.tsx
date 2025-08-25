@@ -115,9 +115,9 @@ export default function AskAISearchBox({ onSearchSubmit, onShowFloatingPanel }: 
               userQuestion: question
             })
 
-            // Clear search input
+            // Clear search input and close tooltip after successful completion
             setQuestion('')
-            // Keep tooltip open until user manually closes it or clicks elsewhere
+            setIsOpen(false) // Auto-close tooltip after search completes
             
           } catch (error) {
             console.error('Error saving query:', error)
