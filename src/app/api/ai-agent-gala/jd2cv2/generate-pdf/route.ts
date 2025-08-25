@@ -18,6 +18,11 @@ interface PersonalInfo {
     gpa?: string
   }>
   certificates: string[]
+  customModules: Array<{
+    id: string
+    title: string
+    content: string[]
+  }>
 }
 
 interface GeneratePDFRequest {
@@ -398,6 +403,16 @@ function generateResumeHTML(personalInfo: PersonalInfo, aiExperience: string, fo
       </ul>
     </div>
     ` : ''}
+
+    <!-- Custom Modules -->
+    ${personalInfo.customModules.map(module => `
+    <div class="section">
+      <h2 class="section-title">${module.title}</h2>
+      <ul class="summary-list">
+        ${module.content.map(item => `<li>${item}</li>`).join('')}
+      </ul>
+    </div>
+    `).join('')}
   </div>
 </body>
 </html>

@@ -49,7 +49,7 @@ export default function NewNavbar() {
       name: 'Career Tools',
       type: 'dropdown',
       items: [
-        { name: 'JD2CV', href: '/jd2cv' }
+        { name: 'JD2CV 1.0', href: '/jd2cv' }
       ]
     },
     {
@@ -64,8 +64,7 @@ export default function NewNavbar() {
       name: 'AI Lab',
       type: 'dropdown',
       items: [
-        { name: 'AI Agent Gala', href: '/ai-agent-gala' },
-        { name: 'Webhook Tester', href: '/ai-agent-gala' }
+        { name: 'AI Agent Gala', href: '/ai-agent-gala' }
       ]
     },
     { name: 'Portfolio', href: '/original', type: 'link' },

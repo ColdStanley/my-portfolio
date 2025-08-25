@@ -10,6 +10,7 @@ interface SidebarProps {
 }
 
 const tabs = [
+  { key: 'overview', label: 'Overview' },
   { key: 'option1', label: 'Test Lab' },
   { key: 'option2', label: 'IELTS Speaking' },
   { key: 'option3', label: 'JD2CV 2.0' },

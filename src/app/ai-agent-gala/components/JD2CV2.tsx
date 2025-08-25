@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 // Removed auth dependency for anonymous access
 import ProgressTooltip from './ProgressTooltip'
 
@@ -9,6 +10,12 @@ interface Education {
   institution: string
   year: string
   gpa?: string
+}
+
+interface CustomModule {
+  id: string
+  title: string
+  content: string[]
 }
 
 interface PDFConfig {
@@ -31,6 +38,7 @@ interface PDFConfig {
     languages: string[]
     education: Education[]
     certificates: string[]
+    customModules: CustomModule[]
   }
 }
 
@@ -45,7 +53,8 @@ const defaultPersonalInfo = {
   technicalSkills: [],
   languages: [],
   education: [],
-  certificates: []
+  certificates: [],
+  customModules: []
 }
 
 const defaultConfig: PDFConfig = {
@@ -76,6 +85,11 @@ export default function JD2CV2() {
     year: '',
     gpa: ''
   })
+  
+  // Custom module states
+  const [newCustomModuleTitle, setNewCustomModuleTitle] = useState('')
+  const [newCustomModuleItem, setNewCustomModuleItem] = useState('')
+  const [currentEditingModuleId, setCurrentEditingModuleId] = useState<string | null>(null)
 
   // JD input states
   const [jdTitle, setJdTitle] = useState('')
@@ -89,6 +103,9 @@ export default function JD2CV2() {
   const [showProgress, setShowProgress] = useState(false)
   const [currentStep, setCurrentStep] = useState('')
   const [stepNumber, setStepNumber] = useState(1)
+  
+  // Flag to prevent auto-save during initial data loading
+  const [isDataLoaded, setIsDataLoaded] = useState(false)
 
   // Load PDF setup data from localStorage on mount
   useEffect(() => {
@@ -113,6 +130,9 @@ export default function JD2CV2() {
       }
     }
 
+    // Mark data loading as complete
+    setIsDataLoaded(true)
+
     // Check for transferred JD data from JD2CV 1.0
     const transferData = localStorage.getItem('jd2cv-transfer')
     if (transferData) {
@@ -129,10 +149,12 @@ export default function JD2CV2() {
     }
   }, [])
 
-  // Save config to localStorage whenever it changes
-  const saveConfig = () => {
-    localStorage.setItem('jd2cv2-pdf-data-anonymous', JSON.stringify(config))
-  }
+  // Save config to localStorage whenever config changes (but only after initial data loading)
+  useEffect(() => {
+    if (isDataLoaded) {
+      localStorage.setItem('jd2cv2-pdf-data-anonymous', JSON.stringify(config))
+    }
+  }, [config, isDataLoaded])
 
   // Array management functions
   const addSummaryItem = () => {
@@ -145,7 +167,6 @@ export default function JD2CV2() {
         }
       }))
       setNewSummaryItem('')
-      saveConfig()
     }
   }
 
@@ -157,7 +178,6 @@ export default function JD2CV2() {
         summary: prev.personalInfo.summary.filter((_, i) => i !== index)
       }
     }))
-    saveConfig()
   }
 
   const addSkill = () => {
@@ -170,7 +190,6 @@ export default function JD2CV2() {
         }
       }))
       setNewSkill('')
-      saveConfig()
     }
   }
 
@@ -182,7 +201,6 @@ export default function JD2CV2() {
         technicalSkills: prev.personalInfo.technicalSkills.filter((_, i) => i !== index)
       }
     }))
-    saveConfig()
   }
 
   const addLanguage = () => {
@@ -195,8 +213,7 @@ export default function JD2CV2() {
         }
       }))
       setNewLanguage('')
-      saveConfig()
-    }
+      }
   }
 
   const removeLanguage = (index: number) => {
@@ -207,7 +224,6 @@ export default function JD2CV2() {
         languages: prev.personalInfo.languages.filter((_, i) => i !== index)
       }
     }))
-    saveConfig()
   }
 
   const addEducation = () => {
@@ -220,8 +236,7 @@ export default function JD2CV2() {
         }
       }))
       setNewEducation({ degree: '', institution: '', year: '', gpa: '' })
-      saveConfig()
-    }
+      }
   }
 
   const removeEducation = (index: number) => {
@@ -232,7 +247,6 @@ export default function JD2CV2() {
         education: prev.personalInfo.education.filter((_, i) => i !== index)
       }
     }))
-    saveConfig()
   }
 
   const addCertificate = () => {
@@ -245,8 +259,7 @@ export default function JD2CV2() {
         }
       }))
       setNewCertificate('')
-      saveConfig()
-    }
+      }
   }
 
   const removeCertificate = (index: number) => {
@@ -257,7 +270,71 @@ export default function JD2CV2() {
         certificates: prev.personalInfo.certificates.filter((_, i) => i !== index)
       }
     }))
-    saveConfig()
+  }
+
+  // Custom module management functions
+  const addCustomModule = () => {
+    if (newCustomModuleTitle.trim()) {
+      const newModule: CustomModule = {
+        id: Date.now().toString(),
+        title: newCustomModuleTitle.trim(),
+        content: []
+      }
+      setConfig(prev => ({
+        ...prev,
+        personalInfo: {
+          ...prev.personalInfo,
+          customModules: [...prev.personalInfo.customModules, newModule]
+        }
+      }))
+      setNewCustomModuleTitle('')
+      setCurrentEditingModuleId(newModule.id)
+      }
+  }
+
+  const removeCustomModule = (moduleId: string) => {
+    setConfig(prev => ({
+      ...prev,
+      personalInfo: {
+        ...prev.personalInfo,
+        customModules: prev.personalInfo.customModules.filter(module => module.id !== moduleId)
+      }
+    }))
+    if (currentEditingModuleId === moduleId) {
+      setCurrentEditingModuleId(null)
+      setNewCustomModuleItem('')
+    }
+  }
+
+  const addCustomModuleItem = (moduleId: string) => {
+    if (newCustomModuleItem.trim()) {
+      setConfig(prev => ({
+        ...prev,
+        personalInfo: {
+          ...prev.personalInfo,
+          customModules: prev.personalInfo.customModules.map(module => 
+            module.id === moduleId 
+              ? { ...module, content: [...module.content, newCustomModuleItem.trim()] }
+              : module
+          )
+        }
+      }))
+      setNewCustomModuleItem('')
+      }
+  }
+
+  const removeCustomModuleItem = (moduleId: string, itemIndex: number) => {
+    setConfig(prev => ({
+      ...prev,
+      personalInfo: {
+        ...prev.personalInfo,
+        customModules: prev.personalInfo.customModules.map(module => 
+          module.id === moduleId 
+            ? { ...module, content: module.content.filter((_, i) => i !== itemIndex) }
+            : module
+        )
+      }
+    }))
   }
 
   // Handle form submission
@@ -398,9 +475,94 @@ export default function JD2CV2() {
           <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">
             JD2CV 2.0
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 mb-4">
             Generate professional resumes with AI-powered experience matching
           </p>
+          
+          {/* Image */}
+          <div className="mb-4 flex justify-center">
+            <img 
+              src="/images/AI Agent - JD2CV 2.0.png" 
+              alt="JD2CV 2.0 Interface"
+              className="max-w-full h-auto rounded-lg shadow-md"
+            />
+          </div>
+          
+          {/* Additional Information */}
+          <div className="bg-purple-50/50 rounded-lg p-4 space-y-2">
+            <p className="text-sm text-gray-700">
+              <span className="font-medium">Requirements:</span> Requires integration with{' '}
+              <Link 
+                href="/jd2cv" 
+                className="text-purple-600 hover:text-purple-700 font-medium underline decoration-purple-200 hover:decoration-purple-400 transition-colors"
+              >
+                JD2CV 1.0
+              </Link>{' '}
+              or contact{' '}
+              <a 
+                href="mailto:stanleytonight@hotmail.com" 
+                className="text-purple-600 hover:text-purple-700 font-medium underline decoration-purple-200 hover:decoration-purple-400 transition-colors"
+              >
+                stanleytonight@hotmail.com
+              </a>{' '}
+              for custom setup.
+            </p>
+            <p className="text-sm text-gray-700">
+              <span className="font-medium">Speed:</span> Generate customized CV in one click, takes 2-3 minutes.
+            </p>
+          </div>
+        </div>
+
+        {/* JD Input Section */}
+        <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl p-6 space-y-4">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-800">Job Description</h2>
+            <button
+              onClick={handleGenerateCV}
+              disabled={isGenerating}
+              className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 ${
+                isGenerating
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl'
+              }`}
+            >
+              {isGenerating ? 'Generating...' : 'Generate Resume PDF'}
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Job Title</label>
+              <input
+                type="text"
+                value={jdTitle}
+                onChange={(e) => setJdTitle(e.target.value)}
+                className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
+                placeholder="e.g. Senior Software Engineer"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Company</label>
+              <input
+                type="text"
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
+                placeholder="e.g. Google"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Full Job Description</label>
+            <textarea
+              value={jdDescription}
+              onChange={(e) => setJdDescription(e.target.value)}
+              rows={8}
+              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none resize-none transition-colors"
+              placeholder="Paste the complete job description here..."
+            />
+          </div>
         </div>
 
         {/* PDF Setup Section */}
@@ -419,8 +581,7 @@ export default function JD2CV2() {
                     ...prev,
                     personalInfo: { ...prev.personalInfo, fullName: e.target.value }
                   }))
-                  saveConfig()
-                }}
+                              }}
                 className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
                 placeholder="Your full name"
               />
@@ -435,8 +596,7 @@ export default function JD2CV2() {
                     ...prev,
                     personalInfo: { ...prev.personalInfo, email: e.target.value }
                   }))
-                  saveConfig()
-                }}
+                              }}
                 className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
                 placeholder="your.email@example.com"
               />
@@ -454,8 +614,7 @@ export default function JD2CV2() {
                     ...prev,
                     personalInfo: { ...prev.personalInfo, phone: e.target.value }
                   }))
-                  saveConfig()
-                }}
+                              }}
                 className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
                 placeholder="+1 (555) 123-4567"
               />
@@ -470,8 +629,7 @@ export default function JD2CV2() {
                     ...prev,
                     personalInfo: { ...prev.personalInfo, location: e.target.value }
                   }))
-                  saveConfig()
-                }}
+                              }}
                 className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
                 placeholder="City, Country"
               />
@@ -489,8 +647,7 @@ export default function JD2CV2() {
                     ...prev,
                     personalInfo: { ...prev.personalInfo, linkedin: e.target.value }
                   }))
-                  saveConfig()
-                }}
+                              }}
                 className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
                 placeholder="linkedin.com/in/yourprofile"
               />
@@ -505,8 +662,7 @@ export default function JD2CV2() {
                     ...prev,
                     personalInfo: { ...prev.personalInfo, website: e.target.value }
                   }))
-                  saveConfig()
-                }}
+                              }}
                 className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
                 placeholder="yourwebsite.com"
               />
@@ -624,43 +780,41 @@ export default function JD2CV2() {
           {/* Education Section */}
           <div className="space-y-3">
             <label className="block text-sm font-medium text-gray-600">Education</label>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+            <div className="flex flex-wrap gap-2">
               <input
                 type="text"
                 value={newEducation.degree}
                 onChange={(e) => setNewEducation(prev => ({ ...prev, degree: e.target.value }))}
-                className="px-3 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors text-sm"
+                className="flex-1 min-w-[140px] px-3 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors text-sm"
                 placeholder="Degree"
               />
               <input
                 type="text"
                 value={newEducation.institution}
                 onChange={(e) => setNewEducation(prev => ({ ...prev, institution: e.target.value }))}
-                className="px-3 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors text-sm"
+                className="flex-1 min-w-[140px] px-3 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors text-sm"
                 placeholder="Institution"
               />
               <input
                 type="text"
                 value={newEducation.year}
                 onChange={(e) => setNewEducation(prev => ({ ...prev, year: e.target.value }))}
-                className="px-3 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors text-sm"
+                className="w-20 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors text-sm"
                 placeholder="Year"
               />
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newEducation.gpa}
-                  onChange={(e) => setNewEducation(prev => ({ ...prev, gpa: e.target.value }))}
-                  className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors text-sm"
-                  placeholder="GPA"
-                />
-                <button
-                  onClick={addEducation}
-                  className="px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm"
-                >
-                  Add
-                </button>
-              </div>
+              <input
+                type="text"
+                value={newEducation.gpa}
+                onChange={(e) => setNewEducation(prev => ({ ...prev, gpa: e.target.value }))}
+                className="w-16 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors text-sm"
+                placeholder="GPA"
+              />
+              <button
+                onClick={addEducation}
+                className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm whitespace-nowrap"
+              >
+                Add
+              </button>
             </div>
             {config.personalInfo.education.length > 0 && (
               <div className="space-y-2">
@@ -717,61 +871,136 @@ export default function JD2CV2() {
               </div>
             )}
           </div>
-        </div>
 
-        {/* JD Input Section */}
-        <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl p-6 space-y-4">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Job Description</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Job Title</label>
+          {/* Custom Modules Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-medium text-gray-600">Custom Modules</label>
+              <button
+                onClick={() => {
+                  if (newCustomModuleTitle.trim()) {
+                    addCustomModule()
+                  } else {
+                    setNewCustomModuleTitle('New Module')
+                    setTimeout(() => {
+                      const input = document.querySelector('input[placeholder="Module title..."]') as HTMLInputElement
+                      if (input) {
+                        input.focus()
+                        input.select()
+                      }
+                    }, 100)
+                  }
+                }}
+                className="flex items-center gap-1 px-3 py-1 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors text-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Add Module
+              </button>
+            </div>
+
+            {/* Add new module input */}
+            <div className="flex gap-2">
               <input
                 type="text"
-                value={jdTitle}
-                onChange={(e) => setJdTitle(e.target.value)}
-                className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
-                placeholder="e.g. Senior Software Engineer"
+                value={newCustomModuleTitle}
+                onChange={(e) => setNewCustomModuleTitle(e.target.value)}
+                className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
+                placeholder="Module title..."
+                onKeyPress={(e) => e.key === 'Enter' && addCustomModule()}
               />
+              <button
+                onClick={addCustomModule}
+                className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+              >
+                Create
+              </button>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Company</label>
-              <input
-                type="text"
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-                className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
-                placeholder="e.g. Google"
-              />
-            </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">Full Job Description</label>
-            <textarea
-              value={jdDescription}
-              onChange={(e) => setJdDescription(e.target.value)}
-              rows={8}
-              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none resize-none transition-colors"
-              placeholder="Paste the complete job description here..."
-            />
+            {/* Existing custom modules */}
+            {config.personalInfo.customModules.map((module) => (
+              <div key={module.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50/50">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-medium text-gray-800">{module.title}</h4>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        if (currentEditingModuleId === module.id) {
+                          setCurrentEditingModuleId(null)
+                          setNewCustomModuleItem('')
+                        } else {
+                          setCurrentEditingModuleId(module.id)
+                          setNewCustomModuleItem('')
+                        }
+                      }}
+                      className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
+                    >
+                      {currentEditingModuleId === module.id ? 'Done' : 'Edit'}
+                    </button>
+                    <button
+                      onClick={() => removeCustomModule(module.id)}
+                      className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors text-sm"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+
+                {/* Add content input when editing */}
+                {currentEditingModuleId === module.id && (
+                  <div className="mb-3">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newCustomModuleItem}
+                        onChange={(e) => setNewCustomModuleItem(e.target.value)}
+                        className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
+                        placeholder="Add content item..."
+                        onKeyPress={(e) => e.key === 'Enter' && addCustomModuleItem(module.id)}
+                      />
+                      <button
+                        onClick={() => addCustomModuleItem(module.id)}
+                        className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Module content */}
+                {module.content.length > 0 && (
+                  <div className="space-y-2">
+                    {module.content.map((item, index) => (
+                      <div key={index} className="flex items-center justify-between bg-white px-3 py-2 rounded-lg">
+                        <span className="text-sm text-gray-700">• {item}</span>
+                        <button
+                          onClick={() => removeCustomModuleItem(module.id, index)}
+                          className="text-red-500 hover:text-red-700 transition-colors"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {module.content.length === 0 && (
+                  <p className="text-sm text-gray-500 italic">No content added yet</p>
+                )}
+              </div>
+            ))}
+
+            {config.personalInfo.customModules.length === 0 && (
+              <p className="text-sm text-gray-500 italic text-center py-4">
+                No custom modules created. Click "Add Module" to create your first custom section.
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Generate Button */}
-        <div className="flex justify-center">
-          <button
-            onClick={handleGenerateCV}
-            disabled={isGenerating}
-            className={`px-8 py-3 rounded-lg font-medium transition-all duration-200 ${
-              isGenerating
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl'
-            }`}
-          >
-            {isGenerating ? 'Generating Resume...' : 'Generate Resume PDF'}
-          </button>
-        </div>
+
 
         {/* Progress Tooltip */}
         <ProgressTooltip 

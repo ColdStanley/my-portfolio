@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Sidebar from './components/Sidebar'
+import Overview from './components/Overview'
 import WebhookTester from './components/WebhookTester'
 import IELTSSpeaking from './components/IELTSSpeaking'
 import JD2CV2 from './components/JD2CV2'
@@ -11,7 +12,7 @@ import FooterSection from '@/components/FooterSection'
 import PageTransition from '@/components/PageTransition'
 
 export default function AIAgentGalaPage() {
-  const [activeTab, setActiveTab] = useState('option2') // Default to IELTS Speaking
+  const [activeTab, setActiveTab] = useState('overview') // Default to Overview
   const [sidebarOpen, setSidebarOpen] = useState(false) // Start closed for bounce effect
 
   // Check URL parameters for tab switching
@@ -19,7 +20,7 @@ export default function AIAgentGalaPage() {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search)
       const tabParam = urlParams.get('tab')
-      if (tabParam && ['option1', 'option2', 'option3', 'option4'].includes(tabParam)) {
+      if (tabParam && ['overview', 'option1', 'option2', 'option3', 'option4'].includes(tabParam)) {
         setActiveTab(tabParam)
       }
     }
@@ -29,13 +30,13 @@ export default function AIAgentGalaPage() {
   useEffect(() => {
     const sidebarDiscovery = () => {
       // First bounce: open
-      setTimeout(() => setSidebarOpen(true), 500)
+      setTimeout(() => setSidebarOpen(true), 200)
       // First retract
-      setTimeout(() => setSidebarOpen(false), 1500)
+      setTimeout(() => setSidebarOpen(false), 600)
       // Second bounce: open
-      setTimeout(() => setSidebarOpen(true), 2500)
+      setTimeout(() => setSidebarOpen(true), 800)
       // Final retract
-      setTimeout(() => setSidebarOpen(false), 3500)
+      setTimeout(() => setSidebarOpen(false), 1200)
     }
 
     sidebarDiscovery()
@@ -90,6 +91,12 @@ export default function AIAgentGalaPage() {
       
       {/* 主内容区域 - L形预留空间布局 */}
       <div className="flex-1 ml-[68px] mt-[52px]">
+        {activeTab === 'overview' && (
+          <div>
+            <Overview />
+          </div>
+        )}
+        
         {activeTab === 'option1' && (
           <div>
             <WebhookTester />
