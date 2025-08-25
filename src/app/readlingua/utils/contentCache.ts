@@ -72,7 +72,6 @@ const processMarkdown = (content: string): string => {
       gfm: true,          // GitHub Flavored Markdown
     })
   } catch (error) {
-    console.warn('Markdown parsing failed, using plain text:', error)
     // Fallback: convert line breaks manually if markdown parsing fails
     return content
       .replace(/\n\n+/g, '</p><p class="mb-4">')

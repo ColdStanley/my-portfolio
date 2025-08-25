@@ -80,10 +80,7 @@ export default function MultipleAITooltips() {
   // 使用浅比较选择器，避免不必要的重渲染
   const selectedLanguage = selectedArticle?.source_language || 'english'
 
-  // Don't render anything if no tooltips
-  if (aiTooltips.length === 0) return null
-
-  // 优化：稳定的回调函数，避免子组件重渲染
+  // 优化：稳定的回调函数，避免子组件重渲染 - ALWAYS call hooks
   const handleRemove = useCallback((id: string) => {
     removeAITooltip(id)
   }, [removeAITooltip])
@@ -133,6 +130,9 @@ export default function MultipleAITooltips() {
       setIsPlaying(false)
     }
   }, [isPlaying, selectedArticle])
+
+  // Don't render anything if no tooltips - AFTER hooks
+  if (aiTooltips.length === 0) return null
 
   return (
     <>

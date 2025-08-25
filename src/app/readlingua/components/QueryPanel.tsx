@@ -87,7 +87,7 @@ export default function QueryPanel() {
           userId = user.id
         }
       } catch (authError) {
-        console.log('Using anonymous mode for delete')
+        // Using anonymous mode
       }
 
       // Delete from database
@@ -159,7 +159,6 @@ export default function QueryPanel() {
       // marked.parse can return a string or Promise<string>, we need string only
       return typeof result === 'string' ? result : text.replace(/\n/g, '<br>')
     } catch (error) {
-      console.warn('Failed to parse AI response markdown:', error)
       return text.replace(/\n/g, '<br>')
     }
   }
@@ -171,6 +170,16 @@ export default function QueryPanel() {
   const getFilteredQueries = () => {
     if (activeTab === 'quiz') return []
     return queries.filter(q => q.query_type === activeTab && (q.selected_text || q.query_type === 'ask_ai'))
+  }
+
+  const getGridCols = (queryType: string) => {
+    const gridCols = {
+      'quick': 'grid-cols-4',
+      'standard': 'grid-cols-3', 
+      'deep': 'grid-cols-1',
+      'ask_ai': 'grid-cols-1'
+    }
+    return gridCols[queryType as keyof typeof gridCols] || 'grid-cols-3'
   }
 
 
@@ -386,8 +395,8 @@ export default function QueryPanel() {
               <p className="text-gray-400 text-xs mt-1">Select text and try {tabs.find(t => t.id === activeTab)?.label} analysis</p>
             </div>
         ) : (
-          /* Tag Style Query List */
-          <div className="flex flex-wrap gap-2">
+          /* Grid Layout Query List */
+          <div className={`grid ${getGridCols(activeTab)} gap-2`}>
             {getFilteredQueries().map((query) => (
               <div
                 key={query.id}
@@ -412,7 +421,7 @@ export default function QueryPanel() {
                 }`}
                 title={deleteMode === query.id ? 'Click X to delete' : `${query.selected_text} - Long press to delete`}
               >
-                <div className="flex items-center gap-1 max-w-xs">
+                <div className="flex items-center justify-between gap-1 max-w-xs">
                   <span className="truncate">
                     {query.selected_text || (query.query_type === 'ask_ai' && query.user_question ? `Ask: ${query.user_question}` : 'No content')}
                   </span>

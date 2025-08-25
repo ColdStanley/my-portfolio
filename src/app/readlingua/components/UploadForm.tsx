@@ -61,23 +61,16 @@ export default function UploadForm({ defaultNativeLanguage = 'chinese', defaultS
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
           userId = user.id
-          console.log('✅ User authenticated:', { id: user.id })
-        } else {
-          console.log('👤 Using anonymous mode')
         }
       } catch (authError) {
-        console.log('⚠️ Auth check failed, using anonymous mode:', authError)
+        // Using anonymous mode
       }
-
-      console.log('📝 Saving article with data:', { user_id: userId, ...formData })
 
       // Save to Supabase
       const article = await articleApi.createArticle({
         user_id: userId,
         ...formData
       })
-
-      console.log('✅ Article saved successfully:', article)
 
       // Auto-switch to learning mode
       setSelectedArticle(article)

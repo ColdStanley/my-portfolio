@@ -144,7 +144,7 @@ const LearningTab = memo(() => {
           userId = user.id
         }
       } catch (authError) {
-        console.log('Using anonymous mode for loading queries')
+        // Using anonymous mode
       }
 
       const articleQueries = await queryApi.getQueries(articleId, userId)

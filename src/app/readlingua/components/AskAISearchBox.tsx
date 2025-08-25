@@ -37,7 +37,7 @@ export default function AskAISearchBox({ onSearchSubmit, onShowFloatingPanel }: 
           userId = user.id
         }
       } catch (authError) {
-        console.log('Using anonymous mode for AI features')
+        // Using anonymous mode
       }
 
       setIsSearching(true)

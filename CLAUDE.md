@@ -352,48 +352,56 @@ const statusOptions = ['Not Started', 'Completed']
 
 **Principle**: One scroll container = predictable user experience
 
-## Text Selection Toolbar Animation (CRITICAL)
+## Text Selection Tooltip Animation (CRITICAL)
 
-**Smooth scaling animation for contextual toolbars triggered by text selection**
+**Refined multi-dimensional animation for elegant tooltip appearance and dismissal**
 
 ### Animation Specifications
 
 ```tsx
-// Standard toolbar animation pattern
-style={{
-  transform: `translate(-50%, -100%) scale(${showToolbar ? 1 : 0.85})`,
-  opacity: showToolbar ? 1 : 0,
-  transition: 'all 0.15s ease-out',
-  pointerEvents: showToolbar ? 'auto' : 'none'
-}}
+// Enhanced tooltip animation pattern
+className={`transition-all duration-200 ease-out ${
+  isVisible 
+    ? 'opacity-100 scale-100 translate-y-0' 
+    : 'opacity-0 scale-95 translate-y-2'
+}`}
 ```
 
 ### Implementation Rules
 
-1. **Scale Transition**: 85% to 100% scale on show/hide
-2. **Timing**: 0.15s ease-out transition for snappy feel
-3. **Combined Effects**: Always combine scale with opacity changes
-4. **DOM Presence**: Keep element in DOM, control visibility via CSS
-5. **Interaction Control**: Use `pointer-events: none` when hidden
-6. **Positioning**: Center above selected text with `translate(-50%, -100%)`
+1. **Multi-Dimensional Transition**: Combine opacity, scale, and translate-y for sophisticated effect
+2. **Scale Range**: 95% to 100% scale for subtle entrance/exit
+3. **Vertical Motion**: 2px upward translation on appear creates floating effect
+4. **Timing**: 200ms duration with `ease-out` for natural deceleration
+5. **State Management**: Use `isVisible` state with delayed trigger for smooth mounting
+6. **Graceful Exit**: Fade out before DOM removal to complete animation cycle
 
-### Usage Pattern
+### Enhanced Implementation
 ```tsx
-const [showToolbar, setShowToolbar] = useState(false)
+const [isVisible, setIsVisible] = useState(false)
 
-// Trigger on text selection
-const handleMouseUp = () => {
-  const selection = window.getSelection()
-  if (selection?.toString().trim()) {
-    setShowToolbar(true)
-  }
-}
+// Smooth entrance with micro-delay
+useEffect(() => {
+  const timer = setTimeout(() => setIsVisible(true), 10)
+  return () => clearTimeout(timer)
+}, [])
 
-// Auto-hide after action
-const handleAction = () => {
-  // Perform action
-  setShowToolbar(false)
-}
+// Graceful exit animation
+const handleClose = useCallback(() => {
+  setIsVisible(false)
+  setTimeout(() => onClose(), 200) // Wait for animation completion
+}, [onClose])
 ```
 
-**Principle**: Subtle scale + opacity creates professional appearance/disappearance effect
+### Micro-Interaction Enhancements
+```tsx
+// Corner buttons with refined hover states
+className="transition-all duration-150 hover:scale-110 hover:shadow-md"
+```
+
+### Visual Hierarchy
+- **Main Animation**: Opacity + scale + translate-y (200ms)
+- **Hover States**: Scale + shadow enhancement (150ms)  
+- **State Timing**: 10ms entrance delay, 200ms exit delay
+
+**Principle**: Layered motion creates depth and polish while maintaining performance

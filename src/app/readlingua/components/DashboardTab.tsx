@@ -35,7 +35,7 @@ export default function DashboardTab() {
           userId = user.id
         }
       } catch (authError) {
-        console.log('Using anonymous mode for loading articles')
+        // Using anonymous mode
       }
 
       const userArticles = await articleApi.getArticles(userId)

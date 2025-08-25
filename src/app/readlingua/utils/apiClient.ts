@@ -164,7 +164,7 @@ export const aiApi = {
                 return
               }
             } catch (parseError) {
-              console.warn('Failed to parse streaming data:', parseError)
+              // Skip malformed data
             }
           }
         }

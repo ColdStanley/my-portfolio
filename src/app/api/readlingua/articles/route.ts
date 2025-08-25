@@ -42,21 +42,16 @@ export async function GET(request: NextRequest) {
 // POST - Create new article
 export async function POST(request: NextRequest) {
   try {
-    console.log('📥 Received POST request to create article')
     const body = await request.json()
-    console.log('📝 Request body:', body)
     
     const { user_id, title, content, source_language, native_language } = body
 
     if (!user_id || !title || !content || !source_language || !native_language) {
-      console.error('❌ Missing required fields:', { user_id: !!user_id, title: !!title, content: !!content, source_language: !!source_language, native_language: !!native_language })
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
     // Normalize user ID
     const finalUserId = normalizeUserId(user_id)
-
-    console.log('🔍 Attempting to insert article into database...')
     const { data: article, error } = await supabase
       .from('readlingua_articles')
       .insert({
@@ -70,11 +65,8 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('❌ Database insertion error:', error)
       throw error
     }
-
-    console.log('✅ Article created successfully:', article)
     return NextResponse.json({ article }, { status: 201 })
   } catch (error) {
     console.error('❌ Error creating article:', error)

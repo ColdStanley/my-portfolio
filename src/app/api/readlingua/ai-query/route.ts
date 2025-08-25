@@ -66,9 +66,7 @@ const MODEL_CONFIGS = {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🤖 AI Query API called')
     const body = await request.json()
-    console.log('📝 Request body:', body)
     
     const { 
       selected_text, 
@@ -79,13 +77,6 @@ export async function POST(request: NextRequest) {
       ai_model = 'deepseek', // Default to DeepSeek
       custom_prompt_template // Custom prompt from frontend
     } = body
-
-    // Check API keys
-    console.log('🗝️ API Keys check:', {
-      openai: !!process.env.OPENAI_API_KEY,
-      deepseek: !!process.env.DEEPSEEK_API_KEY,
-      selectedModel: ai_model
-    })
 
     if (!selected_text && query_type !== 'ask_ai') {
       return NextResponse.json({ error: 'Selected text required' }, { status: 400 })
@@ -124,9 +115,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log('🔍 Calling AI with model:', modelConfig.name)
-    console.log('📋 Final prompt:', prompt)
-
     // Call AI API with streaming (DeepSeek or OpenAI)
     const completion = await modelConfig.client.chat.completions.create({
       model: modelConfig.model,
@@ -145,19 +133,44 @@ export async function POST(request: NextRequest) {
       stream: true,
     })
 
-    console.log('✅ AI streaming response started')
-
     // Create a ReadableStream for streaming response
     const encoder = new TextEncoder()
     const stream = new ReadableStream({
       async start(controller) {
+        let isControllerClosed = false
+        
+        const safeEnqueue = (data: Uint8Array) => {
+          try {
+            if (!isControllerClosed) {
+              controller.enqueue(data)
+            }
+          } catch (error) {
+            console.error('Controller enqueue error:', error)
+            isControllerClosed = true
+          }
+        }
+        
+        const safeClose = () => {
+          try {
+            if (!isControllerClosed) {
+              controller.close()
+              isControllerClosed = true
+            }
+          } catch (error) {
+            console.error('Controller close error:', error)
+            isControllerClosed = true
+          }
+        }
+        
         try {
           let fullResponse = ''
           
           for await (const chunk of completion) {
+            if (isControllerClosed) break
+            
             const content = chunk.choices[0]?.delta?.content || ''
             
-            if (content) {
+            if (content && !isControllerClosed) {
               fullResponse += content
               
               // Send chunk to client
@@ -171,32 +184,39 @@ export async function POST(request: NextRequest) {
                 model_name: modelConfig.name
               }
               
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
+              safeEnqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
             }
           }
           
           // Send completion signal
-          const completionData = {
-            type: 'complete',
-            full_response: fullResponse.trim(),
-            query_type,
-            selected_text,
-            user_question: query_type === 'ask_ai' ? user_question : undefined,
-            ai_model: ai_model,
-            model_name: modelConfig.name
+          if (!isControllerClosed) {
+            const completionData = {
+              type: 'complete',
+              full_response: fullResponse.trim(),
+              query_type,
+              selected_text,
+              user_question: query_type === 'ask_ai' ? user_question : undefined,
+              ai_model: ai_model,
+              model_name: modelConfig.name
+            }
+            
+            safeEnqueue(encoder.encode(`data: ${JSON.stringify(completionData)}\n\n`))
           }
           
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(completionData)}\n\n`))
-          controller.close()
+          safeClose()
           
         } catch (error) {
           console.error('Streaming error:', error)
-          const errorData = {
-            type: 'error',
-            error: 'Failed to process AI query'
+          
+          if (!isControllerClosed) {
+            const errorData = {
+              type: 'error',
+              error: 'Failed to process AI query'
+            }
+            safeEnqueue(encoder.encode(`data: ${JSON.stringify(errorData)}\n\n`))
           }
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(errorData)}\n\n`))
-          controller.close()
+          
+          safeClose()
         }
       }
     })

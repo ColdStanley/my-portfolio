@@ -151,7 +151,6 @@ export default function AIResponseFloatingPanel({
         gfm: true,
       })
     } catch (error) {
-      console.warn('Failed to parse AI response markdown:', error)
       return text.replace(/\n/g, '<br>')
     }
   }

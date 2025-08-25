@@ -17,6 +17,10 @@ const ArticleReader = memo<ArticleReaderProps>(({ article }) => {
   const [selectionPosition, setSelectionPosition] = useState({ x: 0, y: 0 })
   const [showToolbar, setShowToolbar] = useState(false)
   const [streamingTooltips, setStreamingTooltips] = useState<Map<string, string>>(new Map())
+  const [currentHighlight, setCurrentHighlight] = useState<{
+    text: string
+    rect: { top: number, left: number, width: number, height: number }
+  } | null>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const { queries, setShowQueryPanel, addAITooltip, updateAITooltip, selectedAiModel, getCurrentPromptTemplates, addQuery } = useReadLinguaStore()
 
@@ -27,10 +31,22 @@ const ArticleReader = memo<ArticleReaderProps>(({ article }) => {
     if (text && text.length > 0) {
       const range = selection?.getRangeAt(0)
       const rect = range?.getBoundingClientRect()
+      const contentRect = contentRef.current?.getBoundingClientRect()
       
-      if (rect) {
+      if (rect && contentRect) {
+        // Store selected text and relative position for overlay highlighting
         setSelectedText(text)
-        // Use viewport coordinates directly for fixed positioning
+        setCurrentHighlight({
+          text,
+          rect: {
+            top: rect.top - contentRect.top,
+            left: rect.left - contentRect.left,
+            width: rect.width,
+            height: rect.height
+          }
+        })
+        
+        // Position toolbar
         setSelectionPosition({
           x: rect.left + rect.width / 2,
           y: rect.top
@@ -38,9 +54,12 @@ const ArticleReader = memo<ArticleReaderProps>(({ article }) => {
         setShowToolbar(true)
       }
     } else {
+      // Clear highlight and toolbar
+      setCurrentHighlight(null)
       setShowToolbar(false)
     }
   }
+
 
   const handleQuerySubmit = async (queryType: string, userQuestion?: string) => {
     try {
@@ -53,11 +72,12 @@ const ArticleReader = memo<ArticleReaderProps>(({ article }) => {
           userId = user.id
         }
       } catch (authError) {
-        console.log('Using anonymous mode for AI features')
+        // Using anonymous mode
       }
 
-      // Hide toolbar 
+      // Hide toolbar and clear highlight
       setShowToolbar(false)
+      setCurrentHighlight(null)
 
       // Create stream key for this query
       const streamKey = `${queryType}-${selectedText}-${Date.now()}`
@@ -234,18 +254,39 @@ const ArticleReader = memo<ArticleReaderProps>(({ article }) => {
 
       {/* Article Content */}
       <div className="flex-1 p-6">
-        <div
-          ref={contentRef}
-          className="text-lg leading-relaxed text-gray-800 select-text whitespace-pre-wrap"
-          style={{ 
-            wordWrap: 'break-word',
-            overflowWrap: 'break-word',
-            hyphens: 'auto'
-          }}
-          onMouseUp={handleTextSelection}
-          onClick={handleHighlightClick}
-          dangerouslySetInnerHTML={{ __html: formattedContent }}
-        />
+        <div className="relative">
+          <div
+            ref={contentRef}
+            className="text-lg leading-relaxed text-gray-800 select-text whitespace-pre-wrap"
+            style={{ 
+              wordWrap: 'break-word',
+              overflowWrap: 'break-word',
+              hyphens: 'auto'
+            }}
+            onMouseUp={handleTextSelection}
+            onClick={handleHighlightClick}
+            dangerouslySetInnerHTML={{ __html: formattedContent }}
+          />
+          
+          {/* Immediate Highlight Overlay */}
+          {currentHighlight && (
+            <div
+              className="immediate-highlight absolute pointer-events-none z-10 flex items-center"
+              style={{
+                top: currentHighlight.rect.top + 'px',
+                left: currentHighlight.rect.left + 'px',
+                width: currentHighlight.rect.width + 'px',
+                height: currentHighlight.rect.height + 'px',
+                fontSize: '18px',
+                lineHeight: '1.6',
+                wordWrap: 'break-word',
+                whiteSpace: 'pre-wrap'
+              }}
+            >
+              {currentHighlight.text}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Text Selection Toolbar */}
@@ -260,6 +301,40 @@ const ArticleReader = memo<ArticleReaderProps>(({ article }) => {
 
       {/* Custom Styles for Article Highlights */}
       <style jsx>{`
+        .immediate-highlight {
+          background: linear-gradient(145deg, #f3e8ff, #e9d5ff);
+          border-radius: 4px;
+          padding: 2px 6px;
+          margin: 0;
+          box-shadow: 2px 2px 4px rgba(196, 132, 252, 0.2), -1px -1px 3px rgba(255, 255, 255, 0.8);
+          color: #7c3aed;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          position: relative;
+          overflow: hidden;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          text-align: left;
+        }
+        
+        .immediate-highlight::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+          animation: highlight-sweep 0.6s ease-out;
+        }
+        
+        @keyframes highlight-sweep {
+          to { 
+            left: 100%; 
+          }
+        }
+        
         :global(.article-highlight) {
           background: linear-gradient(145deg, #f3e8ff, #e9d5ff);
           border-radius: 4px;

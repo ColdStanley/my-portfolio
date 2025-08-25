@@ -110,7 +110,6 @@ export const loadCustomTemplatesFromStorage = (): PromptTemplatesByLanguagePair 
     const stored = localStorage.getItem(STORAGE_KEY)
     return stored ? JSON.parse(stored) : {}
   } catch (error) {
-    console.warn('Failed to load custom templates from localStorage:', error)
     return {}
   }
 }
@@ -129,7 +128,7 @@ export const saveCustomTemplatesToStorage = (templates: PromptTemplatesByLanguag
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(templates))
     } catch (error) {
-      console.warn('Failed to save custom templates to localStorage:', error)
+      // Silent fail
     }
   }, 300)
 }

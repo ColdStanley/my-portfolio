@@ -58,24 +58,16 @@ async function synthesizeEnglishSpeech(text: string): Promise<Uint8Array> {
 
 // Function to call Google Cloud TTS API for French
 async function synthesizeFrenchSpeech(text: string): Promise<Uint8Array> {
-  console.log('[TTS] Starting French speech synthesis for text:', text)
   
   if (!process.env.GOOGLE_CLOUD_SERVICE_ACCOUNT) {
-    console.error('[TTS] Google Cloud Service Account not configured')
     throw new Error('Google Cloud Service Account not configured')
   }
-  
-  console.log('[TTS] Service account exists, parsing credentials...')
   let credentials
   try {
     credentials = JSON.parse(process.env.GOOGLE_CLOUD_SERVICE_ACCOUNT)
-    console.log('[TTS] Credentials parsed successfully, project_id:', credentials.project_id)
   } catch (parseError) {
-    console.error('[TTS] Failed to parse service account JSON:', parseError)
     throw new Error('Invalid service account JSON format')
   }
-  
-  console.log('[TTS] Creating TextToSpeechClient...')
   const client = new TextToSpeechClient({
     credentials: credentials,
   })
@@ -95,21 +87,15 @@ async function synthesizeFrenchSpeech(text: string): Promise<Uint8Array> {
     },
   }
 
-  console.log('[TTS] Making TTS request with config:', JSON.stringify(ttsRequest, null, 2))
   
   try {
     const [response] = await client.synthesizeSpeech(ttsRequest)
-    console.log('[TTS] TTS request successful, checking audio content...')
     
     if (!response.audioContent) {
-      console.error('[TTS] No audio content in response:', response)
       throw new Error('No audio content generated for French')
     }
-    
-    console.log('[TTS] Audio content generated successfully, size:', response.audioContent.length)
     return response.audioContent as Uint8Array
   } catch (ttsError) {
-    console.error('[TTS] Google Cloud TTS API error:', ttsError)
     throw new Error(`Google Cloud TTS failed: ${ttsError.message || ttsError}`)
   }
 }
@@ -117,7 +103,6 @@ async function synthesizeFrenchSpeech(text: string): Promise<Uint8Array> {
 export async function POST(request: NextRequest) {
   try {
     const { text, language } = await request.json()
-    console.log('[TTS API] Received request - text:', text, 'language:', language)
 
     if (!text) {
       return NextResponse.json({ error: 'Text is required' }, { status: 400 })
@@ -127,14 +112,10 @@ export async function POST(request: NextRequest) {
     let targetLanguage = language
     if (!targetLanguage) {
       targetLanguage = detectLanguage(text)
-      console.log('[TTS API] Language detected as:', targetLanguage)
-    } else {
-      console.log('[TTS API] Using provided language:', targetLanguage)
     }
     
     // Only support English and French
     if (targetLanguage !== 'english' && targetLanguage !== 'french') {
-      console.log('[TTS API] Unsupported language:', targetLanguage)
       return NextResponse.json({ 
         error: 'Language not supported. Only English and French pronunciation are available.' 
       }, { status: 400 })
@@ -143,15 +124,12 @@ export async function POST(request: NextRequest) {
     let audioContent: Uint8Array
 
     try {
-      console.log('[TTS API] Calling TTS service for:', targetLanguage)
       if (targetLanguage === 'english') {
         audioContent = await synthesizeEnglishSpeech(text)
       } else {
         audioContent = await synthesizeFrenchSpeech(text)
       }
-      console.log('[TTS API] TTS synthesis completed successfully')
     } catch (error) {
-      console.error(`[TTS API] ${targetLanguage} TTS error:`, error)
       return NextResponse.json({ 
         error: `Failed to generate ${targetLanguage} speech` 
       }, { status: 500 })
