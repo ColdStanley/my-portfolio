@@ -108,7 +108,7 @@ export default function Sidebar({ activeTab, setActiveTab, sidebarOpen, setSideb
         onClick={handleClick}
         onMouseEnter={handleHoverEnter}
         onMouseLeave={handleHoverLeave}
-        className="hidden md:block fixed top-20 left-4 z-50 p-2 bg-white hover:bg-gray-50 active:bg-gray-100 active:scale-95 rounded-lg shadow-sm border border-gray-200 transition-all duration-200 transform hover:shadow-md"
+        className="hamburger-btn hidden md:block fixed top-20 left-4 z-50 p-2 bg-white hover:bg-gray-50 active:bg-gray-100 active:scale-95 rounded-lg shadow-sm border border-gray-200 transition-all duration-200 transform hover:shadow-md"
       >
         <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />

@@ -348,6 +348,20 @@ function generateResumeHTML(personalInfo: PersonalInfo, aiExperience: string, fo
       font-style: italic;
       color: #374151;
     }
+    
+    .two-column-container {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 25px;
+    }
+    
+    .column {
+      flex: 1;
+    }
+    
+    .column .section {
+      margin-bottom: 0;
+    }
   </style>
 </head>
 <body>
@@ -412,48 +426,60 @@ function generateResumeHTML(personalInfo: PersonalInfo, aiExperience: string, fo
       </div>
     </div>
 
-    <!-- Technical Skills -->
-    ${personalInfo.technicalSkills.length > 0 ? `
-    <div class="section">
-      <h2 class="section-title">Technical Skills</h2>
-      <div class="skills-grid">
-        ${personalInfo.technicalSkills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
-      </div>
-    </div>
-    ` : ''}
-
-    <!-- Languages -->
-    ${personalInfo.languages.length > 0 ? `
-    <div class="section">
-      <h2 class="section-title">Languages</h2>
-      <div class="languages-grid">
-        ${personalInfo.languages.map(lang => `<span class="language-tag">${lang}</span>`).join('')}
-      </div>
-    </div>
-    ` : ''}
-
-    <!-- Education -->
-    ${personalInfo.education.length > 0 ? `
-    <div class="section">
-      <h2 class="section-title">Education</h2>
-      ${personalInfo.education.map(edu => `
-        <div class="education-item">
-          <div class="education-title">${edu.degree}</div>
-          <div class="education-details">
-            ${edu.institution} • ${edu.year}${edu.gpa ? ` • GPA: ${edu.gpa}` : ''}
+    <!-- Technical Skills & Languages (Two Column Layout) -->
+    ${(personalInfo.technicalSkills.length > 0 || personalInfo.languages.length > 0) ? `
+    <div class="two-column-container">
+      <div class="column">
+        ${personalInfo.technicalSkills.length > 0 ? `
+        <div class="section">
+          <h2 class="section-title">Technical Skills</h2>
+          <div class="skills-grid">
+            ${personalInfo.technicalSkills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
           </div>
         </div>
-      `).join('')}
+        ` : ''}
+      </div>
+      <div class="column">
+        ${personalInfo.languages.length > 0 ? `
+        <div class="section">
+          <h2 class="section-title">Languages</h2>
+          <div class="languages-grid">
+            ${personalInfo.languages.map(lang => `<span class="language-tag">${lang}</span>`).join('')}
+          </div>
+        </div>
+        ` : ''}
+      </div>
     </div>
     ` : ''}
 
-    <!-- Certificates -->
-    ${personalInfo.certificates.length > 0 ? `
-    <div class="section">
-      <h2 class="section-title">Certifications</h2>
-      <ul class="certificates-list">
-        ${personalInfo.certificates.map(cert => `<li>${cert}</li>`).join('')}
-      </ul>
+    <!-- Education & Certifications (Two Column Layout) -->
+    ${(personalInfo.education.length > 0 || personalInfo.certificates.length > 0) ? `
+    <div class="two-column-container">
+      <div class="column">
+        ${personalInfo.education.length > 0 ? `
+        <div class="section">
+          <h2 class="section-title">Education</h2>
+          ${personalInfo.education.map(edu => `
+            <div class="education-item">
+              <div class="education-title">${edu.degree}</div>
+              <div class="education-details">
+                ${edu.institution} • ${edu.year}${edu.gpa ? ` • GPA: ${edu.gpa}` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        ` : ''}
+      </div>
+      <div class="column">
+        ${personalInfo.certificates.length > 0 ? `
+        <div class="section">
+          <h2 class="section-title">Certifications</h2>
+          <ul class="certificates-list">
+            ${personalInfo.certificates.map(cert => `<li>${cert}</li>`).join('')}
+          </ul>
+        </div>
+        ` : ''}
+      </div>
     </div>
     ` : ''}
 

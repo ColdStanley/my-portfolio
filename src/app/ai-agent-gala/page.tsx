@@ -26,17 +26,20 @@ export default function AIAgentGalaPage() {
     }
   }, [])
 
-  // Sidebar discovery animation - bounce 2 times then retract
+  // Sidebar discovery animation - quick bounce 1 time then trigger button blink
   useEffect(() => {
     const sidebarDiscovery = () => {
-      // First bounce: open
-      setTimeout(() => setSidebarOpen(true), 200)
-      // First retract
-      setTimeout(() => setSidebarOpen(false), 600)
-      // Second bounce: open
-      setTimeout(() => setSidebarOpen(true), 800)
-      // Final retract
-      setTimeout(() => setSidebarOpen(false), 1200)
+      // Single quick bounce: open
+      setTimeout(() => setSidebarOpen(true), 100)
+      // Quick retract
+      setTimeout(() => setSidebarOpen(false), 250)
+      // Trigger hamburger button blink after retract
+      setTimeout(() => {
+        const hamburgerButton = document.querySelector('.hamburger-btn')
+        if (hamburgerButton) {
+          hamburgerButton.classList.add('blink-animation')
+        }
+      }, 300)
     }
 
     sidebarDiscovery()
@@ -67,13 +70,27 @@ export default function AIAgentGalaPage() {
 
   return (
     <>
-      {/* Hide global navbar/footer */}
+      {/* Hide global navbar/footer + Hamburger blink animation */}
       <style jsx global>{`
         nav[role="banner"], 
         footer[role="contentinfo"],
         .navbar,
         .footer {
           display: none !important;
+        }
+        
+        /* Hamburger button blink animation */
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+        
+        .blink-animation {
+          animation: blink 0.4s ease-in-out 3;
+        }
+        
+        .blink-animation svg {
+          animation: blink 0.4s ease-in-out 3;
         }
       `}</style>
       
