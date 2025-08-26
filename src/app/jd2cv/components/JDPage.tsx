@@ -14,6 +14,9 @@ import CommentTooltip from './CommentTooltip'
 import CommentInlineEdit from './CommentInlineEdit'
 import EnhancedBatchProgressModal from './EnhancedBatchProgressModal'
 import AppliedStatsFloatingButton from './AppliedStatsFloatingButton'
+import LightningButtonV2 from './LightningButtonV2'
+import PersonalInfoTooltipV2 from './PersonalInfoTooltipV2'
+import CoverLetterButtonV2 from './CoverLetterButtonV2'
 import { extractBullets, generateModuleTitle } from '@/shared/utils'
 
 interface JDPageProps {
@@ -1710,7 +1713,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
 
                     {/* 85-100%: Actions & Created */}
                     <div className="w-[15%] flex flex-col items-end">
-                      <div className="flex flex-col justify-between h-[4.5rem] items-end">
+                      <div className="flex flex-col justify-between h-[5.5rem] items-end">
                         {/* Actions Row - align with Title */}
                         <div className="flex items-center gap-1 h-9">
                           <button
@@ -1760,9 +1763,16 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                           </button>
                         </div>
                         
-                        {/* Created Row - align with Company */}
-                        <div className="text-xs text-gray-400 text-right h-9 flex items-center">
+                        {/* Created Row - align with Company - Reduced font size */}
+                        <div className="text-[10px] text-gray-400 text-right h-6 flex items-center">
                           Created: {formatDate(jd.created_at)}
+                        </div>
+                        
+                        {/* V2 Buttons Row - Second row below Created */}
+                        <div className="flex items-center justify-end gap-1 h-7 mt-1">
+                          <LightningButtonV2 jd={jd} className="text-xs" />
+                          <PersonalInfoTooltipV2 className="text-xs" />
+                          <CoverLetterButtonV2 jd={jd} className="text-xs" />
                         </div>
                       </div>
                     </div>

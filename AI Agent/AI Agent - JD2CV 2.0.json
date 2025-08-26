@@ -21,7 +21,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=JD Title & Key Words: {{ $json.text }}\n\nAfter identifying the best Generator (sub-agent), dispatch {{ $json.text }} into that sub-agent.  \n\nOutput must be strictly in the following JSON object format (exactly one object, not an array, not a string):\n\n{\n  \"output\": \"Customized experience text here\"\n}\n\nRules:\n  1. 直接输出简历内容，不要包装成JSON格式\n  2. 使用换行符和markdown格式（**粗体**，*斜体*）进行格式化 \n- No explanations, no extra text.\n",
+        "text": "=JD Title & Key Words: {{ $json.text }}\n\nAfter identifying the best Generator (sub-agent), dispatch {{ $json.text }} into that sub-agent.  \n\nOutput must be strictly in the following JSON object format (exactly one object, not an array, not a string):\n\n{\n  \"output\": \"Customized experience text here\"\n}\n\nRules:\n1. Your only role is to route the input to the correct sub-agent and return its output. Do not rewrite or invent any resume content yourself.  \n2. Preserve exactly the Company, Title, and Time period from the sub-agent’s response. Never generate new roles or experiences.  \n3. Keep the same number of bullet points as in the sub-agent’s response. Do not merge, split, or add bullets.  \n4. Place the sub-agent’s output inside the \"output\" field of the JSON object, without modification.  \n5. Do not include explanations, commentary, or any extra text outside of the JSON object.  ",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -36,7 +36,7 @@
     {
       "parameters": {
         "promptType": "=define",
-        "text": "=Title: {{ $json.body.title }}\nJD: {{ $json.body.full_job_description }}\n\nExtract 10 concise key phrases (priority on noun phrases and verb phrases) that represent the core responsibilities, required skills, and impact described in the JD.  \nIgnore generic words (e.g., \"team\", \"responsible\", \"dynamic environment\") and focus on domain-specific, impactful terms.  \nChoose keywords that can directly guide resume customization (skills, tools, business outcomes, industry-specific terms).\n\nOutput strictly as two separate fields in JSON format:\n\n{\n  \"Title\": \"{{ $json.title }}\",\n  \"Keywords\": [\"keyword1\", \"keyword2\", \"keyword3\", ... , \"keyword10\"]\n}\n\nDo not include any explanations, introductions, or extra text.\n",
+        "text": "=Title: {{ $json.body.title }}\nJD: {{ $json.body.full_job_description }}\n\nExtract 10 concise and impactful key phrases that best represent the JD’s hiring intent, focusing on role responsibilities, domain-specific skills, tools/technologies, and measurable business outcomes.  \nExclude generic or vague terms (e.g., \"team\", \"responsible\", \"communication\", \"dynamic environment\") and ensure the 10 selected keywords can directly guide resume customization and experience tailoring.  \n\nOutput strictly as two separate fields in JSON format:\n\n{\n  \"Title\": \"{{ $json.title }}\",\n  \"Keywords\": [\"keyword1\", \"keyword2\", \"keyword3\", ... , \"keyword10\"]\n}\n\nDo not include any explanations, introductions, or extra text.\n",
         "batching": {}
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
@@ -666,7 +666,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "e8622172-200f-44c9-af3d-d4b77824d697",
+  "versionId": "f6af1d5b-c26a-41f5-8257-b036b5a5727c",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "4c844779e57f062ed2d65cae41537d8794946978b58b8ba423f134ec33dbef0d"
