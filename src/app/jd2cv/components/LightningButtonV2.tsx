@@ -160,7 +160,7 @@ export default function LightningButtonV2({ jd, className = '' }: LightningButto
       <button
         onClick={handleGenerate}
         disabled={isGenerating}
-        className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors disabled:cursor-not-allowed"
+        className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors disabled:cursor-not-allowed border border-gray-200 hover:border-purple-300"
         title="Generate Resume PDF V2"
       >
         {isGenerating ? (

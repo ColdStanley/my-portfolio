@@ -309,7 +309,7 @@ export default function PersonalInfoTooltipV2({ className = '' }: PersonalInfoTo
       `}</style>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
+        className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors border border-gray-200 hover:border-purple-300"
         title="Personal Info V2"
       >
         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">

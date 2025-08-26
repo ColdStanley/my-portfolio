@@ -14,7 +14,7 @@ interface RouteContext {
 // PUT /api/jds/[id] - Update JD field
 export async function PUT(request: NextRequest, context: RouteContext) {
   try {
-    const { id } = context.params
+    const { id } = await context.params
     const body = await request.json()
     const { user_id, field, value } = body
 
@@ -76,7 +76,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 // DELETE /api/jds/[id] - Delete JD
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
-    const { id } = context.params
+    const { id } = await context.params
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('user_id')
 

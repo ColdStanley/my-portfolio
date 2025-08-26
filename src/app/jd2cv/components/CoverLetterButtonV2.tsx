@@ -192,7 +192,7 @@ Based on the above information, generate a professional cover letter for this po
       <button
         onClick={handleClick}
         disabled={!canGenerate || isGenerating}
-        className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+        className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors disabled:cursor-not-allowed disabled:opacity-60 border border-gray-200 hover:border-purple-300"
         title={canGenerate ? "Generate Cover Letter PDF V2" : "Generate Resume first to unlock Cover Letter"}
       >
         {isGenerating ? (

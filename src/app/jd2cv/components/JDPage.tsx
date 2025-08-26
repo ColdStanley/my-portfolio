@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseClient } from '@/lib/supabase'
 import { JDRecord, CreateJDRequest, APPLICATION_STAGES } from '@/shared/types'
 import { useWorkspaceStore } from '@/store/workspaceStore'
 import { useJDFilterStore } from '@/store/useJDFilterStore'
@@ -36,6 +36,9 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
   // JD Transfer states for visual feedback
   const [transferredJDs, setTransferredJDs] = useState<Set<string>>(new Set())
   
+  // Global Personal Info state
+  const [showPersonalInfoTooltip, setShowPersonalInfoTooltip] = useState(false)
+  
   // Auto CV automation states
   const [finalCVState, setFinalCVState] = useState({
     isProcessing: false,
@@ -68,29 +71,40 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
 
   // Load JDs on mount and setup optimized refresh mechanism
   useEffect(() => {
+    console.log('🚀 JDPage useEffect - Initial loadJDs called')
     loadJDs()
 
     let refreshTimeout: NodeJS.Timeout | null = null
 
-    // 防抖刷新函数
-    const debouncedRefresh = () => {
+    // 防抖刷新函数 - 针对 Realtime 使用立即刷新
+    const debouncedRefresh = (immediate = false) => {
       if (refreshTimeout) {
         clearTimeout(refreshTimeout)
       }
-      refreshTimeout = setTimeout(() => {
+      
+      if (immediate) {
         loadJDs()
-      }, 1200) // 1.2秒防抖，确保用户操作完成
+      } else {
+        refreshTimeout = setTimeout(() => {
+          loadJDs()
+        }, 1200) // 1.2秒防抖，确保用户操作完成
+      }
     }
 
     // Setup Supabase Realtime subscription for automatic refresh
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
+    const supabase = getSupabaseClient()
+
+    // Realtime 事件回调 - 立即刷新数据
+    const handleRealtimeEvent = (payload) => {
+      // Realtime 事件使用立即刷新，无延迟
+      debouncedRefresh(true)
+    }
+
+    // Setup Realtime subscription
+    const channel = supabase.channel('jd_records_changes')
 
     // Subscribe to changes in jd_records table for this user
-    const subscription = supabase
-      .channel('jd_records_changes')
+    const subscription = channel
       .on(
         'postgres_changes',
         {
@@ -99,14 +113,15 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
           table: 'jd_records',
           filter: `user_id=eq.${user.id}`
         },
-        (payload) => {
-          // 防抖刷新，避免频繁更新
-          debouncedRefresh()
-        }
+        handleRealtimeEvent
       )
-      .subscribe()
-
-    // 移除页面聚焦刷新 - 只在数据库内容变化时刷新
+      .subscribe((status, err) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('📡 Realtime connected successfully')
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('📡 Realtime connection failed:', err)
+        }
+      })
 
     // Cleanup subscription on unmount
     return () => {
@@ -854,17 +869,18 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-      console.log('File upload triggered', event.target.files)
       const file = event.target.files?.[0]
-      if (!file) return
+      if (!file) {
+        return
+      }
 
-      console.log('File selected:', file.name, file.type)
       if (file.type !== 'application/pdf') {
         alert('Only PDF files are allowed')
         return
       }
 
       setIsUploading(true)
+      
       try {
         const formData = new FormData()
         formData.append('file', file)
@@ -1252,6 +1268,18 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                       <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                     </svg>
                     Clear
+                  </button>
+
+                  {/* Global Personal Info Button */}
+                  <button
+                    onClick={() => setShowPersonalInfoTooltip(true)}
+                    className="w-32 px-6 py-2 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-purple-600 rounded-lg font-medium border border-purple-200 transition-all duration-300 whitespace-nowrap inline-flex items-center justify-center gap-2"
+                    title="Configure Personal Information"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                    </svg>
+                    Profile
                   </button>
 
                   {/* Filter Dropdowns */}
@@ -1728,7 +1756,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                               setTransferredJDs(prev => new Set(prev).add(jd.id))
                               // No page navigation - user manually goes to JD2CV 2.0
                             }}
-                            className={`p-2 rounded transition-colors ${
+                            className={`p-2 rounded transition-colors border border-transparent ${
                               transferredJDs.has(jd.id)
                                 ? 'text-purple-600 bg-purple-100 hover:bg-purple-200'
                                 : 'text-gray-400 hover:text-purple-600 hover:bg-purple-50'
@@ -1741,7 +1769,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                           </button>
                           <button
                             onClick={() => setViewingJD(jd)}
-                            className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
+                            className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors border border-transparent"
                             title="View JD"
                           >
                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -1754,7 +1782,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                               setDeleteButtonRef(e.currentTarget)
                               setDeleteJD(jd)
                             }}
-                            className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
+                            className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors border border-transparent"
                             title="Delete JD"
                           >
                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -1766,7 +1794,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                         {/* Second Actions Row - V2 buttons */}
                         <div className="flex items-center justify-end gap-1 h-9">
                           <LightningButtonV2 jd={jd} />
-                          <PersonalInfoTooltipV2 />
                           <CoverLetterButtonV2 jd={jd} />
                         </div>
                         
@@ -1781,14 +1808,16 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                   {/* Comment Row (73%) + PDF Row (27%) */}
                   <div className="mt-3 flex gap-3 items-center">
                     {/* Comment Section - 73% */}
-                    <div className="w-[73%]">
+                    <div className="w-[73%] min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500 font-medium">Comment:</span>
-                        <div className="bg-gray-50/80 rounded-lg px-3 py-2 flex-1">
-                          <CommentInlineEdit
-                            value={jd.comment || ''}
-                            onSave={(value) => handleUpdateField(jd.id, 'comment', value)}
-                          />
+                        <span className="text-xs text-gray-500 font-medium flex-shrink-0">Comment:</span>
+                        <div className="bg-gray-50/80 rounded-lg px-3 py-2 flex-1 min-w-0 overflow-hidden">
+                          <div className="break-words overflow-wrap-anywhere word-break-break-word">
+                            <CommentInlineEdit
+                              value={jd.comment || ''}
+                              onSave={(value) => handleUpdateField(jd.id, 'comment', value)}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1886,6 +1915,12 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
             useBatchAutoCVStore.getState().resetState()
           }
         }}
+      />
+
+      {/* Global Personal Info Tooltip */}
+      <PersonalInfoTooltipV2 
+        isOpen={showPersonalInfoTooltip}
+        onClose={() => setShowPersonalInfoTooltip(false)}
       />
 
       {/* Applied Stats Floating Button */}

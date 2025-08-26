@@ -66,7 +66,7 @@ export default function CommentInlineEdit({ value, onSave }: CommentInlineEditPr
           onKeyDown={handleKeyDown}
           disabled={isLoading}
           placeholder="Add comment..."
-          className="w-full h-9 px-3 text-sm border border-gray-300 rounded-lg bg-white transition-all duration-200 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+          className="w-full h-9 px-3 text-sm border border-gray-300 rounded-lg bg-white transition-all duration-200 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 min-w-0"
         />
         {isLoading && (
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -80,9 +80,9 @@ export default function CommentInlineEdit({ value, onSave }: CommentInlineEditPr
   return (
     <button
       onClick={() => setIsEditing(true)}
-      className="w-full h-9 px-3 text-sm rounded-lg transition-all duration-200 text-left hover:bg-gray-50 border border-transparent"
+      className="w-full h-9 px-3 text-sm rounded-lg transition-all duration-200 text-left hover:bg-gray-50 border border-transparent min-w-0"
     >
-      <span className={!value ? 'text-gray-400 italic' : 'text-gray-700'}>
+      <span className={`break-words overflow-wrap-anywhere word-break-break-word ${!value ? 'text-gray-400 italic' : 'text-gray-700'}`}>
         {!value ? 'Add comment...' : value}
       </span>
     </button>
