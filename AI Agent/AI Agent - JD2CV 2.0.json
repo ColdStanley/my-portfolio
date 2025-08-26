@@ -69,7 +69,24 @@
     },
     {
       "parameters": {
-        "options": {}
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "GET, POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              }
+            ]
+          }
+        }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
@@ -666,7 +683,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "f6af1d5b-c26a-41f5-8257-b036b5a5727c",
+  "versionId": "f3779db5-315c-44d5-aa49-e9013d9f2a8e",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "4c844779e57f062ed2d65cae41537d8794946978b58b8ba423f134ec33dbef0d"

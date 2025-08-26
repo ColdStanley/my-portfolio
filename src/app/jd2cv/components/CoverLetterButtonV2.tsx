@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 interface JD {
   id: string
@@ -16,51 +17,18 @@ interface CoverLetterButtonV2Props {
 
 export default function CoverLetterButtonV2({ jd, className = '' }: CoverLetterButtonV2Props) {
   const [isGenerating, setIsGenerating] = useState(false)
+  const [showTooltip, setShowTooltip] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
-  // Check if AI content and personal info exist
-  const hasAIContent = () => {
-    const aiContent = localStorage.getItem(`jd2cv-v2-ai-content-${jd.id}`)
-    return !!aiContent
-  }
-
-  const hasPersonalInfo = () => {
-    const personalInfo = localStorage.getItem('jd2cv-v2-personal-info')
-    if (!personalInfo) return false
-    
-    try {
-      const parsed = JSON.parse(personalInfo)
-      return !!(parsed.fullName && parsed.email)
-    } catch {
-      return false
-    }
-  }
-
-  const canGenerate = hasAIContent() && hasPersonalInfo()
-
-  const handleGenerate = async () => {
-    if (!canGenerate || isGenerating) return
-
-    const personalInfo = JSON.parse(localStorage.getItem('jd2cv-v2-personal-info')!)
-    const aiContent = localStorage.getItem(`jd2cv-v2-ai-content-${jd.id}`)!
-
-    setIsGenerating(true)
-
-    try {
-      // Step 1: Generate cover letter text
-      const coverLetterResponse = await fetch('/api/jd2cv/v2/generate-cover-letter', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          personalInfo: personalInfo,
-          jdInfo: {
-            title: jd.title,
-            company: jd.company,
-            description: jd.full_job_description
-          },
-          tailoredExperience: aiContent,
-          userPrompt: `### Requirements
+  // Cover Letter states - exactly same as JD2CV 2.0
+  const [coverLetterState, setCoverLetterState] = useState({
+    available: false,
+    generating: false,
+    generated: false,
+    content: null as string | null,
+    error: null as string | null,
+    userPrompt: `### Requirements
 1. Structure the cover letter in **3–4 short paragraphs**:
    - **Opening**: Express interest in the position and introduce yourself.
    - **Body (1–2 paragraphs)**: Match applicant's skills and experiences with the job's key requirements. Use measurable achievements where possible.
@@ -83,91 +51,284 @@ Main body paragraphs only (no "Dear..." salutation, no "Sincerely..." closing).
 {tailored_experience}
 
 Based on the above information, generate a professional cover letter for this position.`,
-          aiModel: 'deepseek'
-        })
-      })
+    aiModel: 'deepseek' as 'openai' | 'deepseek'
+  })
 
-      if (!coverLetterResponse.ok) {
-        throw new Error('Failed to generate cover letter')
-      }
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
-      const coverLetterResult = await coverLetterResponse.json()
-      
-      if (!coverLetterResult.success || !coverLetterResult.coverLetter) {
-        throw new Error(coverLetterResult.error || 'Failed to generate cover letter')
-      }
+  // Check if AI content and personal info exist
+  const hasAIContent = () => {
+    const aiContent = localStorage.getItem(`jd2cv-v2-ai-content-${jd.id}`)
+    return !!aiContent
+  }
 
-      // Step 2: Generate PDF directly
-      const pdfResponse = await fetch('/api/jd2cv/v2/generate-cover-letter-pdf', {
+  const hasPersonalInfo = () => {
+    const personalInfo = localStorage.getItem('jd2cv-v2-personal-info')
+    if (!personalInfo) return false
+    
+    try {
+      const parsed = JSON.parse(personalInfo)
+      return !!(parsed.fullName && parsed.email)
+    } catch {
+      return false
+    }
+  }
+
+  const canGenerate = hasAIContent() && hasPersonalInfo()
+
+  // Handle Cover Letter generation - exactly same logic as JD2CV 2.0
+  const handleGenerateCoverLetter = async () => {
+    const personalInfo = JSON.parse(localStorage.getItem('jd2cv-v2-personal-info')!)
+    const aiContent = localStorage.getItem(`jd2cv-v2-ai-content-${jd.id}`)!
+
+    setCoverLetterState(prev => ({ 
+      ...prev, 
+      generating: true, 
+      error: null,
+      generated: false 
+    }))
+
+    try {
+      // Step 1: Generate Cover Letter content
+      const coverLetterResponse = await fetch('/api/ai-agent-gala/jd2cv2/generate-cover-letter', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          coverLetterContent: coverLetterResult.coverLetter,
           personalInfo: personalInfo,
           jdInfo: {
             title: jd.title,
             company: jd.company,
             description: jd.full_job_description
           },
-          format: personalInfo.format || 'A4'
+          tailoredExperience: aiContent,
+          userPrompt: coverLetterState.userPrompt,
+          aiModel: coverLetterState.aiModel
         })
       })
 
-      if (!pdfResponse.ok) {
-        throw new Error('Failed to generate cover letter PDF')
+      if (!coverLetterResponse.ok) {
+        throw new Error(`HTTP error! status: ${coverLetterResponse.status}`)
       }
+      
+      const result = await coverLetterResponse.json()
+      
+      if (result.success && result.coverLetter) {
+        setCoverLetterState(prev => ({
+          ...prev,
+          generating: false,
+          generated: true,
+          content: result.coverLetter
+        }))
 
-      // Download the PDF
-      const blob = await pdfResponse.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.style.display = 'none'
-      a.href = url
-      const cleanName = personalInfo.fullName.replace(/[^a-z0-9]/gi, '_')
-      const cleanCompany = jd.company.replace(/[^a-z0-9]/gi, '_')
-      const cleanPosition = jd.title.replace(/[^a-z0-9]/gi, '_')
-      a.download = `${cleanName}_${cleanCompany}_${cleanPosition}_CoverLetter.pdf`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
+        // Step 2: Generate PDF directly
+        const pdfResponse = await fetch('/api/ai-agent-gala/jd2cv2/generate-cover-letter-pdf', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            coverLetterContent: result.coverLetter,
+            personalInfo: personalInfo,
+            jdInfo: {
+              title: jd.title,
+              company: jd.company,
+              description: jd.full_job_description
+            },
+            format: personalInfo.format || 'A4'
+          })
+        })
+
+        if (pdfResponse.ok) {
+          // Download the PDF
+          const blob = await pdfResponse.blob()
+          const url = window.URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.style.display = 'none'
+          a.href = url
+          const cleanName = personalInfo.fullName.replace(/[^a-z0-9]/gi, '_')
+          const cleanCompany = jd.company.replace(/[^a-z0-9]/gi, '_')
+          const cleanPosition = jd.title.replace(/[^a-z0-9]/gi, '_')
+          a.download = `${cleanName}_${cleanCompany}_${cleanPosition}_CoverLetter.pdf`
+          document.body.appendChild(a)
+          a.click()
+          window.URL.revokeObjectURL(url)
+          document.body.removeChild(a)
+        }
+      } else {
+        throw new Error(result.error || 'Failed to generate cover letter')
+      }
 
     } catch (error) {
       console.error('Cover Letter generation error:', error)
-      alert(`Failed to generate cover letter: ${error.message || 'Unknown error'}`)
-    } finally {
-      setIsGenerating(false)
+      setCoverLetterState(prev => ({
+        ...prev,
+        generating: false,
+        error: error.message || 'Unknown error occurred'
+      }))
     }
   }
 
+  // Handle tooltip open
+  const handleClick = () => {
+    if (!canGenerate) return
+    
+    setShowTooltip(true)
+    // Smooth entrance animation
+    setTimeout(() => setIsVisible(true), 10)
+  }
+
+  // Handle tooltip close
+  const handleClose = () => {
+    setIsVisible(false)
+    setTimeout(() => setShowTooltip(false), 200)
+  }
+
   return (
-    <button
-      onClick={handleGenerate}
-      disabled={isGenerating}
-      className={`
-        p-2 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl
-        ${canGenerate 
-          ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white cursor-pointer' 
-          : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
-        }
-        ${isGenerating ? 'animate-pulse' : ''}
-        ${className}
-      `}
-      title={canGenerate ? "Generate Cover Letter PDF V2" : "Generate Resume first to unlock Cover Letter"}
-    >
-      {isGenerating ? (
-        <div className="animate-spin w-4 h-4">
+    <>
+      <button
+        onClick={handleClick}
+        disabled={isGenerating}
+        className={`
+          p-2 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl
+          ${canGenerate 
+            ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white cursor-pointer' 
+            : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
+          }
+          ${isGenerating ? 'animate-pulse' : ''}
+          ${className}
+        `}
+        title={canGenerate ? "Generate Cover Letter PDF V2" : "Generate Resume first to unlock Cover Letter"}
+      >
+        {isGenerating ? (
+          <div className="animate-spin w-4 h-4">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </div>
+        ) : (
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-        </div>
-      ) : (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
+        )}
+      </button>
+
+      {/* Tooltip Portal - Cover Letter Generator */}
+      {mounted && showTooltip && createPortal(
+        <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4">
+          <div className={`
+            relative bg-white/95 backdrop-blur-md rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto transition-all duration-200 ease-out
+            ${isVisible 
+              ? 'opacity-100 scale-100 translate-y-0' 
+              : 'opacity-0 scale-95 translate-y-2'
+            }
+          `}>
+            {/* Close button */}
+            <button
+              onClick={handleClose}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all duration-150 hover:scale-110 hover:shadow-md z-10"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Cover Letter Generator Content - Exactly same as JD2CV 2.0 */}
+            <div className="p-6">
+              <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">
+                📝 Cover Letter Generator
+              </h2>
+              
+              <div className="text-sm text-purple-600 mb-4 bg-purple-50/50 rounded-lg p-3">
+                ✨ Your resume has been generated! Now create a professional cover letter using the same information.
+              </div>
+
+              <div className="space-y-4">
+                {/* Prompt Editor */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Cover Letter Prompt (Customize if needed)
+                  </label>
+                  <textarea
+                    value={coverLetterState.userPrompt}
+                    onChange={(e) => setCoverLetterState(prev => ({ ...prev, userPrompt: e.target.value }))}
+                    rows={12}
+                    className="w-full p-3 border border-gray-200 rounded-lg text-sm focus:border-purple-500 focus:outline-none transition-colors"
+                    placeholder="Modify the prompt or use the default template..."
+                  />
+                </div>
+
+                {/* AI Model Selection */}
+                <div className="flex items-center gap-4">
+                  <label className="text-sm font-medium text-gray-700">AI Model:</label>
+                  <select 
+                    value={coverLetterState.aiModel}
+                    onChange={(e) => setCoverLetterState(prev => ({ ...prev, aiModel: e.target.value as 'openai' | 'deepseek' }))}
+                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-purple-500 focus:outline-none"
+                  >
+                    <option value="deepseek">DeepSeek (Recommended)</option>
+                    <option value="openai">OpenAI GPT-4</option>
+                  </select>
+                </div>
+                
+                {/* Generate Button */}
+                <button
+                  onClick={handleGenerateCoverLetter}
+                  disabled={coverLetterState.generating}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50"
+                >
+                  {coverLetterState.generating ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Generating Cover Letter + PDF...
+                    </div>
+                  ) : (
+                    'Generate Cover Letter + PDF'
+                  )}
+                </button>
+                
+                {/* Error Display */}
+                {coverLetterState.error && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-700 text-sm">{coverLetterState.error}</p>
+                    <button 
+                      onClick={handleGenerateCoverLetter}
+                      className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                )}
+                
+                {/* Generated Content Display */}
+                {coverLetterState.generated && coverLetterState.content && (
+                  <div className="p-4 bg-white border border-purple-200 rounded-lg">
+                    <div className="flex justify-between items-center mb-3">
+                      <h4 className="font-medium text-purple-900">Generated Cover Letter</h4>
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(coverLetterState.content || '')
+                          alert('Cover letter copied to clipboard!')
+                        }}
+                        className="text-sm text-purple-600 hover:text-purple-800 underline"
+                      >
+                        Copy to Clipboard
+                      </button>
+                    </div>
+                    <div className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg max-h-60 overflow-y-auto">
+                      {coverLetterState.content}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
-    </button>
+    </>
   )
 }
