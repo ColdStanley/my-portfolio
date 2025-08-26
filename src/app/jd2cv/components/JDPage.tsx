@@ -1713,8 +1713,8 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
 
                     {/* 85-100%: Actions & Created */}
                     <div className="w-[15%] flex flex-col items-end">
-                      <div className="flex flex-col justify-between h-[5.5rem] items-end">
-                        {/* Actions Row - align with Title */}
+                      <div className="flex flex-col justify-between h-[6.5rem] items-end">
+                        {/* First Actions Row - Original 3 buttons */}
                         <div className="flex items-center gap-1 h-9">
                           <button
                             onClick={() => {
@@ -1763,16 +1763,16 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                           </button>
                         </div>
                         
-                        {/* Created Row - align with Company - Reduced font size */}
-                        <div className="text-[10px] text-gray-400 text-right h-6 flex items-center">
-                          Created: {formatDate(jd.created_at)}
+                        {/* Second Actions Row - V2 buttons */}
+                        <div className="flex items-center justify-end gap-1 h-9">
+                          <LightningButtonV2 jd={jd} />
+                          <PersonalInfoTooltipV2 />
+                          <CoverLetterButtonV2 jd={jd} />
                         </div>
                         
-                        {/* V2 Buttons Row - Second row below Created */}
-                        <div className="flex items-center justify-end gap-1 h-7 mt-1">
-                          <LightningButtonV2 jd={jd} className="text-xs" />
-                          <PersonalInfoTooltipV2 className="text-xs" />
-                          <CoverLetterButtonV2 jd={jd} className="text-xs" />
+                        {/* Created Row - at bottom */}
+                        <div className="text-[10px] text-gray-400 text-right h-6 flex items-center">
+                          Created: {formatDate(jd.created_at)}
                         </div>
                       </div>
                     </div>
