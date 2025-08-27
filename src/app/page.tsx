@@ -54,7 +54,7 @@ export default function HomePage() {
           "Maintain professional formatting consistency"
         ]}
         buttonText="Automate Resume"
-        href="/jd2cv"
+        href="/jd2cv-full"
         gradient="from-indigo-600 to-purple-600"
         index={1}
         reverse

@@ -11,7 +11,7 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 async function getUserCVPrompt(userId: string, aiModel: string = 'deepseek'): Promise<string> {
   try {
     // Fetch user prompts from the prompt management API
-    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/jd2cv/prompts?user_id=${userId}&ai_model=${aiModel}`)
+    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/jd2cv-full/prompts?user_id=${userId}&ai_model=${aiModel}`)
     
     if (!response.ok) {
       throw new Error(`Prompt API request failed: ${response.status}`)

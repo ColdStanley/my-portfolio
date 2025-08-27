@@ -25,7 +25,7 @@ export default function FooterSection({ hasSidebar = false }: FooterSectionProps
             <div className="space-y-2">
               <a href="/" className="block text-gray-600 hover:text-purple-600 transition-colors">Home</a>
               <a href="/ai-agent-gala" className="block text-gray-600 hover:text-purple-600 transition-colors">AI Agents</a>
-              <a href="/jd2cv" className="block text-gray-600 hover:text-purple-600 transition-colors">Resume Tools</a>
+              <a href="/jd2cv-full" className="block text-gray-600 hover:text-purple-600 transition-colors">Resume Tools</a>
               <a href="/readlingua" className="block text-gray-600 hover:text-purple-600 transition-colors">Language Learning</a>
             </div>
           </div>

@@ -49,7 +49,7 @@ export default function NewNavbar() {
       name: 'Career Tools',
       type: 'dropdown',
       items: [
-        { name: 'JD2CV 1.0', href: '/jd2cv' }
+        { name: 'JD2CV 1.0', href: '/jd2cv-full' }
       ]
     },
     {

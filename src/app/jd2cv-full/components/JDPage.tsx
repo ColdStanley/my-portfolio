@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { getSupabaseClient } from '@/lib/supabase'
 import { JDRecord, CreateJDRequest, APPLICATION_STAGES } from '@/shared/types'
-import { useWorkspaceStore } from '@/store/workspaceStore'
+import { useWorkspaceStore } from '../store/workspaceStore'
 import { useJDFilterStore } from '@/store/useJDFilterStore'
 import { useBatchAutoCVStore } from '@/store/useBatchAutoCVStore'
 import { useBatchSelectionStore } from '@/store/useBatchSelectionStore'
@@ -647,7 +647,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
   const step1_AnalyzeJD = async (jd: JDRecord) => {
     setFinalCVState(prev => ({ ...prev, progress: 5, currentStep: 'Analyzing JD...' }))
     
-    const response = await fetch('/api/jd2cv/analyze-jd', {
+    const response = await fetch('/api/jd2cv-full/analyze-jd', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -736,7 +736,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
       const stepProgress = 40 + ((i + 1) / experiences.length) * 20
       setFinalCVState(prev => ({ ...prev, progress: stepProgress }))
       
-      const response = await fetch('/api/jd2cv/optimize-cv', {
+      const response = await fetch('/api/jd2cv-full/optimize-cv', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -824,7 +824,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
     setFinalCVState(prev => ({ ...prev, progress: 90 }))
     
     // Call PDF generation API
-    const response = await fetch('/api/jd2cv/generate-pdf', {
+    const response = await fetch('/api/jd2cv-full/generate-pdf', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1067,7 +1067,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
   // 批量专用的JD分析函数 - 不更新单个Auto CV状态
   const batchStep1_AnalyzeJD = async (jd: JDRecord) => {
     try {
-      const response = await fetch('/api/jd2cv/analyze-jd', {
+      const response = await fetch('/api/jd2cv-full/analyze-jd', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -93,7 +93,7 @@ const step1_AnalyzeJD = async (jd: any, userId: string) => {
   try {
     // 完全复制现有Auto CV的调用方式，但使用完整URL
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
-    const response = await fetch(`${baseUrl}/api/jd2cv/analyze-jd`, {
+    const response = await fetch(`${baseUrl}/api/jd2cv-full/analyze-jd`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -150,7 +150,7 @@ const step3_BatchOptimize = async (experiences: any[], jd: any, userId: string) 
     try {
       // 完全复制现有Auto CV的调用方式，但使用完整URL
       const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
-      const response = await fetch(`${baseUrl}/api/jd2cv/optimize-cv`, {
+      const response = await fetch(`${baseUrl}/api/jd2cv-full/optimize-cv`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

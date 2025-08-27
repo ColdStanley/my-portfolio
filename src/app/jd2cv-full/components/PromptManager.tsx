@@ -74,7 +74,7 @@ export default function PromptManager({ isOpen, onClose }: PromptManagerProps) {
     
     setLoading(true)
     try {
-      const response = await fetch(`/api/jd2cv/prompts?user_id=${user.id}&ai_model=${selectedModel}`)
+      const response = await fetch(`/api/jd2cv-full/prompts?user_id=${user.id}&ai_model=${selectedModel}`)
       const result = await response.json()
 
       if (response.ok && result.success) {
@@ -93,7 +93,7 @@ export default function PromptManager({ isOpen, onClose }: PromptManagerProps) {
     
     setSaving(true)
     try {
-      const response = await fetch('/api/jd2cv/prompts', {
+      const response = await fetch('/api/jd2cv-full/prompts', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -126,7 +126,7 @@ export default function PromptManager({ isOpen, onClose }: PromptManagerProps) {
     
     setSaving(true)
     try {
-      const response = await fetch(`/api/jd2cv/prompts?user_id=${user.id}&ai_model=${selectedModel}&prompt_type=${promptType}`, {
+      const response = await fetch(`/api/jd2cv-full/prompts?user_id=${user.id}&ai_model=${selectedModel}&prompt_type=${promptType}`, {
         method: 'DELETE'
       })
 

@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
-import { useWorkspaceStore } from '@/store/workspaceStore'
+import { useWorkspaceStore } from './store/workspaceStore'
 import PromptManager from './components/PromptManager'
 import JDPage from './components/JDPage'
 import PDFSetupModal from './components/PDFSetupModal'
-import { CVModuleDraft } from '@/shared/types'
-import { extractBullets, generateModuleTitle } from '@/shared/utils'
+import { CVModuleDraft } from './shared/types'
+import { extractBullets, generateModuleTitle } from './shared/utils'
 import { useStarredExperiences } from './hooks/useStarredExperiences'
 import DeleteTooltip from './components/DeleteTooltip'
 import NewNavbar from '@/components/NewNavbar'
@@ -58,7 +58,7 @@ export default function JD2CV() {
   useEffect(() => {
     if (!loading && !user) {
       // 未登录，重定向到登录页
-      router.push('/login?redirect=/jd2cv')
+      router.push('/login?redirect=/jd2cv-full')
     }
   }, [user, loading, router])
 
@@ -406,7 +406,7 @@ function WorkspaceContent({ globalLoading = false }) {
       setQuickPDFProgress(30)
       
       // Call new PDF generation API
-      const response = await fetch('/api/jd2cv/generate-pdf', {
+      const response = await fetch('/api/jd2cv-full/generate-pdf', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -478,7 +478,7 @@ function WorkspaceContent({ globalLoading = false }) {
 
     setJDAnalysisLoading(true)
     try {
-      const response = await fetch('/api/jd2cv/analyze-jd', {
+      const response = await fetch('/api/jd2cv-full/analyze-jd', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -942,7 +942,7 @@ function CVOptimizationSection({ selectedJD, selectedExperiences, jdKeywords, ad
         setExperienceGenerating(experience.id, true)
         
         try {
-          const response = await fetch('/api/jd2cv/optimize-cv', {
+          const response = await fetch('/api/jd2cv-full/optimize-cv', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -1072,7 +1072,7 @@ function CVOptimizationSection({ selectedJD, selectedExperiences, jdKeywords, ad
         // Use same logic as saveOptimizedExperience
         try {
           const optimizationData = optimizedExperiences[experience.id]
-          const response = await fetch('/api/jd2cv/optimize-cv', {
+          const response = await fetch('/api/jd2cv-full/optimize-cv', {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -1639,7 +1639,7 @@ function ExperienceOptimizationCard({ experience, jdKeywords, selectedJD, index,
     setExperienceGenerating(experience.id, true)
     
     try {
-      const response = await fetch('/api/jd2cv/optimize-cv', {
+      const response = await fetch('/api/jd2cv-full/optimize-cv', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1678,7 +1678,7 @@ function ExperienceOptimizationCard({ experience, jdKeywords, selectedJD, index,
     }
 
     try {
-      const response = await fetch('/api/jd2cv/optimize-cv', {
+      const response = await fetch('/api/jd2cv-full/optimize-cv', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1963,7 +1963,7 @@ function JDLibraryContent({ user, activeSubTab, setActiveSubTab }: { user: any, 
     setIsLoading(true)
     try {
       const isUpdate = editingRecordId !== null
-      const url = '/api/jd2cv/supabase'
+      const url = '/api/jd2cv-full/supabase'
       const method = isUpdate ? 'PUT' : 'POST'
       
       const response = await fetch(url, {
@@ -2018,7 +2018,7 @@ function JDLibraryContent({ user, activeSubTab, setActiveSubTab }: { user: any, 
   const loadSavedRecords = async () => {
     setLoadingRecords(true)
     try {
-      const response = await fetch(`/api/jd2cv/supabase?user_id=${user.id}&limit=20`)
+      const response = await fetch(`/api/jd2cv-full/supabase?user_id=${user.id}&limit=20`)
       const result = await response.json()
 
       if (!response.ok) {
@@ -2045,7 +2045,7 @@ function JDLibraryContent({ user, activeSubTab, setActiveSubTab }: { user: any, 
   // Update JD Score function
   const updateJDScore = async (recordId: string, newScore: number) => {
     try {
-      const response = await fetch('/api/jd2cv/supabase', {
+      const response = await fetch('/api/jd2cv-full/supabase', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -2353,7 +2353,7 @@ function LibraryJDContent({
     }
 
     try {
-      const response = await fetch('/api/jd2cv/jd-records', {
+      const response = await fetch('/api/jd2cv-full/jd-records', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

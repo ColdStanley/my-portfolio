@@ -22,7 +22,7 @@ export const PROJECT_CONFIG = {
     '/ielts-speaking': 'ielts-speaking',
     '/feelink': 'feelink',
     '/job-application': 'job-application',
-    '/jd2cv': 'jd2cv',
+    '/jd2cv-full': 'jd2cv',
     '/notion-writer': 'notion-writer',
     '/ielts-reading': 'english-reading'
   } as const,
