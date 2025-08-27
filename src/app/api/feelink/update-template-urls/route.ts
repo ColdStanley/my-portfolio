@@ -15,7 +15,6 @@ const URL_MAPPING = {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🚀 开始更新模板图片URL...')
     
     // 1. 查询所有模板记录
     const { data: templates, error: queryError } = await supabase
@@ -31,7 +30,6 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
     
-    console.log(`📊 找到 ${templates.length} 个模板记录`)
     
     const results = []
     
@@ -51,7 +49,6 @@ export async function POST(request: NextRequest) {
           continue
         }
         
-        console.log(`🔄 更新模板 ${templateName}`)
         console.log(`   旧URL: ${template.image_url}`)
         console.log(`   新URL: ${newImageUrl}`)
         
@@ -105,7 +102,6 @@ export async function POST(request: NextRequest) {
       failed: results.filter(r => !r.success).length
     }
     
-    console.log(`📊 更新完成: 成功 ${summary.success}, 失败 ${summary.failed}`)
     
     return NextResponse.json({
       success: true,

@@ -184,7 +184,6 @@ export async function GET(request: NextRequest) {
     for (const endpoint of videoEndpoints) {
       try {
         const url = endpoint.url()
-        console.log(`🚀 Trying ${endpoint.name} endpoint: ${url}`)
 
         const startTime = Date.now()
         const data = await fetchWithRetry(url)

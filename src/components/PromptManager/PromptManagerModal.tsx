@@ -66,7 +66,6 @@ export default function PromptManagerModal({
     
     setSaveStatus('saved')
     setTimeout(() => setSaveStatus('idle'), 2000) // 2秒后恢复
-    console.log('Prompts saved to localStorage')
   }
   
   

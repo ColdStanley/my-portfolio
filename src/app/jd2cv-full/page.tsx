@@ -39,15 +39,10 @@ export default function JD2CV() {
     if (index === 0) { // Dashboard tab
       scrollToSelectedJD()
     }
-    if (showIntroAnimation) skipIntroAnimation()
   }
   const { user, loading } = useCurrentUser()
   const router = useRouter()
   
-  // Intro animation states
-  const [showIntroAnimation, setShowIntroAnimation] = useState(false)
-  const [currentHighlight, setCurrentHighlight] = useState<number | null>(null)
-  const [introStep, setIntroStep] = useState<'jd' | 'cv' | 'workspace' | null>(null)
   
   // PDF related states - moved to WorkspaceContent
   const [showOneClickModal, setShowOneClickModal] = useState(false)
@@ -62,53 +57,7 @@ export default function JD2CV() {
     }
   }, [user, loading, router])
 
-  // Intro animation sequence - 每次页面加载都播放
-  useEffect(() => {
-    if (!user || loading) return
-    
-    // Start intro animation after 2 second delay
-    const startIntro = setTimeout(() => {
-      setShowIntroAnimation(true)
-      
-      // Step 1: JD highlight
-      setCurrentHighlight(0)
-      setIntroStep('jd')
-      
-      const step1Timer = setTimeout(() => {
-        // Step 2: CV highlight  
-        setCurrentHighlight(1)
-        setIntroStep('cv')
-        
-        const step2Timer = setTimeout(() => {
-          // Step 3: Workspace highlight
-          setCurrentHighlight(2)
-          setIntroStep('workspace')
-          
-          const step3Timer = setTimeout(() => {
-            // End animation
-            setShowIntroAnimation(false)
-            setCurrentHighlight(null)
-            setIntroStep(null)
-          }, 6000) // 6 seconds for final step
-          
-          return () => clearTimeout(step3Timer)
-        }, 4000) // 4 seconds for CV
-        
-        return () => clearTimeout(step2Timer)
-      }, 4000) // 4 seconds for JD
-      
-      return () => clearTimeout(step1Timer)
-    }, 2000) // 2 second initial delay
-    
-    return () => clearTimeout(startIntro)
-  }, [user, loading])
 
-  // Skip intro animation on click
-  const skipIntroAnimation = () => {
-    setShowIntroAnimation(false)
-    setCurrentHighlight(null)
-    setIntroStep(null)
-  }
 
 
 
@@ -183,72 +132,13 @@ export default function JD2CV() {
           }
         }
         
-        .intro-highlight {
-          animation: pulseGlow 1.5s ease-in-out infinite, bounce 2s ease-in-out infinite;
-          position: relative;
-          z-index: 60;
-        }
-        
-        
-        .intro-tooltip {
-          position: absolute;
-          top: 120%;
-          left: 50%;
-          transform: translateX(-50%);
-          background: rgba(55, 65, 81, 0.95);
-          color: white;
-          padding: 8px 16px;
-          border-radius: 8px;
-          font-size: 14px;
-          white-space: nowrap;
-          z-index: 70;
-          animation: fadeInUp 0.5s ease-out;
-        }
-        
-        .intro-tooltip::before {
-          content: '';
-          position: absolute;
-          top: -4px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 0;
-          height: 0;
-          border-left: 4px solid transparent;
-          border-right: 4px solid transparent;
-          border-bottom: 4px solid rgba(55, 65, 81, 0.95);
-        }
-        
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateX(-50%) translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-          }
-        }
       `}</style>
       
       <PageTransition>
-        <div 
-          className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30"
-          onClick={showIntroAnimation ? skipIntroAnimation : undefined}
-        >
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
         {/* Custom Navigation */}
         <NewNavbar />
 
-        {/* Skip Intro Button */}
-        {showIntroAnimation && (
-          <div className="fixed top-4 right-4 z-[100]">
-            <button
-              onClick={skipIntroAnimation}
-              className="px-3 py-1.5 bg-white/90 hover:bg-white text-gray-600 hover:text-gray-800 rounded-lg text-sm font-medium shadow-lg backdrop-blur-sm border border-white/20 transition-all"
-            >
-              Skip intro
-            </button>
-          </div>
-        )}
 
         {/* Fixed Tab Navigation */}
         <div className="fixed top-[104px] left-0 right-0 z-50 bg-gradient-to-br from-slate-50 via-white to-purple-50/30 pb-4 border-b border-gray-100/50">
@@ -257,12 +147,6 @@ export default function JD2CV() {
             <div className="flex">
               {tabs.map((tab, index) => {
                 const isActive = activeTab === index
-                const isHighlighted = currentHighlight === index
-                const tooltips = {
-                  0: '① Start here: Add your job descriptions',
-                  1: '② Then: Build your experience library',
-                  2: '③ Finally: Match & optimize for each job'
-                }
                 
                 return (
                   <button
@@ -275,21 +159,12 @@ export default function JD2CV() {
                       isActive 
                         ? 'bg-purple-500 text-white shadow-lg'
                         : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
-                    } ${
-                      isHighlighted && showIntroAnimation ? 'intro-highlight' : ''
                     }`}
                   >
                     <span className="hidden sm:inline">{tab.label}</span>
                     <span className="sm:hidden">
                       {index === 0 ? 'JD' : index === 1 ? 'CV' : index === 2 ? 'Workspace' : tab.label}
                     </span>
-                    
-                    {/* Intro Tooltip */}
-                    {isHighlighted && showIntroAnimation && (
-                      <div className="intro-tooltip">
-                        {tooltips[index as keyof typeof tooltips]}
-                      </div>
-                    )}
                   </button>
                 )
               })}

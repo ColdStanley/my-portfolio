@@ -13,7 +13,6 @@ export default function FrenchPanel() {
 
   const handleRefresh = () => {
     // Refresh functionality placeholder
-    console.log('Refresh clicked')
   }
 
   const handleSubmit = async () => {
@@ -139,7 +138,6 @@ export default function FrenchPanel() {
         
         {/* Primary Action Button - Always last */}
         <button
-          onClick={() => console.log('New French item')}
           className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-all duration-200 shadow-sm transform hover:scale-105 active:scale-95"
         >
           <span>🇫🇷</span>

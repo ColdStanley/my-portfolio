@@ -71,7 +71,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
 
   // Load JDs on mount and setup optimized refresh mechanism
   useEffect(() => {
-    console.log('🚀 JDPage useEffect - Initial loadJDs called')
     loadJDs()
 
     let refreshTimeout: NodeJS.Timeout | null = null
@@ -117,7 +116,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
       )
       .subscribe((status, err) => {
         if (status === 'SUBSCRIBED') {
-          console.log('📡 Realtime connected successfully')
         } else if (status === 'CHANNEL_ERROR') {
           console.error('📡 Realtime connection failed:', err)
         }

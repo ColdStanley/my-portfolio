@@ -18,8 +18,6 @@ export default function AuthDebug() {
       setParams(paramObj)
       setFullUrl(window.location.href)
       
-      console.log('Debug page - Full URL:', window.location.href)
-      console.log('Debug page - All params:', paramObj)
     }
   }, [])
 

@@ -34,6 +34,8 @@ interface PersonalInfo {
 
 interface PersonalInfoTooltipV2Props {
   className?: string
+  isOpen?: boolean
+  onClose?: () => void
 }
 
 const defaultPersonalInfo: PersonalInfo = {
@@ -52,8 +54,18 @@ const defaultPersonalInfo: PersonalInfo = {
   format: 'A4'
 }
 
-export default function PersonalInfoTooltipV2({ className = '' }: PersonalInfoTooltipV2Props) {
-  const [isOpen, setIsOpen] = useState(false)
+export default function PersonalInfoTooltipV2({ 
+  className = '', 
+  isOpen: externalIsOpen, 
+  onClose: externalOnClose 
+}: PersonalInfoTooltipV2Props) {
+  const [internalIsOpen, setInternalIsOpen] = useState(false)
+  
+  // Use external control if provided, otherwise use internal state
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen
+  const setIsOpen = externalOnClose !== undefined ? 
+    (value: boolean) => { if (!value) externalOnClose() } : 
+    setInternalIsOpen
   const [isVisible, setIsVisible] = useState(false)
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo>(defaultPersonalInfo)
   const [isDataLoaded, setIsDataLoaded] = useState(false)
@@ -308,7 +320,18 @@ export default function PersonalInfoTooltipV2({ className = '' }: PersonalInfoTo
         }
       `}</style>
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          if (externalOnClose !== undefined) {
+            // External control - only allow opening if currently closed
+            if (!isOpen) {
+              // This won't work for external control, but we keep it for compatibility
+              console.warn('PersonalInfoTooltipV2: Cannot open with external control via internal button')
+            }
+          } else {
+            // Internal control
+            setIsOpen(!isOpen)
+          }
+        }}
         className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors border border-gray-200 hover:border-purple-300"
         title="Personal Info V2"
       >

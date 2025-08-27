@@ -17,6 +17,9 @@ interface LightningButtonV2Props {
 export default function LightningButtonV2({ jd, className = '' }: LightningButtonV2Props) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [countdown, setCountdown] = useState(120)
+  
+  // Check if button has been clicked before
+  const hasBeenClicked = localStorage.getItem(`lightning-clicked-${jd.id}`) === 'true'
 
   // Countdown timer effect
   useEffect(() => {
@@ -53,6 +56,9 @@ export default function LightningButtonV2({ jd, className = '' }: LightningButto
       return
     }
 
+    // Mark as clicked in localStorage
+    localStorage.setItem(`lightning-clicked-${jd.id}`, 'true')
+    
     setIsGenerating(true)
 
     try {
@@ -172,7 +178,9 @@ export default function LightningButtonV2({ jd, className = '' }: LightningButto
       <button
         onClick={handleGenerate}
         disabled={isGenerating}
-        className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors disabled:cursor-not-allowed border border-gray-200 hover:border-purple-300"
+        className={`p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors disabled:cursor-not-allowed border border-gray-200 hover:border-purple-300 ${
+          hasBeenClicked ? 'ring-2 ring-purple-300/30 ring-inset' : ''
+        }`}
         title="Generate Resume PDF V2"
       >
         {isGenerating ? (

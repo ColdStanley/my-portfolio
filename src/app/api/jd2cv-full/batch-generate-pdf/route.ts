@@ -600,7 +600,6 @@ export async function POST(request: NextRequest) {
     }
 
     // 批量生成所有JD的PDF - 性能优化版本
-    console.log(`🔄 [Batch Generate PDF] Starting optimized batch processing for ${jdsData.length} JDs`)
     
     // 创建共享browser实例
     const sharedBrowser = await puppeteer.launch({
@@ -616,7 +615,6 @@ export async function POST(request: NextRequest) {
     try {
       // 并行处理所有PDF生成
       const pdfPromises = jdsData.map(async (jdData) => {
-        console.log(`🔄 [Batch Generate PDF] Processing PDF for ${jdData.jd.title}`)
         return await generateSingleJDPDF(jdData.jd, jdData.pdfModules, config, sharedBrowser)
       })
       

@@ -33,7 +33,6 @@ const TEMPLATE_DATA = {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🚀 开始模板迁移...')
     
     const results = []
     
@@ -114,7 +113,6 @@ export async function POST(request: NextRequest) {
     const successCount = results.filter(r => r.success).length
     const failCount = results.filter(r => !r.success).length
     
-    console.log(`📊 迁移完成: 成功 ${successCount}, 失败 ${failCount}`)
     
     return NextResponse.json({
       success: true,

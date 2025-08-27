@@ -219,13 +219,11 @@ export async function POST(request: NextRequest) {
     }
 
     // 批量分析所有JD - 并行处理优化
-    console.log(`🔄 [Batch Analyze JD] Starting parallel processing for ${jdRecords.length} JDs`)
     
     // 缓存用户prompts，避免重复查询
     const cachedPrompts = await getUserPrompts(userId, aiModel)
     
     const analysisPromises = jdRecords.map(async (jdRecord) => {
-      console.log(`🔄 [Batch Analyze JD] Processing ${jdRecord.title}`)
       return await analyzeSingleJD(jdRecord, userId, aiModel, cachedPrompts)
     })
     

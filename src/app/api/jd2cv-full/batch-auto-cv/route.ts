@@ -833,10 +833,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 批量处理所有JD - 并行处理优化
-    console.log(`🔄 [Batch Auto CV] Starting parallel processing for ${jds.length} JDs`)
     
     const processPromises = jds.map(async (jd, i) => {
-      console.log(`🔄 [Batch Auto CV] Processing JD ${i + 1}/${jds.length}: ${jd.title}`)
       return await processSingleJD(jd, userId, config, starredExperiences)
     })
     

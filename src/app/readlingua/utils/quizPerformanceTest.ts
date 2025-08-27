@@ -100,7 +100,6 @@ export const runQuizPerformanceTest = (): PerformanceResult[] => {
   const testSizes = [10, 50, 100]
   
   testSizes.forEach(size => {
-    console.log(`\n📊 Testing with ${size} queries...`)
     
     const mockQueries = createMockQueries(size)
     

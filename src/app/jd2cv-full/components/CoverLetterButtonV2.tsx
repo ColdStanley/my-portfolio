@@ -20,6 +20,9 @@ export default function CoverLetterButtonV2({ jd, className = '' }: CoverLetterB
   const [showTooltip, setShowTooltip] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
   const [mounted, setMounted] = useState(false)
+  
+  // Check if button has been clicked before
+  const hasBeenClicked = localStorage.getItem(`coverletter-clicked-${jd.id}`) === 'true'
 
   // Cover Letter states - exactly same as JD2CV 2.0
   const [coverLetterState, setCoverLetterState] = useState({
@@ -176,6 +179,9 @@ Based on the above information, generate a professional cover letter for this po
   const handleClick = () => {
     if (!canGenerate) return
     
+    // Mark as clicked in localStorage
+    localStorage.setItem(`coverletter-clicked-${jd.id}`, 'true')
+    
     setShowTooltip(true)
     // Smooth entrance animation
     setTimeout(() => setIsVisible(true), 10)
@@ -192,7 +198,9 @@ Based on the above information, generate a professional cover letter for this po
       <button
         onClick={handleClick}
         disabled={!canGenerate || isGenerating}
-        className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors disabled:cursor-not-allowed disabled:opacity-60 border border-gray-200 hover:border-purple-300"
+        className={`p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors disabled:cursor-not-allowed disabled:opacity-60 border border-gray-200 hover:border-purple-300 ${
+          hasBeenClicked ? 'ring-2 ring-purple-300/30 ring-inset' : ''
+        }`}
         title={canGenerate ? "Generate Cover Letter PDF V2" : "Generate Resume first to unlock Cover Letter"}
       >
         {isGenerating ? (

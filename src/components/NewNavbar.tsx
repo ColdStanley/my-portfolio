@@ -108,14 +108,10 @@ export default function NewNavbar() {
 
   const handleLogout = async () => {
     try {
-      console.log('开始logout...')
-      
       // 清除所有Supabase session
       const { error } = await supabase.auth.signOut({ scope: 'global' })
       if (error) {
         console.error('SignOut error:', error)
-      } else {
-        console.log('Supabase signOut 完成')
       }
       
       // 清除所有本地存储
@@ -126,8 +122,6 @@ export default function NewNavbar() {
       document.cookie.split(";").forEach(function(c) { 
         document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
       })
-      
-      console.log('清理完成，准备重定向')
       
       // 使用replace而不是href，避免浏览器后退
       window.location.replace('/')

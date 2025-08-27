@@ -15,7 +15,6 @@ export async function POST(req: Request) {
   }
 
   try {
-    console.log('🚀 正在尝试写入 Notion...')
     const res = await notion.pages.create({
       parent: { database_id: databaseId },
       properties: {

@@ -246,10 +246,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 批量优化所有experience - 并行处理优化
-    console.log(`🔄 [Batch Optimize CV] Starting parallel processing for ${experiences.length} experiences`)
     
     const optimizationPromises = experiences.map(async (experience) => {
-      console.log(`🔄 [Batch Optimize CV] Processing ${experience.title} at ${experience.company}`)
       return await optimizeSingleExperience(experience, jdKeywords, userId, aiModel)
     })
     
