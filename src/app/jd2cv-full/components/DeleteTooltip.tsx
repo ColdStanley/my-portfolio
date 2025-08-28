@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 
 interface DeleteTooltipProps {
   isOpen: boolean
@@ -16,6 +16,7 @@ export default function DeleteTooltip({
   triggerElement
 }: DeleteTooltipProps) {
   const tooltipRef = useRef<HTMLDivElement>(null)
+  const [isAnimating, setIsAnimating] = useState(false)
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -31,6 +32,7 @@ export default function DeleteTooltip({
     }
 
     if (isOpen) {
+      setTimeout(() => setIsAnimating(true), 10) // 微延迟触发动画
       document.addEventListener('mousedown', handleClickOutside)
       document.addEventListener('keydown', handleEscape)
       return () => {
@@ -40,7 +42,7 @@ export default function DeleteTooltip({
     }
   }, [isOpen, onClose])
 
-  // Position calculation
+  // Position calculation - 左侧很近的位置
   const getTooltipPosition = () => {
     if (!triggerElement) {
       return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
@@ -48,9 +50,9 @@ export default function DeleteTooltip({
 
     const rect = triggerElement.getBoundingClientRect()
     return {
-      top: `${rect.top - 8}px`,
-      left: `${rect.left + rect.width / 2}px`,
-      transform: 'translate(-50%, -100%)'
+      top: `${rect.top + rect.height / 2}px`,
+      left: `${rect.left - 8}px`, // 按钮左侧很近，只偏移8px
+      transform: 'translate(-100%, -50%)'
     }
   }
 
@@ -61,16 +63,18 @@ export default function DeleteTooltip({
       <div 
         ref={tooltipRef}
         style={getTooltipPosition()}
-        className="absolute bg-white/95 backdrop-blur-md rounded-lg shadow-xl p-3 pointer-events-auto"
+        className={`absolute bg-white/95 backdrop-blur-md rounded-lg shadow-xl p-3 pointer-events-auto transition-all duration-200 ease-out ${
+          isAnimating ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2'
+        }`}
       >
-        {/* Minimal Content */}
+        {/* 简洁文案 */}
         <div className="text-xs text-gray-600 mb-2 whitespace-nowrap">Delete?</div>
         
-        {/* Minimal Actions */}
+        {/* 简洁按钮 */}
         <div className="flex gap-1">
           <button
             onClick={onClose}
-            className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded transition-colors"
+            className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded transition-all duration-150 hover:scale-105"
           >
             No
           </button>
@@ -79,15 +83,15 @@ export default function DeleteTooltip({
               onConfirm()
               onClose()
             }}
-            className="px-2 py-1 text-xs bg-purple-500 hover:bg-purple-600 text-white rounded transition-colors"
+            className="px-2 py-1 text-xs bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded transition-all duration-150 hover:scale-105 shadow-md"
           >
             Yes
           </button>
         </div>
 
-        {/* Simple Arrow */}
-        <div className="absolute top-full left-1/2 transform -translate-x-1/2">
-          <div className="w-0 h-0 border-l-3 border-r-3 border-t-3 border-transparent border-t-white/95"></div>
+        {/* 箭头指向右侧（按钮方向） */}
+        <div className="absolute top-1/2 right-0 transform translate-x-full -translate-y-1/2">
+          <div className="w-0 h-0 border-l-3 border-r-0 border-t-3 border-b-3 border-transparent border-l-white/95"></div>
         </div>
       </div>
     </div>

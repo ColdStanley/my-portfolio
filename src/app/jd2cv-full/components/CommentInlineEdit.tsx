@@ -5,6 +5,18 @@ interface CommentInlineEditProps {
   onSave: (value: string) => void
 }
 
+// Function to process URLs in comment text
+const processCommentLinks = (text: string): string => {
+  if (!text) return text
+  
+  const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`[\]]+|www\.[^\s<>"{}|\\^`[\]]+)/gi
+  
+  return text.replace(urlRegex, (url) => {
+    const href = url.startsWith('www.') ? `https://${url}` : url
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline cursor-pointer">link</a>`
+  })
+}
+
 export default function CommentInlineEdit({ value, onSave }: CommentInlineEditProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(value || '')
@@ -82,9 +94,20 @@ export default function CommentInlineEdit({ value, onSave }: CommentInlineEditPr
       onClick={() => setIsEditing(true)}
       className="w-full h-9 px-3 text-sm rounded-lg transition-all duration-200 text-left hover:bg-gray-50 border border-transparent min-w-0"
     >
-      <span className={`break-words overflow-wrap-anywhere word-break-break-word ${!value ? 'text-gray-400 italic' : 'text-gray-700'}`}>
-        {!value ? 'Add comment...' : value}
-      </span>
+      {!value ? (
+        <span className="text-gray-400 italic">Add comment...</span>
+      ) : (
+        <span 
+          className="break-words overflow-wrap-anywhere word-break-break-word text-gray-700"
+          dangerouslySetInnerHTML={{ __html: processCommentLinks(value) }}
+          onClick={(e) => {
+            // Allow link clicks to work, prevent edit mode
+            if ((e.target as HTMLElement).tagName === 'A') {
+              e.stopPropagation()
+            }
+          }}
+        />
+      )}
     </button>
   )
 }

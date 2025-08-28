@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "Monster to JD2CV Supabase Sync",
+  "version": "1.0.0",
+  "description": "Save Monster job postings directly to your JD2CV Supabase database for seamless career management",
+  
+  "permissions": [
+    "storage",
+    "notifications",
+    "activeTab"
+  ],
+  
+  "host_permissions": [
+    "https://monster.com/*",
+    "https://*.monster.com/*",
+    "http://localhost:3000/*",
+    "https://*.vercel.app/*"
+  ],
+  
+  "background": {
+    "service_worker": "scripts/monster-supabase-background.js",
+    "type": "module"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": [
+        "https://monster.com/job-openings/*",
+        "https://*.monster.com/job-openings/*"
+      ],
+      "js": ["scripts/monster-supabase-content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Monster JD2CV Settings"
+  }
+}

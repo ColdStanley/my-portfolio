@@ -12,9 +12,10 @@ interface JD {
 interface LightningButtonV2Props {
   jd: JD
   className?: string
+  onPDFUploaded?: () => void
 }
 
-export default function LightningButtonV2({ jd, className = '' }: LightningButtonV2Props) {
+export default function LightningButtonV2({ jd, className = '', onPDFUploaded }: LightningButtonV2Props) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [countdown, setCountdown] = useState(120)
   
@@ -68,7 +69,11 @@ export default function LightningButtonV2({ jd, className = '' }: LightningButto
       
       try {
         // Call n8n webhook to get AI-generated experience
-        const webhookResponse = await fetch('https://agentworkflow.stanleyhi.com/webhook/cf88dabc-821e-4ce5-b78a-d2699bfa1851', {
+        const n8nUrl = process.env.NODE_ENV === 'development' 
+          ? 'http://localhost:5678/webhook/cf88dabc-821e-4ce5-b78a-d2699bfa1851'
+          : 'https://agentworkflow.stanleyhi.com/webhook/cf88dabc-821e-4ce5-b78a-d2699bfa1851'
+        
+        const webhookResponse = await fetch(n8nUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -150,15 +155,47 @@ export default function LightningButtonV2({ jd, className = '' }: LightningButto
         }
 
         const blob = await pdfResponse.blob()
+        const filename = `${parsedPersonalInfo.fullName.replace(/[^a-z0-9]/gi, '_')}_${jd.company.replace(/[^a-z0-9]/gi, '_')}_${jd.title.replace(/[^a-z0-9]/gi, '_')}_Resume.pdf`
+        
+        // User download (existing functionality)
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.style.display = 'none'
         a.href = url
-        a.download = `${parsedPersonalInfo.fullName.replace(/[^a-z0-9]/gi, '_')}_${jd.title.replace(/[^a-z0-9]/gi, '_')}_Resume.pdf`
+        a.download = filename
         document.body.appendChild(a)
         a.click()
         window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
+
+        // Auto-upload to database (using fresh blob)
+        try {
+          console.log('Starting auto-upload to database...')
+          console.log('JD Info:', { id: jd.id, user_id: jd.user_id, filename })
+          
+          const uploadBlob = new Blob([blob], { type: 'application/pdf' }) // Ensure PDF MIME type
+          const formData = new FormData()
+          formData.append('file', uploadBlob, filename)
+          formData.append('jdId', jd.id)
+          formData.append('userId', jd.user_id)
+          
+          const uploadResponse = await fetch('/api/jds/upload-pdf', {
+            method: 'POST',
+            body: formData
+          })
+          
+          if (uploadResponse.ok) {
+            const result = await uploadResponse.json()
+            console.log('Auto-upload to database successful:', result)
+            // Trigger refresh of JD data to show the uploaded PDF
+            onPDFUploaded?.()
+          } else {
+            const errorText = await uploadResponse.text()
+            console.warn('Auto-upload failed:', uploadResponse.status, errorText)
+          }
+        } catch (uploadError) {
+          console.warn('Auto-upload error:', uploadError)
+        }
 
       } catch (timeoutError) {
         clearTimeout(timeoutId)

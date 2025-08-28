@@ -116,8 +116,12 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
       )
       .subscribe((status, err) => {
         if (status === 'SUBSCRIBED') {
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('📡 Realtime connection failed:', err)
+          // Connection successful
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          // Only log actual errors, ignore undefined errors
+          if (err && err.message) {
+            console.error('Realtime connection error:', err.message)
+          }
         }
       })
 
@@ -195,78 +199,14 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
 
   const handleDeleteJD = async (jd: JDRecord) => {
     try {
-      // Find the JD card and delete button elements
+      // Find the JD card element
       const jdCard = document.getElementById(`jd-card-${jd.id}`)
-      const deleteButton = deleteButtonRef
       
-      if (jdCard && deleteButton) {
-        // Create flying animation before deletion
-        const cardRect = jdCard.getBoundingClientRect()
-        const buttonRect = deleteButton.getBoundingClientRect()
-        
-        // Create flying clone of the entire JD card
-        const clone = jdCard.cloneNode(true) as HTMLElement
-        clone.style.position = 'fixed'
-        clone.style.zIndex = '9999'
-        clone.style.pointerEvents = 'none'
-        clone.style.left = `${cardRect.left}px`
-        clone.style.top = `${cardRect.top}px`
-        clone.style.width = `${cardRect.width}px`
-        clone.style.height = `${cardRect.height}px`
-        clone.style.transform = 'scale(1) rotate(0deg)'
-        clone.style.opacity = '0.95'
-        clone.style.boxShadow = '0 20px 60px rgba(239, 68, 68, 0.4), 0 8px 30px rgba(0, 0, 0, 0.2)'
-        clone.style.borderRadius = '12px'
-        clone.style.transition = 'all 1400ms cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-        document.body.appendChild(clone)
-        
-        // Start continuous rotation animation (reverse direction like remove)
-        let rotationAngle = 0
-        const rotationInterval = setInterval(() => {
-          rotationAngle -= 12 // Faster reverse rotation for deletion
-          if (clone.parentNode) {
-            const currentTransform = clone.style.transform
-            const scaleMatch = currentTransform.match(/scale\(([^)]+)\)/)
-            const currentScale = scaleMatch ? scaleMatch[1] : '1'
-            clone.style.transform = `scale(${currentScale}) rotate(${rotationAngle}deg)`
-          }
-        }, 16) // 60fps smooth rotation
-        
-        // Animate to delete button position
-        setTimeout(() => {
-          clone.style.left = `${buttonRect.left + buttonRect.width / 2 - cardRect.width / 2}px`
-          clone.style.top = `${buttonRect.top + buttonRect.height / 2 - cardRect.height / 2}px`
-          clone.style.width = `${cardRect.width * 0.1}px`
-          clone.style.height = `${cardRect.height * 0.1}px`
-          const currentRotation = rotationAngle
-          clone.style.transform = `scale(0.05) rotate(${currentRotation}deg)`
-          clone.style.opacity = '0.1'
-          clone.style.boxShadow = '0 8px 25px rgba(239, 68, 68, 0.6), 0 4px 15px rgba(0, 0, 0, 0.3)'
-        }, 50)
-        
-        // Final fade out phase
-        setTimeout(() => {
-          clone.style.opacity = '0'
-          const currentRotation = rotationAngle
-          clone.style.transform = `scale(0.01) rotate(${currentRotation}deg)`
-        }, 1000)
-        
-        // Clean up rotation interval
-        setTimeout(() => {
-          clearInterval(rotationInterval)
-        }, 1400)
-        
-        // Clean up clone
-        setTimeout(() => {
-          if (clone.parentNode) {
-            clone.parentNode.removeChild(clone)
-          }
-        }, 1400)
-        
-        // Hide original card immediately
+      if (jdCard) {
+        // Simple, elegant shrink animation
+        jdCard.style.transition = 'all 250ms ease-out'
+        jdCard.style.transform = 'scale(0)'
         jdCard.style.opacity = '0'
-        jdCard.style.transform = 'scale(0.95)'
-        jdCard.style.transition = 'all 300ms ease-out'
         
         // Wait for animation to complete before actual deletion
         setTimeout(async () => {
@@ -1550,13 +1490,13 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
         }
         
         return (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-4 transition-all duration-300 ease-in-out">
             {filteredJDs.map((jd) => {
             const keywords = parseKeywords(jd.keywords_from_sentences)
             const keywordGroups = groupKeywords(keywords)
             
             return (
-              <div key={jd.id} id={`jd-card-${jd.id}`} className="jd-card bg-white/90 backdrop-blur-md rounded-xl shadow-xl overflow-hidden">
+              <div key={jd.id} id={`jd-card-${jd.id}`} className="jd-card bg-white/90 backdrop-blur-md rounded-xl shadow-xl overflow-hidden transition-all duration-300 ease-in-out">
                 {/* Optimized 2-Row Layout */}
                 <div className="p-4 relative">
                   <div className="flex items-start">
@@ -1791,7 +1731,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                         
                         {/* Second Actions Row - V2 buttons */}
                         <div className="flex items-center justify-end gap-1 h-9">
-                          <LightningButtonV2 jd={jd} />
+                          <LightningButtonV2 jd={jd} onPDFUploaded={() => loadJDs()} />
                           <CoverLetterButtonV2 jd={jd} />
                         </div>
                         

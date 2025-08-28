@@ -1,17 +1,17 @@
 /**
- * LinkedIn to Supabase Background Script
- * Handles API calls to sync LinkedIn job data to Supabase JD2CV database
+ * Monster to JD2CV Supabase Background Script
+ * Handles API calls to sync Monster job data to Supabase JD2CV database
  */
 
-console.log('🔄 LinkedIn JD2CV Supabase Background Script - Service Worker Started');
+console.log('🔄 Monster JD2CV Supabase Background Script - Service Worker Started');
 
 // Configuration
 const CONFIG = {
   // Default to your production URL, can be updated via popup settings
   API_BASE_URL: 'http://localhost:3000',
   ENDPOINTS: {
-    SAVE_JD: '/api/jd2cv-full/supabase',
-    SEARCH_JD: '/api/jd2cv-full/supabase'
+    SAVE_JD: '/api/monster2cv/supabase',
+    SEARCH_JD: '/api/monster2cv/supabase'
   },
   NOTIFICATION_DURATION: 4000,
   // Default user ID - should be configured via popup
@@ -23,8 +23,8 @@ const CONFIG = {
  */
 async function getApiBaseUrl() {
   try {
-    const result = await chrome.storage.sync.get(['apiBaseUrl']);
-    return result.apiBaseUrl || CONFIG.API_BASE_URL;
+    const result = await chrome.storage.sync.get(['monster_apiBaseUrl']);
+    return result.monster_apiBaseUrl || CONFIG.API_BASE_URL;
   } catch (error) {
     console.error('Error getting API base URL from storage:', error);
     return CONFIG.API_BASE_URL;
@@ -36,8 +36,8 @@ async function getApiBaseUrl() {
  */
 async function getUserId() {
   try {
-    const result = await chrome.storage.sync.get(['userId']);
-    return result.userId || CONFIG.DEFAULT_USER_ID;
+    const result = await chrome.storage.sync.get(['monster_userId']);
+    return result.monster_userId || CONFIG.DEFAULT_USER_ID;
   } catch (error) {
     console.error('Error getting user ID from storage:', error);
     return CONFIG.DEFAULT_USER_ID;
@@ -73,7 +73,7 @@ async function checkJobExists(jobData, userId) {
 }
 
 /**
- * Save job data to Supabase via JD2CV API
+ * Save job data to Supabase via Monster2CV API
  */
 async function syncJobDataToSupabase(jobData) {
   try {
@@ -81,7 +81,7 @@ async function syncJobDataToSupabase(jobData) {
     const userId = await getUserId();
     const saveUrl = `${apiBaseUrl}${CONFIG.ENDPOINTS.SAVE_JD}`;
     
-    console.log('📤 Syncing job data to Supabase:', {
+    console.log('📤 Syncing Monster job data to Supabase:', {
       title: jobData.title,
       company: jobData.company,
       userId: userId,
@@ -107,7 +107,8 @@ async function syncJobDataToSupabase(jobData) {
       title: jobData.title,
       company: jobData.company,
       full_job_description: jobData.full_job_description?.replace(/\r\n/g, '\n').replace(/\r/g, '\n') || '',
-      comment: jobData.comment || ''
+      source: 'monster.com',
+      original_url: jobData.url
     };
 
     const saveResponse = await fetch(saveUrl, {
@@ -129,18 +130,18 @@ async function syncJobDataToSupabase(jobData) {
       // Success
       await showNotification({
         type: 'success',
-        title: 'LinkedIn Job Synced! 🎉',
+        title: 'Monster Job Synced! 🎉',
         message: `"${jobData.title}" at "${jobData.company}" has been saved to your JD2CV Supabase database.`
       });
       
-      console.log('✅ Job successfully synced to Supabase:', saveResult);
+      console.log('✅ Monster job successfully synced to Supabase:', saveResult);
       return { success: true, data: saveResult };
     } else {
       throw new Error(saveResult.error || 'Unknown API error');
     }
 
   } catch (error) {
-    console.error('❌ Error syncing job data to Supabase:', error);
+    console.error('❌ Error syncing Monster job data to Supabase:', error);
     
     await showNotification({
       type: 'error',
@@ -163,13 +164,9 @@ async function showNotification({ type, title, message }) {
     info: 'ℹ️'
   };
 
-  // 使用扩展内本地图片，避免 MV3 data URL 报错
-  const iconUrl = chrome.runtime.getURL("icons/icon48.png");
-
   try {
     const notificationId = await chrome.notifications.create({
       type: 'basic',
-      iconUrl: iconUrl,
       title: `${iconMap[type] || ''} ${title}`,
       message: message,
       requireInteraction: false
@@ -185,15 +182,14 @@ async function showNotification({ type, title, message }) {
   }
 }
 
-
 /**
  * Handle messages from content script
  */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('📨 Background script received message:', message.action);
+  console.log('📨 Monster background script received message:', message.action);
 
   switch (message.action) {
-    case 'SYNC_LINKEDIN_JOB_TO_SUPABASE':
+    case 'SYNC_MONSTER_JOB_TO_SUPABASE':
       // Handle async operation
       syncJobDataToSupabase(message.data)
         .then(result => {
@@ -206,31 +202,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       // Return true to indicate we'll send response asynchronously
       return true;
 
-    case 'UPDATE_API_BASE_URL':
-      chrome.storage.sync.set({ apiBaseUrl: message.url })
+    case 'UPDATE_MONSTER_API_BASE_URL':
+      chrome.storage.sync.set({ monster_apiBaseUrl: message.url })
         .then(() => {
-          console.log('✅ API base URL updated:', message.url);
+          console.log('✅ Monster API base URL updated:', message.url);
           sendResponse({ success: true });
         })
         .catch(error => {
-          console.error('❌ Error updating API base URL:', error);
+          console.error('❌ Error updating Monster API base URL:', error);
           sendResponse({ success: false, error: error.message });
         });
       return true;
 
-    case 'UPDATE_USER_ID':
-      chrome.storage.sync.set({ userId: message.userId })
+    case 'UPDATE_MONSTER_USER_ID':
+      chrome.storage.sync.set({ monster_userId: message.userId })
         .then(() => {
-          console.log('✅ User ID updated:', message.userId);
+          console.log('✅ Monster User ID updated:', message.userId);
           sendResponse({ success: true });
         })
         .catch(error => {
-          console.error('❌ Error updating User ID:', error);
+          console.error('❌ Error updating Monster User ID:', error);
           sendResponse({ success: false, error: error.message });
         });
       return true;
 
-    case 'GET_CONFIG':
+    case 'GET_MONSTER_CONFIG':
       Promise.all([getApiBaseUrl(), getUserId()])
         .then(([apiBaseUrl, userId]) => {
           sendResponse({ 
@@ -257,22 +253,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
  * Handle extension installation
  */
 chrome.runtime.onInstalled.addListener((details) => {
-  console.log('🚀 LinkedIn JD2CV Supabase extension installed/updated:', details.reason);
+  console.log('🚀 Monster JD2CV Supabase extension installed/updated:', details.reason);
   
   if (details.reason === 'install') {
     // Set default configuration
     chrome.storage.sync.set({
-      apiBaseUrl: CONFIG.API_BASE_URL,
-      userId: CONFIG.DEFAULT_USER_ID,
-      autoSync: true
+      monster_apiBaseUrl: CONFIG.API_BASE_URL,
+      monster_userId: CONFIG.DEFAULT_USER_ID,
+      monster_autoSync: true
     });
     
     showNotification({
       type: 'info',
       title: 'Extension Installed',
-      message: 'LinkedIn JD2CV Supabase sync is ready! Visit any LinkedIn job page and click Save to test.'
+      message: 'Monster JD2CV Supabase sync is ready! Visit any Monster job page and click Save to JD2CV to test.'
     });
   }
 });
 
-console.log('✅ LinkedIn JD2CV Supabase background script fully initialized');
+console.log('✅ Monster JD2CV Supabase background script fully initialized');

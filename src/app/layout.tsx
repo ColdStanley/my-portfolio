@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Quicksand, Dancing_Script, PT_Serif, Cormorant_Garam
 import "./globals.css"
 import { Toaster } from "sonner"
 import Script from "next/script"
+import CookieConsent from "@/components/CookieConsent"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -94,6 +95,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         {/* ✅ Toast 支持（不影响现有样式） */}
         <Toaster richColors position="top-center" />
+        {/* ✅ Cookie同意弹窗 */}
+        <CookieConsent />
       </body>
     </html>
   )
