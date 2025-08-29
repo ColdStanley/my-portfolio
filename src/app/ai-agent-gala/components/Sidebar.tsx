@@ -13,6 +13,7 @@ const tabs = [
   { key: 'overview', label: 'Overview' },
   { key: 'option1', label: 'Test Lab' },
   { key: 'option2', label: 'IELTS Speaking' },
+  { key: 'option5', label: 'AI Card Studio' },
   { key: 'option3', label: 'JD2CV 2.0' },
   { key: 'option4', label: 'Paragraphe Magique' },
 ]

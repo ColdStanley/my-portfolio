@@ -77,10 +77,10 @@ export default function SimpleVoiceRecorder({ onTranscript }: SimpleVoiceRecorde
   return (
     <button
       onClick={toggleRecording}
-      className={`p-2 rounded transition-colors ${
+      className={`w-8 h-8 rounded-lg transition-all duration-200 hover:scale-105 flex items-center justify-center ${
         isRecording 
-          ? 'text-red-500 hover:text-red-600' 
-          : 'text-gray-400 hover:text-gray-600'
+          ? 'bg-purple-600 text-white animate-pulse' 
+          : 'bg-purple-500 text-white hover:bg-purple-600'
       }`}
       title={isRecording ? 'Stop recording' : 'Start voice input'}
     >

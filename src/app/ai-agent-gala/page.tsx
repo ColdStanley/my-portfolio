@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar'
 import Overview from './components/Overview'
 import WebhookTester from './components/WebhookTester'
 import IELTSSpeaking from './components/IELTSSpeaking'
+import AICardStudio from './components/AICardStudio'
 import JD2CV2 from './components/JD2CV2'
 import ParagrapheMagique from './components/ParagrapheMagique'
 import NewNavbar from '@/components/NewNavbar'
@@ -20,7 +21,7 @@ export default function AIAgentGalaPage() {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search)
       const tabParam = urlParams.get('tab')
-      if (tabParam && ['overview', 'option1', 'option2', 'option3', 'option4'].includes(tabParam)) {
+      if (tabParam && ['overview', 'option1', 'option2', 'option3', 'option4', 'option5'].includes(tabParam)) {
         setActiveTab(tabParam)
       }
     }
@@ -135,6 +136,12 @@ export default function AIAgentGalaPage() {
         {activeTab === 'option4' && (
           <div>
             <ParagrapheMagique />
+          </div>
+        )}
+        
+        {activeTab === 'option5' && (
+          <div>
+            <AICardStudio />
           </div>
         )}
       </div>

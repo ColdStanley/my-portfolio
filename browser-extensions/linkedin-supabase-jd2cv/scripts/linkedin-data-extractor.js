@@ -156,6 +156,151 @@ function initializeSaveButtonMonitoring() {
 }
 
 /**
+ * Create and inject sync button (Monster-style enhancement)
+ */
+function createSyncButton() {
+  const button = document.createElement('button');
+  button.innerHTML = `
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 8px;">
+      <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+    </svg>
+    Save to JD2CV
+  `;
+  
+  button.style.cssText = `
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    margin-left: 12px;
+    background: linear-gradient(135deg, #7c3aed, #3b82f6);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(124, 58, 237, 0.2);
+  `;
+  
+  // Hover effects
+  button.addEventListener('mouseenter', () => {
+    button.style.transform = 'translateY(-1px)';
+    button.style.boxShadow = '0 4px 8px rgba(124, 58, 237, 0.3)';
+  });
+  
+  button.addEventListener('mouseleave', () => {
+    button.style.transform = 'translateY(0)';
+    button.style.boxShadow = '0 2px 4px rgba(124, 58, 237, 0.2)';
+  });
+  
+  return button;
+}
+
+/**
+ * Initialize LinkedIn sync button injection
+ */
+function initializeLinkedInSyncButton() {
+  try {
+    // Find the LinkedIn save button
+    const saveButton = document.querySelector(LINKEDIN_SELECTORS.SAVE_BUTTON);
+    if (!saveButton) {
+      console.warn('⚠️ LinkedIn save button not found');
+      return;
+    }
+    
+    const container = saveButton.parentElement;
+    if (!container) {
+      console.warn('⚠️ Save button container not found');
+      return;
+    }
+    
+    // Check if our button already exists
+    if (container.querySelector('.linkedin-jd2cv-sync-button')) {
+      return;
+    }
+    
+    // Create and add sync button
+    const syncButton = createSyncButton();
+    syncButton.className = 'linkedin-jd2cv-sync-button';
+    
+    syncButton.addEventListener('click', async () => {
+      try {
+        // Update button state
+        const originalText = syncButton.innerHTML;
+        syncButton.innerHTML = `
+          <div style="width: 16px; height: 16px; border: 2px solid transparent; border-top: 2px solid currentColor; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px;"></div>
+          Syncing...
+        `;
+        syncButton.style.pointerEvents = 'none';
+        
+        // Add spin animation
+        if (!document.querySelector('#linkedin-sync-spinner-style')) {
+          const style = document.createElement('style');
+          style.id = 'linkedin-sync-spinner-style';
+          style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+          document.head.appendChild(style);
+        }
+        
+        // Extract job data
+        const jobData = extractLinkedInJobData();
+        
+        if (!jobData) {
+          throw new Error('Failed to extract job data');
+        }
+        
+        // Send to background script
+        const response = await chrome.runtime.sendMessage({
+          action: 'SYNC_LINKEDIN_JOB_TO_SUPABASE',
+          data: jobData
+        });
+        
+        if (response && response.success) {
+          syncButton.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 8px;">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+            </svg>
+            Saved!
+          `;
+          syncButton.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+          
+          // Reset button after 3 seconds
+          setTimeout(() => {
+            syncButton.innerHTML = originalText;
+            syncButton.style.background = 'linear-gradient(135deg, #7c3aed, #3b82f6)';
+            syncButton.style.pointerEvents = 'auto';
+          }, 3000);
+        } else {
+          throw new Error(response?.error || 'Sync failed');
+        }
+      } catch (error) {
+        console.error('❌ Sync failed:', error);
+        syncButton.innerHTML = `
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 8px;">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+          Error
+        `;
+        syncButton.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+        
+        // Reset after 3 seconds
+        setTimeout(() => {
+          syncButton.innerHTML = originalText;
+          syncButton.style.background = 'linear-gradient(135deg, #7c3aed, #3b82f6)';
+          syncButton.style.pointerEvents = 'auto';
+        }, 3000);
+      }
+    });
+    
+    container.appendChild(syncButton);
+    console.log('✅ LinkedIn JD2CV sync button added');
+    
+  } catch (error) {
+    console.error('❌ Error initializing LinkedIn sync button:', error);
+  }
+}
+
+/**
  * Test data extraction (for debugging)
  */
 function testDataExtraction() {
@@ -169,9 +314,13 @@ function testDataExtraction() {
 
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeSaveButtonMonitoring);
+  document.addEventListener('DOMContentLoaded', () => {
+    initializeSaveButtonMonitoring();
+    setTimeout(initializeLinkedInSyncButton, 1000);
+  });
 } else {
   initializeSaveButtonMonitoring();
+  setTimeout(initializeLinkedInSyncButton, 1000);
 }
 
 // Listen for messages from popup or background script
@@ -189,5 +338,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ success: false, error: 'Unknown action' });
   }
 });
+
+// Monitor URL changes for SPA navigation (LinkedIn is a SPA)
+let currentUrl = location.href;
+new MutationObserver(() => {
+  if (location.href !== currentUrl) {
+    currentUrl = location.href;
+    console.log('🔗 LinkedIn URL changed, re-initializing sync button...');
+    setTimeout(initializeLinkedInSyncButton, 1500);
+  }
+}).observe(document, { subtree: true, childList: true });
 
 console.log('✅ LinkedIn data extractor fully initialized');

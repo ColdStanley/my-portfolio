@@ -73,21 +73,28 @@ await aiApi.processQueryStream(
 ### Layout Standards
 
 #### Button Requirements (CRITICAL)
-- **Gradient Primary**: Always use `bg-gradient-to-r from-purple-600 to-indigo-600`
-- **Glass Secondary**: Use `bg-white/70 backdrop-blur-sm` with purple text
-- **Fixed Width**: All buttons in same interface: `w-32`, `w-40`
-- **Single Line Text**: Always use `whitespace-nowrap truncate`
-- **Standard Classes**: `px-6 py-2 rounded-lg font-medium`
+- **Primary Purple**: Always use solid `bg-purple-600 hover:bg-purple-700`
+- **Clean Design**: No gradients, no glass effects for main action buttons
+- **Disabled States**: `disabled:bg-purple-400` with loading spinner
+- **Standard Classes**: `px-4 py-2 rounded-lg font-medium`
 
 ```tsx
-// ✅ Primary Button (Gradient)
-<button className="w-32 px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-medium whitespace-nowrap transition-all duration-300 shadow-lg hover:shadow-xl">
-  Save
+// ✅ Primary Action Button
+<button className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2">
+  Generate a Question
 </button>
 
-// ✅ Secondary Button (Glass)  
-<button className="w-32 px-6 py-2 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-purple-600 rounded-lg font-medium border border-purple-200 transition-all duration-300 whitespace-nowrap">
-  Cancel
+// ✅ Loading State with Spinner
+<button disabled className="px-4 py-2 bg-purple-400 text-white rounded-lg font-medium flex items-center gap-2">
+  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+  </svg>
+</button>
+
+// ✅ Tooltip Button (Minimal)
+<button className="px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left">
+  Daily Life
 </button>
 ```
 
@@ -352,26 +359,36 @@ const statusOptions = ['Not Started', 'Completed']
 
 **Principle**: One scroll container = predictable user experience
 
-## Text Selection Tooltip Animation (CRITICAL)
+## Interactive Tooltip System (CRITICAL)
 
-**Refined multi-dimensional animation for elegant tooltip appearance and dismissal**
+**Refined tooltip with clean design and smooth animations**
 
 ### Animation Specifications
 
 ```tsx
-// Enhanced tooltip animation pattern
-className={`transition-all duration-200 ease-out ${
-  isVisible 
-    ? 'opacity-100 scale-100 translate-y-0' 
-    : 'opacity-0 scale-95 translate-y-2'
-}`}
+// Tooltip animation pattern
+<div className="absolute top-full mt-2 left-0 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-3 transform transition-all duration-200 ease-out opacity-100 scale-100">
+  {/* Arrow pointing to button */}
+  <div className="absolute -top-1 left-4 w-2 h-2 bg-white border-l border-t border-gray-200 transform rotate-45"></div>
+  
+  {/* Content */}
+  <div className="flex flex-col gap-2 min-w-32">
+    {options.map((option) => (
+      <button className="px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left">
+        {option}
+      </button>
+    ))}
+  </div>
+</div>
 ```
 
 ### Implementation Rules
 
-1. **Multi-Dimensional Transition**: Combine opacity, scale, and translate-y for sophisticated effect
-2. **Scale Range**: 95% to 100% scale for subtle entrance/exit
-3. **Vertical Motion**: 2px upward translation on appear creates floating effect
+1. **Clean Design**: White background, subtle shadow, clean border
+2. **Precise Arrow**: Small arrow pointing to trigger button
+3. **Smooth Animation**: 200ms transition for appearance
+4. **Backdrop Dismiss**: Click outside to close
+5. **Minimal Buttons**: Text-only with purple hover states
 4. **Timing**: 200ms duration with `ease-out` for natural deceleration
 5. **State Management**: Use `isVisible` state with delayed trigger for smooth mounting
 6. **Graceful Exit**: Fade out before DOM removal to complete animation cycle

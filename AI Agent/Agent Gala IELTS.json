@@ -1,0 +1,679 @@
+{
+  "name": "Agent Gala IELTS",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        224,
+        800
+      ],
+      "id": "b01977f0-d7a7-451b-abf3-bd794158e79d",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "p6DB6HAUv2VP5Jy6",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        832,
+        800
+      ],
+      "id": "0e54f4cc-3ee3-490c-8ca4-5e2628ad529f",
+      "name": "DeepSeek Chat Model2",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "p6DB6HAUv2VP5Jy6",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "当要对Part 1的题目进行分析时，请使用此AI Agent",
+        "text": "=你是高级雅思口语老师。从以下角度分析IELTS Speaking Part 1题目：{{$json.question}}\n\n分析维度：\n1- 题型结构识别：这属于哪种类型的问句？是否需要理由、举例或扩展？\n2- 话题分类：这道题属于哪类常见话题（如：食物、兴趣、日常生活等）？\n3- 答题策略建议：\n   - 学生应该如何在回答前进行简单思考？\n   - 推荐什么样的回答结构？\n   - 若采用该结构，对应的通用性词组有哪些？（6分版只给短语；7分版和8分版需提供短语+中文解释+英文例句）\n   - 针对该话题，可使用的单词有哪些？（6分版只给单词；7分版和8分版需提供单词+中文解释+英文例句）\n4- 常见错误提醒：学生在回答此类问题时容易出现哪些典型错误？如何避免？\n\n输出要求：\n1- 必须输出合法 JSON 对象。\n2- JSON 对象字段：\n{\n  \"structure_recognition\": \"...\",\n  \"topic_category\": \"...\",\n  \"strategy\": {\n    \"planning\": \"...\",\n    \"recommended_structure\": \"...\",\n    \"phrases\": {\n      \"band6\": \"短语示例\",\n      \"band7\": {\n        \"examples\": \"短语示例\",\n        \"explanation\": \"中文解释。English example sentence.\"\n      },\n      \"band8\": {\n        \"examples\": \"短语示例\",\n        \"explanation\": \"中文解释。English example sentence.\"\n      }\n    },\n    \"vocabulary\": {\n      \"band6\": \"单词示例\",\n      \"band7\": {\n        \"examples\": \"单词示例\",\n        \"explanation\": \"中文解释。English example sentence.\"\n      },\n      \"band8\": {\n        \"examples\": \"单词示例\",\n        \"explanation\": \"中文解释。English example sentence.\"\n      }\n    }\n  },\n  \"common_errors\": \"...\"\n}\n3- 禁止输出除 JSON 外的任何内容。\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        1168,
+        640
+      ],
+      "id": "4c666aa6-c51a-4e11-b107-0fa8653270cd",
+      "name": "Part 1 Question Analyzer"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        1648,
+        784
+      ],
+      "id": "22a2af13-0f22-4ec5-8534-8b89124296ca",
+      "name": "DeepSeek Chat Model3",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "p6DB6HAUv2VP5Jy6",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        1984,
+        784
+      ],
+      "id": "e52e6612-6bdd-4b47-b978-9a3ada9f93cd",
+      "name": "DeepSeek Chat Model4",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "p6DB6HAUv2VP5Jy6",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "当要对Part 2的题目进行分析时，请使用此AI Agent",
+        "text": "=你是高级雅思口语老师。从以下角度分析IELTS Speaking Part 2题目：{{$json.question}}\n\n分析维度：\n1- 题型结构识别：Part 2 属于长时回答题，考生需要如何展开叙述？应包含哪些要素（如人物、地点、原因、感受、结果）？\n2- 话题分类：这道题属于哪类常见话题（如：人物、事件、经历、物品、场所等）？\n3- 答题策略建议：\n   - 学生应该如何在1分钟准备时间内构思？\n   - 推荐什么样的回答结构（开头—细节—感受—结尾）\n   - 若采用该结构，对应的通用性词组有哪些？（6分版只给短语；7分版和8分版需提供短语+中文解释+英文例句）\n   - 针对该话题，可使用的单词有哪些？（6分版只给单词；7分版和8分版需提供单词+中文解释+英文例句）\n4- 常见错误提醒：学生在回答此类问题时容易出现哪些典型错误？如何避免？\n\n输出要求：\n1- 必须输出合法 JSON 对象。\n2- JSON 对象字段：\n{\n  \"structure_recognition\": \"...\",\n  \"topic_category\": \"...\",\n  \"strategy\": {\n    \"planning\": \"...\",\n    \"recommended_structure\": \"...\",\n    \"phrases\": {\n      \"band6\": \"短语示例\",\n      \"band7\": {\n        \"examples\": \"短语示例\",\n        \"explanation\": \"中文解释。English example sentence.\"\n      },\n      \"band8\": {\n        \"examples\": \"短语示例\",\n        \"explanation\": \"中文解释。English example sentence.\"\n      }\n    },\n    \"vocabulary\": {\n      \"band6\": \"单词示例\",\n      \"band7\": {\n        \"examples\": \"单词示例\",\n        \"explanation\": \"中文解释。English example sentence.\"\n      },\n      \"band8\": {\n        \"examples\": \"单词示例\",\n        \"explanation\": \"中文解释。English example sentence.\"\n      }\n    }\n  },\n  \"common_errors\": \"...\"\n}\n3- 禁止输出除 JSON 外的任何内容。\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        1648,
+        608
+      ],
+      "id": "72cd3921-d49a-4c77-b3ac-0d783639bd2c",
+      "name": "Part 2 Question Analyzer"
+    },
+    {
+      "parameters": {
+        "toolDescription": "当要对Part 3的题目进行分析时，请使用此AI Agent",
+        "text": "=你是高级雅思口语老师。从以下角度分析IELTS Speaking Part 3题目：{{$json.question}}\n\n分析维度：\n1- 题型结构识别：Part 3 属于抽象、拓展和讨论类问句，需要考生如何展开？是否需要比较、预测或表达观点？\n2- 话题分类：这道题属于哪类常见话题（如：社会、教育、科技、文化、环境等）？\n3- 答题策略建议：\n   - 学生应该如何组织论点和论据？\n   - 推荐什么样的回答结构（观点—解释—例子—总结）\n   - 若采用该结构，对应的通用性词组有哪些？（6分版只给短语；7分版和8分版需提供短语+中文解释+英文例句）\n   - 针对该话题，可使用的单词有哪些？（6分版只给单词；7分版和8分版需提供单词+中文解释+英文例句）\n4- 常见错误提醒：学生在回答此类问题时容易出现哪些典型错误？如何避免？\n\n输出要求：\n1- 必须输出合法 JSON 对象。\n2- JSON 对象字段：\n{\n  \"structure_recognition\": \"...\",\n  \"topic_category\": \"...\",\n  \"strategy\": {\n    \"planning\": \"...\",\n    \"recommended_structure\": \"...\",\n    \"phrases\": {\n      \"band6\": \"短语示例\",\n      \"band7\": {\n        \"examples\": \"短语示例\",\n        \"explanation\": \"中文解释。English example sentence.\"\n      },\n      \"band8\": {\n        \"examples\": \"短语示例\",\n        \"explanation\": \"中文解释。English example sentence.\"\n      }\n    },\n    \"vocabulary\": {\n      \"band6\": \"单词示例\",\n      \"band7\": {\n        \"examples\": \"单词示例\",\n        \"explanation\": \"中文解释。English example sentence.\"\n      },\n      \"band8\": {\n        \"examples\": \"单词示例\",\n        \"explanation\": \"中文解释。English example sentence.\"\n      }\n    }\n  },\n  \"common_errors\": \"...\"\n}\n3- 禁止输出除 JSON 外的任何内容。\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        1984,
+        608
+      ],
+      "id": "d1dc32a9-45df-4491-a4e8-93f9814c4bec",
+      "name": "Part 3 Question Analyzer"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "3bcd7132-a248-4700-af8c-e01d81a9d00a",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        336
+      ],
+      "id": "13471e48-1e4c-4371-8c6b-c984ab40d6a2",
+      "name": "Webhook",
+      "webhookId": "3bcd7132-a248-4700-af8c-e01d81a9d00a"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1520,
+        336
+      ],
+      "id": "18556efc-e9bf-447a-baf9-f126295d8b23",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        816
+      ],
+      "id": "0ca64d91-0260-4c24-a636-a2c5c71995b1",
+      "name": "DeepSeek Chat Model1",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "p6DB6HAUv2VP5Jy6",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "682c8778-cd25-4c44-8c5b-421c599348ed",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        16,
+        976
+      ],
+      "id": "358ddc15-b175-4962-a6e3-55072cc3d59a",
+      "name": "Webhook1",
+      "webhookId": "682c8778-cd25-4c44-8c5b-421c599348ed"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1120,
+        976
+      ],
+      "id": "6fb862d0-c527-4612-b842-2a5fff282220",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=你是任务调度员。识别雅思口语回答 {{$json.question}} 属于 IELTS 口语的 Part（Part 1、Part 2 或 Part 3），并分发给对应的子专家模型（Part 1 Question Analyzer, Part 2 Question Analyzer, Part 3 Question Analyzer）。\n\n任务流程：\n1- 判断该回答属于 Part 1、Part 2 或 Part 3。\n2- 将回答 {{$json.question}} 转发给对应的子专家模型。\n3- 等待子专家模型返回结果（注意：结果可能是字符串形式的 JSON）。\n4- 将结果统一封装为 JSON 对象，格式如下：\n{\n  \"part\": \"Part1 | Part2 | Part3\",\n  \"question\": \"原始回答\",\n  \"analysis\": \"子专家模型的输出（可能是 JSON 字符串）\"\n}\n\n输出要求：\n1- 必须输出合法 JSON 对象。\n2- analysis 字段如果是对象或字符串都可以，不要尝试解析。\n3- 禁止输出除 JSON 以外的任何内容（不能有说明文字、Markdown 或代码块符号）。\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        832,
+        336
+      ],
+      "id": "3d4d9385-abfc-4682-832a-e70242818455",
+      "name": "Question Dispatcher"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=你是任务调度员。识别雅思口语回答 {{$json.body.text}} 属于 IELTS 口语的 Part（Part 1、Part 2 或 Part 3），并分发给对应的子专家模型（Part 1 Answer Analyzer, Part 2 Answer Analyzer, Part 3 Answer Analyzer）。\n\n任务流程：\n1- 判断该回答属于 Part 1、Part 2 或 Part 3。\n2- 将回答 {{$json.body.text}} 转发给对应的子专家模型。\n3- 等待子专家模型返回结果（注意：结果可能是字符串形式的 JSON）。\n4- 将结果统一封装为 JSON 对象，格式如下：\n{\n  \"part\": \"Part1 | Part2 | Part3\",\n  \"answer\": \"原始回答\",\n  \"analysis\": \"子专家模型的输出（可能是 JSON 字符串）\"\n}\n\n输出要求：\n1- 必须输出合法 JSON 对象。\n2- analysis 字段如果是对象或字符串都可以，不要尝试解析。\n3- 禁止输出除 JSON 以外的任何内容（不能有说明文字、Markdown 或代码块符号）。\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        576,
+        976
+      ],
+      "id": "076d9e94-bb39-4393-9e4c-36203504c515",
+      "name": "Answer Dispatcher"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        576,
+        1168
+      ],
+      "id": "2bbb3f10-0822-4c58-bad8-0adf46801fca",
+      "name": "DeepSeek Chat Model5",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "p6DB6HAUv2VP5Jy6",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Part 1 Answer Analyzer，只负责分析Part 1",
+        "text": "=你是雅思口语教师。从以下五个维度分析学生的IELTS Speaking回答：{{$json.body.text}}\n\n每个维度必须包含三部分内容：\n(a) 学生当前存在的问题；\n(b) 针对6/7/8分的改进方向；\n(c) 每个分数段各给出1–2句英文示例句。\n\n分析维度：\n1- 内容完整性：回答是否完整覆盖题意？是否包含理由、细节或例子？\n2- 句式多样性：是否使用了不同类型的句子（如从句、并列句）？是否都是简单句？\n3- 词汇多样性：是否出现重复用词？是否有具体、描述性或话题相关的词？\n4- 语法准确性：是否存在常见语法错误？如时态错误、主谓不一致等？\n5- 连贯与衔接性：句子之间是否自然衔接？是否缺少过渡词或逻辑跳跃？\n\n输出要求：\n1- 必须输出合法 JSON 对象。\n2- JSON 对象必须包含以下字段：\n{\n  \"content_completeness\": {\n    \"problems\": \"...\",\n    \"improvements\": {\n      \"band6\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band7\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band8\": { \"direction\": \"...\", \"examples\": \"...\" }\n    }\n  },\n  \"sentence_variety\": {\n    \"problems\": \"...\",\n    \"improvements\": {\n      \"band6\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band7\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band8\": { \"direction\": \"...\", \"examples\": \"...\" }\n    }\n  },\n  \"vocabulary_range\": {\n    \"problems\": \"...\",\n    \"improvements\": {\n      \"band6\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band7\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band8\": { \"direction\": \"...\", \"examples\": \"...\" }\n    }\n  },\n  \"grammar_accuracy\": {\n    \"problems\": \"...\",\n    \"improvements\": {\n      \"band6\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band7\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band8\": { \"direction\": \"...\", \"examples\": \"...\" }\n    }\n  },\n  \"coherence_cohesion\": {\n    \"problems\": \"...\",\n    \"improvements\": {\n      \"band6\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band7\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band8\": { \"direction\": \"...\", \"examples\": \"...\" }\n    }\n  }\n}\n3- 禁止输出除 JSON 以外的任何内容。\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        1200
+      ],
+      "id": "747b01ae-11c1-4e9e-8dcd-7341de912bad",
+      "name": "Part 1 Answer Analyzer"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Part 2 Answer Analyzer，只负责分析Part 2",
+        "text": "=你是雅思口语教师。从以下五个维度分析学生的IELTS Speaking Part 2回答：{{$json.body.text}}\n\n每个维度必须包含三部分内容：\n(a) 学生当前存在的问题；\n(b) 针对6/7/8分的改进方向；\n(c) 每个分数段各给出1–2句英文示例句。\n\n分析维度：\n1- 内容展开：是否覆盖题卡的所有提示点？是否有足够细节和例子？\n2- 结构与组织：是否有清晰的开头、主体和结尾？逻辑是否连贯？\n3- 句式多样性：是否使用了不同句型（如从句、复杂句）来延展叙述？\n4- 词汇丰富度：是否使用了具体、生动、与话题相关的词汇？\n5- 流利与衔接性：叙述是否自然顺畅？是否有过渡词引导思路？\n\n输出要求：\n1- 必须输出合法 JSON 对象。\n2- JSON 对象必须包含以下字段：\n{\n  \"content_development\": {\n    \"problems\": \"...\",\n    \"improvements\": {\n      \"band6\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band7\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band8\": { \"direction\": \"...\", \"examples\": \"...\" }\n    }\n  },\n  \"structure_organization\": {\n    \"problems\": \"...\",\n    \"improvements\": {\n      \"band6\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band7\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band8\": { \"direction\": \"...\", \"examples\": \"...\" }\n    }\n  },\n  \"sentence_variety\": {\n    \"problems\": \"...\",\n    \"improvements\": {\n      \"band6\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band7\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band8\": { \"direction\": \"...\", \"examples\": \"...\" }\n    }\n  },\n  \"vocabulary_richness\": {\n    \"problems\": \"...\",\n    \"improvements\": {\n      \"band6\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band7\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band8\": { \"direction\": \"...\", \"examples\": \"...\" }\n    }\n  },\n  \"fluency_cohesion\": {\n    \"problems\": \"...\",\n    \"improvements\": {\n      \"band6\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band7\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band8\": { \"direction\": \"...\", \"examples\": \"...\" }\n    }\n  }\n}\n3- 每个维度的 \"problems\" 字段写明学生当前回答的不足；\n4- 每个维度的 \"improvements\" 下，分别说明 Band 6/7/8 的改进方向，并各提供1–2句英文示例句；\n5- 禁止输出除 JSON 以外的任何内容（不能有说明文字、Markdown 或代码块符号）。\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        1248,
+        1200
+      ],
+      "id": "a30fda5f-e783-4bf7-9082-c112a6aef04f",
+      "name": "Part 2 Answer Analyzer"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Part 3 Answer Analyzer，只负责分析Part 3",
+        "text": "=你是雅思口语教师。从以下五个维度分析学生的IELTS Speaking Part 3回答：{{$json.body.text}}\n\n每个维度必须包含三部分内容：\n(a) 学生当前存在的问题；\n(b) 针对6/7/8分的改进方向；\n(c) 每个分数段各给出1–2句英文示例句。\n\n分析维度：\n1- 论点清晰度：回答是否直接回应问题？论点是否明确？\n2- 理由与例证：是否提供了合理的解释、原因或社会现象作为支撑？\n3- 论证深度：是否体现了批判性思维？是否有多角度思考？\n4- 语言复杂度：是否使用了较高级的句型和学术词汇？\n5- 连贯与逻辑：观点之间是否有良好的逻辑过渡和衔接？\n\n输出要求：\n1- 必须输出合法 JSON 对象。\n2- JSON 对象必须包含以下字段：\n{\n  \"argument_clarity\": {\n    \"problems\": \"...\",\n    \"improvements\": {\n      \"band6\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band7\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band8\": { \"direction\": \"...\", \"examples\": \"...\" }\n    }\n  },\n  \"reasoning_evidence\": {\n    \"problems\": \"...\",\n    \"improvements\": {\n      \"band6\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band7\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band8\": { \"direction\": \"...\", \"examples\": \"...\" }\n    }\n  },\n  \"argument_depth\": {\n    \"problems\": \"...\",\n    \"improvements\": {\n      \"band6\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band7\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band8\": { \"direction\": \"...\", \"examples\": \"...\" }\n    }\n  },\n  \"language_complexity\": {\n    \"problems\": \"...\",\n    \"improvements\": {\n      \"band6\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band7\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band8\": { \"direction\": \"...\", \"examples\": \"...\" }\n    }\n  },\n  \"coherence_logic\": {\n    \"problems\": \"...\",\n    \"improvements\": {\n      \"band6\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band7\": { \"direction\": \"...\", \"examples\": \"...\" },\n      \"band8\": { \"direction\": \"...\", \"examples\": \"...\" }\n    }\n  }\n}\n3- 每个维度的 \"problems\" 字段写明学生当前回答的不足；\n4- 每个维度的 \"improvements\" 下，分别说明 Band 6/7/8 的改进方向，并各提供1–2句英文示例句；\n5- 禁止输出除 JSON 以外的任何内容（不能有说明文字、Markdown 或代码块符号）。\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        1584,
+        1200
+      ],
+      "id": "e67a832d-d51e-4670-8656-9030d4685ae2",
+      "name": "Part 3 Answer Analyzer"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        896,
+        1360
+      ],
+      "id": "8c50f00c-4e8a-4f0b-ab26-845f762a49a2",
+      "name": "DeepSeek Chat Model7",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "p6DB6HAUv2VP5Jy6",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        1248,
+        1376
+      ],
+      "id": "458682a4-9987-4477-bd7d-53dc6b5209f4",
+      "name": "DeepSeek Chat Model8",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "p6DB6HAUv2VP5Jy6",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        1584,
+        1376
+      ],
+      "id": "767e348f-5edb-4dbb-a7d8-879d5db58f70",
+      "name": "DeepSeek Chat Model9",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "p6DB6HAUv2VP5Jy6",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=你是一名IELTS口语考官。根据用户请求{{$json.body.text}}，生成一道真实的IELTS口语题目。\n\n输出要求：\n1- 必须输出一个合法的 JSON 对象。\n2- JSON 对象结构如下：\n{\n  \"question\": \"IELTS 口语题目文本\"\n}\n3- 题目文本必须为字符串，直接输出题目内容。\n4- 禁止输出任何额外内容（如解释、前缀、后缀、引号、Markdown 格式）。\n",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        224,
+        336
+      ],
+      "id": "39a203f4-47da-4d9e-9b00-8e31252d0dcd",
+      "name": "Question Generator"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 遍历每个输入 item\nreturn $input.all().map(item => {\n  // 模型的输出在 item.json.text\n  const raw = item.json.text;\n\n  let parsed;\n  try {\n    // 解析双重字符串\n    parsed = JSON.parse(raw);\n  } catch (e) {\n    // 如果出错就兜底，直接返回原始内容\n    parsed = { question: raw };\n  }\n\n  return {\n    json: parsed\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        336
+      ],
+      "id": "94167a67-24fb-441e-9f09-231d36a305e1",
+      "name": "Code",
+      "notes": "{ \"text\": \"{\\\"question\\\": \\\"Do you prefer to spend time with your family or with your friends?\\\"}\" }\n\n{ \"question\": \"Do you prefer to spend time with your family or with your friends?\" }\n"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  // Dispatcher 的返回整体在 output 里，是字符串\n  const raw = item.json.output || \"{}\";\n  let parsed;\n\n  try {\n    parsed = JSON.parse(raw);   // 解析出 { part, question, analysis }\n  } catch (e) {\n    parsed = { error: \"Invalid JSON\", raw };\n  }\n\n  // 再从解析后的对象里取字段\n  let part = parsed.part || \"\";\n  let question = parsed.question || \"\";\n  let analysis = parsed.analysis || {};\n\n  // analysis 可能还是字符串，再 parse 一次\n  if (typeof analysis === \"string\") {\n    try {\n      analysis = JSON.parse(analysis);\n    } catch (e) {\n      analysis = { error: \"Invalid analysis JSON\", raw: analysis };\n    }\n  }\n\n  return {\n    json: {\n      part,\n      question,\n      analysis\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        336
+      ],
+      "id": "39d03cdc-76cd-4165-bb01-139943c1e166",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  // Dispatcher 的返回整体在 output 里，是字符串\n  const raw = item.json.output || \"{}\";\n  let parsed;\n\n  try {\n    parsed = JSON.parse(raw);   // 解析出 { part, answer, analysis }\n  } catch (e) {\n    parsed = { error: \"Invalid JSON\", raw };\n  }\n\n  // 再从解析后的对象里取字段\n  let part = parsed.part || \"\";\n  let answer = parsed.answer || \"\";\n  let analysis = parsed.analysis || {};\n\n  // analysis 可能还是字符串，再 parse 一次\n  if (typeof analysis === \"string\") {\n    try {\n      analysis = JSON.parse(analysis);\n    } catch (e) {\n      analysis = { error: \"Invalid analysis JSON\", raw: analysis };\n    }\n  }\n\n  return {\n    json: {\n      part,\n      answer,\n      analysis\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        928,
+        976
+      ],
+      "id": "51026f9d-0149-4362-98ba-3e14fa498d9e",
+      "name": "Code2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Question Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Question Dispatcher",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Part 1 Question Analyzer": {
+      "ai_tool": [
+        [
+          {
+            "node": "Question Dispatcher",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Part 2 Question Analyzer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Part 3 Question Analyzer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Part 2 Question Analyzer": {
+      "ai_tool": [
+        [
+          {
+            "node": "Question Dispatcher",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Part 3 Question Analyzer": {
+      "ai_tool": [
+        [
+          {
+            "node": "Question Dispatcher",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Question Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Part 1 Question Analyzer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Answer Dispatcher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Question Dispatcher": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Answer Dispatcher",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer Dispatcher": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Part 1 Answer Analyzer": {
+      "ai_tool": [
+        [
+          {
+            "node": "Answer Dispatcher",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Part 2 Answer Analyzer": {
+      "ai_tool": [
+        [
+          {
+            "node": "Answer Dispatcher",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Part 3 Answer Analyzer": {
+      "ai_tool": [
+        [
+          {
+            "node": "Answer Dispatcher",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model7": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Part 1 Answer Analyzer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model8": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Part 2 Answer Analyzer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model9": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Part 3 Answer Analyzer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Question Generator": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Question Dispatcher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "eb4b824c-4403-4fde-a41f-5d48591755d2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4c844779e57f062ed2d65cae41537d8794946978b58b8ba423f134ec33dbef0d"
+  },
+  "id": "IommRbwgj1WfczOD",
+  "tags": []
+}
