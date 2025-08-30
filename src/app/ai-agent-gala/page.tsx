@@ -5,7 +5,6 @@ import Sidebar from './components/Sidebar'
 import Overview from './components/Overview'
 import WebhookTester from './components/WebhookTester'
 import IELTSSpeaking from './components/IELTSSpeaking'
-import AICardStudio from './components/AICardStudio'
 import JD2CV2 from './components/JD2CV2'
 import ParagrapheMagique from './components/ParagrapheMagique'
 import NewNavbar from '@/components/NewNavbar'
@@ -141,7 +140,16 @@ export default function AIAgentGalaPage() {
         
         {activeTab === 'option5' && (
           <div>
-            <AICardStudio />
+            <div className="p-8 text-center">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">AI Card Studio</h2>
+              <p className="text-gray-600">This feature has been moved to its own dedicated page.</p>
+              <a 
+                href="/ai-card-studio" 
+                className="inline-block mt-4 px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+              >
+                Visit AI Card Studio
+              </a>
+            </div>
           </div>
         )}
       </div>

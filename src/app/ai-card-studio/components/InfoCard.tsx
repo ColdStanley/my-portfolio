@@ -85,7 +85,7 @@ export default function InfoCard({
       </div>
 
       {/* Card Settings Modal - Screen Centered via Portal */}
-      <Modal isOpen={showSettingsTooltip} onClose={handleCloseSettingsTooltip}>
+      <Modal isOpen={showSettingsTooltip} onClose={handleCloseSettingsTooltip} className="w-full max-w-4xl mx-4">
         <SettingsModal
           isVisible={settingsTooltipVisible}
           title="Info Card Settings"

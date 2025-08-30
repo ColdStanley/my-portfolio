@@ -97,6 +97,15 @@ export default function AIToolCard({
       order: currentCardIndex
     }))
 
+  // Get Info Cards from current column for reference dropdown
+  const infoCards = currentColumn.cards
+    .filter(card => card.type === 'info')
+    .map(card => ({
+      id: card.id,
+      title: card.title || 'Unnamed Info',
+      description: card.description || ''
+    }))
+
   // Handle textarea input changes
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newText = e.target.value
@@ -124,6 +133,39 @@ export default function AIToolCard({
       const textBefore = promptText.substring(0, cursorPosition)
       const textAfter = promptText.substring(textarea.selectionEnd)
       const referenceText = `[REF: ${selectedButtonName}]`
+      
+      const newText = textBefore + referenceText + textAfter
+      setPromptText(newText)
+      
+      updateColumns(prev => prev.map(col => 
+        col.id === columnId
+          ? {
+              ...col,
+              cards: col.cards.map(card =>
+                card.id === cardId
+                  ? { ...card, promptText: newText }
+                  : card
+              )
+            }
+          : col
+      ))
+      
+      setTimeout(() => {
+        const newCursorPosition = cursorPosition + referenceText.length
+        textarea.setSelectionRange(newCursorPosition, newCursorPosition)
+        textarea.focus()
+      }, 0)
+    }
+  }
+
+  // Insert Info Card reference at cursor position
+  const insertInfoReference = (selectedTitle: string) => {
+    if (textareaRef.current) {
+      const textarea = textareaRef.current
+      const cursorPosition = textarea.selectionStart
+      const textBefore = promptText.substring(0, cursorPosition)
+      const textAfter = promptText.substring(textarea.selectionEnd)
+      const referenceText = `[INFO: ${selectedTitle}]`
       
       const newText = textBefore + referenceText + textAfter
       setPromptText(newText)
@@ -266,12 +308,12 @@ export default function AIToolCard({
         </svg>
       </button>
 
-      {/* Generate Button */}
+      {/* Generate Button - Small and refined */}
       <button
         ref={generateButtonRef}
         onClick={() => handleGenerateClick()}
         disabled={isGenerating}
-        className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 mb-4"
+        className="px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-md font-medium transition-all duration-200 flex items-center gap-1.5 mb-4"
       >
         {isGenerating ? (
           <>
@@ -286,9 +328,9 @@ export default function AIToolCard({
         )}
       </button>
 
-      {/* Generated Content */}
-      {generatedContent && (
-        <div className="mt-4 p-4 bg-gray-50/80 backdrop-blur-sm rounded-lg border border-gray-200">
+      {/* AI Response Area - Always visible with gray background */}
+      <div className="p-4 bg-gray-50/80 backdrop-blur-sm rounded-lg border border-gray-200 min-h-24">
+        {generatedContent ? (
           <div className="prose prose-sm max-w-none text-gray-700">
             <ReactMarkdown
               components={{
@@ -309,39 +351,49 @@ export default function AIToolCard({
               {generatedContent}
             </ReactMarkdown>
           </div>
-        </div>
-      )}
+        ) : null
+        }
+      </div>
 
       {/* Options Tooltip */}
       {showOptionsTooltip && (options || []).length > 0 && generateButtonRef.current && typeof document !== 'undefined' && createPortal(
-        <div 
-          className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-3"
-          style={{
-            top: generateButtonRef.current.getBoundingClientRect().bottom + 8,
-            left: generateButtonRef.current.getBoundingClientRect().left
-          }}
-        >
-          <div className="absolute -top-1 left-4 w-2 h-2 bg-white border-l border-t border-gray-200 transform rotate-45"></div>
-          <div className="flex flex-col gap-2 min-w-32">
-            {(options || []).map((optionValue, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  handleGenerateClick(optionValue)
-                  setShowOptionsTooltip(false)
-                }}
-                className="px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
-              >
-                {optionValue}
-              </button>
-            ))}
+        <>
+          {/* Backdrop - click to close */}
+          <div 
+            className="fixed inset-0 z-40"
+            onClick={() => setShowOptionsTooltip(false)}
+          />
+          
+          {/* Tooltip */}
+          <div 
+            className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-3"
+            style={{
+              top: generateButtonRef.current.getBoundingClientRect().bottom + 8,
+              left: generateButtonRef.current.getBoundingClientRect().left
+            }}
+          >
+            <div className="absolute -top-1 left-4 w-2 h-2 bg-white border-l border-t border-gray-200 transform rotate-45"></div>
+            <div className="flex flex-col gap-2 min-w-32">
+              {(options || []).map((optionValue, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    handleGenerateClick(optionValue)
+                    setShowOptionsTooltip(false)
+                  }}
+                  className="px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
+                >
+                  {optionValue}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>,
+        </>,
         document.body
       )}
 
       {/* Settings Modal */}
-      <Modal isOpen={showPromptTooltip} onClose={handleClosePromptTooltip}>
+      <Modal isOpen={showPromptTooltip} onClose={handleClosePromptTooltip} className="w-full max-w-4xl mx-4">
         <SettingsModal
           isVisible={promptTooltipVisible}
           title="AI Tool Card Settings"
@@ -428,27 +480,56 @@ export default function AIToolCard({
             </div>
           </div>
 
-          {/* Insert Reference */}
-          {previousCards.length > 0 && (
+          {/* Insert Reference - Two Column Layout */}
+          {(previousCards.length > 0 || infoCards.length > 0) && (
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Insert Reference:</label>
-              <div className="flex flex-wrap gap-2">
-                {previousCards.map((card) => (
-                  <button
-                    key={card.id}
-                    onClick={() => insertReference(card.buttonName)}
-                    className="px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors"
-                  >
-                    {card.buttonName}
-                  </button>
-                ))}
+              <div className="flex gap-4">
+                {/* Left 50% - AI Cards */}
+                <div className="flex-1">
+                  {previousCards.length > 0 && (
+                    <>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Insert Reference from AI Cards</label>
+                      <div className="flex flex-wrap gap-2">
+                        {previousCards.map((card) => (
+                          <button
+                            key={card.id}
+                            onClick={() => insertReference(card.buttonName)}
+                            className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                          >
+                            {card.buttonName}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+                
+                {/* Right 50% - Info Cards */}
+                <div className="flex-1">
+                  {infoCards.length > 0 && (
+                    <>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Insert Reference from Info Cards</label>
+                      <div className="flex flex-wrap gap-2">
+                        {infoCards.map((card) => (
+                          <button
+                            key={card.id}
+                            onClick={() => insertInfoReference(card.title)}
+                            className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                          >
+                            {card.title}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           )}
 
           {/* Options Management */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Options (use {{option}} in prompt):</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Options (use {'{{option}}'} in prompt):</label>
             <div className="space-y-2">
               {(options || []).map((optionValue, index) => (
                 <div key={index} className="flex gap-2">

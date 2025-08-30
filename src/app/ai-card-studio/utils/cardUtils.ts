@@ -77,7 +77,7 @@ export const isTitleExists = (title: string, columns: Column[], excludeCardId?: 
 export const resolveReferences = (promptText: string, columns: Column[]): string => {
   let resolvedPrompt = promptText
   
-  // Find all references in format [REF: ButtonName]
+  // Find all AI Card references in format [REF: ButtonName]
   const referenceMatches = promptText.match(/\[REF:\s*([^\]]+)\]/g)
   
   if (referenceMatches) {
@@ -92,6 +92,25 @@ export const resolveReferences = (promptText: string, columns: Column[]): string
       
       if (referencedCard && referencedCard.generatedContent) {
         resolvedPrompt = resolvedPrompt.replace(match, referencedCard.generatedContent)
+      }
+    }
+  }
+  
+  // Find all Info Card references in format [INFO: Title]
+  const infoMatches = promptText.match(/\[INFO:\s*([^\]]+)\]/g)
+  
+  if (infoMatches) {
+    for (const match of infoMatches) {
+      // Extract title from [INFO: Title]
+      const title = match.replace(/\[INFO:\s*/, '').replace(/\]$/, '').trim()
+      
+      // Find the corresponding Info Card
+      const infoCard = columns
+        .flatMap(col => col.cards)
+        .find(card => card.type === 'info' && card.title === title)
+      
+      if (infoCard && infoCard.description) {
+        resolvedPrompt = resolvedPrompt.replace(match, infoCard.description)
       }
     }
   }

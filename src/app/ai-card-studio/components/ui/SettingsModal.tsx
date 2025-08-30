@@ -16,7 +16,7 @@ export default function SettingsModal({
   children 
 }: SettingsModalProps) {
   return (
-    <div className={`bg-white rounded-xl shadow-2xl border border-gray-200 p-6 max-w-md w-full mx-4 transform transition-all duration-300 ease-out ${
+    <div className={`bg-white rounded-xl shadow-2xl border border-gray-200 p-6 w-full transform transition-all duration-300 ease-out ${
       isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
     }`}>
       {/* Header */}
@@ -42,7 +42,7 @@ export default function SettingsModal({
         <div className="flex justify-end">
           <button
             onClick={onDelete}
-            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
           >
             Delete Card
           </button>

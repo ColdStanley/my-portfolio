@@ -1,14 +1,12 @@
 'use client'
 
 import AICardStudio from './components/AICardStudio'
-import NewNavbar from '@/components/NewNavbar'
-import FooterSection from '@/components/FooterSection'
 import PageTransition from '@/components/PageTransition'
 
 export default function AICardStudioPage() {
   return (
     <>
-      {/* Hide global navbar/footer */}
+      {/* Hide global navbar/footer to avoid auth conflicts */}
       <style jsx global>{`
         nav[role="banner"], 
         footer[role="contentinfo"],
@@ -18,14 +16,10 @@ export default function AICardStudioPage() {
         }
       `}</style>
       
-      <NewNavbar />
-      
       <PageTransition>
-        <div className="pt-16 min-h-screen">
+        <div className="min-h-screen">
           <AICardStudio />
         </div>
-        
-        <FooterSection />
       </PageTransition>
     </>
   )
