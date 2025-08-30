@@ -2,6 +2,7 @@
 
 import { useState, useRef, createContext, useContext, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import ReactMarkdown from 'react-markdown'
 
 // Card state management
 interface CardInfo {
@@ -27,6 +28,7 @@ interface ColumnCard {
   buttonName?: string
   promptText?: string
   generatedContent?: string
+  options?: string[]  // Optional array of option values
   deleting?: boolean
   justCreated?: boolean
 }
@@ -194,6 +196,22 @@ export default function AICardStudio() {
     return generateUniqueButtonName(newName)
   }
 
+  // Handle info card title change with uniqueness
+  const handleTitleChange = (cardId: string, newTitle: string, currentTitle: string): string => {
+    if (!newTitle.trim()) return currentTitle
+    
+    // If title hasn't changed, return as-is
+    if (newTitle === currentTitle) return newTitle
+    
+    // If title is unique, use it
+    if (!isTitleExists(newTitle, cardId)) {
+      return newTitle
+    }
+    
+    // If duplicate, generate unique version
+    return generateUniqueTitle(newTitle)
+  }
+
   // Helper function for escaping regex
   const escapeRegExp = (string: string) => {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -234,7 +252,7 @@ export default function AICardStudio() {
       ? {
           id: `info-${timestamp}-${randomId}`,
           type: 'info',
-          title: 'New Card',
+          title: generateUniqueTitle('New Card'),
           description: 'Enter description...'
         }
       : {
@@ -274,7 +292,7 @@ export default function AICardStudio() {
       cards: [{
         id: `info-${timestamp}-${randomId}`,
         type: 'info',
-        title: 'New Card',
+        title: generateUniqueTitle('New Card'),
         description: 'Enter description...',
         justCreated: true
       }]
@@ -363,6 +381,7 @@ export default function AICardStudio() {
                       isTopCard={cardIndex === 0}
                       onDelete={deleteCard}
                       autoOpenSettings={card.justCreated}
+                      onTitleChange={handleTitleChange}
                       updateColumns={setColumns}
                     />
                   ) : (
@@ -372,6 +391,7 @@ export default function AICardStudio() {
                       columnId={column.id}
                       buttonName={card.buttonName || 'Generate Content'}
                       promptText={card.promptText || ''}
+                      options={card.options}
                       autoOpenSettings={card.justCreated}
                       onButtonNameChange={handleButtonNameChange}
                       updateColumns={setColumns}
@@ -541,6 +561,7 @@ function InfoCard({
   isTopCard,
   onDelete,
   autoOpenSettings = false,
+  onTitleChange,
   updateColumns
 }: { 
   title: string, 
@@ -550,6 +571,7 @@ function InfoCard({
   isTopCard: boolean,
   onDelete: (columnId: string, cardId: string, isTopCard: boolean) => void,
   autoOpenSettings?: boolean,
+  onTitleChange: (cardId: string, newTitle: string, currentTitle: string) => string,
   updateColumns: (updater: (prev: Column[]) => Column[]) => void
 }) {
   const [showSettingsTooltip, setShowSettingsTooltip] = useState(false)
@@ -625,7 +647,7 @@ function InfoCard({
             }`}>
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-800">Card Settings</h3>
+                <h3 className="text-lg font-medium text-gray-800">Info Card Settings</h3>
                 <button
                   onClick={handleCloseSettingsTooltip}
                   className="p-1 hover:bg-gray-100 rounded transition-colors"
@@ -640,25 +662,34 @@ function InfoCard({
               <div>
                 {/* Card Name */}
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Card Name:</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Name:</label>
                   <input
                     type="text"
                     value={title}
-                    onChange={(e) => {
-                      setTitle(e.target.value)
-                      // Update columns state immediately for persistence
+                    onBlur={(e) => {
+                      const newTitle = e.target.value
+                      const uniqueTitle = onTitleChange(cardId, newTitle, title)
+                      
+                      if (uniqueTitle !== newTitle) {
+                        setTitle(uniqueTitle)
+                      }
+                      
+                      // Update columns state with unique title
                       updateColumns(prev => prev.map(col => 
                         col.id === columnId
                           ? {
                               ...col,
                               cards: col.cards.map(card =>
                                 card.id === cardId
-                                  ? { ...card, title: e.target.value }
+                                  ? { ...card, title: uniqueTitle }
                                   : card
                               )
                             }
                           : col
                       ))
+                    }}
+                    onChange={(e) => {
+                      setTitle(e.target.value)
                     }}
                     placeholder="Enter card name..."
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -720,6 +751,7 @@ function AIToolCard({
   columnId,
   buttonName: initialButtonName,
   promptText: initialPromptText,
+  options: initialOptions,
   onDelete,
   autoOpenSettings = false,
   onButtonNameChange,
@@ -731,6 +763,7 @@ function AIToolCard({
   columnId: string,
   buttonName: string,
   promptText: string,
+  options?: string[],
   onDelete: (cardId: string) => void,
   autoOpenSettings?: boolean,
   onButtonNameChange: (cardId: string, newName: string, currentName: string) => string,
@@ -740,10 +773,17 @@ function AIToolCard({
   const cardContext = useContext(CardContext)
   const [showPromptTooltip, setShowPromptTooltip] = useState(false)
   const [promptTooltipVisible, setPromptTooltipVisible] = useState(false)
+  const [showOptionsTooltip, setShowOptionsTooltip] = useState(false)
+  const generateButtonRef = useRef<HTMLButtonElement>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedContent, setGeneratedContent] = useState('')
   const [buttonName, setButtonName] = useState(initialButtonName)
   const [promptText, setPromptText] = useState(initialPromptText)
+  const [options, setOptions] = useState<string[]>(() => {
+    // Ensure options is never undefined
+    return Array.isArray(initialOptions) ? initialOptions : []
+  })
+  const [isFocused, setIsFocused] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Initialize card in context (only once)
@@ -789,24 +829,59 @@ function AIToolCard({
       order: currentCardIndex  // Not used anymore, but keeping for compatibility
     }))
 
+  // Render prompt text with highlighted references and option placeholders
+
+  // Handle textarea input changes
+  const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newText = e.target.value
+    setPromptText(newText)
+    
+    // Update columns state for persistence
+    updateColumns(prev => prev.map(col => 
+      col.id === columnId
+        ? {
+            ...col,
+            cards: col.cards.map(card =>
+              card.id === cardId
+                ? { ...card, promptText: newText }
+                : card
+            )
+          }
+        : col
+    ))
+  }
+
   // Insert reference at cursor position
   const insertReference = (selectedButtonName: string) => {
     if (textareaRef.current) {
       const textarea = textareaRef.current
       const cursorPosition = textarea.selectionStart
       const textBefore = promptText.substring(0, cursorPosition)
-      const textAfter = promptText.substring(cursorPosition)
-      const newText = textBefore + `Output of ${selectedButtonName}` + textAfter
+      const textAfter = promptText.substring(textarea.selectionEnd)
+      const referenceText = `Output of ${selectedButtonName}`
       
+      const newText = textBefore + referenceText + textAfter
       setPromptText(newText)
       
-      // Reset cursor position after state update
+      // Update columns state
+      updateColumns(prev => prev.map(col => 
+        col.id === columnId
+          ? {
+              ...col,
+              cards: col.cards.map(card =>
+                card.id === cardId
+                  ? { ...card, promptText: newText }
+                  : card
+              )
+            }
+          : col
+      ))
+      
+      // Set cursor position after inserted text
       setTimeout(() => {
-        if (textareaRef.current) {
-          const newCursorPosition = cursorPosition + `Output of ${selectedButtonName}`.length
-          textareaRef.current.setSelectionRange(newCursorPosition, newCursorPosition)
-          textareaRef.current.focus()
-        }
+        const newCursorPosition = cursorPosition + referenceText.length
+        textarea.setSelectionRange(newCursorPosition, newCursorPosition)
+        textarea.focus()
       }, 0)
     }
   }
@@ -844,15 +919,26 @@ function AIToolCard({
     return resolvedPrompt
   }
 
-  const handleGenerateClick = async () => {
+  const handleGenerateClick = async (selectedOption?: string) => {
     if (!promptText.trim()) return
+    
+    // If has options but no option selected, show tooltip
+    if (options.length > 0 && !selectedOption) {
+      setShowOptionsTooltip(true)
+      return
+    }
     
     setIsGenerating(true)
     setGeneratedContent('')
     
     try {
-      // Resolve references in prompt
-      const resolvedPrompt = resolveReferences(promptText)
+      // Resolve references and options in prompt
+      let resolvedPrompt = resolveReferences(promptText)
+      
+      // Replace option placeholder with selected value
+      if (selectedOption && options.length > 0) {
+        resolvedPrompt = resolvedPrompt.replace(/\{\{option\}\}/g, selectedOption)
+      }
       
       // Call AI API with streaming
       const response = await fetch('/api/ai-agent/generate', {
@@ -982,7 +1068,8 @@ function AIToolCard({
       {/* Generate Button */}
       <div className="relative">
         <button
-          onClick={handleGenerateClick}
+          ref={generateButtonRef}
+          onClick={() => handleGenerateClick()}
           disabled={isGenerating || !promptText.trim()}
           className={`px-3 py-1.5 rounded-md font-medium text-sm transition-all duration-200 flex items-center gap-1.5 ${
             isGenerating || !promptText.trim()
@@ -1014,7 +1101,35 @@ function AIToolCard({
               <span className="text-xs">AI is thinking...</span>
             </div>
           )}
-          {generatedContent || (!isGenerating && 'Click generate to create content')}
+          
+          {generatedContent ? (
+            <div className="prose prose-sm max-w-none">
+              <ReactMarkdown
+                components={{
+                  h1: ({node, ...props}) => <h1 className="text-lg font-bold text-gray-800 mb-3 mt-4 first:mt-0" {...props} />,
+                  h2: ({node, ...props}) => <h2 className="text-base font-bold text-gray-800 mb-2 mt-3 first:mt-0" {...props} />,
+                  h3: ({node, ...props}) => <h3 className="text-sm font-bold text-gray-800 mb-2 mt-3 first:mt-0" {...props} />,
+                  p: ({node, ...props}) => <p className="mb-3 leading-relaxed" {...props} />,
+                  ul: ({node, ...props}) => <ul className="mb-3 ml-4 space-y-1" {...props} />,
+                  ol: ({node, ...props}) => <ol className="mb-3 ml-4 space-y-1" {...props} />,
+                  li: ({node, ...props}) => <li className="list-disc marker:text-purple-500" {...props} />,
+                  strong: ({node, ...props}) => <strong className="font-semibold text-gray-800" {...props} />,
+                  em: ({node, ...props}) => <em className="italic text-gray-700" {...props} />,
+                  code: ({node, inline, ...props}) => 
+                    inline ? 
+                      <code className="bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded text-xs font-mono" {...props} /> :
+                      <code className="block bg-gray-100 p-3 rounded-lg text-xs font-mono overflow-x-auto" {...props} />,
+                  blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-300 pl-4 italic text-gray-600 my-3" {...props} />,
+                  hr: ({node, ...props}) => <hr className="border-gray-300 my-4" {...props} />
+                }}
+              >
+                {generatedContent}
+              </ReactMarkdown>
+            </div>
+          ) : (
+            !isGenerating && <span className="text-gray-500">Click generate to create content</span>
+          )}
+          
           {isGenerating && generatedContent && (
             <div className="absolute top-2 right-2">
               <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
@@ -1039,7 +1154,7 @@ function AIToolCard({
             }`}>
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-800">Card Settings</h3>
+                <h3 className="text-lg font-medium text-gray-800">AI Tool Card Settings</h3>
                 <button
                   onClick={handleClosePromptTooltip}
                   className="p-1 hover:bg-gray-100 rounded transition-colors"
@@ -1054,7 +1169,7 @@ function AIToolCard({
               <div>
                 {/* Card Name */}
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Card Name:</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Name:</label>
                   <input
                     type="text"
                     value={buttonName}
@@ -1085,30 +1200,159 @@ function AIToolCard({
                 {/* Prompt */}
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Prompt:</label>
-                  <textarea
-                    ref={textareaRef}
-                    value={promptText}
-                    onChange={(e) => {
-                      setPromptText(e.target.value)
-                      // Update columns state immediately for persistence
-                      updateColumns(prev => prev.map(col => 
-                        col.id === columnId
-                          ? {
-                              ...col,
-                              cards: col.cards.map(card =>
-                                card.id === cardId
-                                  ? { ...card, promptText: e.target.value }
-                                  : card
-                              )
-                            }
-                          : col
-                      ))
-                    }}
-                    placeholder="Enter your AI prompt here..."
-                    className="w-full h-32 p-3 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-                  />
+                  <div className="relative">
+                    {/* Hidden textarea for compatibility */}
+                    <textarea
+                      ref={textareaRef}
+                      value={promptText}
+                      onChange={() => {}}
+                      className="sr-only"
+                      tabIndex={-1}
+                    />
+                    
+                    {/* Plain textarea for editing */}
+                    <textarea
+                      ref={textareaRef}
+                      value={promptText}
+                      onChange={handlePromptChange}
+                      placeholder="Enter your AI prompt here..."
+                      className="w-full min-h-32 p-3 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                      style={{
+                        minHeight: '128px',
+                        maxHeight: '256px',
+                        lineHeight: '1.5'
+                      }}
+                    />
+                  </div>
                 </div>
                 
+                {/* Options Management */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Options (optional):</label>
+                  <div className="space-y-2">
+                    {options.map((option, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={option}
+                          onChange={(e) => {
+                            const newOptions = [...options]
+                            newOptions[index] = e.target.value
+                            setOptions(newOptions)
+                            // Update columns state immediately
+                            updateColumns(prev => prev.map(col => 
+                              col.id === columnId
+                                ? {
+                                    ...col,
+                                    cards: col.cards.map(card =>
+                                      card.id === cardId
+                                        ? { ...card, options: newOptions }
+                                        : card
+                                    )
+                                  }
+                                : col
+                            ))
+                          }}
+                          className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          placeholder="Enter option value"
+                        />
+                        <button
+                          onClick={() => {
+                            const newOptions = options.filter((_, i) => i !== index)
+                            setOptions(newOptions)
+                            // Update columns state and handle placeholder removal
+                            updateColumns(prev => prev.map(col => 
+                              col.id === columnId
+                                ? {
+                                    ...col,
+                                    cards: col.cards.map(card =>
+                                      card.id === cardId
+                                        ? { 
+                                            ...card, 
+                                            options: newOptions,
+                                            // Remove placeholder if no options left
+                                            promptText: newOptions.length === 0 
+                                              ? card.promptText?.replace(/\{\{option\}\}/g, '')
+                                              : card.promptText
+                                          }
+                                        : card
+                                    )
+                                  }
+                                : col
+                            ))
+                            // Also update local promptText state
+                            if (newOptions.length === 0) {
+                              setPromptText(prev => prev.replace(/\{\{option\}\}/g, ''))
+                            }
+                          }}
+                          className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-all duration-150"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6m0 12L6 6" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                    
+                    {/* Add Option Button */}
+                    <button
+                      onClick={() => {
+                        const newOptions = [...options, '']
+                        setOptions(newOptions)
+                        
+                        // Auto-insert placeholder if first option and not present
+                        if (options.length === 0 && !promptText.includes('{{option}}')) {
+                          const newPromptText = promptText + (promptText ? ' ' : '') + '{{option}}'
+                          setPromptText(newPromptText)
+                          
+                          // Update columns state
+                          updateColumns(prev => prev.map(col => 
+                            col.id === columnId
+                              ? {
+                                  ...col,
+                                  cards: col.cards.map(card =>
+                                    card.id === cardId
+                                      ? { ...card, options: newOptions, promptText: newPromptText }
+                                      : card
+                                  )
+                                }
+                              : col
+                          ))
+                          
+                          // No need to re-render highlights in textarea mode
+                        } else {
+                          // Just update options
+                          updateColumns(prev => prev.map(col => 
+                            col.id === columnId
+                              ? {
+                                  ...col,
+                                  cards: col.cards.map(card =>
+                                    card.id === cardId
+                                      ? { ...card, options: newOptions }
+                                      : card
+                                  )
+                                }
+                              : col
+                          ))
+                        }
+                      }}
+                      className="w-full px-3 py-2 border-2 border-dashed border-gray-300 hover:border-purple-300 text-gray-500 hover:text-purple-600 rounded-lg transition-all duration-150 text-sm flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      Add Option
+                    </button>
+                  </div>
+                  
+                  {/* Help text */}
+                  {options.length > 0 && (
+                    <div className="mt-2 text-xs text-gray-500">
+                      Use <code className="bg-gray-100 px-1 rounded">{'{{option}}'}</code> in your prompt as a placeholder
+                    </div>
+                  )}
+                </div>
+
                 {/* Bottom controls */}
                 <div className="flex items-center justify-between">
                   {/* Left: Reference dropdown */}
@@ -1158,6 +1402,47 @@ function AIToolCard({
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
+
+      {/* Options Selection Tooltip - Portal */}
+      {showOptionsTooltip && options.length > 0 && typeof document !== 'undefined' && createPortal(
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 z-40"
+            onClick={() => setShowOptionsTooltip(false)}
+          />
+          
+          {/* Tooltip positioned below Generate button */}
+          <div 
+            className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-3 transform transition-all duration-200 ease-out opacity-100 scale-100"
+            style={{
+              top: generateButtonRef.current ? generateButtonRef.current.getBoundingClientRect().bottom + 8 : '50%',
+              left: generateButtonRef.current ? generateButtonRef.current.getBoundingClientRect().left : '50%',
+              transform: generateButtonRef.current ? 'none' : 'translate(-50%, -50%)'
+            }}
+          >
+            {/* Arrow pointing up to button */}
+            <div className="absolute -top-1 left-4 w-2 h-2 bg-white border-l border-t border-gray-200 transform rotate-45"></div>
+            
+            {/* Content */}
+            <div className="flex flex-col gap-2 min-w-32">
+              {options.map((option, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    setShowOptionsTooltip(false)
+                    handleGenerateClick(option)
+                  }}
+                  className="px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
+                >
+                  {option}
+                </button>
+              ))}
             </div>
           </div>
         </>,
