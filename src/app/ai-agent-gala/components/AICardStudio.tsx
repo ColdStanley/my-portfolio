@@ -29,6 +29,7 @@ interface ColumnCard {
   promptText?: string
   generatedContent?: string
   options?: string[]  // Optional array of option values
+  aiModel?: 'deepseek' | 'openai'  // AI model selection for aitool cards
   deleting?: boolean
   justCreated?: boolean
 }
@@ -196,6 +197,30 @@ export default function AICardStudio() {
     return generateUniqueButtonName(newName)
   }
 
+  // Check if Info Card title exists (excluding current card)
+  const isTitleExists = (title: string, excludeCardId?: string): boolean => {
+    return columns.some(col => 
+      col.cards.some(card => 
+        card.type === 'info' && 
+        card.id !== excludeCardId && 
+        card.title === title
+      )
+    )
+  }
+
+  // Generate unique title for Info Cards
+  const generateUniqueTitle = (baseTitle: string): string => {
+    let counter = 2
+    let uniqueTitle = `${baseTitle} (${counter})`
+    
+    while (isTitleExists(uniqueTitle)) {
+      counter++
+      uniqueTitle = `${baseTitle} (${counter})`
+    }
+    
+    return uniqueTitle
+  }
+
   // Handle info card title change with uniqueness
   const handleTitleChange = (cardId: string, newTitle: string, currentTitle: string): string => {
     if (!newTitle.trim()) return currentTitle
@@ -260,7 +285,8 @@ export default function AICardStudio() {
           type: 'aitool',
           buttonName: generateUniqueButtonName('Generate Content'),
           promptText: '',
-          generatedContent: ''
+          generatedContent: '',
+          aiModel: 'deepseek'  // Default to DeepSeek
         }
 
     setColumns(prev => prev.map(col =>
@@ -392,6 +418,7 @@ export default function AICardStudio() {
                       buttonName={card.buttonName || 'Generate Content'}
                       promptText={card.promptText || ''}
                       options={card.options}
+                      aiModel={card.aiModel || 'deepseek'}
                       autoOpenSettings={card.justCreated}
                       onButtonNameChange={handleButtonNameChange}
                       updateColumns={setColumns}
@@ -752,6 +779,7 @@ function AIToolCard({
   buttonName: initialButtonName,
   promptText: initialPromptText,
   options: initialOptions,
+  aiModel: initialAiModel = 'deepseek',
   onDelete,
   autoOpenSettings = false,
   onButtonNameChange,
@@ -764,6 +792,7 @@ function AIToolCard({
   buttonName: string,
   promptText: string,
   options?: string[],
+  aiModel?: 'deepseek' | 'openai',
   onDelete: (cardId: string) => void,
   autoOpenSettings?: boolean,
   onButtonNameChange: (cardId: string, newName: string, currentName: string) => string,
@@ -779,6 +808,7 @@ function AIToolCard({
   const [generatedContent, setGeneratedContent] = useState('')
   const [buttonName, setButtonName] = useState(initialButtonName)
   const [promptText, setPromptText] = useState(initialPromptText)
+  const [aiModel, setAiModel] = useState<'deepseek' | 'openai'>(initialAiModel)
   const [options, setOptions] = useState<string[]>(() => {
     // Ensure options is never undefined
     return Array.isArray(initialOptions) ? initialOptions : []
@@ -948,6 +978,7 @@ function AIToolCard({
         },
         body: JSON.stringify({
           prompt: resolvedPrompt,
+          model: aiModel,
           stream: true
         }),
       })
@@ -1199,7 +1230,34 @@ function AIToolCard({
 
                 {/* Prompt */}
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Prompt:</label>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="text-sm font-medium text-gray-700">Prompt:</label>
+                    <select
+                      value={aiModel}
+                      onChange={(e) => {
+                        const newModel = e.target.value as 'deepseek' | 'openai'
+                        setAiModel(newModel)
+                        
+                        // Update columns state with new model selection
+                        updateColumns(prev => prev.map(col => 
+                          col.id === columnId
+                            ? {
+                                ...col,
+                                cards: col.cards.map(card =>
+                                  card.id === cardId
+                                    ? { ...card, aiModel: newModel }
+                                    : card
+                                )
+                              }
+                            : col
+                        ))
+                      }}
+                      className="px-3 py-1 text-sm border border-gray-200 rounded-md text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
+                    >
+                      <option value="deepseek">DeepSeek</option>
+                      <option value="openai">OpenAI</option>
+                    </select>
+                  </div>
                   <div className="relative">
                     {/* Hidden textarea for compatibility */}
                     <textarea
