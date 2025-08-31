@@ -51,6 +51,8 @@ export default function AIToolCard({
   const [showPromptTooltip, setShowPromptTooltip] = useState(false)
   const [promptTooltipVisible, setPromptTooltipVisible] = useState(false)
   const [showOptionsTooltip, setShowOptionsTooltip] = useState(false)
+  const [showOptionsManageTooltip, setShowOptionsManageTooltip] = useState(false)
+  const [optionsManageTooltipVisible, setOptionsManageTooltipVisible] = useState(false)
   const generateButtonRef = useRef<HTMLButtonElement>(null)
   const [isFocused, setIsFocused] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -243,6 +245,11 @@ export default function AIToolCard({
     setTimeout(() => setShowPromptTooltip(false), 250)
   }
 
+  const handleCloseOptionsManageTooltip = () => {
+    setOptionsManageTooltipVisible(false)
+    setTimeout(() => setShowOptionsManageTooltip(false), 250)
+  }
+
   return (
     <div className="bg-gradient-to-br from-white/95 to-purple-50/30 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 border border-white/50 p-4 relative">
       {/* Settings Button */}
@@ -397,11 +404,11 @@ export default function AIToolCard({
             </div>
           </div>
 
-          {/* Insert Reference - Two Column Layout */}
-          {(previousCards.length > 0 || infoCards.length > 0) && (
+          {/* Insert Reference - Three Column Layout */}
+          {(previousCards.length > 0 || infoCards.length > 0 || (options || []).length > 0) && (
             <div className="mb-4">
               <div className="flex gap-4">
-                {/* Left 50% - AI Cards */}
+                {/* Left 1/3 - AI Cards */}
                 <div className="flex-1">
                   {previousCards.length > 0 && (
                     <>
@@ -421,7 +428,7 @@ export default function AIToolCard({
                   )}
                 </div>
                 
-                {/* Right 50% - Info Cards */}
+                {/* Middle 1/3 - Info Cards */}
                 <div className="flex-1">
                   {infoCards.length > 0 && (
                     <>
@@ -440,51 +447,125 @@ export default function AIToolCard({
                     </>
                   )}
                 </div>
+                
+                {/* Right 1/3 - Options */}
+                <div className="flex-1">
+                  {(options || []).length > 0 && (
+                    <>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Options (click Insert Option to add to prompt):
+                        <button
+                          onClick={() => {
+                            setShowOptionsManageTooltip(true)
+                            setTimeout(() => setOptionsManageTooltipVisible(true), 10)
+                          }}
+                          className="inline-block ml-1 p-0.5 text-gray-400 hover:text-gray-600 transition-colors align-middle"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        </button>
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => {
+                            if (textareaRef.current) {
+                              const textarea = textareaRef.current
+                              const cursorPosition = textarea.selectionStart
+                              const textBefore = promptText.substring(0, cursorPosition)
+                              const textAfter = promptText.substring(textarea.selectionEnd)
+                              const optionText = '{{option}}'
+                              
+                              const newText = textBefore + optionText + textAfter
+                              onPromptChange(cardId, newText)
+                              
+                              setTimeout(() => {
+                                const newCursorPosition = cursorPosition + optionText.length
+                                textarea.setSelectionRange(newCursorPosition, newCursorPosition)
+                                textarea.focus()
+                              }, 0)
+                            }
+                          }}
+                          className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                        >
+                          Insert Option
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           )}
 
-          {/* Options Management */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Options (use {'{{option}}'} in prompt):</label>
-            <div className="space-y-2">
-              {(options || []).map((optionValue, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={optionValue}
-                    onChange={(e) => {
-                      const newOptions = [...options]
-                      newOptions[index] = e.target.value
-                      onOptionsChange(cardId, newOptions)
-                    }}
-                    placeholder="Enter option..."
-                    className="flex-1 px-2 py-1 text-sm border border-gray-200 rounded text-gray-700 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                  />
-                  <button
-                    onClick={() => {
-                      const newOptions = options.filter((_, i) => i !== index)
-                      onOptionsChange(cardId, newOptions)
-                    }}
-                    className="px-2 py-1 text-red-600 hover:bg-red-50 rounded transition-colors"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-              <button
-                onClick={() => {
-                  const newOptions = [...options, '']
-                  onOptionsChange(cardId, newOptions)
-                }}
-                className="w-full px-3 py-1 text-sm text-purple-600 border border-purple-200 rounded hover:bg-purple-50 transition-colors"
-              >
-                + Add Option
-              </button>
-            </div>
-          </div>
+
         </SettingsModal>
       </Modal>
+
+      {/* Options Management Tooltip */}
+      {showOptionsManageTooltip && typeof document !== 'undefined' && createPortal(
+        <>
+          <div 
+            className="fixed inset-0 z-40"
+            onClick={handleCloseOptionsManageTooltip}
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+            <div className={`bg-white rounded-lg shadow-xl border border-gray-200 p-4 max-w-md w-full mx-4 pointer-events-auto transform transition-all duration-200 ease-out ${
+              optionsManageTooltipVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+            }`}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-800">Manage Options</h3>
+                <button
+                  onClick={handleCloseOptionsManageTooltip}
+                  className="p-1 hover:bg-gray-100 rounded transition-colors"
+                >
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="space-y-2">
+                {(options || []).map((optionValue, index) => (
+                  <div key={index} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={optionValue}
+                      onChange={(e) => {
+                        const newOptions = [...options]
+                        newOptions[index] = e.target.value
+                        onOptionsChange(cardId, newOptions)
+                      }}
+                      placeholder="Enter option..."
+                      className="flex-1 px-2 py-1 text-sm border border-gray-200 rounded text-gray-700 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    />
+                    <button
+                      onClick={() => {
+                        const newOptions = options.filter((_, i) => i !== index)
+                        onOptionsChange(cardId, newOptions)
+                      }}
+                      className="px-2 py-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => {
+                    const newOptions = [...options, '']
+                    onOptionsChange(cardId, newOptions)
+                  }}
+                  className="w-full px-3 py-1 text-sm text-purple-600 border border-purple-200 rounded hover:bg-purple-50 transition-colors"
+                >
+                  + Add Option
+                </button>
+              </div>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
     </div>
   )
 }
