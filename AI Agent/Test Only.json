@@ -1,0 +1,134 @@
+{
+  "name": "Test Only",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "testonly",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "eb34c5e1-610b-4350-a263-89c89622d036",
+      "name": "Test Only",
+      "webhookId": "46309b58-7093-42ef-b264-517f80e06876"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "生成一道雅思Part 1口语真题。不要任何其他内容",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "6f4ba8c0-9b85-4d2e-9a07-93f727ceeec3",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        144,
+        208
+      ],
+      "id": "aee78326-4c36-4286-8e36-c7806738e9ce",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "p6DB6HAUv2VP5Jy6",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        96
+      ],
+      "id": "30d9a4be-d1a0-4c98-9720-609c78ff30ee",
+      "name": "Format"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        768,
+        0
+      ],
+      "id": "22a8d57a-92fa-4bfc-a4a8-d980f4b6bf45",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Test Only": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d782f86e-d100-454b-9941-4253513800b4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4c844779e57f062ed2d65cae41537d8794946978b58b8ba423f134ec33dbef0d"
+  },
+  "id": "wWPNPkhtW1MF2fvJ",
+  "tags": []
+}

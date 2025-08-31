@@ -16,6 +16,15 @@ export default function AICardStudioPage() {
   const { isLoading: workspaceLoading, actions } = useWorkspaceStore()
   const initializedRef = useRef(false)
 
+  // Set page title
+  useEffect(() => {
+    document.title = "AI Card Studio | Stanley Hi"
+    
+    return () => {
+      document.title = "Stanley's Portfolio" // Reset on unmount
+    }
+  }, [])
+
   useEffect(() => {
     let mounted = true
 

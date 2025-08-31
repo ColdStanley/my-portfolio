@@ -12,6 +12,7 @@ export interface ColumnCard {
   deleting?: boolean
   justCreated?: boolean
   isGenerating?: boolean  // AI generation state
+  urls?: string[]  // n8n workflow URLs for info cards
 }
 
 export interface Column {
