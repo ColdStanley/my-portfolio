@@ -114,7 +114,35 @@ export default function InfoCard({
       <Modal isOpen={showSettingsTooltip} onClose={handleCloseSettingsTooltip} className="w-full max-w-4xl mx-4">
         <SettingsModal
           isVisible={settingsTooltipVisible}
-          title="Info Card Settings"
+          title={
+            <div className="flex items-center gap-2">
+              <span>Info Card Settings</span>
+              {isTopCard && totalColumns > 1 && (
+                <div className="flex gap-1 ml-2">
+                  <button
+                    onClick={() => moveColumn(columnId, 'left')}
+                    disabled={!canMoveLeft}
+                    className="p-1 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed rounded transition-colors"
+                    title="Move column left"
+                  >
+                    <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => moveColumn(columnId, 'right')}
+                    disabled={!canMoveRight}
+                    className="p-1 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed rounded transition-colors"
+                    title="Move column right"
+                  >
+                    <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </div>
+          }
           onClose={handleCloseSettingsTooltip}
           onDelete={handleDelete}
           onSave={handleSave}
@@ -145,34 +173,6 @@ export default function InfoCard({
             />
           </div>
 
-          {/* Column Move Controls - Only for top cards */}
-          {isTopCard && totalColumns > 1 && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Move Column:</label>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => moveColumn(columnId, 'left')}
-                  disabled={!canMoveLeft}
-                  className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-700 rounded-lg transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  Move Left
-                </button>
-                <button
-                  onClick={() => moveColumn(columnId, 'right')}
-                  disabled={!canMoveRight}
-                  className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-700 rounded-lg transition-colors"
-                >
-                  Move Right
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          )}
         </SettingsModal>
       </Modal>
     </div>

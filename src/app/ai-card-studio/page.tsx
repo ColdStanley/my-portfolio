@@ -13,7 +13,7 @@ export default function AICardStudioPage() {
   const [loading, setLoading] = useState(true)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
-  const { actions } = useWorkspaceStore()
+  const { isLoading: workspaceLoading, actions } = useWorkspaceStore()
 
   useEffect(() => {
     // Get initial session
@@ -78,7 +78,7 @@ export default function AICardStudioPage() {
     }
   }
 
-  if (loading) {
+  if (loading || workspaceLoading) {
     return (
       <>
         <style jsx global>{`
