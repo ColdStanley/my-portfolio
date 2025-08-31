@@ -1,6 +1,7 @@
 import { Column, ColumnCard } from '../types'
 import InfoCard from './InfoCard'
 import AIToolCard from './AIToolCard'
+import { checkReferences } from '../utils/cardUtils'
 
 interface ColumnProps {
   column: Column
@@ -99,8 +100,21 @@ export default function ColumnComponent({
                 currentColumn={column}
                 allColumns={allColumns}
                 onDelete={(cardId) => {
-                  // Check references logic would go here
-                  const confirmMessage = "Are you sure you want to delete this card?"
+                  // 找到要删除的AI Tool Card
+                  const cardToDelete = column.cards.find(card => card.id === cardId)
+                  if (!cardToDelete || cardToDelete.type !== 'aitool' || !cardToDelete.buttonName) {
+                    onDeleteCard(column.id, cardId, false)
+                    return
+                  }
+
+                  // 检查引用
+                  const references = checkReferences(column.id, 0, cardToDelete.buttonName, allColumns)
+                  
+                  let confirmMessage = "Are you sure you want to delete this card?"
+                  if (references.length > 0) {
+                    confirmMessage = `This card is referenced by:\n${references.join('\n')}\n\nDeleting it will break these references. Are you sure?`
+                  }
+                  
                   if (confirm(confirmMessage)) {
                     onDeleteCard(column.id, cardId, false)
                   }
