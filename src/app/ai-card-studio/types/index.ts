@@ -1,16 +1,3 @@
-export interface CardInfo {
-  id: string
-  buttonName: string
-  generatedContent: string
-  order: number
-}
-
-export interface CardContextType {
-  cards: CardInfo[]
-  addCard: (card: CardInfo) => void
-  updateCard: (id: string, updates: Partial<CardInfo>) => void
-  getCard: (id: string) => CardInfo | undefined
-}
 
 export interface ColumnCard {
   id: string
@@ -24,6 +11,7 @@ export interface ColumnCard {
   aiModel?: 'deepseek' | 'openai'  // AI model selection for aitool cards
   deleting?: boolean
   justCreated?: boolean
+  isGenerating?: boolean  // AI generation state
 }
 
 export interface Column {

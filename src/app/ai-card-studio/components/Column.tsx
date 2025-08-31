@@ -1,27 +1,157 @@
 import { Column, ColumnCard } from '../types'
+import { useWorkspaceStore } from '../store/workspaceStore'
 import InfoCard from './InfoCard'
 import AIToolCard from './AIToolCard'
-import { checkReferences } from '../utils/cardUtils'
+import { generateUniqueButtonName, generateUniqueTitle, isButtonNameExists, isTitleExists } from '../utils/cardUtils'
 
 interface ColumnProps {
   column: Column
   onAddCard: (columnId: string) => void
   onDeleteCard: (columnId: string, cardId: string, isTopCard: boolean) => void
-  onButtonNameChange: (cardId: string, newName: string, currentName: string) => string
-  onTitleChange: (cardId: string, newTitle: string, currentTitle: string) => string
-  updateColumns: (updater: (prev: Column[]) => Column[]) => void
-  allColumns: Column[]
 }
 
 export default function ColumnComponent({ 
   column, 
   onAddCard, 
-  onDeleteCard, 
-  onButtonNameChange,
-  onTitleChange,
-  updateColumns,
-  allColumns
+  onDeleteCard
 }: ColumnProps) {
+  const { columns, actions } = useWorkspaceStore()
+  const { updateColumns } = actions
+
+  // Event handlers - all logic contained within this component
+  const handleTitleChange = (cardId: string, newTitle: string) => {
+    updateColumns(prev => prev.map(col => ({
+      ...col,
+      cards: col.cards.map(card =>
+        card.id === cardId
+          ? { ...card, title: newTitle }
+          : card
+      )
+    })))
+  }
+  
+  const handleTitleBlur = (cardId: string) => {
+    const currentCard = columns.find(col => 
+      col.cards.find(card => card.id === cardId)
+    )?.cards.find(card => card.id === cardId)
+    
+    if (!currentCard?.title) return
+    
+    const trimmedTitle = currentCard.title.trim()
+    if (!trimmedTitle) return
+    
+    if (isTitleExists(trimmedTitle, columns, cardId)) {
+      const uniqueTitle = generateUniqueTitle(trimmedTitle, columns, cardId)
+      updateColumns(prev => prev.map(col => ({
+        ...col,
+        cards: col.cards.map(card =>
+          card.id === cardId
+            ? { ...card, title: uniqueTitle }
+            : card
+        )
+      })))
+    }
+  }
+
+  const handleDescriptionChange = (cardId: string, newDescription: string) => {
+    updateColumns(prev => prev.map(col => ({
+      ...col,
+      cards: col.cards.map(card =>
+        card.id === cardId
+          ? { ...card, description: newDescription }
+          : card
+      )
+    })))
+  }
+
+  const handleButtonNameChange = (cardId: string, newName: string) => {
+    updateColumns(prev => prev.map(col => ({
+      ...col,
+      cards: col.cards.map(card =>
+        card.id === cardId
+          ? { ...card, buttonName: newName }
+          : card
+      )
+    })))
+  }
+  
+  const handleButtonNameBlur = (cardId: string) => {
+    const currentCard = columns.find(col => 
+      col.cards.find(card => card.id === cardId)
+    )?.cards.find(card => card.id === cardId)
+    
+    if (!currentCard?.buttonName) return
+    
+    const trimmedName = currentCard.buttonName.trim()
+    if (!trimmedName) return
+    
+    if (isButtonNameExists(trimmedName, columns, cardId)) {
+      const uniqueName = generateUniqueButtonName(trimmedName, columns, cardId)
+      updateColumns(prev => prev.map(col => ({
+        ...col,
+        cards: col.cards.map(card =>
+          card.id === cardId
+            ? { ...card, buttonName: uniqueName }
+            : card
+        )
+      })))
+    }
+  }
+
+  const handlePromptChange = (cardId: string, newPrompt: string) => {
+    updateColumns(prev => prev.map(col => ({
+      ...col,
+      cards: col.cards.map(card =>
+        card.id === cardId
+          ? { ...card, promptText: newPrompt }
+          : card
+      )
+    })))
+  }
+
+  const handleOptionsChange = (cardId: string, newOptions: string[]) => {
+    updateColumns(prev => prev.map(col => ({
+      ...col,
+      cards: col.cards.map(card =>
+        card.id === cardId
+          ? { ...card, options: newOptions }
+          : card
+      )
+    })))
+  }
+
+  const handleAiModelChange = (cardId: string, newModel: 'deepseek' | 'openai') => {
+    updateColumns(prev => prev.map(col => ({
+      ...col,
+      cards: col.cards.map(card =>
+        card.id === cardId
+          ? { ...card, aiModel: newModel }
+          : card
+      )
+    })))
+  }
+
+  const handleGeneratedContentChange = (cardId: string, newContent: string) => {
+    updateColumns(prev => prev.map(col => ({
+      ...col,
+      cards: col.cards.map(card =>
+        card.id === cardId
+          ? { ...card, generatedContent: newContent }
+          : card
+      )
+    })))
+  }
+
+  const handleGeneratingStateChange = (cardId: string, isGenerating: boolean) => {
+    updateColumns(prev => prev.map(col => ({
+      ...col,
+      cards: col.cards.map(card =>
+        card.id === cardId
+          ? { ...card, isGenerating }
+          : card
+      )
+    })))
+  }
   return (
     <div className="flex-shrink-0 w-[480px] h-full relative">
       {/* Up Arrow - 悬浮在列外上方 */}
@@ -75,50 +205,29 @@ export default function ColumnComponent({
           >
             {card.type === 'info' ? (
               <InfoCard
-                title={card.title!}
-                description={card.description!}
                 columnId={column.id}
                 cardId={card.id}
                 isTopCard={cardIndex === 0}
-                onDelete={onDeleteCard}
+                onDelete={(cardId) => onDeleteCard(column.id, cardId, cardIndex === 0)}
                 autoOpenSettings={card.justCreated}
-                onTitleChange={onTitleChange}
-                updateColumns={updateColumns}
+                onTitleChange={handleTitleChange}
+                onTitleBlur={handleTitleBlur}
+                onDescriptionChange={handleDescriptionChange}
               />
             ) : (
               <AIToolCard 
                 cardId={card.id} 
                 order={cardIndex}
                 columnId={column.id}
-                buttonName={card.buttonName || 'Start'}
-                promptText={card.promptText || ''}
-                options={card.options || []}
-                aiModel={card.aiModel || 'deepseek'}
                 autoOpenSettings={card.justCreated}
-                onButtonNameChange={onButtonNameChange}
-                updateColumns={updateColumns}
-                currentColumn={column}
-                allColumns={allColumns}
-                onDelete={(cardId) => {
-                  // 找到要删除的AI Tool Card
-                  const cardToDelete = column.cards.find(card => card.id === cardId)
-                  if (!cardToDelete || cardToDelete.type !== 'aitool' || !cardToDelete.buttonName) {
-                    onDeleteCard(column.id, cardId, false)
-                    return
-                  }
-
-                  // 检查引用
-                  const references = checkReferences(column.id, 0, cardToDelete.buttonName, allColumns)
-                  
-                  let confirmMessage = "Are you sure you want to delete this card?"
-                  if (references.length > 0) {
-                    confirmMessage = `This card is referenced by:\n${references.join('\n')}\n\nDeleting it will break these references. Are you sure?`
-                  }
-                  
-                  if (confirm(confirmMessage)) {
-                    onDeleteCard(column.id, cardId, false)
-                  }
-                }}
+                onDelete={(cardId) => onDeleteCard(column.id, cardId, false)}
+                onButtonNameChange={handleButtonNameChange}
+                onButtonNameBlur={handleButtonNameBlur}
+                onPromptChange={handlePromptChange}
+                onOptionsChange={handleOptionsChange}
+                onAiModelChange={handleAiModelChange}
+                onGeneratedContentChange={handleGeneratedContentChange}
+                onGeneratingStateChange={handleGeneratingStateChange}
               />
             )}
           </div>

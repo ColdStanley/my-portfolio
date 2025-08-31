@@ -1,122 +1,23 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Column, ColumnCard, CardInfo, CardContextType } from '../types'
-import { generateUniqueButtonName, generateUniqueTitle, isButtonNameExists, isTitleExists } from '../utils/cardUtils'
-import { CardContext } from './CardContext'
+import { Column, ColumnCard } from '../types'
+import { generateUniqueButtonName, generateUniqueTitle } from '../utils/cardUtils'
+import { useCardDeletion } from '../hooks/useCardDeletion'
 import ColumnComponent from './Column'
+import { useWorkspaceStore } from '../store/workspaceStore'
+import DebugPanel from './DebugPanel'
 
 export default function AICardStudio() {
-  // 简化状态管理 - 只保留必要的卡片和列状态
-  const [columns, setColumns] = useState<Column[]>(() => [
-    // 默认示例列
-    {
-      id: 'col-1',
-      cards: [
-        {
-          id: 'info-1',
-          type: 'info',
-          title: 'Info Card',
-          description: 'Display static information, instructions, or reference content without AI processing.'
-        },
-        {
-          id: 'aitool-1', 
-          type: 'aitool',
-          buttonName: 'Start',
-          promptText: '',
-          generatedContent: '',
-          aiModel: 'deepseek'
-        }
-      ]
-    },
-    {
-      id: 'col-2',
-      cards: [
-        {
-          id: 'info-2',
-          type: 'info',
-          title: 'Usage Tips',
-          description: 'Use [REF: Start] to reference other AI tool outputs in your prompts. Use {{option}} for user-selectable options.'
-        },
-        {
-          id: 'aitool-2',
-          type: 'aitool',
-          buttonName: 'Analyze Data',
-          promptText: 'Analyze the following data: {{option}}',
-          generatedContent: '',
-          options: ['Sales Report', 'User Feedback', 'Performance Metrics'],
-          aiModel: 'deepseek'
-        }
-      ]
-    }
-  ])
+  const { columns, isLoading, saveError, actions } = useWorkspaceStore()
+  const { updateColumns, clearSaveError } = actions
+  const { deleteCard } = useCardDeletion(columns, updateColumns)
   
-  const [allCards, setAllCards] = useState<CardInfo[]>([])
   const [showCardTypeModal, setShowCardTypeModal] = useState(false)
   const [cardTypeModalVisible, setCardTypeModalVisible] = useState(false)
   const [selectedColumnId, setSelectedColumnId] = useState<string>('')
 
-  // Card context functions
-  const updateCard = (id: string, updates: Partial<CardInfo>) => {
-    setAllCards(prev => prev.map(card => 
-      card.id === id ? { ...card, ...updates } : card
-    ))
-  }
-
-  const addCard = (card: CardInfo) => {
-    setAllCards(prev => {
-      const exists = prev.find(c => c.id === card.id)
-      if (exists) {
-        return prev.map(c => c.id === card.id ? card : c)
-      } else {
-        return [...prev, card]
-      }
-    })
-  }
-
-  const getCard = (id: string) => {
-    return allCards.find(card => card.id === id)
-  }
-
-  const cardContextValue: CardContextType = {
-    cards: allCards,
-    addCard,
-    updateCard,
-    getCard
-  }
-
-  // Handle button name change with auto-suffix for duplicates
-  const handleButtonNameChange = (cardId: string, newName: string, currentName: string): string => {
-    if (!newName.trim()) return currentName
-    
-    // If name hasn't changed, return as-is
-    if (newName === currentName) return newName
-    
-    // If name is unique, use it
-    if (!isButtonNameExists(newName, columns, cardId)) {
-      return newName
-    }
-    
-    // If duplicate, generate unique version
-    return generateUniqueButtonName(newName, columns)
-  }
-
-  // Handle info card title change with uniqueness
-  const handleTitleChange = (cardId: string, newTitle: string, currentTitle: string): string => {
-    if (!newTitle.trim()) return currentTitle
-    
-    // If title hasn't changed, return as-is
-    if (newTitle === currentTitle) return newTitle
-    
-    // If title is unique, use it
-    if (!isTitleExists(newTitle, columns, cardId)) {
-      return newTitle
-    }
-    
-    // If duplicate, generate unique version
-    return generateUniqueTitle(newTitle, columns)
-  }
 
   const addNewColumn = () => {
     const timestamp = Date.now()
@@ -133,11 +34,11 @@ export default function AICardStudio() {
       }]
     }
 
-    setColumns(prev => [...prev, newColumn])
+    updateColumns(prev => [...prev, newColumn])
 
     // Remove justCreated flag after animation
     setTimeout(() => {
-      setColumns(prev => prev.map(col =>
+      updateColumns(prev => prev.map(col =>
         col.id === newColumn.id
           ? { ...col, cards: col.cards.map(card => ({ ...card, justCreated: undefined })) }
           : col
@@ -165,7 +66,7 @@ export default function AICardStudio() {
           aiModel: 'deepseek'  // Default to DeepSeek
         }
 
-    setColumns(prev => prev.map(col =>
+    updateColumns(prev => prev.map(col =>
       col.id === columnId
         ? { ...col, cards: [...col.cards, { ...newCard, justCreated: true }] }
         : col
@@ -173,7 +74,7 @@ export default function AICardStudio() {
 
     // Remove justCreated flag after animation
     setTimeout(() => {
-      setColumns(prev => prev.map(col =>
+      updateColumns(prev => prev.map(col =>
         col.id === columnId
           ? { 
               ...col, 
@@ -191,42 +92,6 @@ export default function AICardStudio() {
     handleCloseCardTypeModal()
   }
 
-  const deleteCard = (columnId: string, cardId: string, isTopCard: boolean) => {
-    if (isTopCard) {
-      // Delete entire column with animation
-      setColumns(prev => prev.map(col => 
-        col.id === columnId
-          ? { ...col, cards: col.cards.map(card => ({ ...card, deleting: true })) }
-          : col
-      ))
-      
-      // Remove column after animation
-      setTimeout(() => {
-        setColumns(prev => prev.filter(col => col.id !== columnId))
-      }, 800)
-    } else {
-      // Delete individual card with animation
-      setColumns(prev => prev.map(col =>
-        col.id === columnId
-          ? {
-              ...col,
-              cards: col.cards.map(card =>
-                card.id === cardId ? { ...card, deleting: true } : card
-              )
-            }
-          : col
-      ))
-
-      // Remove card after animation
-      setTimeout(() => {
-        setColumns(prev => prev.map(col =>
-          col.id === columnId
-            ? { ...col, cards: col.cards.filter(card => card.id !== cardId) }
-            : col
-        ))
-      }, 800)
-    }
-  }
 
   const handleAddCard = (columnId: string) => {
     setSelectedColumnId(columnId)
@@ -239,8 +104,27 @@ export default function AICardStudio() {
     setTimeout(() => setShowCardTypeModal(false), 250)
   }
 
+
   return (
-    <CardContext.Provider value={cardContextValue}>
+    <div>
+      {/* Save Error Notification */}
+      {saveError && (
+        <div className="fixed top-20 right-4 z-50 bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="text-sm">{saveError}</span>
+          <button 
+            onClick={clearSaveError}
+            className="ml-2 text-red-500 hover:text-red-700"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Full screen layout - no L-shaped offset */}
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 p-6 pb-0">
         <div className="max-w-full mx-auto">
@@ -291,10 +175,6 @@ export default function AICardStudio() {
                   column={column}
                   onAddCard={handleAddCard}
                   onDeleteCard={deleteCard}
-                  onButtonNameChange={handleButtonNameChange}
-                  onTitleChange={handleTitleChange}
-                  updateColumns={setColumns}
-                  allColumns={columns}
                 />
               ))}
               
@@ -359,6 +239,9 @@ export default function AICardStudio() {
         document.body
       )}
 
-    </CardContext.Provider>
+      {/* Debug Panel - only in development */}
+      <DebugPanel />
+
+    </div>
   )
 }

@@ -1,36 +1,41 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Column } from '../types'
+import { useWorkspaceStore } from '../store/workspaceStore'
 import Modal from './ui/Modal'
 import SettingsModal from './ui/SettingsModal'
 
 interface InfoCardProps {
-  title: string
-  description: string
   columnId: string
   cardId: string
   isTopCard: boolean
-  onDelete: (columnId: string, cardId: string, isTopCard: boolean) => void
+  onDelete: (cardId: string) => void
   autoOpenSettings?: boolean
-  onTitleChange: (cardId: string, newTitle: string, currentTitle: string) => string
-  updateColumns: (updater: (prev: Column[]) => Column[]) => void
+  onTitleChange: (cardId: string, newTitle: string) => void
+  onTitleBlur: (cardId: string) => void
+  onDescriptionChange: (cardId: string, newDescription: string) => void
 }
 
 export default function InfoCard({ 
-  title: initialTitle, 
-  description: initialDescription,
   columnId,
   cardId,
   isTopCard,
   onDelete,
   autoOpenSettings = false,
   onTitleChange,
-  updateColumns
+  onTitleBlur,
+  onDescriptionChange
 }: InfoCardProps) {
+  const { columns } = useWorkspaceStore()
+  
+  // Get current card data from Zustand store
+  const currentCard = columns
+    .find(col => col.id === columnId)
+    ?.cards.find(card => card.id === cardId)
+  
+  const title = currentCard?.title || ''
+  const description = currentCard?.description || ''
   const [showSettingsTooltip, setShowSettingsTooltip] = useState(false)
   const [settingsTooltipVisible, setSettingsTooltipVisible] = useState(false)
-  const [title, setTitle] = useState(initialTitle)
-  const [description, setDescription] = useState(initialDescription)
 
   const handleSettingsClick = () => {
     setShowSettingsTooltip(true)
@@ -43,14 +48,8 @@ export default function InfoCard({
   }
 
   const handleDelete = () => {
-    const confirmMessage = isTopCard 
-      ? "Deleting this card will remove the entire column. Are you sure?"
-      : "Are you sure you want to delete this card?"
-    
-    if (confirm(confirmMessage)) {
-      onDelete(columnId, cardId, isTopCard)
-      handleCloseSettingsTooltip()
-    }
+    onDelete(cardId)
+    handleCloseSettingsTooltip()
   }
 
   // Auto-open settings for newly created cards
@@ -98,31 +97,8 @@ export default function InfoCard({
             <input
               type="text"
               value={title}
-              onBlur={(e) => {
-                const newTitle = e.target.value
-                const uniqueTitle = onTitleChange(cardId, newTitle, title)
-                
-                if (uniqueTitle !== newTitle) {
-                  setTitle(uniqueTitle)
-                }
-                
-                // Update columns state with unique title
-                updateColumns(prev => prev.map(col => 
-                  col.id === columnId
-                    ? {
-                        ...col,
-                        cards: col.cards.map(card =>
-                          card.id === cardId
-                            ? { ...card, title: uniqueTitle }
-                            : card
-                        )
-                      }
-                    : col
-                ))
-              }}
-              onChange={(e) => {
-                setTitle(e.target.value)
-              }}
+              onChange={(e) => onTitleChange(cardId, e.target.value)}
+              onBlur={() => onTitleBlur(cardId)}
               placeholder="Enter card name..."
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             />
@@ -133,22 +109,7 @@ export default function InfoCard({
             <label className="block text-sm font-medium text-gray-700 mb-2">Description:</label>
             <textarea
               value={description}
-              onChange={(e) => {
-                setDescription(e.target.value)
-                // Update columns state immediately for persistence
-                updateColumns(prev => prev.map(col => 
-                  col.id === columnId
-                    ? {
-                        ...col,
-                        cards: col.cards.map(card =>
-                          card.id === cardId
-                            ? { ...card, description: e.target.value }
-                            : card
-                        )
-                      }
-                    : col
-                ))
-              }}
+              onChange={(e) => onDescriptionChange(cardId, e.target.value)}
               placeholder="Enter description..."
               className="w-full h-32 p-3 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
             />

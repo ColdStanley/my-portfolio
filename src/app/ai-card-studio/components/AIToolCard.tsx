@@ -1,9 +1,8 @@
-import { useState, useRef, useContext, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
-import { Column } from '../types'
-import { CardContext } from './CardContext'
-import { resolveReferences, checkReferences } from '../utils/cardUtils'
+import { resolveReferences } from '../utils/cardUtils'
+import { useWorkspaceStore } from '../store/workspaceStore'
 import Modal from './ui/Modal'
 import SettingsModal from './ui/SettingsModal'
 
@@ -11,70 +10,50 @@ interface AIToolCardProps {
   cardId: string
   order: number
   columnId: string
-  buttonName: string
-  promptText: string
-  options?: string[]
-  aiModel?: 'deepseek' | 'openai'
   onDelete: (cardId: string) => void
   autoOpenSettings?: boolean
-  onButtonNameChange: (cardId: string, newName: string, currentName: string) => string
-  updateColumns: (updater: (prev: Column[]) => Column[]) => void
-  currentColumn: Column
-  allColumns: Column[]
+  onButtonNameChange: (cardId: string, newName: string) => void
+  onButtonNameBlur: (cardId: string) => void
+  onPromptChange: (cardId: string, newPrompt: string) => void
+  onOptionsChange: (cardId: string, newOptions: string[]) => void
+  onAiModelChange: (cardId: string, newModel: 'deepseek' | 'openai') => void
+  onGeneratedContentChange: (cardId: string, newContent: string) => void
+  onGeneratingStateChange: (cardId: string, isGenerating: boolean) => void
 }
 
 export default function AIToolCard({ 
   cardId, 
   order,
   columnId,
-  buttonName: initialButtonName,
-  promptText: initialPromptText,
-  options: initialOptions,
-  aiModel: initialAiModel = 'deepseek',
   onDelete,
   autoOpenSettings = false,
   onButtonNameChange,
-  updateColumns,
-  currentColumn,
-  allColumns
+  onButtonNameBlur,
+  onPromptChange,
+  onOptionsChange,
+  onAiModelChange,
+  onGeneratedContentChange,
+  onGeneratingStateChange
 }: AIToolCardProps) {
-  const cardContext = useContext(CardContext)
+  const { columns } = useWorkspaceStore()
+  
+  // Get current card data from Zustand store
+  const currentColumn = columns.find(col => col.id === columnId)
+  const currentCard = currentColumn?.cards.find(card => card.id === cardId)
+  
+  const buttonName = currentCard?.buttonName || 'Start'
+  const promptText = currentCard?.promptText || ''
+  const options = currentCard?.options || []
+  const aiModel = currentCard?.aiModel || 'deepseek'
+  const generatedContent = currentCard?.generatedContent || ''
+  const isGenerating = currentCard?.isGenerating || false
   const [showPromptTooltip, setShowPromptTooltip] = useState(false)
   const [promptTooltipVisible, setPromptTooltipVisible] = useState(false)
   const [showOptionsTooltip, setShowOptionsTooltip] = useState(false)
   const generateButtonRef = useRef<HTMLButtonElement>(null)
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [generatedContent, setGeneratedContent] = useState('')
-  const [buttonName, setButtonName] = useState(initialButtonName)
-  const [promptText, setPromptText] = useState(initialPromptText)
-  const [aiModel, setAiModel] = useState<'deepseek' | 'openai'>(initialAiModel)
-  const [options, setOptions] = useState<string[]>(() => {
-    return Array.isArray(initialOptions) ? initialOptions : []
-  })
   const [isFocused, setIsFocused] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // Initialize card in context
-  useEffect(() => {
-    if (cardContext) {
-      cardContext.addCard({
-        id: cardId,
-        buttonName,
-        generatedContent,
-        order
-      })
-    }
-  }, [cardId])
-
-  // Update card when content changes
-  useEffect(() => {
-    if (cardContext) {
-      cardContext.updateCard(cardId, { 
-        buttonName, 
-        generatedContent 
-      })
-    }
-  }, [buttonName, generatedContent])
 
   // Auto-open settings for newly created cards
   useEffect(() => {
@@ -87,42 +66,28 @@ export default function AIToolCard({
   }, [autoOpenSettings])
 
   // Get previous AIToolCards from current column for reference dropdown
-  const currentCardIndex = currentColumn.cards.findIndex(card => card.id === cardId)
-  const previousCards = currentColumn.cards
+  const currentCardIndex = currentColumn?.cards.findIndex(card => card.id === cardId) || 0
+  const previousCards = currentColumn?.cards
     .slice(0, currentCardIndex)
     .filter(card => card.type === 'aitool')
     .map(card => ({
       id: card.id,
       buttonName: card.buttonName || 'Unnamed Card',
       order: currentCardIndex
-    }))
+    })) || []
 
   // Get Info Cards from current column for reference dropdown
-  const infoCards = currentColumn.cards
+  const infoCards = currentColumn?.cards
     .filter(card => card.type === 'info')
     .map(card => ({
       id: card.id,
       title: card.title || 'Unnamed Info',
       description: card.description || ''
-    }))
+    })) || []
 
   // Handle textarea input changes
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newText = e.target.value
-    setPromptText(newText)
-    
-    updateColumns(prev => prev.map(col => 
-      col.id === columnId
-        ? {
-            ...col,
-            cards: col.cards.map(card =>
-              card.id === cardId
-                ? { ...card, promptText: newText }
-                : card
-            )
-          }
-        : col
-    ))
+    onPromptChange(cardId, e.target.value)
   }
 
   // Insert reference at cursor position
@@ -135,20 +100,7 @@ export default function AIToolCard({
       const referenceText = `[REF: ${selectedButtonName}]`
       
       const newText = textBefore + referenceText + textAfter
-      setPromptText(newText)
-      
-      updateColumns(prev => prev.map(col => 
-        col.id === columnId
-          ? {
-              ...col,
-              cards: col.cards.map(card =>
-                card.id === cardId
-                  ? { ...card, promptText: newText }
-                  : card
-              )
-            }
-          : col
-      ))
+      onPromptChange(cardId, newText)
       
       setTimeout(() => {
         const newCursorPosition = cursorPosition + referenceText.length
@@ -168,20 +120,7 @@ export default function AIToolCard({
       const referenceText = `[INFO: ${selectedTitle}]`
       
       const newText = textBefore + referenceText + textAfter
-      setPromptText(newText)
-      
-      updateColumns(prev => prev.map(col => 
-        col.id === columnId
-          ? {
-              ...col,
-              cards: col.cards.map(card =>
-                card.id === cardId
-                  ? { ...card, promptText: newText }
-                  : card
-              )
-            }
-          : col
-      ))
+      onPromptChange(cardId, newText)
       
       setTimeout(() => {
         const newCursorPosition = cursorPosition + referenceText.length
@@ -199,11 +138,12 @@ export default function AIToolCard({
       return
     }
     
-    setIsGenerating(true)
-    setGeneratedContent('')
+    // Set generating state
+    onGeneratedContentChange(cardId, '') // Clear previous content
+    onGeneratingStateChange(cardId, true)
     
     try {
-      let resolvedPrompt = resolveReferences(promptText, allColumns)
+      let resolvedPrompt = resolveReferences(promptText, columns)
       
       // Replace option placeholder with selected value if both exist
       const hasOptions = (options || []).length > 0
@@ -253,20 +193,7 @@ export default function AIToolCard({
               const content = parsed.choices?.[0]?.delta?.content || ''
               if (content) {
                 fullResponse += content
-                setGeneratedContent(fullResponse)
-                
-                updateColumns(prev => prev.map(col => 
-                  col.id === columnId
-                    ? {
-                        ...col,
-                        cards: col.cards.map(card =>
-                          card.id === cardId
-                            ? { ...card, generatedContent: fullResponse }
-                            : card
-                        )
-                      }
-                    : col
-                ))
+                onGeneratedContentChange(cardId, fullResponse)
               }
             } catch (parseError) {
               console.error('Error parsing streaming data:', parseError)
@@ -278,9 +205,10 @@ export default function AIToolCard({
       setShowOptionsTooltip(false)
     } catch (error) {
       console.error('Error generating content:', error)
-      setGeneratedContent('Error generating content. Please try again.')
+      onGeneratedContentChange(cardId, 'Error generating content. Please try again.')
+      onGeneratingStateChange(cardId, false)
     } finally {
-      setIsGenerating(false)
+      onGeneratingStateChange(cardId, false)
     }
   }
 
@@ -406,30 +334,8 @@ export default function AIToolCard({
             <input
               type="text"
               value={buttonName}
-              onBlur={(e) => {
-                const newName = e.target.value
-                const uniqueName = onButtonNameChange(cardId, newName, buttonName)
-                
-                if (uniqueName !== newName) {
-                  setButtonName(uniqueName)
-                }
-                
-                updateColumns(prev => prev.map(col => 
-                  col.id === columnId
-                    ? {
-                        ...col,
-                        cards: col.cards.map(card =>
-                          card.id === cardId
-                            ? { ...card, buttonName: uniqueName }
-                            : card
-                        )
-                      }
-                    : col
-                ))
-              }}
-              onChange={(e) => {
-                setButtonName(e.target.value)
-              }}
+              onChange={(e) => onButtonNameChange(cardId, e.target.value)}
+              onBlur={() => onButtonNameBlur(cardId)}
               placeholder="Enter button name..."
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             />
@@ -443,20 +349,7 @@ export default function AIToolCard({
                 value={aiModel}
                 onChange={(e) => {
                   const newModel = e.target.value as 'deepseek' | 'openai'
-                  setAiModel(newModel)
-                  
-                  updateColumns(prev => prev.map(col => 
-                    col.id === columnId
-                      ? {
-                          ...col,
-                          cards: col.cards.map(card =>
-                            card.id === cardId
-                              ? { ...card, aiModel: newModel }
-                              : card
-                          )
-                        }
-                      : col
-                  ))
+                  onAiModelChange(cardId, newModel)
                 }}
                 className="px-3 py-1 text-sm border border-gray-200 rounded-md text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
               >
@@ -537,43 +430,17 @@ export default function AIToolCard({
                     type="text"
                     value={optionValue}
                     onChange={(e) => {
-                      const newOptions = [...(options || [])]
+                      const newOptions = [...options]
                       newOptions[index] = e.target.value
-                      setOptions(newOptions)
-                      
-                      updateColumns(prev => prev.map(col => 
-                        col.id === columnId
-                          ? {
-                              ...col,
-                              cards: col.cards.map(card =>
-                                card.id === cardId
-                                  ? { ...card, options: newOptions }
-                                  : card
-                              )
-                            }
-                          : col
-                      ))
+                      onOptionsChange(cardId, newOptions)
                     }}
                     placeholder="Enter option..."
                     className="flex-1 px-2 py-1 text-sm border border-gray-200 rounded text-gray-700 focus:outline-none focus:ring-1 focus:ring-purple-500"
                   />
                   <button
                     onClick={() => {
-                      const newOptions = (options || []).filter((_, i) => i !== index)
-                      setOptions(newOptions)
-                      
-                      updateColumns(prev => prev.map(col => 
-                        col.id === columnId
-                          ? {
-                              ...col,
-                              cards: col.cards.map(card =>
-                                card.id === cardId
-                                  ? { ...card, options: newOptions }
-                                  : card
-                              )
-                            }
-                          : col
-                      ))
+                      const newOptions = options.filter((_, i) => i !== index)
+                      onOptionsChange(cardId, newOptions)
                     }}
                     className="px-2 py-1 text-red-600 hover:bg-red-50 rounded transition-colors"
                   >
@@ -583,21 +450,8 @@ export default function AIToolCard({
               ))}
               <button
                 onClick={() => {
-                  const newOptions = [...(options || []), '']
-                  setOptions(newOptions)
-                  
-                  updateColumns(prev => prev.map(col => 
-                    col.id === columnId
-                      ? {
-                          ...col,
-                          cards: col.cards.map(card =>
-                            card.id === cardId
-                              ? { ...card, options: newOptions }
-                              : card
-                          )
-                        }
-                      : col
-                  ))
+                  const newOptions = [...options, '']
+                  onOptionsChange(cardId, newOptions)
                 }}
                 className="w-full px-3 py-1 text-sm text-purple-600 border border-purple-200 rounded hover:bg-purple-50 transition-colors"
               >
