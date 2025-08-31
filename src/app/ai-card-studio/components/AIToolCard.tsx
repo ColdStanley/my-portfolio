@@ -506,10 +506,7 @@ export default function AIToolCard({
       {/* Options Management Tooltip */}
       {showOptionsManageTooltip && typeof document !== 'undefined' && createPortal(
         <>
-          <div 
-            className="fixed inset-0 z-40"
-            onClick={handleCloseOptionsManageTooltip}
-          />
+          <div className="fixed inset-0 z-40 bg-black/20" />
           <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
             <div className={`bg-white rounded-lg shadow-xl border border-gray-200 p-4 max-w-md w-full mx-4 pointer-events-auto transform transition-all duration-200 ease-out ${
               optionsManageTooltipVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'

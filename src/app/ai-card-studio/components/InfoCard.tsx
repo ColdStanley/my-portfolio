@@ -26,7 +26,13 @@ export default function InfoCard({
   onDescriptionChange
 }: InfoCardProps) {
   const { columns, actions } = useWorkspaceStore()
-  const { saveWorkspace } = actions
+  const { saveWorkspace, moveColumn } = actions
+  
+  // Calculate column position for move buttons
+  const currentColumnIndex = columns.findIndex(col => col.id === columnId)
+  const totalColumns = columns.length
+  const canMoveLeft = currentColumnIndex > 0
+  const canMoveRight = currentColumnIndex < totalColumns - 1
   
   // Get current card data from Zustand store
   const currentCard = columns
@@ -138,6 +144,35 @@ export default function InfoCard({
               className="w-full h-32 p-3 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
             />
           </div>
+
+          {/* Column Move Controls - Only for top cards */}
+          {isTopCard && totalColumns > 1 && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Move Column:</label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => moveColumn(columnId, 'left')}
+                  disabled={!canMoveLeft}
+                  className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-700 rounded-lg transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Move Left
+                </button>
+                <button
+                  onClick={() => moveColumn(columnId, 'right')}
+                  disabled={!canMoveRight}
+                  className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-700 rounded-lg transition-colors"
+                >
+                  Move Right
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
         </SettingsModal>
       </Modal>
     </div>

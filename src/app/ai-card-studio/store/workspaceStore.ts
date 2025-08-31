@@ -12,6 +12,7 @@ interface WorkspaceState {
   actions: {
     fetchAndHandleWorkspace: (userId: string) => Promise<void>;
     updateColumns: (updater: (prev: Column[]) => Column[]) => void;
+    moveColumn: (columnId: string, direction: 'left' | 'right') => void;
     saveWorkspace: () => Promise<void>;
     setUser: (user: User | null) => void;
     clearSaveError: () => void;
@@ -121,6 +122,26 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       
       // Debug: Log when columns are updated (no auto-save anymore)
       console.log('Columns updated. Use Save button to save changes.');
+    },
+
+    moveColumn: (columnId, direction) => {
+      const { columns } = get();
+      const currentIndex = columns.findIndex(col => col.id === columnId);
+      
+      if (currentIndex === -1) return;
+      
+      const newIndex = direction === 'left' ? currentIndex - 1 : currentIndex + 1;
+      
+      // Boundary check
+      if (newIndex < 0 || newIndex >= columns.length) return;
+      
+      const newColumns = [...columns];
+      [newColumns[currentIndex], newColumns[newIndex]] = [newColumns[newIndex], newColumns[currentIndex]];
+      
+      set({ columns: newColumns });
+      
+      // Auto-save after move
+      get().actions.saveWorkspace();
     },
 
     saveWorkspace: async () => {

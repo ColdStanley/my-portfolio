@@ -13,11 +13,8 @@ export default function Modal({ isOpen, onClose, children, className = '' }: Mod
 
   return createPortal(
     <>
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 z-40"
-        onClick={onClose}
-      />
+      {/* Backdrop - no click to close */}
+      <div className="fixed inset-0 z-40 bg-black/20" />
       
       {/* Modal Content */}
       <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
