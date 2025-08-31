@@ -16,6 +16,7 @@ export default function AICardStudio() {
   const [showCardTypeModal, setShowCardTypeModal] = useState(false)
   const [cardTypeModalVisible, setCardTypeModalVisible] = useState(false)
   const [selectedColumnId, setSelectedColumnId] = useState<string>('')
+  const [insertAfterCardId, setInsertAfterCardId] = useState<string>('')
 
   // Show loading while data is being fetched
   if (isLoading) {
@@ -59,7 +60,7 @@ export default function AICardStudio() {
     }, 400)
   }
 
-  const addCardToColumn = (columnId: string, cardType: 'info' | 'aitool') => {
+  const addCardToColumn = (columnId: string, cardType: 'info' | 'aitool', afterCardId?: string) => {
     const timestamp = Date.now()
     const randomId = Math.random().toString(36).substr(2, 9)
 
@@ -81,7 +82,17 @@ export default function AICardStudio() {
 
     updateColumns(prev => prev.map(col =>
       col.id === columnId
-        ? { ...col, cards: [...col.cards, { ...newCard, justCreated: true }] }
+        ? { 
+            ...col, 
+            cards: afterCardId 
+              ? (() => {
+                  const insertIndex = col.cards.findIndex(card => card.id === afterCardId) + 1
+                  const newCards = [...col.cards]
+                  newCards.splice(insertIndex, 0, { ...newCard, justCreated: true })
+                  return newCards
+                })()
+              : [...col.cards, { ...newCard, justCreated: true }]
+          }
         : col
     ))
 
@@ -106,8 +117,9 @@ export default function AICardStudio() {
   }
 
 
-  const handleAddCard = (columnId: string) => {
+  const handleAddCard = (columnId: string, afterCardId?: string) => {
     setSelectedColumnId(columnId)
+    setInsertAfterCardId(afterCardId || '')
     setShowCardTypeModal(true)
     setTimeout(() => setCardTypeModalVisible(true), 10)
   }
@@ -188,6 +200,7 @@ export default function AICardStudio() {
                   column={column}
                   onAddCard={handleAddCard}
                   onDeleteCard={deleteCard}
+                  onInsertCard={handleAddCard}
                 />
               ))}
               
@@ -230,7 +243,7 @@ export default function AICardStudio() {
               
               <div className="space-y-3">
                 <button
-                  onClick={() => addCardToColumn(selectedColumnId, 'info')}
+                  onClick={() => addCardToColumn(selectedColumnId, 'info', insertAfterCardId)}
                   className="w-full p-4 text-left border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50/50 transition-all duration-200"
                 >
                   <h4 className="font-medium text-gray-800">Info Card</h4>
@@ -238,7 +251,7 @@ export default function AICardStudio() {
                 </button>
                 
                 <button
-                  onClick={() => addCardToColumn(selectedColumnId, 'aitool')}
+                  onClick={() => addCardToColumn(selectedColumnId, 'aitool', insertAfterCardId)}
                   className="w-full p-4 text-left border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50/50 transition-all duration-200"
                 >
                   <h4 className="font-medium text-gray-800">AI Tool Card</h4>

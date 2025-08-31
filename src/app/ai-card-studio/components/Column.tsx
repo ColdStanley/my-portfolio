@@ -8,12 +8,14 @@ interface ColumnProps {
   column: Column
   onAddCard: (columnId: string) => void
   onDeleteCard: (columnId: string, cardId: string, isTopCard: boolean) => void
+  onInsertCard: (columnId: string, afterCardId?: string) => void
 }
 
 export default function ColumnComponent({ 
   column, 
   onAddCard, 
-  onDeleteCard
+  onDeleteCard,
+  onInsertCard
 }: ColumnProps) {
   const { columns, actions } = useWorkspaceStore()
   const { updateColumns } = actions
@@ -191,7 +193,7 @@ export default function ColumnComponent({
         {column.cards.map((card, cardIndex) => (
           <div
             key={card.id}
-            className={`transform transition-all duration-800 ease-out ${
+            className={`relative transform transition-all duration-800 ease-out ${
               card.deleting
                 ? 'translate-y-4 opacity-0 scale-95'
                 : card.justCreated
@@ -213,6 +215,7 @@ export default function ColumnComponent({
                 onTitleChange={handleTitleChange}
                 onTitleBlur={handleTitleBlur}
                 onDescriptionChange={handleDescriptionChange}
+                onInsertCard={onInsertCard}
               />
             ) : (
               <AIToolCard 
@@ -228,6 +231,7 @@ export default function ColumnComponent({
                 onAiModelChange={handleAiModelChange}
                 onGeneratedContentChange={handleGeneratedContentChange}
                 onGeneratingStateChange={handleGeneratingStateChange}
+                onInsertCard={onInsertCard}
               />
             )}
           </div>

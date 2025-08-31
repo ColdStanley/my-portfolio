@@ -13,6 +13,7 @@ interface InfoCardProps {
   onTitleChange: (cardId: string, newTitle: string) => void
   onTitleBlur: (cardId: string) => void
   onDescriptionChange: (cardId: string, newDescription: string) => void
+  onInsertCard?: (columnId: string, afterCardId: string) => void
 }
 
 export default function InfoCard({ 
@@ -23,7 +24,8 @@ export default function InfoCard({
   autoOpenSettings = false,
   onTitleChange,
   onTitleBlur,
-  onDescriptionChange
+  onDescriptionChange,
+  onInsertCard
 }: InfoCardProps) {
   const { columns, actions } = useWorkspaceStore()
   const { saveWorkspace, moveColumn, updateColumns } = actions
@@ -187,13 +189,24 @@ export default function InfoCard({
       {/* Settings Button - Top Right */}
       <button
         onClick={handleSettingsClick}
-        className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-200 z-10 cursor-pointer"
+        className="absolute top-4 right-4 w-6 h-6 bg-white/80 hover:bg-purple-50 rounded-full flex items-center justify-center text-gray-400 hover:text-purple-600 transition-all duration-200 z-10"
         title="Card Settings"
         style={{ pointerEvents: 'auto' }}
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </button>
+
+      {/* Insert Card Button - Bottom Right, same positioning as settings button */}
+      <button
+        onClick={() => onInsertCard?.(columnId, cardId)}
+        className="absolute bottom-4 right-4 w-6 h-6 bg-white/80 hover:bg-purple-50 rounded-full flex items-center justify-center text-gray-400 hover:text-purple-600 transition-all duration-200 z-10"
+        title="Insert card below"
+      >
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
         </svg>
       </button>
 
