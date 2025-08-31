@@ -77,41 +77,65 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
     fetchAndHandleWorkspace: async (userId) => {
       set({ isLoading: true });
+      
       try {
-        const { data, error } = await supabase
-          .from('ai_card_studios')
-          .select('data')
-          .eq('user_id', userId)
-          .single();
+        // Add timeout to database operations
+        const fetchWithTimeout = Promise.race([
+          supabase
+            .from('ai_card_studios')
+            .select('data')
+            .eq('user_id', userId)
+            .single(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Database timeout')), 15000)
+          )
+        ]) as Promise<any>;
+
+        const { data, error } = await fetchWithTimeout;
 
         if (error && error.code === 'PGRST116') {
-          // No existing workspace, create new one
-          const { data: newWorkspace, error: insertError } = await supabase
-            .from('ai_card_studios')
-            .insert({ user_id: userId, data: defaultColumns })
-            .select('data')
-            .single();
+          // No existing workspace, create new one with timeout
+          const insertWithTimeout = Promise.race([
+            supabase
+              .from('ai_card_studios')
+              .insert({ user_id: userId, data: defaultColumns })
+              .select('data')
+              .single(),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Insert timeout')), 15000)
+            )
+          ]) as Promise<any>;
+
+          try {
+            const { data: newWorkspace, error: insertError } = await insertWithTimeout;
             
-          if (insertError) {
-            console.error('Error creating new workspace:', insertError.message);
-            set({ columns: defaultColumns, saveError: 'Failed to create workspace' });
-          } else {
-            set({ columns: newWorkspace.data as Column[], saveError: null });
+            if (insertError) {
+              console.error('Error creating new workspace:', insertError.message);
+              set({ columns: defaultColumns, saveError: 'Failed to create workspace' });
+            } else {
+              set({ columns: newWorkspace.data as Column[], saveError: null });
+            }
+          } catch (insertErr) {
+            console.error('Insert operation timeout:', insertErr);
+            set({ columns: defaultColumns, saveError: 'Database connection slow, using defaults' });
           }
-        } else if (error) {
+        } else if (error && error.message !== 'Database timeout') {
           console.error('Error fetching workspace:', error.message);
           set({ columns: defaultColumns, saveError: 'Failed to load workspace' });
         } else if (data && data.data) {
-          // Debug logging
           console.log('Loaded workspace data:', data.data);
           set({ columns: data.data as Column[], saveError: null });
         } else {
           console.log('No workspace data found, using defaults');
           set({ columns: defaultColumns, saveError: null });
         }
-      } catch (err) {
-        console.error('Unexpected error:', err);
-        set({ columns: defaultColumns, saveError: 'Unexpected error occurred' });
+      } catch (err: any) {
+        console.error('Workspace fetch error:', err);
+        if (err.message === 'Database timeout') {
+          set({ columns: defaultColumns, saveError: 'Connection timeout, using defaults' });
+        } else {
+          set({ columns: defaultColumns, saveError: 'Unexpected error occurred' });
+        }
       }
       
       set({ isLoading: false, isInitialLoad: false });

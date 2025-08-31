@@ -14,38 +14,76 @@ export default function AICardStudioPage() {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
   const { isLoading: workspaceLoading, actions } = useWorkspaceStore()
+  const initializedRef = useRef(false)
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const currentUser = session?.user ?? null
-      setUser(currentUser)
-      actions.setUser(currentUser)
-      
-      if (currentUser) {
-        actions.fetchAndHandleWorkspace(currentUser.id)
+    let mounted = true
+
+    const initializeAuth = async () => {
+      try {
+        // Get initial session with timeout
+        const { data: { session }, error } = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Session timeout')), 10000)
+          )
+        ]) as any
+        
+        if (!mounted) return
+        
+        if (error) {
+          console.error('Auth session error:', error)
+          setLoading(false)
+          return
+        }
+
+        const currentUser = session?.user ?? null
+        setUser(currentUser)
+        actions.setUser(currentUser)
+        
+        if (currentUser && !initializedRef.current) {
+          initializedRef.current = true
+          await actions.fetchAndHandleWorkspace(currentUser.id)
+        }
+        
+        setLoading(false)
+      } catch (error) {
+        console.error('Auth initialization failed:', error)
+        if (mounted) {
+          setLoading(false)
+        }
       }
-      
-      setLoading(false)
-    })
+    }
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return
+      
       const currentUser = session?.user ?? null
       setUser(currentUser)
       actions.setUser(currentUser)
       
-      if (currentUser && event === 'SIGNED_IN') {
+      // Only fetch workspace on actual sign-in, not tab switching
+      if (currentUser && event === 'SIGNED_IN' && !initializedRef.current) {
+        initializedRef.current = true
         await actions.fetchAndHandleWorkspace(currentUser.id)
       }
       
-      setLoading(false)
+      if (mounted) {
+        setLoading(false)
+      }
     })
 
-    return () => subscription.unsubscribe()
-  }, [actions])
+    initializeAuth()
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+      initializedRef.current = false
+    }
+  }, []) // 移除actions依赖
 
   // Close user menu when clicking outside
   useEffect(() => {
