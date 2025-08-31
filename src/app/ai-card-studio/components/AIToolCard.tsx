@@ -35,7 +35,8 @@ export default function AIToolCard({
   onGeneratedContentChange,
   onGeneratingStateChange
 }: AIToolCardProps) {
-  const { columns } = useWorkspaceStore()
+  const { columns, actions } = useWorkspaceStore()
+  const { saveWorkspace } = actions
   
   // Get current card data from Zustand store
   const currentColumn = columns.find(col => col.id === columnId)
@@ -53,7 +54,27 @@ export default function AIToolCard({
   const generateButtonRef = useRef<HTMLButtonElement>(null)
   const [isFocused, setIsFocused] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  
+  // Save state
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
 
+
+  // Save function
+  const handleSave = async () => {
+    setIsSaving(true)
+    setSaveSuccess(false)
+    
+    try {
+      await saveWorkspace()
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 2000) // Hide success message after 2s
+    } catch (error) {
+      console.error('Save failed:', error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   // Auto-open settings for newly created cards
   useEffect(() => {
@@ -327,6 +348,9 @@ export default function AIToolCard({
           title="AI Tool Card Settings"
           onClose={handleClosePromptTooltip}
           onDelete={() => onDelete(cardId)}
+          onSave={handleSave}
+          isSaving={isSaving}
+          saveSuccess={saveSuccess}
         >
           {/* Button Name */}
           <div className="mb-4">

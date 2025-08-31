@@ -25,7 +25,8 @@ export default function InfoCard({
   onTitleBlur,
   onDescriptionChange
 }: InfoCardProps) {
-  const { columns } = useWorkspaceStore()
+  const { columns, actions } = useWorkspaceStore()
+  const { saveWorkspace } = actions
   
   // Get current card data from Zustand store
   const currentCard = columns
@@ -36,6 +37,26 @@ export default function InfoCard({
   const description = currentCard?.description || ''
   const [showSettingsTooltip, setShowSettingsTooltip] = useState(false)
   const [settingsTooltipVisible, setSettingsTooltipVisible] = useState(false)
+  
+  // Save state
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
+
+  // Save function
+  const handleSave = async () => {
+    setIsSaving(true)
+    setSaveSuccess(false)
+    
+    try {
+      await saveWorkspace()
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 2000) // Hide success message after 2s
+    } catch (error) {
+      console.error('Save failed:', error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   const handleSettingsClick = () => {
     setShowSettingsTooltip(true)
@@ -90,6 +111,9 @@ export default function InfoCard({
           title="Info Card Settings"
           onClose={handleCloseSettingsTooltip}
           onDelete={handleDelete}
+          onSave={handleSave}
+          isSaving={isSaving}
+          saveSuccess={saveSuccess}
         >
           {/* Card Name */}
           <div className="mb-4">

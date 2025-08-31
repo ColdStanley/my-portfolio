@@ -125,7 +125,7 @@ export default function AICardStudioPage() {
                   onClick={() => setShowUserMenu(!showUserMenu)}
                   className="px-3 py-1.5 text-xs bg-white/90 backdrop-blur-md hover:bg-purple-50 text-gray-600 hover:text-purple-600 rounded-lg border border-gray-200 shadow-md transition-all duration-200 flex items-center gap-2"
                 >
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
                   {user.email}
                   <svg 
                     className={`w-3 h-3 transition-transform duration-200 ${showUserMenu ? 'rotate-180' : ''}`} 
@@ -152,7 +152,7 @@ export default function AICardStudioPage() {
                           setShowUserMenu(false)
                           handleSignOut()
                         }}
-                        className="w-full px-3 py-2 text-sm text-left text-red-600 hover:bg-red-50 transition-all duration-200 flex items-center gap-2"
+                        className="w-full px-3 py-2 text-sm text-left text-purple-600 hover:bg-purple-50 transition-all duration-200 flex items-center gap-2"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

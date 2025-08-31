@@ -60,8 +60,7 @@ const defaultColumns: Column[] = [
   }
 ];
 
-// Debounced save function
-let saveTimeout: NodeJS.Timeout | null = null;
+// Manual save only - no debounce
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   columns: [],
@@ -118,23 +117,10 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     },
 
     updateColumns: (updater) => {
-      const prevColumns = get().columns;
       set((state) => ({ columns: updater(state.columns) }));
       
-      // Debug: Log when columns are updated
-      const newColumns = get().columns;
-      console.log('Columns updated. Scheduling save...');
-      
-      // Debounced auto-save (800ms delay)
-      if (saveTimeout) {
-        clearTimeout(saveTimeout);
-      }
-      
-      saveTimeout = setTimeout(() => {
-        const { saveWorkspace } = get().actions;
-        console.log('Debounce timeout reached, saving...');
-        saveWorkspace();
-      }, 200); // Reduced to 200ms for faster debugging
+      // Debug: Log when columns are updated (no auto-save anymore)
+      console.log('Columns updated. Use Save button to save changes.');
     },
 
     saveWorkspace: async () => {

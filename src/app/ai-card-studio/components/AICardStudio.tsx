@@ -7,7 +7,6 @@ import { generateUniqueButtonName, generateUniqueTitle } from '../utils/cardUtil
 import { useCardDeletion } from '../hooks/useCardDeletion'
 import ColumnComponent from './Column'
 import { useWorkspaceStore } from '../store/workspaceStore'
-import DebugPanel from './DebugPanel'
 
 export default function AICardStudio() {
   const { columns, isLoading, saveError, actions } = useWorkspaceStore()
@@ -55,7 +54,7 @@ export default function AICardStudio() {
           id: `info-${timestamp}-${randomId}`,
           type: 'info',
           title: generateUniqueTitle('New Card', columns),
-          description: 'Enter description...'
+          description: ''
         }
       : {
           id: `aitool-${timestamp}-${randomId}`,
@@ -238,9 +237,6 @@ export default function AICardStudio() {
         </>,
         document.body
       )}
-
-      {/* Debug Panel - only in development */}
-      <DebugPanel />
 
     </div>
   )
