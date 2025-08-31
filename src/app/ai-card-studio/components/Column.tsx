@@ -186,7 +186,7 @@ export default function ColumnComponent({
 
       {/* Scrollable Content */}
       <div data-column-id={column.id} className="h-full overflow-y-auto scrollbar-hide pr-0">
-        <div className="space-y-4 pb-0 pt-12 px-2">
+        <div className="space-y-3 pb-0 px-2">
         {/* Render cards */}
         {column.cards.map((card, cardIndex) => (
           <div
@@ -236,12 +236,11 @@ export default function ColumnComponent({
         {/* Add card button - follows cards */}
         <button
           onClick={() => onAddCard(column.id)}
-          className="w-full h-16 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center text-gray-500 hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50/30 transition-all duration-200"
+          className="w-full h-16 border border-dashed border-gray-200 rounded-xl flex items-center justify-center text-gray-300 hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50/30 transition-all duration-200"
         >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          Add Card
         </button>
         </div>
       </div>

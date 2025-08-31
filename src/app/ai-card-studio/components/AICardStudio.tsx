@@ -166,7 +166,7 @@ export default function AICardStudio() {
             </button>
 
             {/* Scrollable Content */}
-            <div className="horizontal-scroll-container flex gap-6 items-start overflow-x-auto scrollbar-hide pb-0 h-[calc(100vh-200px)] px-12">
+            <div className="horizontal-scroll-container flex gap-3 items-start overflow-x-auto scrollbar-hide pb-0 h-[calc(100vh-125px)] px-12">
               {/* Render all columns */}
               {columns.map((column) => (
                 <ColumnComponent
@@ -180,12 +180,11 @@ export default function AICardStudio() {
               {/* Add new column button */}
               <button
                 onClick={addNewColumn}
-                className="flex-shrink-0 w-[480px] h-32 border-2 border-dashed border-purple-300 rounded-xl flex items-center justify-center text-purple-600 hover:border-purple-400 hover:text-purple-700 hover:bg-purple-50/50 transition-all duration-200 font-medium"
+                className="flex-shrink-0 w-[480px] h-32 border border-dashed border-gray-200 rounded-xl flex items-center justify-center text-gray-300 hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50/30 transition-all duration-200"
               >
-                <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Add New Column
               </button>
             </div>
           </div>

@@ -244,7 +244,7 @@ export default function AIToolCard({
   }
 
   return (
-    <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl p-6 relative">
+    <div className="bg-gradient-to-br from-white/95 to-purple-50/30 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 border border-white/50 p-4 relative">
       {/* Settings Button */}
       <button
         onClick={handlePromptClick}
@@ -262,7 +262,7 @@ export default function AIToolCard({
         ref={generateButtonRef}
         onClick={() => handleGenerateClick()}
         disabled={isGenerating}
-        className="px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-md font-medium transition-all duration-200 flex items-center gap-1.5 mb-4"
+        className="px-3 py-1.5 text-sm bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300 text-white rounded-md font-medium transition-all duration-200 flex items-center gap-1.5 mb-4"
       >
         {isGenerating ? (
           <>
@@ -278,7 +278,7 @@ export default function AIToolCard({
       </button>
 
       {/* AI Response Area - Always visible with gray background */}
-      <div className="p-4 bg-gray-50/80 backdrop-blur-sm rounded-lg border border-gray-200 min-h-24">
+      <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100/30 backdrop-blur-sm rounded-lg min-h-24">
         {generatedContent ? (
           <div className="prose prose-sm max-w-none text-gray-700">
             <ReactMarkdown

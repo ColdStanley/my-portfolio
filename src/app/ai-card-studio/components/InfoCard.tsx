@@ -84,7 +84,7 @@ export default function InfoCard({
   }, [autoOpenSettings])
 
   return (
-    <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl p-6 relative">
+    <div className="bg-gradient-to-br from-white/95 to-purple-50/30 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 border border-white/50 p-4 relative">
       
       {/* Settings Button - Top Right */}
       <button
@@ -99,7 +99,7 @@ export default function InfoCard({
         </svg>
       </button>
 
-      <h2 className="text-lg font-medium text-purple-700 mb-4">{title}</h2>
+      <h2 className="text-lg font-medium text-purple-600 mb-4">{title}</h2>
       <div className="text-gray-600 text-sm">
         {description}
       </div>
