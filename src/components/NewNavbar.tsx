@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSimplifiedAuth } from '@/hooks/useSimplifiedAuth'
-import { supabase } from '@/lib/supabaseClient'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 export default function NewNavbar() {
   const [scrolled, setScrolled] = useState(false)
@@ -14,6 +14,7 @@ export default function NewNavbar() {
   const [showUserDropdown, setShowUserDropdown] = useState(false)
   const pathname = usePathname()
   const { user, profile, isAdmin } = useSimplifiedAuth()
+  const supabase = createClientComponentClient()
 
   useEffect(() => {
     const handleScroll = () => {

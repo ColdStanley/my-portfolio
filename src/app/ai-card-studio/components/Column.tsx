@@ -23,7 +23,7 @@ export default function ColumnComponent({
 }: ColumnProps) {
   return (
     <div className="flex-shrink-0 w-[480px] h-full relative">
-      {/* Up Arrow */}
+      {/* Up Arrow - 悬浮在列外上方 */}
       <button
         onClick={() => {
           const scrollContainer = document.querySelector(`[data-column-id="${column.id}"]`)
@@ -31,14 +31,14 @@ export default function ColumnComponent({
             scrollContainer.scrollBy({ top: -200, behavior: 'smooth' })
           }
         }}
-        className="absolute top-2 right-2 z-10 w-8 h-8 bg-white/90 backdrop-blur-md rounded-full shadow-md flex items-center justify-center text-purple-600 hover:bg-purple-50 hover:text-purple-700 transition-all duration-200"
+        className="absolute -top-5 left-1/2 transform -translate-x-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur-md rounded-full shadow-md flex items-center justify-center text-purple-600 hover:bg-purple-50 hover:text-purple-700 transition-all duration-200"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
         </svg>
       </button>
 
-      {/* Down Arrow */}
+      {/* Down Arrow - 悬浮在列外下方 */}
       <button
         onClick={() => {
           const scrollContainer = document.querySelector(`[data-column-id="${column.id}"]`)
@@ -46,7 +46,7 @@ export default function ColumnComponent({
             scrollContainer.scrollBy({ top: 200, behavior: 'smooth' })
           }
         }}
-        className="absolute bottom-2 right-2 z-10 w-8 h-8 bg-white/90 backdrop-blur-md rounded-full shadow-md flex items-center justify-center text-purple-600 hover:bg-purple-50 hover:text-purple-700 transition-all duration-200"
+        className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur-md rounded-full shadow-md flex items-center justify-center text-purple-600 hover:bg-purple-50 hover:text-purple-700 transition-all duration-200"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

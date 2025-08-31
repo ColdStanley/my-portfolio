@@ -6,7 +6,7 @@ import PageTransition from '@/components/PageTransition'
 export default function AICardStudioPage() {
   return (
     <>
-      {/* Hide global navbar/footer to avoid auth conflicts */}
+      {/* Hide global navbar/footer for clean fullscreen experience */}
       <style jsx global>{`
         nav[role="banner"], 
         footer[role="contentinfo"],

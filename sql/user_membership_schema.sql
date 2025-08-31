@@ -116,10 +116,8 @@ CREATE TRIGGER update_feelink_quotes_updated_at
 INSERT INTO products (id, name, description, default_tier) VALUES
 ('ielts-speaking', 'IELTS Speaking Practice', 'IELTS口语练习平台', 'registered'),
 ('feelink', 'Feelink Quote Generator', '情感引用生成器', 'registered'),
-('frenotes', 'French Learning Notes', '法语学习笔记', 'registered'),
 ('lueur', 'Interactive Reading Game', '互动阅读理解游戏', 'registered'),
 ('job-application', 'AI Job Application Tools', 'AI求职工具套件', 'registered'),
-('notion-writer', 'Notion Bulk Writer', 'Notion批量写入工具', 'registered'),
 ('english-reading', 'English Reading Practice', '英语阅读练习', 'registered'),
 ('cestlavie', 'Life Management Dashboard', '人生管理仪表板', 'registered')
 ON CONFLICT (id) DO NOTHING;

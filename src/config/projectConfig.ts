@@ -11,7 +11,6 @@ export const PROJECT_CONFIG = {
     FEELINK: 'feelink',
     JOB_APPLICATION: 'job-application',
     JD2CV: 'jd2cv',
-    NOTION_WRITER: 'notion-writer',
     ENGLISH_READING: 'english-reading'
   } as const,
 
@@ -23,7 +22,6 @@ export const PROJECT_CONFIG = {
     '/feelink': 'feelink',
     '/job-application': 'job-application',
     '/jd2cv-full': 'jd2cv',
-    '/notion-writer': 'notion-writer',
     '/ielts-reading': 'english-reading'
   } as const,
 
