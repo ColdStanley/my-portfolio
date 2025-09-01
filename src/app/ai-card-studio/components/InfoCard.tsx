@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
+import remarkBreaks from 'remark-breaks'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import Modal from './ui/Modal'
 import SettingsModal from './ui/SettingsModal'
@@ -297,6 +298,7 @@ export default function InfoCard({
         {description ? (
           <div className="prose prose-sm max-w-none">
             <ReactMarkdown
+              remarkPlugins={[remarkBreaks]}
               components={{
                 h1: ({node, ...props}) => <h1 className="text-lg font-bold text-gray-800 mb-2" {...props} />,
                 h2: ({node, ...props}) => <h2 className="text-base font-semibold text-gray-800 mb-2" {...props} />,
