@@ -131,7 +131,36 @@ export default function AICardStudio() {
 
 
   return (
-    <div>
+    <>
+      <style jsx global>{`
+        @keyframes gradient-flow {
+          0% {
+            background-position: 0% 50%;
+            background-size: 200% 200%;
+          }
+          25% {
+            background-position: 100% 25%;
+            background-size: 220% 180%;
+          }
+          50% {
+            background-position: 50% 100%;
+            background-size: 180% 220%;
+          }
+          75% {
+            background-position: 25% 0%;
+            background-size: 240% 160%;
+          }
+          100% {
+            background-position: 0% 50%;
+            background-size: 200% 200%;
+          }
+        }
+        
+        .animate-gradient-flow {
+          animation: gradient-flow 12s ease-in-out infinite;
+        }
+      `}</style>
+      <div>
       {/* Save Error Notification */}
       {saveError && (
         <div className="fixed top-20 right-4 z-50 bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
@@ -151,7 +180,7 @@ export default function AICardStudio() {
       )}
 
       {/* Full screen layout - no L-shaped offset */}
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 p-6 pb-0">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 p-6 pb-0 animate-gradient-flow">
         <div className="max-w-full mx-auto">
           {/* 简化的标题 */}
           <div className="flex items-center justify-center mb-8">
@@ -265,5 +294,6 @@ export default function AICardStudio() {
       )}
 
     </div>
+    </>
   )
 }

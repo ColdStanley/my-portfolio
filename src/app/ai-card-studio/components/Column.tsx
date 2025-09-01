@@ -155,7 +155,32 @@ export default function ColumnComponent({
     })))
   }
   return (
-    <div className="flex-shrink-0 w-[480px] h-full relative">
+    <>
+      <style jsx>{`
+        .staggered-entry {
+          opacity: 0;
+          transform: translateY(20px) scale(0.95);
+          animation: staggered-fade-in 2400ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+        }
+        
+        @keyframes staggered-fade-in {
+          0% {
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        
+        .staggered-entry.animation-complete {
+          animation: none;
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      `}</style>
+      <div className="flex-shrink-0 w-[480px] h-full relative">
       {/* Up Arrow - 悬浮在列外上方 */}
       <button
         onClick={() => {
@@ -193,18 +218,20 @@ export default function ColumnComponent({
         {column.cards.map((card, cardIndex) => (
           <div
             key={card.id}
-            className={`relative transform transition-all duration-800 ease-out ${
+            className={`relative transform transition-all duration-[2400ms] staggered-entry ${
               card.deleting
-                ? 'translate-y-4 opacity-0 scale-95'
+                ? 'translate-y-4 translate-x-2 opacity-0 scale-95 ease-in'
                 : card.justCreated
-                ? 'translate-y-0 opacity-100 scale-100'
-                : 'translate-y-0 opacity-100 scale-100'
+                ? 'animation-complete translate-y-0 opacity-100 scale-100'
+                : ''
             } ${
               cardIndex === 0 && card.type === 'info' ? 'sticky top-0 z-20' : ''
             }`}
             style={{
-              transitionDelay: card.deleting ? '0ms' : card.justCreated ? '0ms' : `${cardIndex * 80}ms`,
-              transform: card.justCreated ? 'translateY(0)' : undefined
+              transitionDelay: card.deleting ? '0ms' : card.justCreated ? '100ms' : `${cardIndex * 360 + 600}ms`,
+              transform: card.justCreated ? 'translateY(40px)' : undefined,
+              transitionTimingFunction: card.justCreated ? 'cubic-bezier(0.68, -0.55, 0.27, 1.55)' : card.deleting ? 'cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'cubic-bezier(0.4, 0.0, 0.2, 1)',
+              animationFillMode: 'both'
             }}
           >
             {card.type === 'info' ? (
@@ -250,6 +277,7 @@ export default function ColumnComponent({
         </button>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   )
 }

@@ -191,29 +191,29 @@ export default function InfoCard({
   }, [autoOpenSettings])
 
   return (
-    <div className="bg-gradient-to-br from-white/95 to-purple-50/30 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 border border-white/50 p-4 relative">
+    <div className="bg-gradient-to-br from-white/95 to-purple-50/30 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 border border-white/50 p-4 relative transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-1 group">
       
+      {/* Insert Card Button - Top Right, left of Settings button */}
+      <button
+        onClick={() => onInsertCard?.(columnId, cardId)}
+        className="absolute top-4 right-12 w-6 h-6 bg-white/80 hover:bg-purple-50 rounded-full flex items-center justify-center text-gray-400 hover:text-purple-600 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 hover:scale-110 hover:-translate-y-0.5"
+        title="Insert card below"
+      >
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
+
       {/* Settings Button - Top Right */}
       <button
         onClick={handleSettingsClick}
-        className="absolute top-4 right-4 w-6 h-6 bg-white/80 hover:bg-purple-50 rounded-full flex items-center justify-center text-gray-400 hover:text-purple-600 transition-all duration-200 z-10"
+        className="absolute top-4 right-4 w-6 h-6 bg-white/80 hover:bg-purple-50 rounded-full flex items-center justify-center text-gray-400 hover:text-purple-600 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 hover:scale-110 hover:-translate-y-0.5"
         title="Card Settings"
         style={{ pointerEvents: 'auto' }}
       >
         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      </button>
-
-      {/* Insert Card Button - Bottom Right, same positioning as settings button */}
-      <button
-        onClick={() => onInsertCard?.(columnId, cardId)}
-        className="absolute bottom-4 right-4 w-6 h-6 bg-white/80 hover:bg-purple-50 rounded-full flex items-center justify-center text-gray-400 hover:text-purple-600 transition-all duration-200 z-10"
-        title="Insert card below"
-      >
-        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
         </svg>
       </button>
 
@@ -243,14 +243,14 @@ export default function InfoCard({
       <div className={`relative text-gray-600 text-sm transition-all duration-300 ${
         !isDescriptionExpanded && description ? 'max-h-16 overflow-hidden' : 'max-h-fit'
       }`}>
-        {/* Expand/Collapse Button */}
+        {/* Expand/Collapse Button - Minimal dropdown arrow */}
         {description && (
           <button
             onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-            className="absolute top-1 right-5 w-4 h-4 text-gray-400 hover:text-purple-500 cursor-pointer transition-colors z-10 bg-gradient-to-l from-white via-white to-transparent pl-2"
+            className="absolute top-1 right-2 p-1 text-gray-400 hover:text-purple-600 cursor-pointer transition-all duration-200 z-10"
             title={isDescriptionExpanded ? 'Collapse description' : 'Expand description'}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path 
                 strokeLinecap="round" 
                 strokeLinejoin="round" 

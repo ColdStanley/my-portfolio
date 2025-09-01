@@ -135,14 +135,66 @@ export default function AICardStudioPage() {
           .footer {
             display: none !important;
           }
+          @keyframes gradient-shift {
+            0% {
+              background-position: 0% 50%;
+            }
+            50% {
+              background-position: 100% 50%;
+            }
+            100% {
+              background-position: 0% 50%;
+            }
+          }
+          .animate-gradient-shift {
+            background-size: 400% 400%;
+            animation: gradient-shift 8s ease-in-out infinite;
+          }
         `}</style>
-        <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
-          <div className="flex items-center gap-3 text-purple-600">
-            <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 animate-gradient-shift">
+          {/* Skeleton Layout */}
+          <div className="p-6 pb-0">
+            <div className="max-w-full mx-auto">
+              {/* Title Skeleton */}
+              <div className="flex items-center justify-center mb-8">
+                <div className="h-9 w-48 bg-gradient-to-r from-purple-200 to-indigo-200 rounded-lg animate-pulse"></div>
+              </div>
+              
+              {/* Skeleton Cards Layout */}
+              <div className="relative">
+                <div className="horizontal-scroll-container flex gap-3 items-start overflow-x-auto scrollbar-hide pb-0 h-[calc(100vh-125px)] px-12">
+                  {/* Skeleton Columns */}
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex-shrink-0 w-[480px] h-full relative">
+                      <div className="h-full overflow-y-auto scrollbar-hide pr-0">
+                        <div className="space-y-3 pb-0 px-2">
+                          {/* Skeleton Cards */}
+                          {[1, 2, 3].map((j) => (
+                            <div key={j} className="bg-white/60 backdrop-blur-sm rounded-xl shadow-sm p-4 animate-pulse">
+                              <div className="h-6 bg-purple-200/60 rounded mb-3"></div>
+                              <div className="space-y-2">
+                                <div className="h-4 bg-gray-200/60 rounded w-full"></div>
+                                <div className="h-4 bg-gray-200/60 rounded w-3/4"></div>
+                                <div className="h-4 bg-gray-200/60 rounded w-1/2"></div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Loading Indicator Overlay */}
+          <div className="fixed bottom-8 right-8 flex items-center gap-3 bg-white/90 backdrop-blur-md rounded-full px-4 py-2 shadow-lg">
+            <svg className="w-5 h-5 animate-spin text-purple-600" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 718-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
             </svg>
-            <span className="text-sm font-medium">Loading...</span>
+            <span className="text-sm font-medium text-purple-700">Loading workspace...</span>
           </div>
         </div>
       </>
