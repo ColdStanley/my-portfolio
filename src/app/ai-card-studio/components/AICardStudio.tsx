@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Column, ColumnCard } from '../types'
 import { generateUniqueButtonName, generateUniqueTitle } from '../utils/cardUtils'
@@ -10,13 +10,16 @@ import { useWorkspaceStore } from '../store/workspaceStore'
 
 export default function AICardStudio() {
   const { columns, isLoading, saveError, actions } = useWorkspaceStore()
-  const { updateColumns, clearSaveError } = actions
+  const { updateColumns, clearSaveError, saveWorkspace } = actions
   const { deleteCard } = useCardDeletion(columns, updateColumns)
   
   const [showCardTypeModal, setShowCardTypeModal] = useState(false)
   const [cardTypeModalVisible, setCardTypeModalVisible] = useState(false)
   const [selectedColumnId, setSelectedColumnId] = useState<string>('')
   const [insertAfterCardId, setInsertAfterCardId] = useState<string>('')
+  
+  // Import functionality
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Show loading while data is being fetched
   if (isLoading) {
@@ -129,6 +132,62 @@ export default function AICardStudio() {
     setTimeout(() => setShowCardTypeModal(false), 250)
   }
 
+  // Import column functions
+  const handleImportClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      const text = await file.text()
+      const importedColumn = JSON.parse(text) as Column
+
+      // Generate new unique IDs for the column and all cards
+      const timestamp = Date.now()
+      const randomId = Math.random().toString(36).substr(2, 9)
+      
+      const newColumn: Column = {
+        ...importedColumn,
+        id: `col-${timestamp}-${randomId}`,
+        cards: importedColumn.cards.map((card, index) => {
+          const cardTimestamp = timestamp + index
+          const cardRandomId = Math.random().toString(36).substr(2, 9)
+          
+          if (card.type === 'info') {
+            return {
+              ...card,
+              id: `info-${cardTimestamp}-${cardRandomId}`,
+              title: generateUniqueTitle(card.title || 'Imported Card', columns)
+            }
+          } else {
+            return {
+              ...card,
+              id: `aitool-${cardTimestamp}-${cardRandomId}`,
+              buttonName: generateUniqueButtonName(card.buttonName || 'Imported Tool', columns)
+            }
+          }
+        })
+      }
+
+      // Add the new column
+      updateColumns(prev => [...prev, newColumn])
+
+      // Auto-save after import
+      await saveWorkspace()
+
+      // Clear the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+
+    } catch (error) {
+      console.error('Import error:', error)
+      // Could add user feedback here
+    }
+  }
 
   return (
     <>
@@ -236,12 +295,37 @@ export default function AICardStudio() {
               {/* Add new column button */}
               <button
                 onClick={addNewColumn}
-                className="flex-shrink-0 w-[480px] h-32 border border-dashed border-gray-200 rounded-xl flex items-center justify-center text-gray-300 hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50/30 transition-all duration-200"
+                className="flex-shrink-0 w-[230px] h-32 border border-dashed border-gray-200 rounded-xl flex items-center justify-center text-gray-300 hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50/30 transition-all duration-200"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
+                <div className="flex flex-col items-center gap-2">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span className="text-sm">Add Column</span>
+                </div>
               </button>
+
+              {/* Import column button */}
+              <button
+                onClick={handleImportClick}
+                className="flex-shrink-0 w-[230px] h-32 border border-dashed border-gray-200 rounded-xl flex items-center justify-center text-gray-300 hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50/30 transition-all duration-200"
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                  </svg>
+                  <span className="text-sm">Import Column</span>
+                </div>
+              </button>
+
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleFileChange}
+                className="hidden"
+              />
             </div>
           </div>
         </div>
