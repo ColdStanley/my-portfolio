@@ -58,6 +58,7 @@ export default function AIToolCard({
   const generateButtonRef = useRef<HTMLButtonElement>(null)
   const [isFocused, setIsFocused] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [isResponseExpanded, setIsResponseExpanded] = useState(false)
   
   // Save state
   const [isSaving, setIsSaving] = useState(false)
@@ -298,7 +299,29 @@ export default function AIToolCard({
       </button>
 
       {/* AI Response Area - Always visible with gray background */}
-      <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100/30 backdrop-blur-sm rounded-lg min-h-24">
+      <div className={`relative p-4 bg-gradient-to-br from-gray-50 to-gray-100/30 backdrop-blur-sm rounded-lg transition-all duration-300 ${
+        isResponseExpanded ? 'min-h-fit' : 'min-h-24'
+      } ${
+        !isResponseExpanded && generatedContent ? 'max-h-24 overflow-hidden' : ''
+      }`}>
+        {/* Expand/Collapse Button */}
+        {generatedContent && (
+          <button
+            onClick={() => setIsResponseExpanded(!isResponseExpanded)}
+            className="absolute top-2 right-2 w-4 h-4 text-gray-400 hover:text-purple-500 cursor-pointer transition-colors z-10"
+            title={isResponseExpanded ? 'Collapse response' : 'Expand response'}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d={isResponseExpanded ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} 
+              />
+            </svg>
+          </button>
+        )}
+        
         {generatedContent ? (
           <div className="prose prose-sm max-w-none text-gray-700">
             <ReactMarkdown
@@ -418,7 +441,7 @@ export default function AIToolCard({
           </div>
 
           {/* Insert Reference - Three Column Layout */}
-          {(previousCards.length > 0 || infoCards.length > 0 || (options || []).length > 0) && (
+          {(previousCards.length > 0 || infoCards.length > 0 || true) && (
             <div className="mb-4">
               <div className="flex gap-4">
                 {/* Left 1/3 - AI Cards */}
@@ -463,50 +486,53 @@ export default function AIToolCard({
                 
                 {/* Right 1/3 - Options */}
                 <div className="flex-1">
-                  {(options || []).length > 0 && (
-                    <>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Options (click Insert Option to add to prompt):
-                        <button
-                          onClick={() => {
-                            setShowOptionsManageTooltip(true)
-                            setTimeout(() => setOptionsManageTooltipVisible(true), 10)
-                          }}
-                          className="inline-block ml-1 p-0.5 text-gray-400 hover:text-gray-600 transition-colors align-middle"
-                        >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                        </button>
-                      </label>
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          onClick={() => {
-                            if (textareaRef.current) {
-                              const textarea = textareaRef.current
-                              const cursorPosition = textarea.selectionStart
-                              const textBefore = promptText.substring(0, cursorPosition)
-                              const textAfter = promptText.substring(textarea.selectionEnd)
-                              const optionText = '{{option}}'
-                              
-                              const newText = textBefore + optionText + textAfter
-                              onPromptChange(cardId, newText)
-                              
-                              setTimeout(() => {
-                                const newCursorPosition = cursorPosition + optionText.length
-                                textarea.setSelectionRange(newCursorPosition, newCursorPosition)
-                                textarea.focus()
-                              }, 0)
-                            }
-                          }}
-                          className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
-                        >
-                          Insert Option
-                        </button>
-                      </div>
-                    </>
-                  )}
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Options (click Insert Option to add to prompt):
+                    <button
+                      onClick={() => {
+                        setShowOptionsManageTooltip(true)
+                        setTimeout(() => setOptionsManageTooltipVisible(true), 10)
+                      }}
+                      className="inline-block ml-1 p-0.5 text-gray-400 hover:text-gray-600 transition-colors align-middle"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </button>
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {(options || []).length > 0 && (
+                      <button
+                        onClick={() => {
+                          if (textareaRef.current) {
+                            const textarea = textareaRef.current
+                            const cursorPosition = textarea.selectionStart
+                            const textBefore = promptText.substring(0, cursorPosition)
+                            const textAfter = promptText.substring(textarea.selectionEnd)
+                            const optionText = '{{option}}'
+                            
+                            const newText = textBefore + optionText + textAfter
+                            onPromptChange(cardId, newText)
+                            
+                            setTimeout(() => {
+                              const newCursorPosition = cursorPosition + optionText.length
+                              textarea.setSelectionRange(newCursorPosition, newCursorPosition)
+                              textarea.focus()
+                            }, 0)
+                          }
+                        }}
+                        className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                      >
+                        Insert Option
+                      </button>
+                    )}
+                    {(options || []).length > 0 && (
+                      <span className="px-2 py-1 text-xs text-gray-500 bg-gray-50 rounded">
+                        {options.length} option{options.length !== 1 ? 's' : ''} configured
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

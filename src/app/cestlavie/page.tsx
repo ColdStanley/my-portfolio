@@ -7,7 +7,6 @@ import { TaskRecord } from './types/task'
 import Sidebar from './components/Sidebar'
 import TaskPanelOptimized from './components/Life/TaskPanelOptimized'
 import NotionConfigModal from './components/NotionConfigModal'
-import FrenchPanel from './components/Study/FrenchPanel'
 import NewNavbar from '@/components/NewNavbar'
 import FooterSection from '@/components/FooterSection'
 import PageTransition from '@/components/PageTransition'
@@ -37,10 +36,7 @@ export default function CestLaViePage() {
     },
     {
       key: 'study',
-      label: 'Study',
-      subTabs: [
-        { key: 'french', label: 'French' }
-      ]
+      label: 'Study'
     }
   ]
 
@@ -179,7 +175,6 @@ export default function CestLaViePage() {
             </div>
           )}
           
-          {activeTab === 'french' && <FrenchPanel />}
         </div>
       </div>
 

@@ -54,6 +54,7 @@ export default function InfoCard({
   const [newUrl, setNewUrl] = useState('')
   const [isTriggering, setIsTriggering] = useState(false)
   const urlButtonRef = useRef<HTMLButtonElement>(null)
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
   
   // Save state
   const [isSaving, setIsSaving] = useState(false)
@@ -239,7 +240,27 @@ export default function InfoCard({
         </button>
       )}
       
-      <div className="text-gray-600 text-sm">
+      <div className={`relative text-gray-600 text-sm transition-all duration-300 ${
+        !isDescriptionExpanded && description ? 'max-h-16 overflow-hidden' : 'max-h-fit'
+      }`}>
+        {/* Expand/Collapse Button */}
+        {description && (
+          <button
+            onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+            className="absolute top-1 right-5 w-4 h-4 text-gray-400 hover:text-purple-500 cursor-pointer transition-colors z-10 bg-gradient-to-l from-white via-white to-transparent pl-2"
+            title={isDescriptionExpanded ? 'Collapse description' : 'Expand description'}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d={isDescriptionExpanded ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} 
+              />
+            </svg>
+          </button>
+        )}
+        
         {description ? (
           <div className="prose prose-sm max-w-none">
             <ReactMarkdown
@@ -263,9 +284,7 @@ export default function InfoCard({
               {description}
             </ReactMarkdown>
           </div>
-        ) : (
-          <span className="text-gray-400 italic">No description</span>
-        )}
+        ) : null}
       </div>
 
       {/* Card Settings Modal - Screen Centered via Portal */}

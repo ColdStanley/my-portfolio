@@ -41,12 +41,11 @@ export default function StrategyContent({
     if (onStrategyUpdate) {
       onStrategyUpdate(strategyId, field, value)
     } else {
-      // Fallback to direct update if no callback provided
       const strategy = strategies.find(s => s.id === strategyId)
       if (!strategy) return
 
       try {
-        await updateStrategyField(strategy, field, value)
+        await updatePlanField(strategy, field, value)
       } catch (error) {
         console.error(`Failed to update strategy ${field}:`, error)
       }
@@ -55,32 +54,57 @@ export default function StrategyContent({
 
   if (loading) {
     return (
-      <div className="text-center py-6">
-        <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mb-2"></div>
-        <p className="text-xs text-purple-600">Loading strategies...</p>
+      <div className="text-center py-6 text-[#6B7280]">
+        <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-[#007AFF] mb-2"></div>
+        <p className="text-xs">Loading strategies...</p>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="text-center py-6">
-        <div className="text-red-500 text-sm mb-2">Error loading strategies</div>
-        <p className="text-xs text-purple-600">{error}</p>
+      <div className="text-center py-6 text-red-500">
+        <div className="text-sm mb-2">Error loading strategies</div>
+        <p className="text-xs text-[#6B7280]">{error}</p>
       </div>
     )
   }
 
+  // 辅助函数：根据状态和优先级获取对应的颜色类
+  const getStatusClasses = (status: string) => {
+    switch(status) {
+      case 'In Progress':
+        return 'bg-[#EAF4FF] text-[#007AFF] border border-[#007AFF]';
+      case 'Completed':
+        return 'bg-[#F2F2F7] text-[#8E8E93] border border-[#D1D5DB]';
+      case 'Not Started':
+        return 'bg-[#F9FAFB] text-[#6B7280] border border-[#D1D5DB]';
+      default:
+        return 'bg-[#F9FAFB] text-[#6B7280] border border-[#D1D5DB]';
+    }
+  };
+
+  const getPriorityClasses = (priority: string) => {
+    switch(priority) {
+      case 'Important & Urgent':
+        return 'bg-[#FFF7E6] text-[#FF9F0A] border border-[#FF9F0A]';
+      case 'Important & Not Urgent':
+        return 'bg-[#F4FCEB] text-[#30D158] border border-[#30D158]';
+      default:
+        return 'bg-[#F9FAFB] text-[#6B7280] border border-[#D1D5DB]';
+    }
+  };
+
   return (
     <>
       {strategies.length === 0 ? (
-        <div className="text-center py-6 text-purple-900">
+        <div className="text-center py-6 text-[#6B7280]">
           <div className="text-lg mb-2">🎯</div>
           <p className="text-sm mb-3">No strategies yet</p>
           {onAddStrategy && (
             <button 
               onClick={onAddStrategy}
-              className="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
+              className="px-3 py-1 bg-[#007AFF] text-white text-xs rounded-lg hover:bg-[#007AFF]/90 transition-colors"
             >
               Create First Strategy
             </button>
@@ -89,7 +113,6 @@ export default function StrategyContent({
       ) : (
         <div className="space-y-3">
           {sortStrategiesByOrder(strategies).sort((a, b) => {
-            // Sort by status: completed strategies last
             const aCompleted = a.status === 'Completed'
             const bCompleted = b.status === 'Completed'
             
@@ -101,25 +124,23 @@ export default function StrategyContent({
             const isCompleted = strategy.status === 'Completed'
             
             return (
-            <div key={strategy.id} className={`relative p-3 bg-purple-600/20 rounded-lg shadow-lg hover:bg-purple-600/25 transition-colors ${
-              isCompleted ? 'border-l-4 border-purple-600' : ''
+            <div key={strategy.id} className={`relative p-3 rounded-lg shadow-sm border border-[#D1D5DB] transition-all duration-200 ${
+              isCompleted ? 'bg-[#F2F2F7] text-[#8E8E93]' : 'bg-[#FFFFFF] hover:bg-[#F9FAFB]'
             }`}>
-              {/* Completion Check Icon - Right Top Corner */}
               {isCompleted && (
-                <div className="absolute top-2 right-2 text-purple-600">
+                <div className="absolute top-2 right-2 text-[#8E8E93]">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 </div>
               )}
-              {/* Drill Down Button - Right Top Corner - Desktop Only */}
               {onStrategyDrillDown && enableDrillDown && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
                     onStrategyDrillDown(strategy.id)
                   }}
-                  className={`absolute top-2 p-1 text-purple-600 hover:text-purple-700 hover:bg-purple-600/10 rounded transition-colors z-10 ${
+                  className={`absolute top-2 p-1 text-[#007AFF] hover:text-[#0A84FF] hover:bg-[#007AFF]/5 rounded transition-colors z-10 ${
                     isCompleted ? 'right-8' : 'right-2'
                   }`}
                   title="View Plans"
@@ -130,27 +151,26 @@ export default function StrategyContent({
                 </button>
               )}
 
-              {/* Time */}
-              <div className="text-xs text-purple-600 font-medium mb-1 pr-8">
+              <div className="text-xs text-[#6B7280] font-medium mb-1 pr-8">
                 {formatDateRange(strategy.start_date, strategy.due_date)}
               </div>
               
-              {/* Title */}
               <h4 
-                className="text-sm font-semibold text-purple-900 cursor-pointer hover:text-purple-800 transition-colors line-clamp-2 mb-2 pr-8"
+                className={`text-sm font-semibold text-[#1C1C1E] cursor-pointer hover:text-[#333333] transition-colors line-clamp-2 mb-2 pr-8 ${
+                  isCompleted ? 'line-through text-[#8E8E93]' : ''
+                }`}
                 onClick={() => openNotionPage(strategy.id)}
                 title="Click to open in Notion"
               >
                 {strategy.objective || 'Untitled Strategy'}
               </h4>
               
-              {/* Status & Priority */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs">
                   <select
                     value={strategy.status || ''}
                     onChange={(e) => handleStrategyUpdate(strategy.id, 'status', e.target.value)}
-                    className="px-2 py-0.5 bg-purple-600/10 text-purple-900 rounded border-0 text-xs cursor-pointer hover:bg-purple-600/15 transition-colors"
+                    className={`px-2 py-0.5 rounded border text-xs cursor-pointer transition-colors ${getStatusClasses(strategy.status || '')}`}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <option value="">No Status</option>
@@ -162,7 +182,7 @@ export default function StrategyContent({
                   <select
                     value={strategy.priority_quadrant || ''}
                     onChange={(e) => handleStrategyUpdate(strategy.id, 'priority_quadrant', e.target.value)}
-                    className="px-2 py-0.5 bg-purple-600/10 text-purple-900 rounded border-0 text-xs cursor-pointer hover:bg-purple-600/15 transition-colors"
+                    className={`px-2 py-0.5 rounded border text-xs cursor-pointer transition-colors ${getPriorityClasses(strategy.priority_quadrant || '')}`}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <option value="">No Priority</option>
@@ -172,7 +192,6 @@ export default function StrategyContent({
                   </select>
                 </div>
 
-                {/* Action Buttons */}
                 <div className="flex items-center gap-1">
                   {onAddPlanFromStrategy && (
                     <button
@@ -180,7 +199,7 @@ export default function StrategyContent({
                         e.stopPropagation()
                         onAddPlanFromStrategy(strategy.id)
                       }}
-                      className="p-1 text-purple-600 hover:text-purple-700 hover:bg-purple-600/10 rounded transition-colors"
+                      className="p-1 text-[#8E8E93] hover:text-[#007AFF] hover:bg-[#007AFF]/5 rounded-md transition-colors"
                       title="Add Plan to this Strategy"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -194,7 +213,7 @@ export default function StrategyContent({
                         e.stopPropagation()
                         onStrategyEdit(strategy)
                       }}
-                      className="p-1 text-purple-600 hover:text-purple-700 hover:bg-purple-600/10 rounded transition-colors"
+                      className="p-1 text-[#8E8E93] hover:text-[#007AFF] hover:bg-[#007AFF]/5 rounded-md transition-colors"
                       title="Edit"
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -208,7 +227,7 @@ export default function StrategyContent({
                         e.stopPropagation()
                         onStrategyDelete(strategy.id)
                       }}
-                      className="p-1 text-purple-600 hover:text-purple-700 hover:bg-purple-600/10 rounded transition-colors"
+                      className="p-1 text-[#8E8E93] hover:text-[#FF3B30] hover:bg-[#FF3B30]/5 rounded-md transition-colors"
                       title="Delete"
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

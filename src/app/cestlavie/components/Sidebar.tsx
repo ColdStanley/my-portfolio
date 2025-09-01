@@ -41,7 +41,6 @@ const lifeSubTabs = [
 ]
 
 const studySubTabs = [
-  { key: 'french', label: 'French', icon: '🇫🇷' },
 ]
 
 export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMobileMenuOpen, onConfigClick, tasks = [] }: SidebarProps) {
@@ -72,7 +71,7 @@ export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMo
     // 切换Study展开状态
     setStudyExpanded(!studyExpanded)
     // 如果当前不在study相关页面，则切换到study
-    if (!activeTab.startsWith('study') && !['french'].includes(activeTab)) {
+    if (!activeTab.startsWith('study')) {
       setActiveTab('study')
     }
   }
@@ -171,7 +170,7 @@ export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMo
 
   // Auto-expand Study when activeTab is a study sub-tab
   useEffect(() => {
-    if (['french'].includes(activeTab)) {
+    if ([].includes(activeTab)) {
       setStudyExpanded(true)
     }
   }, [activeTab])
@@ -286,7 +285,7 @@ export default function Sidebar({ activeTab, setActiveTab, mobileMenuOpen, setMo
                     <button
                       onClick={handleStudyClick}
                       className={`w-full px-3 py-2 text-left text-sm transition-colors rounded-md flex items-center justify-between ${
-                        activeTab === tab.key || ['french'].includes(activeTab)
+                        activeTab === tab.key
                           ? 'bg-purple-50 text-purple-700'
                           : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
                       }`}
