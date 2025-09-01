@@ -311,7 +311,18 @@ export default function InfoCard({
                   inline 
                     ? <code className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-xs font-mono" {...props} />
                     : <code className="block bg-gray-100 text-gray-800 p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre" {...props} />,
-                blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-300 pl-3 italic text-gray-600 mb-2" {...props} />
+                blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-300 pl-3 italic text-gray-600 mb-2" {...props} />,
+                a: ({ href, children, ...props }) => (
+                  <a 
+                    href={href} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-purple-600 hover:text-purple-800 underline"
+                    {...props}
+                  >
+                    {children}
+                  </a>
+                )
               }}
             >
               {description}
