@@ -246,7 +246,11 @@ export default function InfoCard({
         </svg>
       </button>
 
-      <h2 className={`text-lg font-medium mb-4 ${isTopCard ? 'text-xl font-semibold text-purple-700' : 'text-purple-600'}`}>{title}</h2>
+      <div className={isTopCard ? 'border-l-4 border-purple-500 pl-4' : ''}>
+        <h2 className={`${isTopCard ? 'text-xl font-bold' : 'text-lg font-medium'} text-purple-600 mb-4`}>
+          {title}
+        </h2>
+      </div>
       
       {/* Trigger Button - only show if URLs are configured, positioned between title and description */}
       {urls.length > 0 && (
@@ -276,7 +280,7 @@ export default function InfoCard({
         {description && (
           <button
             onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-            className="absolute top-1 right-2 p-1 text-gray-400 hover:text-purple-600 cursor-pointer transition-all duration-200 z-10"
+            className="absolute top-1 right-2 p-1 text-gray-600 hover:text-purple-600 cursor-pointer transition-all duration-200 z-10"
             title={isDescriptionExpanded ? 'Collapse description' : 'Expand description'}
           >
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

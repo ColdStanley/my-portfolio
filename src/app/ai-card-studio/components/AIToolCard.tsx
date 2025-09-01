@@ -313,7 +313,7 @@ export default function AIToolCard({
         {generatedContent && (
           <button
             onClick={() => setIsResponseExpanded(!isResponseExpanded)}
-            className="absolute top-2 right-2 p-1 text-gray-400 hover:text-purple-600 cursor-pointer transition-all duration-200 z-10"
+            className="absolute top-2 right-2 p-1 text-gray-600 hover:text-purple-600 cursor-pointer transition-all duration-200 z-10"
             title={isResponseExpanded ? 'Collapse response' : 'Expand response'}
           >
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
