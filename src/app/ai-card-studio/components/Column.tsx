@@ -199,6 +199,8 @@ export default function ColumnComponent({
                 : card.justCreated
                 ? 'translate-y-0 opacity-100 scale-100'
                 : 'translate-y-0 opacity-100 scale-100'
+            } ${
+              cardIndex === 0 && card.type === 'info' ? 'sticky top-0 z-20' : ''
             }`}
             style={{
               transitionDelay: card.deleting ? '0ms' : card.justCreated ? '0ms' : `${cardIndex * 80}ms`,

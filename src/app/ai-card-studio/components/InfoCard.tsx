@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import ReactMarkdown from 'react-markdown'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import Modal from './ui/Modal'
 import SettingsModal from './ui/SettingsModal'
@@ -143,13 +144,18 @@ export default function InfoCard({
     
     try {
       const responses = await Promise.allSettled(
-        urls.map(url =>
-          fetch(url, {
+        urls.map(url => {
+          // Prepare payload - only include text if description has content
+          const payload = description.trim() 
+            ? { text: description.trim() }
+            : {}
+          
+          return fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: 'trigger' })
+            body: JSON.stringify(payload)
           }).then(res => res.text())
-        )
+        })
       )
 
       const results = responses
@@ -210,7 +216,7 @@ export default function InfoCard({
         </svg>
       </button>
 
-      <h2 className="text-lg font-medium text-purple-600 mb-4">{title}</h2>
+      <h2 className={`text-lg font-medium mb-4 ${isTopCard ? 'text-xl font-semibold text-purple-700' : 'text-purple-600'}`}>{title}</h2>
       
       {/* Trigger Button - only show if URLs are configured, positioned between title and description */}
       {urls.length > 0 && (
@@ -234,7 +240,32 @@ export default function InfoCard({
       )}
       
       <div className="text-gray-600 text-sm">
-        {description}
+        {description ? (
+          <div className="prose prose-sm max-w-none">
+            <ReactMarkdown
+              components={{
+                h1: ({node, ...props}) => <h1 className="text-lg font-bold text-gray-800 mb-2" {...props} />,
+                h2: ({node, ...props}) => <h2 className="text-base font-semibold text-gray-800 mb-2" {...props} />,
+                h3: ({node, ...props}) => <h3 className="text-sm font-medium text-gray-800 mb-1" {...props} />,
+                p: ({node, ...props}) => <p className="text-gray-600 mb-2 leading-relaxed" {...props} />,
+                ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2 text-gray-600" {...props} />,
+                ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-2 text-gray-600" {...props} />,
+                li: ({node, ...props}) => <li className="mb-1" {...props} />,
+                strong: ({node, ...props}) => <strong className="font-semibold text-gray-800" {...props} />,
+                em: ({node, ...props}) => <em className="italic" {...props} />,
+                code: ({node, inline, ...props}) => 
+                  inline 
+                    ? <code className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-xs font-mono" {...props} />
+                    : <code className="block bg-gray-100 text-gray-800 p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre" {...props} />,
+                blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-300 pl-3 italic text-gray-600 mb-2" {...props} />
+              }}
+            >
+              {description}
+            </ReactMarkdown>
+          </div>
+        ) : (
+          <span className="text-gray-400 italic">No description</span>
+        )}
       </div>
 
       {/* Card Settings Modal - Screen Centered via Portal */}
