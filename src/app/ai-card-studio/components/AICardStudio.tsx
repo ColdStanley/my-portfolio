@@ -9,8 +9,8 @@ import ColumnComponent from './Column'
 import { useWorkspaceStore } from '../store/workspaceStore'
 
 export default function AICardStudio() {
-  const { columns, isLoading, saveError, actions } = useWorkspaceStore()
-  const { updateColumns, clearSaveError, saveWorkspace } = actions
+  const { columns, isLoading, saveError, columnExecutionStatus, actions } = useWorkspaceStore()
+  const { updateColumns, clearSaveError, saveWorkspace, runColumnWorkflow } = actions
   const { deleteCard } = useCardDeletion(columns, updateColumns)
   
   const [showCardTypeModal, setShowCardTypeModal] = useState(false)
@@ -289,6 +289,8 @@ export default function AICardStudio() {
                   onAddCard={handleAddCard}
                   onDeleteCard={deleteCard}
                   onInsertCard={handleAddCard}
+                  onRunColumnWorkflow={runColumnWorkflow}
+                  isColumnExecuting={columnExecutionStatus[column.id] || false}
                 />
               ))}
               

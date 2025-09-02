@@ -9,13 +9,17 @@ interface ColumnProps {
   onAddCard: (columnId: string) => void
   onDeleteCard: (columnId: string, cardId: string, isTopCard: boolean) => void
   onInsertCard: (columnId: string, afterCardId?: string) => void
+  onRunColumnWorkflow?: (columnId: string) => void
+  isColumnExecuting?: boolean
 }
 
 export default function ColumnComponent({ 
   column, 
   onAddCard, 
   onDeleteCard,
-  onInsertCard
+  onInsertCard,
+  onRunColumnWorkflow,
+  isColumnExecuting = false
 }: ColumnProps) {
   const { columns, actions } = useWorkspaceStore()
   const { updateColumns } = actions
@@ -154,6 +158,15 @@ export default function ColumnComponent({
       )
     })))
   }
+
+  const handleRunAllCards = () => {
+    if (onRunColumnWorkflow) {
+      onRunColumnWorkflow(column.id)
+    }
+  }
+
+  // Check if column has AI tool cards
+  const hasAIToolCards = column.cards.some(card => card.type === 'aitool')
   return (
     <>
       <style jsx>{`
@@ -245,6 +258,8 @@ export default function ColumnComponent({
                 onTitleBlur={handleTitleBlur}
                 onDescriptionChange={handleDescriptionChange}
                 onInsertCard={onInsertCard}
+                onRunColumnWorkflow={cardIndex === 0 && hasAIToolCards ? handleRunAllCards : undefined}
+                isColumnExecuting={isColumnExecuting}
               />
             ) : (
               <AIToolCard 

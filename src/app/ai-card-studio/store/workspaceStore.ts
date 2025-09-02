@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../../../lib/supabaseClient';
 import { Column } from '../types';
+import { resolveReferences } from '../utils/cardUtils';
 import type { User } from '@supabase/supabase-js'
 
 interface WorkspaceState {
@@ -9,11 +10,13 @@ interface WorkspaceState {
   isLoading: boolean;
   isInitialLoad: boolean; // 避免竞态条件的标志
   saveError: string | null;
+  columnExecutionStatus: { [columnId: string]: boolean }; // Track column execution status
   actions: {
     fetchAndHandleWorkspace: (userId: string) => Promise<void>;
     updateColumns: (updater: (prev: Column[]) => Column[]) => void;
     moveColumn: (columnId: string, direction: 'left' | 'right') => void;
     moveCard: (columnId: string, cardId: string, direction: 'up' | 'down') => void;
+    runColumnWorkflow: (columnId: string) => Promise<void>;
     saveWorkspace: () => Promise<void>;
     setUser: (user: User | null) => void;
     clearSaveError: () => void;
@@ -70,6 +73,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   isLoading: true,
   isInitialLoad: true,
   saveError: null,
+  columnExecutionStatus: {},
 
   actions: {
     setUser: (user) => set({ user }),
@@ -205,6 +209,188 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       set({ columns: newColumns });
       
       console.log('Card moved. Use Save button to save changes.');
+    },
+
+    runColumnWorkflow: async (columnId) => {
+      const { columns, columnExecutionStatus } = get();
+      
+      // Check if column is already executing
+      if (columnExecutionStatus[columnId]) return;
+      
+      // Find the target column
+      const targetColumn = columns.find(col => col.id === columnId);
+      if (!targetColumn) return;
+      
+      // Get all AI tool cards in the column
+      const aiToolCards = targetColumn.cards.filter(card => card.type === 'aitool');
+      if (aiToolCards.length === 0) return;
+      
+      // Set column execution status to true
+      set(state => ({
+        columnExecutionStatus: {
+          ...state.columnExecutionStatus,
+          [columnId]: true
+        }
+      }));
+      
+      try {
+        // Process cards sequentially
+        for (const card of aiToolCards) {
+          const cardId = card.id;
+          const promptText = card.promptText || '';
+          const aiModel = card.aiModel || 'deepseek';
+          
+          // Skip if no prompt text
+          if (!promptText.trim()) continue;
+          
+          // Set generating state
+          get().actions.updateColumns(prev => prev.map(col => ({
+            ...col,
+            cards: col.cards.map(c =>
+              c.id === cardId
+                ? { ...c, isGenerating: true, generatedContent: '' }
+                : c
+            )
+          })));
+          
+          // Resolve references using current state
+          const currentColumns = get().columns;
+          let resolvedPrompt = resolveReferences(promptText, currentColumns);
+          
+          // Handle options - automatically use first option if available
+          const options = card.options || [];
+          if (options.length > 0) {
+            const defaultOption = options[0];
+            resolvedPrompt = resolvedPrompt.replace(/\{\{option\}\}/g, defaultOption);
+          }
+          
+          // Call AI API
+          const response = await fetch('/api/ai-agent/generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              prompt: resolvedPrompt,
+              model: aiModel,
+              stream: true
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const reader = response.body?.getReader();
+          if (!reader) {
+            throw new Error('No response body reader');
+          }
+
+          const decoder = new TextDecoder();
+          let fullResponse = '';
+          let buffer = '';
+
+          // Process streaming response
+          while (true) {
+            const { done, value } = await reader.read();
+            
+            if (done) break;
+            
+            // Append new data to buffer
+            buffer += decoder.decode(value, { stream: true });
+            
+            // Split by newlines, keep incomplete last line
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+            
+            // Process complete lines
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6).trim();
+                if (data === '[DONE]') continue;
+                
+                try {
+                  const parsed = JSON.parse(data);
+                  const content = parsed.choices?.[0]?.delta?.content || '';
+                  if (content) {
+                    fullResponse += content;
+                    // Update content in real-time
+                    get().actions.updateColumns(prev => prev.map(col => ({
+                      ...col,
+                      cards: col.cards.map(c =>
+                        c.id === cardId
+                          ? { ...c, generatedContent: fullResponse }
+                          : c
+                      )
+                    })));
+                  }
+                } catch (parseError) {
+                  console.warn('Skipping malformed JSON line:', data);
+                }
+              }
+            }
+          }
+          
+          // Process remaining buffer content
+          if (buffer.trim() && buffer.startsWith('data: ')) {
+            const data = buffer.slice(6).trim();
+            if (data !== '[DONE]') {
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices?.[0]?.delta?.content || '';
+                if (content) {
+                  fullResponse += content;
+                  get().actions.updateColumns(prev => prev.map(col => ({
+                    ...col,
+                    cards: col.cards.map(c =>
+                      c.id === cardId
+                        ? { ...c, generatedContent: fullResponse }
+                        : c
+                    )
+                  })));
+                }
+              } catch (parseError) {
+                console.warn('Skipping final malformed JSON:', data);
+              }
+            }
+          }
+          
+          // Mark as completed
+          get().actions.updateColumns(prev => prev.map(col => ({
+            ...col,
+            cards: col.cards.map(c =>
+              c.id === cardId
+                ? { ...c, isGenerating: false }
+                : c
+            )
+          })));
+          
+          // Small delay between cards to ensure state updates are processed
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+      } catch (error: any) {
+        console.error('Workflow execution error:', error);
+        set({ saveError: `Workflow failed: ${error.message}` });
+        
+        // Reset all generating states on error
+        get().actions.updateColumns(prev => prev.map(col => ({
+          ...col,
+          cards: col.cards.map(card =>
+            card.type === 'aitool'
+              ? { ...card, isGenerating: false }
+              : card
+          )
+        })));
+      } finally {
+        // Set column execution status to false when done
+        set(state => ({
+          columnExecutionStatus: {
+            ...state.columnExecutionStatus,
+            [columnId]: false
+          }
+        }));
+      }
     },
 
     saveWorkspace: async () => {

@@ -16,6 +16,8 @@ interface InfoCardProps {
   onTitleBlur: (cardId: string) => void
   onDescriptionChange: (cardId: string, newDescription: string) => void
   onInsertCard?: (columnId: string, afterCardId: string) => void
+  onRunColumnWorkflow?: () => void
+  isColumnExecuting?: boolean
 }
 
 export default function InfoCard({ 
@@ -27,7 +29,9 @@ export default function InfoCard({
   onTitleChange,
   onTitleBlur,
   onDescriptionChange,
-  onInsertCard
+  onInsertCard,
+  onRunColumnWorkflow,
+  isColumnExecuting = false
 }: InfoCardProps) {
   const { columns, actions } = useWorkspaceStore()
   const { saveWorkspace, moveColumn, moveCard, updateColumns } = actions
@@ -323,9 +327,31 @@ export default function InfoCard({
       </button>
 
       <div className={isTopCard ? 'border-l-4 border-purple-500 pl-4' : ''}>
-        <h2 className={`${isTopCard ? 'text-xl font-bold' : 'text-lg font-medium'} text-purple-600 mb-4`}>
-          {title}
-        </h2>
+        <div className="flex items-center gap-2 mb-4">
+          {/* Run All Cards Button - 仅在顶部Info Card且列中有AI工具卡片时显示 */}
+          {onRunColumnWorkflow && (
+            <button
+              onClick={onRunColumnWorkflow}
+              disabled={isColumnExecuting}
+              className="flex-shrink-0 w-7 h-7 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 disabled:cursor-not-allowed rounded-full shadow-md flex items-center justify-center text-white transition-all duration-200"
+              title={isColumnExecuting ? "Workflow is running..." : "Run all AI tool cards in this column"}
+            >
+              {isColumnExecuting ? (
+                <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                </svg>
+              ) : (
+                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              )}
+            </button>
+          )}
+          <h2 className={`${isTopCard ? 'text-xl font-bold' : 'text-lg font-medium'} text-purple-600`}>
+            {title}
+          </h2>
+        </div>
       </div>
       
       {/* Trigger Button - only show if URLs are configured, positioned between title and description */}

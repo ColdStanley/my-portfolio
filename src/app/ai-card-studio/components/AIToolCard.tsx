@@ -101,14 +101,14 @@ export default function AIToolCard({
   }, [autoOpenSettings])
 
   // Get previous AIToolCards from current column for reference dropdown
-  const cardIndex = currentColumn?.cards.findIndex(card => card.id === cardId) || 0
+  const referenceCardIndex = currentColumn?.cards.findIndex(card => card.id === cardId) || 0
   const previousCards = currentColumn?.cards
-    .slice(0, cardIndex)
+    .slice(0, referenceCardIndex)
     .filter(card => card.type === 'aitool')
     .map(card => ({
       id: card.id,
       buttonName: card.buttonName || 'Unnamed Card',
-      order: cardIndex
+      order: referenceCardIndex
     })) || []
 
   // Get Info Cards from current column for reference dropdown
@@ -384,17 +384,13 @@ export default function AIToolCard({
         disabled={isGenerating}
         className="px-3 py-1.5 text-sm bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300 text-white rounded-md font-medium transition-all duration-200 flex items-center gap-1.5 mb-4"
       >
-        {isGenerating ? (
-          <>
-            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-            </svg>
-            Generating...
-          </>
-        ) : (
-          buttonName
+        {isGenerating && (
+          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+          </svg>
         )}
+        {buttonName}
       </button>
 
       {/* AI Response Area - Always visible with gray background */}
