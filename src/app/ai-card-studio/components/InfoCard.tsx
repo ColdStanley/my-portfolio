@@ -65,6 +65,9 @@ export default function InfoCard({
   // Save state
   const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  
+  // PDF generation state
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
 
   // Save function
   const handleSave = async () => {
@@ -229,6 +232,72 @@ export default function InfoCard({
   return (
     <div className="bg-gradient-to-br from-white/95 to-purple-50/30 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 border border-white/50 p-4 relative transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-1 group">
       
+      {/* PDF Export Button - Top Right, left of Insert button */}
+      <button
+        onClick={async () => {
+          if (!description?.trim() || isGeneratingPDF) return
+          
+          setIsGeneratingPDF(true)
+          
+          try {
+            console.log('Generating PDF for Info Card:', title)
+            
+            const response = await fetch('/api/ai-card-studio/generate-pdf', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                cardName: title || 'Info Card',
+                aiContent: description,
+                generatedAt: new Date().toLocaleString()
+              })
+            })
+
+            if (!response.ok) {
+              throw new Error(`PDF generation failed: ${response.status}`)
+            }
+
+            const blob = await response.blob()
+            const cleanCardName = (title || 'Info_Card').replace(/[^a-z0-9]/gi, '_')
+            const timestamp = new Date().toISOString().split('T')[0]
+            const filename = `${cleanCardName}_${timestamp}.pdf`
+            
+            // Download the PDF
+            const url = window.URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.style.display = 'none'
+            a.href = url
+            a.download = filename
+            document.body.appendChild(a)
+            a.click()
+            window.URL.revokeObjectURL(url)
+            document.body.removeChild(a)
+            
+            console.log('PDF generated successfully:', filename)
+          } catch (error) {
+            console.error('PDF generation error:', error)
+            alert('Failed to generate PDF. Please try again.')
+          } finally {
+            setIsGeneratingPDF(false)
+          }
+        }}
+        className="absolute top-4 right-20 w-6 h-6 bg-white/80 hover:bg-purple-50 rounded-full flex items-center justify-center text-gray-400 hover:text-purple-600 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 hover:scale-110 hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
+        title={isGeneratingPDF ? "Generating PDF..." : "Export to PDF"}
+        disabled={!description?.trim() || isGeneratingPDF}
+      >
+        {isGeneratingPDF ? (
+          <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 818-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+          </svg>
+        ) : (
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        )}
+      </button>
+
       {/* Insert Card Button - Top Right, left of Settings button */}
       <button
         onClick={() => onInsertCard?.(columnId, cardId)}
@@ -396,6 +465,14 @@ export default function InfoCard({
               )}
             </div>
           }
+          headerActions={isTopCard ? (
+            <button
+              onClick={handleExportColumn}
+              className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm font-medium transition-all duration-200"
+            >
+              Download & Share
+            </button>
+          ) : undefined}
           onClose={handleCloseSettingsTooltip}
           onDelete={handleDelete}
           onSave={handleSave}
@@ -439,20 +516,6 @@ export default function InfoCard({
             />
           </div>
 
-          {/* Export Column Button - Only show for top card */}
-          {isTopCard && (
-            <div className="mb-4 pt-4 border-t border-gray-200">
-              <button
-                onClick={handleExportColumn}
-                className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Export This Column
-              </button>
-            </div>
-          )}
 
         </SettingsModal>
       </Modal>

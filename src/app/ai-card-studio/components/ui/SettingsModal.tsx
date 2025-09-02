@@ -9,6 +9,7 @@ interface SettingsModalProps {
   isSaving?: boolean
   saveSuccess?: boolean
   children: ReactNode
+  headerActions?: ReactNode // New prop for additional header buttons
 }
 
 export default function SettingsModal({ 
@@ -19,7 +20,8 @@ export default function SettingsModal({
   onSave,
   isSaving = false,
   saveSuccess = false,
-  children 
+  children,
+  headerActions
 }: SettingsModalProps) {
   return (
     <div className={`bg-white rounded-xl shadow-2xl border border-gray-200 p-6 w-full transform transition-all duration-300 ease-out ${
@@ -28,14 +30,17 @@ export default function SettingsModal({
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="text-lg font-medium text-gray-800">{title}</div>
-        <button
-          onClick={onClose}
-          className="p-1 hover:bg-gray-100 rounded transition-colors"
-        >
-          <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-2">
+          {headerActions && <div>{headerActions}</div>}
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-gray-100 rounded transition-colors"
+          >
+            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
       
       {/* Content */}
