@@ -30,7 +30,11 @@ export default function InfoCard({
   onInsertCard
 }: InfoCardProps) {
   const { columns, actions } = useWorkspaceStore()
-  const { saveWorkspace, moveColumn, updateColumns } = actions
+  const { saveWorkspace, moveColumn, moveCard, updateColumns } = actions
+  
+  // Get current column and card data from Zustand store
+  const currentColumn = columns.find(col => col.id === columnId)
+  const currentCard = currentColumn?.cards.find(card => card.id === cardId)
   
   // Calculate column position for move buttons
   const currentColumnIndex = columns.findIndex(col => col.id === columnId)
@@ -38,9 +42,11 @@ export default function InfoCard({
   const canMoveLeft = currentColumnIndex > 0
   const canMoveRight = currentColumnIndex < totalColumns - 1
   
-  // Get current column and card data from Zustand store
-  const currentColumn = columns.find(col => col.id === columnId)
-  const currentCard = currentColumn?.cards.find(card => card.id === cardId)
+  // Calculate card position for move buttons
+  const currentCardIndex = currentColumn?.cards.findIndex(card => card.id === cardId) ?? -1
+  const totalCards = currentColumn?.cards.length ?? 0
+  const canMoveUp = currentCardIndex > 0
+  const canMoveDown = currentCardIndex < totalCards - 1
   
   const title = currentCard?.title || ''
   const description = currentCard?.description || ''
@@ -360,6 +366,30 @@ export default function InfoCard({
                   >
                     <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+              {totalCards > 1 && (
+                <div className="flex gap-1 ml-2">
+                  <button
+                    onClick={() => moveCard(columnId, cardId, 'up')}
+                    disabled={!canMoveUp}
+                    className="p-1 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed rounded transition-colors"
+                    title="Move card up"
+                  >
+                    <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => moveCard(columnId, cardId, 'down')}
+                    disabled={!canMoveDown}
+                    className="p-1 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed rounded transition-colors"
+                    title="Move card down"
+                  >
+                    <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
                 </div>

@@ -38,11 +38,17 @@ export default function AIToolCard({
   onInsertCard
 }: AIToolCardProps) {
   const { columns, actions } = useWorkspaceStore()
-  const { saveWorkspace } = actions
+  const { saveWorkspace, moveCard } = actions
   
   // Get current card data from Zustand store
   const currentColumn = columns.find(col => col.id === columnId)
   const currentCard = currentColumn?.cards.find(card => card.id === cardId)
+  
+  // Calculate card position for move buttons
+  const currentCardIndex = currentColumn?.cards.findIndex(card => card.id === cardId) ?? -1
+  const totalCards = currentColumn?.cards.length ?? 0
+  const canMoveUp = currentCardIndex > 0
+  const canMoveDown = currentCardIndex < totalCards - 1
   
   const buttonName = currentCard?.buttonName || 'Start'
   const promptText = currentCard?.promptText || ''
@@ -92,14 +98,14 @@ export default function AIToolCard({
   }, [autoOpenSettings])
 
   // Get previous AIToolCards from current column for reference dropdown
-  const currentCardIndex = currentColumn?.cards.findIndex(card => card.id === cardId) || 0
+  const cardIndex = currentColumn?.cards.findIndex(card => card.id === cardId) || 0
   const previousCards = currentColumn?.cards
-    .slice(0, currentCardIndex)
+    .slice(0, cardIndex)
     .filter(card => card.type === 'aitool')
     .map(card => ({
       id: card.id,
       buttonName: card.buttonName || 'Unnamed Card',
-      order: currentCardIndex
+      order: cardIndex
     })) || []
 
   // Get Info Cards from current column for reference dropdown
@@ -200,15 +206,21 @@ export default function AIToolCard({
 
       const decoder = new TextDecoder()
       let fullResponse = ''
+      let buffer = '' // 添加缓冲区
 
       while (true) {
         const { done, value } = await reader.read()
         
         if (done) break
         
-        const chunk = decoder.decode(value, { stream: true })
-        const lines = chunk.split('\n')
+        // 将新数据追加到缓冲区
+        buffer += decoder.decode(value, { stream: true })
         
+        // 按换行符分割，保留最后一个可能不完整的部分
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || '' // 最后一行可能不完整，保留到下次处理
+        
+        // 处理完整的行
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const data = line.slice(6).trim()
@@ -222,8 +234,26 @@ export default function AIToolCard({
                 onGeneratedContentChange(cardId, fullResponse)
               }
             } catch (parseError) {
-              console.error('Error parsing streaming data:', parseError)
+              // 忽略解析错误，继续处理下一行
+              console.warn('Skipping malformed JSON line:', data)
             }
+          }
+        }
+      }
+      
+      // 处理缓冲区中剩余的最后一行（如果有的话）
+      if (buffer.trim() && buffer.startsWith('data: ')) {
+        const data = buffer.slice(6).trim()
+        if (data !== '[DONE]') {
+          try {
+            const parsed = JSON.parse(data)
+            const content = parsed.choices?.[0]?.delta?.content || ''
+            if (content) {
+              fullResponse += content
+              onGeneratedContentChange(cardId, fullResponse)
+            }
+          } catch (parseError) {
+            console.warn('Skipping final malformed JSON:', data)
           }
         }
       }
@@ -255,6 +285,21 @@ export default function AIToolCard({
 
   return (
     <div className="bg-gradient-to-br from-white/95 to-purple-50/30 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 border border-white/50 p-4 relative transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-1 group">
+      {/* PDF Export Button - Top Right, left of Insert button */}
+      <button
+        onClick={() => {
+          // TODO: Implement PDF generation
+          console.log('PDF export for card:', cardId)
+        }}
+        className="absolute top-4 right-20 w-6 h-6 bg-white/80 hover:bg-purple-50 rounded-full flex items-center justify-center text-gray-400 hover:text-purple-600 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 hover:scale-110 hover:-translate-y-0.5"
+        title="Export to PDF"
+        disabled={!generatedContent?.trim()}
+      >
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      </button>
+
       {/* Insert Card Button - Top Right, left of Settings button */}
       <button
         onClick={() => onInsertCard?.(columnId, cardId)}
@@ -469,7 +514,35 @@ export default function AIToolCard({
       <Modal isOpen={showPromptTooltip} onClose={handleClosePromptTooltip} className="w-full max-w-4xl mx-4">
         <SettingsModal
           isVisible={promptTooltipVisible}
-          title="AI Tool Card Settings"
+          title={
+            <div className="flex items-center gap-2">
+              <span>AI Tool Card Settings</span>
+              {totalCards > 1 && (
+                <div className="flex gap-1 ml-2">
+                  <button
+                    onClick={() => moveCard(columnId, cardId, 'up')}
+                    disabled={!canMoveUp}
+                    className="p-1 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed rounded transition-colors"
+                    title="Move card up"
+                  >
+                    <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => moveCard(columnId, cardId, 'down')}
+                    disabled={!canMoveDown}
+                    className="p-1 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed rounded transition-colors"
+                    title="Move card down"
+                  >
+                    <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </div>
+          }
           onClose={handleClosePromptTooltip}
           onDelete={() => onDelete(cardId)}
           onSave={handleSave}

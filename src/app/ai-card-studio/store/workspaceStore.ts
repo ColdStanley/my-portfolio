@@ -13,6 +13,7 @@ interface WorkspaceState {
     fetchAndHandleWorkspace: (userId: string) => Promise<void>;
     updateColumns: (updater: (prev: Column[]) => Column[]) => void;
     moveColumn: (columnId: string, direction: 'left' | 'right') => void;
+    moveCard: (columnId: string, cardId: string, direction: 'up' | 'down') => void;
     saveWorkspace: () => Promise<void>;
     setUser: (user: User | null) => void;
     clearSaveError: () => void;
@@ -166,6 +167,44 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       
       // Auto-save after move
       get().actions.saveWorkspace();
+    },
+
+    moveCard: (columnId, cardId, direction) => {
+      const { columns } = get();
+      
+      // Find the target column
+      const columnIndex = columns.findIndex(col => col.id === columnId);
+      if (columnIndex === -1) return;
+      
+      const targetColumn = columns[columnIndex];
+      
+      // Find the target card within the column
+      const currentIndex = targetColumn.cards.findIndex(card => card.id === cardId);
+      if (currentIndex === -1) return;
+      
+      // Calculate new index
+      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      
+      // Boundary check
+      if (newIndex < 0 || newIndex >= targetColumn.cards.length) return;
+      
+      // Create new columns array with updated card order
+      const newColumns = [...columns];
+      const newCards = [...targetColumn.cards];
+      
+      // Move the card using splice
+      const [movedCard] = newCards.splice(currentIndex, 1);
+      newCards.splice(newIndex, 0, movedCard);
+      
+      // Update the column with new cards order
+      newColumns[columnIndex] = {
+        ...targetColumn,
+        cards: newCards
+      };
+      
+      set({ columns: newColumns });
+      
+      console.log('Card moved. Use Save button to save changes.');
     },
 
     saveWorkspace: async () => {
