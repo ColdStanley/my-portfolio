@@ -367,9 +367,9 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
             )
           })));
           
-          // Resolve references using all canvases
+          // Resolve references within current column only
           const currentCanvases = get().canvases;
-          let resolvedPrompt = resolveReferences(promptText, currentCanvases);
+          let resolvedPrompt = resolveReferences(promptText, currentCanvases, columnId);
           
           // Handle options - automatically use first option if available
           const options = card.options || [];
@@ -379,7 +379,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           }
           
           // Call AI API
-          const response = await fetch('/api/ai-agent/generate', {
+          const response = await fetch('/api/ai-card-studio/generate', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

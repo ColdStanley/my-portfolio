@@ -81,9 +81,18 @@ export const isTitleExists = (title: string, canvases: Canvas[], excludeCardId?:
   )
 }
 
-// Resolve references in prompt text (searches across all canvases)
-export const resolveReferences = (promptText: string, canvases: Canvas[]): string => {
+// Resolve references in prompt text (searches within current column only)
+export const resolveReferences = (promptText: string, canvases: Canvas[], columnId: string): string => {
   let resolvedPrompt = promptText
+  
+  // Find the current column
+  const currentColumn = canvases
+    .flatMap(canvas => canvas.columns)
+    .find(col => col.id === columnId)
+  
+  if (!currentColumn) {
+    return resolvedPrompt
+  }
   
   // Find all AI Card references in format [REF: ButtonName]
   const referenceMatches = promptText.match(/\[REF:\s*([^\]]+)\]/g)
@@ -93,11 +102,10 @@ export const resolveReferences = (promptText: string, canvases: Canvas[]): strin
       // Extract button name from [REF: ButtonName]
       const buttonName = match.replace(/\[REF:\s*/, '').replace(/\]$/, '').trim()
       
-      // Find the corresponding AI Tool Card across all canvases
-      const referencedCard = canvases
-        .flatMap(canvas => canvas.columns)
-        .flatMap(col => col.cards)
-        .find(card => card.type === 'aitool' && card.buttonName === buttonName)
+      // Find the corresponding AI Tool Card within current column only
+      const referencedCard = currentColumn.cards.find(card => 
+        card.type === 'aitool' && card.buttonName === buttonName
+      )
       
       if (referencedCard && referencedCard.generatedContent) {
         resolvedPrompt = resolvedPrompt.replace(match, referencedCard.generatedContent)
@@ -113,11 +121,10 @@ export const resolveReferences = (promptText: string, canvases: Canvas[]): strin
       // Extract title from [INFO: Title]
       const title = match.replace(/\[INFO:\s*/, '').replace(/\]$/, '').trim()
       
-      // Find the corresponding Info Card across all canvases
-      const infoCard = canvases
-        .flatMap(canvas => canvas.columns)
-        .flatMap(col => col.cards)
-        .find(card => card.type === 'info' && card.title === title)
+      // Find the corresponding Info Card within current column only
+      const infoCard = currentColumn.cards.find(card => 
+        card.type === 'info' && card.title === title
+      )
       
       if (infoCard && infoCard.description) {
         resolvedPrompt = resolvedPrompt.replace(match, infoCard.description)

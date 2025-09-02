@@ -33,6 +33,40 @@ await aiApi.processQueryStream(
 )
 ```
 
+### Independent AI API Requirements (CRITICAL)
+
+**MANDATORY: Every project MUST create its own independent AI API endpoint**
+
+#### Core Principle
+- **No Shared APIs**: Never reuse existing AI agent APIs across projects
+- **Project Isolation**: Each project requires dedicated API for better maintainability
+- **Custom Optimization**: Tailor system prompts and configurations per project
+
+#### Implementation Pattern
+```typescript
+// ✅ Project-specific API structure
+/api/[project-name]/generate/route.ts
+
+// Examples:
+/api/ai-card-studio/generate/route.ts
+/api/jd2cv-full/generate/route.ts
+/api/readlingua/generate/route.ts
+```
+
+#### Required Features per API
+1. **Custom System Prompt**: Project-specific AI instructions
+2. **Model Support**: OpenAI & DeepSeek with DeepSeek default
+3. **Streaming Support**: Full streaming response capability
+4. **Error Handling**: Project-appropriate error messages
+5. **Token Limits**: Optimized for project requirements
+
+#### Forbidden Patterns
+- **❌ Shared Generic APIs**: Never use `/api/ai-agent/generate` for new projects
+- **❌ Cross-Project Dependencies**: No project should depend on another's API
+- **❌ Multi-Project APIs**: One API serving multiple projects
+
+**Principle**: Independent APIs ensure project isolation, custom optimization, and maintainability
+
 ## UI Design Guidelines
 
 ### Modern Glass Morphism Design System (2025 UPDATE)

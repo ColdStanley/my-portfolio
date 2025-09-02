@@ -138,7 +138,7 @@ export default function AIToolCard({
     updateCardGeneratingState(cardId, true)
     
     try {
-      let resolvedPrompt = resolveReferences(promptText, canvases)
+      let resolvedPrompt = resolveReferences(promptText, canvases, columnId)
       
       // Replace option placeholder with selected value if both exist
       const hasOptions = (options || []).length > 0
@@ -146,7 +146,7 @@ export default function AIToolCard({
         resolvedPrompt = resolvedPrompt.replace(/\{\{option\}\}/g, selectedOption)
       }
       
-      const response = await fetch('/api/ai-agent/generate', {
+      const response = await fetch('/api/ai-card-studio/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -382,8 +382,8 @@ export default function AIToolCard({
           </button>
         )}
         
-        {isGenerating ? (
-          /* Skeleton Shimmer Effect */
+        {isGenerating && !generatedContent ? (
+          /* Skeleton Shimmer Effect - Only show when generating and no content yet */
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="animate-pulse">
@@ -406,75 +406,86 @@ export default function AIToolCard({
             `}</style>
           </div>
         ) : generatedContent ? (
-          <div className="prose prose-sm max-w-none text-gray-700">
-            <ReactMarkdown
-              components={{
-                h1: ({node, ...props}) => (
-                  <h1 className="text-xl font-bold text-gray-800 mb-3 mt-4 first:mt-0 border-b border-gray-200 pb-1" {...props} />
-                ),
-                h2: ({node, ...props}) => (
-                  <h2 className="text-lg font-semibold text-gray-800 mb-2 mt-3 first:mt-0" {...props} />
-                ),
-                h3: ({node, ...props}) => (
-                  <h3 className="text-base font-medium text-gray-800 mb-2 mt-2 first:mt-0" {...props} />
-                ),
-                h4: ({node, ...props}) => (
-                  <h4 className="text-sm font-medium text-gray-800 mb-1 mt-2 first:mt-0" {...props} />
-                ),
-                p: ({node, ...props}) => (
-                  <p className="text-gray-700 mb-3 leading-relaxed text-sm" {...props} />
-                ),
-                ul: ({node, ...props}) => (
-                  <ul className="list-disc list-outside ml-4 mb-3 text-gray-700 space-y-1" {...props} />
-                ),
-                ol: ({node, ...props}) => (
-                  <ol className="list-decimal list-outside ml-4 mb-3 text-gray-700 space-y-1" {...props} />
-                ),
-                li: ({node, ...props}) => (
-                  <li className="text-sm leading-relaxed" {...props} />
-                ),
-                code: ({node, inline, ...props}) => 
-                  inline ? (
-                    <code className="bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded text-xs font-mono border border-purple-200" {...props} />
-                  ) : (
-                    <code className="block bg-gray-100 text-gray-800 p-3 rounded-lg text-xs font-mono overflow-x-auto whitespace-pre border border-gray-200 my-2" {...props} />
+          /* Show streaming content with loading indicator when generating */
+          <div className="relative">
+            {isGenerating && (
+              <div className="absolute -top-2 -right-2 w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
+                <svg className="w-2 h-2 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                </svg>
+              </div>
+            )}
+            <div className="prose prose-sm max-w-none text-gray-700">
+              <ReactMarkdown
+                components={{
+                  h1: ({node, ...props}) => (
+                    <h1 className="text-xl font-bold text-gray-800 mb-3 mt-4 first:mt-0 border-b border-gray-200 pb-1" {...props} />
                   ),
-                pre: ({node, ...props}) => (
-                  <pre className="bg-gray-100 rounded-lg p-3 overflow-x-auto border border-gray-200 my-3" {...props} />
-                ),
-                blockquote: ({node, ...props}) => (
-                  <blockquote className="border-l-4 border-purple-300 pl-4 pr-2 py-1 italic text-gray-600 mb-3 bg-purple-50/30 rounded-r-lg" {...props} />
-                ),
-                strong: ({node, ...props}) => (
-                  <strong className="font-semibold text-gray-800" {...props} />
-                ),
-                em: ({node, ...props}) => (
-                  <em className="italic text-gray-700" {...props} />
-                ),
-                a: ({node, ...props}) => (
-                  <a className="text-purple-600 hover:text-purple-700 underline decoration-purple-300 hover:decoration-purple-500 transition-colors" {...props} />
-                ),
-                hr: ({node, ...props}) => (
-                  <hr className="border-t border-gray-200 my-4" {...props} />
-                ),
-                table: ({node, ...props}) => (
-                  <div className="overflow-x-auto my-3">
-                    <table className="min-w-full border border-gray-200 rounded-lg" {...props} />
-                  </div>
-                ),
-                thead: ({node, ...props}) => (
-                  <thead className="bg-gray-50" {...props} />
-                ),
-                th: ({node, ...props}) => (
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 border-b border-gray-200" {...props} />
-                ),
-                td: ({node, ...props}) => (
-                  <td className="px-3 py-2 text-sm text-gray-700 border-b border-gray-100" {...props} />
-                )
-              }}
-            >
-              {generatedContent}
-            </ReactMarkdown>
+                  h2: ({node, ...props}) => (
+                    <h2 className="text-lg font-semibold text-gray-800 mb-2 mt-3 first:mt-0" {...props} />
+                  ),
+                  h3: ({node, ...props}) => (
+                    <h3 className="text-base font-medium text-gray-800 mb-2 mt-2 first:mt-0" {...props} />
+                  ),
+                  h4: ({node, ...props}) => (
+                    <h4 className="text-sm font-medium text-gray-800 mb-1 mt-2 first:mt-0" {...props} />
+                  ),
+                  p: ({node, ...props}) => (
+                    <p className="text-gray-700 mb-3 leading-relaxed text-sm" {...props} />
+                  ),
+                  ul: ({node, ...props}) => (
+                    <ul className="list-disc list-outside ml-4 mb-3 text-gray-700 space-y-1" {...props} />
+                  ),
+                  ol: ({node, ...props}) => (
+                    <ol className="list-decimal list-outside ml-4 mb-3 text-gray-700 space-y-1" {...props} />
+                  ),
+                  li: ({node, ...props}) => (
+                    <li className="text-sm leading-relaxed" {...props} />
+                  ),
+                  code: ({node, inline, ...props}) => 
+                    inline ? (
+                      <code className="bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded text-xs font-mono border border-purple-200" {...props} />
+                    ) : (
+                      <code className="block bg-gray-100 text-gray-800 p-3 rounded-lg text-xs font-mono overflow-x-auto whitespace-pre border border-gray-200 my-2" {...props} />
+                    ),
+                  pre: ({node, ...props}) => (
+                    <pre className="bg-gray-100 rounded-lg p-3 overflow-x-auto border border-gray-200 my-3" {...props} />
+                  ),
+                  blockquote: ({node, ...props}) => (
+                    <blockquote className="border-l-4 border-purple-300 pl-4 pr-2 py-1 italic text-gray-600 mb-3 bg-purple-50/30 rounded-r-lg" {...props} />
+                  ),
+                  strong: ({node, ...props}) => (
+                    <strong className="font-semibold text-gray-800" {...props} />
+                  ),
+                  em: ({node, ...props}) => (
+                    <em className="italic text-gray-700" {...props} />
+                  ),
+                  a: ({node, ...props}) => (
+                    <a className="text-purple-600 hover:text-purple-700 underline decoration-purple-300 hover:decoration-purple-500 transition-colors" {...props} />
+                  ),
+                  hr: ({node, ...props}) => (
+                    <hr className="border-t border-gray-200 my-4" {...props} />
+                  ),
+                  table: ({node, ...props}) => (
+                    <div className="overflow-x-auto my-3">
+                      <table className="min-w-full border border-gray-200 rounded-lg" {...props} />
+                    </div>
+                  ),
+                  thead: ({node, ...props}) => (
+                    <thead className="bg-gray-50" {...props} />
+                  ),
+                  th: ({node, ...props}) => (
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 border-b border-gray-200" {...props} />
+                  ),
+                  td: ({node, ...props}) => (
+                    <td className="px-3 py-2 text-sm text-gray-700 border-b border-gray-100" {...props} />
+                  )
+                }}
+              >
+                {generatedContent}
+              </ReactMarkdown>
+            </div>
           </div>
         ) : (
           <div className="flex items-center justify-center h-16 text-gray-400 text-sm">
