@@ -75,7 +75,7 @@ export default function InfoCard({
   }
 
   const handleDelete = () => {
-    deleteCard(cardId)
+    deleteCard(columnId, cardId)
     handleCloseSettingsTooltip()
   }
 
@@ -189,9 +189,12 @@ export default function InfoCard({
     const url = URL.createObjectURL(blob)
     const timestamp = Date.now()
     
+    // Get column title from the first Info Card title
+    const columnTitle = title || 'Untitled Column'
+    
     const link = document.createElement('a')
     link.href = url
-    link.download = `ai-card-studio-column-${timestamp}.json`
+    link.download = `AI Card Studio - ${columnTitle} - ${timestamp}.json`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)

@@ -554,7 +554,7 @@ export default function AIToolCard({
             </div>
           }
           onClose={handleClosePromptTooltip}
-          onDelete={() => deleteCard(cardId)}
+          onDelete={() => deleteCard(columnId, cardId)}
         >
           {/* Button Name */}
           <div className="mb-4">

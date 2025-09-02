@@ -161,10 +161,7 @@ export default function AICardStudio() {
       const text = await file.text()
       const importedData = JSON.parse(text)
 
-      // Generate new canvas for imported data
       const timestamp = Date.now()
-      const randomId = Math.random().toString(36).substr(2, 9)
-      const newCanvasId = `canvas-imported-${timestamp}-${randomId}`
       
       let importedColumns: Column[] = []
       
@@ -208,16 +205,12 @@ export default function AICardStudio() {
         }
       })
       
-      // Create new canvas with imported columns
-      const newCanvas: Canvas = {
-        id: newCanvasId,
-        name: 'Imported Canvas',
-        columns: processedColumns
-      }
-
-      // Add the new canvas and set it as active
-      updateCanvases(prev => [...prev, newCanvas])
-      setActiveCanvas(newCanvasId)
+      // Add imported columns to the current active canvas
+      updateCanvases(prev => prev.map(canvas => 
+        canvas.id === activeCanvasId 
+          ? { ...canvas, columns: [...canvas.columns, ...processedColumns] }
+          : canvas
+      ))
 
       // Auto-save after import
       await saveWorkspace()
