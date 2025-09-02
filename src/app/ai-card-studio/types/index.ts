@@ -19,3 +19,9 @@ export interface Column {
   id: string
   cards: ColumnCard[]
 }
+
+export interface Canvas {
+  id: string
+  name: string
+  columns: Column[]
+}

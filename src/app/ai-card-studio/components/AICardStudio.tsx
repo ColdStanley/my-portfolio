@@ -1,22 +1,38 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Column, ColumnCard } from '../types'
 import { generateUniqueButtonName, generateUniqueTitle } from '../utils/cardUtils'
 import { useCardDeletion } from '../hooks/useCardDeletion'
 import ColumnComponent from './Column'
+import CanvasSettingsModal from './CanvasSettingsModal'
 import { useWorkspaceStore } from '../store/workspaceStore'
 
 export default function AICardStudio() {
-  const { columns, isLoading, saveError, columnExecutionStatus, actions } = useWorkspaceStore()
-  const { updateColumns, clearSaveError, saveWorkspace, runColumnWorkflow } = actions
-  const { deleteCard } = useCardDeletion(columns, updateColumns)
+  const { canvases, activeCanvasId, isLoading, saveError, columnExecutionStatus, actions } = useWorkspaceStore()
+  const { updateColumns, updateCanvases, clearSaveError, saveWorkspace, runColumnWorkflow, addCanvas, setActiveCanvas } = actions
+  
+  // Get active canvas and its columns
+  const activeCanvas = canvases.find(canvas => canvas.id === activeCanvasId)
+  const columns = activeCanvas?.columns || []
+  const { deleteCard } = useCardDeletion()
   
   const [showCardTypeModal, setShowCardTypeModal] = useState(false)
   const [cardTypeModalVisible, setCardTypeModalVisible] = useState(false)
   const [selectedColumnId, setSelectedColumnId] = useState<string>('')
   const [insertAfterCardId, setInsertAfterCardId] = useState<string>('')
+  
+  // Canvas dropdown state
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  
+  // Settings modal state  
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false)
+  const [settingsCanvasId, setSettingsCanvasId] = useState('')
+  
+  // Global save state
+  const [isSaving, setIsSaving] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   
   // Import functionality
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -45,7 +61,7 @@ export default function AICardStudio() {
       cards: [{
         id: `info-${timestamp}-${randomId}`,
         type: 'info',
-        title: generateUniqueTitle('New Card', columns),
+        title: generateUniqueTitle('New Card', canvases),
         description: 'Enter description...',
         justCreated: true
       }]
@@ -71,13 +87,13 @@ export default function AICardStudio() {
       ? {
           id: `info-${timestamp}-${randomId}`,
           type: 'info',
-          title: generateUniqueTitle('New Card', columns),
+          title: generateUniqueTitle('New Card', canvases),
           description: ''
         }
       : {
           id: `aitool-${timestamp}-${randomId}`,
           type: 'aitool',
-          buttonName: generateUniqueButtonName('Start', columns),
+          buttonName: generateUniqueButtonName('Start', canvases),
           promptText: '',
           generatedContent: '',
           aiModel: 'deepseek'  // Default to DeepSeek
@@ -143,37 +159,65 @@ export default function AICardStudio() {
 
     try {
       const text = await file.text()
-      const importedColumn = JSON.parse(text) as Column
+      const importedData = JSON.parse(text)
 
-      // Generate new unique IDs for the column and all cards
+      // Generate new canvas for imported data
       const timestamp = Date.now()
       const randomId = Math.random().toString(36).substr(2, 9)
+      const newCanvasId = `canvas-imported-${timestamp}-${randomId}`
       
-      const newColumn: Column = {
-        ...importedColumn,
-        id: `col-${timestamp}-${randomId}`,
-        cards: importedColumn.cards.map((card, index) => {
-          const cardTimestamp = timestamp + index
-          const cardRandomId = Math.random().toString(36).substr(2, 9)
-          
-          if (card.type === 'info') {
-            return {
-              ...card,
-              id: `info-${cardTimestamp}-${cardRandomId}`,
-              title: generateUniqueTitle(card.title || 'Imported Card', columns)
+      let importedColumns: Column[] = []
+      
+      // Handle both old format (single Column) and array of Columns
+      if (Array.isArray(importedData)) {
+        // Array of columns
+        importedColumns = importedData as Column[]
+      } else if (importedData.cards) {
+        // Single column
+        importedColumns = [importedData as Column]
+      } else {
+        throw new Error('Invalid import format')
+      }
+      
+      // Process columns to ensure unique IDs and names
+      const processedColumns = importedColumns.map((column, colIndex) => {
+        const colTimestamp = timestamp + colIndex * 1000
+        const colRandomId = Math.random().toString(36).substr(2, 9)
+        
+        return {
+          ...column,
+          id: `col-${colTimestamp}-${colRandomId}`,
+          cards: column.cards.map((card, cardIndex) => {
+            const cardTimestamp = colTimestamp + cardIndex
+            const cardRandomId = Math.random().toString(36).substr(2, 9)
+            
+            if (card.type === 'info') {
+              return {
+                ...card,
+                id: `info-${cardTimestamp}-${cardRandomId}`,
+                title: generateUniqueTitle(card.title || 'Imported Card', canvases)
+              }
+            } else {
+              return {
+                ...card,
+                id: `aitool-${cardTimestamp}-${cardRandomId}`,
+                buttonName: generateUniqueButtonName(card.buttonName || 'Imported Tool', canvases)
+              }
             }
-          } else {
-            return {
-              ...card,
-              id: `aitool-${cardTimestamp}-${cardRandomId}`,
-              buttonName: generateUniqueButtonName(card.buttonName || 'Imported Tool', columns)
-            }
-          }
-        })
+          })
+        }
+      })
+      
+      // Create new canvas with imported columns
+      const newCanvas: Canvas = {
+        id: newCanvasId,
+        name: 'Imported Canvas',
+        columns: processedColumns
       }
 
-      // Add the new column
-      updateColumns(prev => [...prev, newColumn])
+      // Add the new canvas and set it as active
+      updateCanvases(prev => [...prev, newCanvas])
+      setActiveCanvas(newCanvasId)
 
       // Auto-save after import
       await saveWorkspace()
@@ -188,6 +232,65 @@ export default function AICardStudio() {
       // Could add user feedback here
     }
   }
+
+  // Canvas dropdown functions
+  const toggleDropdown = () => {
+    setDropdownOpen(!dropdownOpen)
+  }
+
+  const handleCanvasSwitch = (canvasId: string) => {
+    setActiveCanvas(canvasId)
+    setDropdownOpen(false)
+  }
+
+  const handleManageCanvases = () => {
+    setSettingsCanvasId(activeCanvasId || '')
+    setSettingsModalOpen(true)
+    setDropdownOpen(false)
+  }
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element
+      if (dropdownOpen && !target.closest('[data-dropdown-container]')) {
+        setDropdownOpen(false)
+      }
+    }
+
+    if (dropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside)
+      }
+    }
+  }, [dropdownOpen])
+
+  // Settings modal functions
+
+  const handleSettingsClose = () => {
+    setSettingsModalOpen(false)
+    setSettingsCanvasId('')
+  }
+
+  // Global save functions
+  const handleGlobalSave = async () => {
+    setIsSaving(true)
+    try {
+      await saveWorkspace()
+      setHasUnsavedChanges(false)
+    } catch (error) {
+      console.error('Save failed:', error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // Track changes to set unsaved state
+  useEffect(() => {
+    // Any time canvases change, mark as unsaved
+    setHasUnsavedChanges(true)
+  }, [canvases])
 
   return (
     <>
@@ -238,15 +341,128 @@ export default function AICardStudio() {
         </div>
       )}
 
-      {/* Full screen layout - no L-shaped offset */}
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 p-6 pb-0 animate-gradient-flow">
+      {/* Full screen layout - optimized spacing */}
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 pt-16 px-6 pb-0 animate-gradient-flow">
         <div className="max-w-full mx-auto">
-          {/* 简化的标题 */}
-          <div className="flex items-center justify-center mb-8">
+          {/* Header Navigation Bar */}
+          <div className="flex items-center justify-between mb-6">
+            {/* Left side - Title */}
             <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
               AI Card Studio
             </h1>
+            
+            {/* Right side - All controls */}
+            <div className="flex items-center gap-4">
+              {/* Save Status Indicator */}
+              <div className="text-sm text-gray-500">
+                {isSaving ? (
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 animate-spin text-purple-600" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                    </svg>
+                    <span className="text-purple-600">Saving...</span>
+                  </div>
+                ) : hasUnsavedChanges ? (
+                  <span className="text-purple-600">Unsaved changes</span>
+                ) : (
+                  <span className="text-purple-600">All saved</span>
+                )}
+              </div>
+              
+              {/* Global Save Button */}
+              <button
+                onClick={handleGlobalSave}
+                disabled={isSaving || !hasUnsavedChanges}
+                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
+                  hasUnsavedChanges && !isSaving
+                    ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                {isSaving ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                    </svg>
+                    Saving
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    Save
+                  </>
+                )}
+              </button>
+              
+              {/* Canvas Dropdown Selector */}
+              <div className="relative" data-dropdown-container>
+                {/* Dropdown Trigger */}
+                <button
+                  onClick={toggleDropdown}
+                  className="flex items-center gap-2 px-4 py-2 bg-white border border-purple-200 rounded-lg text-purple-600 font-medium hover:bg-purple-50 transition-all duration-200 min-w-[200px] justify-between"
+                >
+                  <span>{activeCanvas?.name || 'Select Canvas'}</span>
+                  <svg 
+                    className={`w-4 h-4 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Dropdown Menu */}
+                {dropdownOpen && (
+                  <div className="absolute top-full mt-2 left-0 z-50 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 py-2 min-w-[200px]">
+                    {/* Canvas List */}
+                    {canvases.map((canvas) => (
+                      <button
+                        key={canvas.id}
+                        onClick={() => handleCanvasSwitch(canvas.id)}
+                        className={`w-full px-4 py-2 text-left hover:bg-purple-50 transition-all duration-150 ${
+                          canvas.id === activeCanvasId ? 'text-purple-600 bg-purple-50' : 'text-gray-700'
+                        }`}
+                      >
+                        {canvas.name}
+                      </button>
+                    ))}
+                    
+                    {/* Separator */}
+                    <hr className="my-2 border-gray-200" />
+                    
+                    {/* Management Options */}
+                    <button
+                      onClick={handleManageCanvases}
+                      className="w-full px-4 py-2 text-left text-gray-600 hover:bg-gray-50 transition-all duration-150 flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Manage Canvases
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              {/* Add Canvas Button */}
+              <button
+                onClick={addCanvas}
+                className="w-10 h-10 bg-white border border-purple-200 text-purple-600 hover:bg-purple-50 rounded-lg flex items-center justify-center transition-all duration-200"
+                title="Add new canvas"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            </div>
           </div>
+          
           
           <div className="relative">
             {/* Left Arrow */}
@@ -378,6 +594,13 @@ export default function AICardStudio() {
         </>,
         document.body
       )}
+
+      {/* Canvas Settings Modal */}
+      <CanvasSettingsModal 
+        isOpen={settingsModalOpen}
+        onClose={handleSettingsClose}
+        canvasId={settingsCanvasId}
+      />
 
     </div>
     </>

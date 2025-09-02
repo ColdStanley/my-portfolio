@@ -10,11 +10,7 @@ interface InfoCardProps {
   columnId: string
   cardId: string
   isTopCard: boolean
-  onDelete: (cardId: string) => void
   autoOpenSettings?: boolean
-  onTitleChange: (cardId: string, newTitle: string) => void
-  onTitleBlur: (cardId: string) => void
-  onDescriptionChange: (cardId: string, newDescription: string) => void
   onInsertCard?: (columnId: string, afterCardId: string) => void
   onRunColumnWorkflow?: () => void
   isColumnExecuting?: boolean
@@ -24,25 +20,24 @@ export default function InfoCard({
   columnId,
   cardId,
   isTopCard,
-  onDelete,
   autoOpenSettings = false,
-  onTitleChange,
-  onTitleBlur,
-  onDescriptionChange,
   onInsertCard,
   onRunColumnWorkflow,
   isColumnExecuting = false
 }: InfoCardProps) {
-  const { columns, actions } = useWorkspaceStore()
-  const { saveWorkspace, moveColumn, moveCard, updateColumns } = actions
+  const { canvases, actions } = useWorkspaceStore()
+  const { moveColumn, moveCard, updateColumns, updateCardTitle, updateCardDescription, deleteCard } = actions
   
   // Get current column and card data from Zustand store
-  const currentColumn = columns.find(col => col.id === columnId)
+  const currentColumn = canvases.flatMap(canvas => canvas.columns).find(col => col.id === columnId)
   const currentCard = currentColumn?.cards.find(card => card.id === cardId)
   
   // Calculate column position for move buttons
-  const currentColumnIndex = columns.findIndex(col => col.id === columnId)
-  const totalColumns = columns.length
+  const activeCanvas = canvases.find(canvas => 
+    canvas.columns.some(col => col.id === columnId)
+  )
+  const currentColumnIndex = activeCanvas?.columns.findIndex(col => col.id === columnId) ?? -1
+  const totalColumns = activeCanvas?.columns.length ?? 0
   const canMoveLeft = currentColumnIndex > 0
   const canMoveRight = currentColumnIndex < totalColumns - 1
   
@@ -66,28 +61,8 @@ export default function InfoCard({
   const urlButtonRef = useRef<HTMLButtonElement>(null)
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
   
-  // Save state
-  const [isSaving, setIsSaving] = useState(false)
-  const [saveSuccess, setSaveSuccess] = useState(false)
-  
   // PDF generation state
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
-
-  // Save function
-  const handleSave = async () => {
-    setIsSaving(true)
-    setSaveSuccess(false)
-    
-    try {
-      await saveWorkspace()
-      setSaveSuccess(true)
-      setTimeout(() => setSaveSuccess(false), 2000) // Hide success message after 2s
-    } catch (error) {
-      console.error('Save failed:', error)
-    } finally {
-      setIsSaving(false)
-    }
-  }
 
   const handleSettingsClick = () => {
     setShowSettingsTooltip(true)
@@ -100,7 +75,7 @@ export default function InfoCard({
   }
 
   const handleDelete = () => {
-    onDelete(cardId)
+    deleteCard(cardId)
     handleCloseSettingsTooltip()
   }
 
@@ -184,10 +159,10 @@ export default function InfoCard({
         .join('\n\n')
 
       // Update description with results
-      onDescriptionChange(cardId, results)
+      updateCardDescription(cardId, results)
     } catch (error) {
       console.error('Trigger failed:', error)
-      onDescriptionChange(cardId, 'Error: Failed to trigger workflows')
+      updateCardDescription(cardId, 'Error: Failed to trigger workflows')
     } finally {
       setIsTriggering(false)
     }
@@ -501,9 +476,6 @@ export default function InfoCard({
           ) : undefined}
           onClose={handleCloseSettingsTooltip}
           onDelete={handleDelete}
-          onSave={handleSave}
-          isSaving={isSaving}
-          saveSuccess={saveSuccess}
         >
           {/* Card Name */}
           <div className="mb-4">
@@ -511,8 +483,7 @@ export default function InfoCard({
             <input
               type="text"
               value={title}
-              onChange={(e) => onTitleChange(cardId, e.target.value)}
-              onBlur={() => onTitleBlur(cardId)}
+              onChange={(e) => updateCardTitle(cardId, e.target.value)}
               placeholder="Enter card name..."
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             />
@@ -536,7 +507,7 @@ export default function InfoCard({
             </div>
             <textarea
               value={description}
-              onChange={(e) => onDescriptionChange(cardId, e.target.value)}
+              onChange={(e) => updateCardDescription(cardId, e.target.value)}
               placeholder="Enter description..."
               className="w-full h-32 p-3 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
             />

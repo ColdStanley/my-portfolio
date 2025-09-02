@@ -8,40 +8,22 @@ import SettingsModal from './ui/SettingsModal'
 
 interface AIToolCardProps {
   cardId: string
-  order: number
   columnId: string
-  onDelete: (cardId: string) => void
   autoOpenSettings?: boolean
-  onButtonNameChange: (cardId: string, newName: string) => void
-  onButtonNameBlur: (cardId: string) => void
-  onPromptChange: (cardId: string, newPrompt: string) => void
-  onOptionsChange: (cardId: string, newOptions: string[]) => void
-  onAiModelChange: (cardId: string, newModel: 'deepseek' | 'openai') => void
-  onGeneratedContentChange: (cardId: string, newContent: string) => void
-  onGeneratingStateChange: (cardId: string, isGenerating: boolean) => void
   onInsertCard?: (columnId: string, afterCardId: string) => void
 }
 
 export default function AIToolCard({ 
   cardId, 
-  order,
   columnId,
-  onDelete,
   autoOpenSettings = false,
-  onButtonNameChange,
-  onButtonNameBlur,
-  onPromptChange,
-  onOptionsChange,
-  onAiModelChange,
-  onGeneratedContentChange,
-  onGeneratingStateChange,
   onInsertCard
 }: AIToolCardProps) {
-  const { columns, actions } = useWorkspaceStore()
-  const { saveWorkspace, moveCard } = actions
+  const { canvases, actions } = useWorkspaceStore()
+  const { moveCard, updateCardButtonName, updateCardPromptText, updateCardOptions, updateCardAiModel, updateCardGeneratedContent, updateCardGeneratingState, deleteCard } = actions
   
   // Get current card data from Zustand store
-  const currentColumn = columns.find(col => col.id === columnId)
+  const currentColumn = canvases.flatMap(canvas => canvas.columns).find(col => col.id === columnId)
   const currentCard = currentColumn?.cards.find(card => card.id === cardId)
   
   // Calculate card position for move buttons
@@ -62,33 +44,11 @@ export default function AIToolCard({
   const [showOptionsManageTooltip, setShowOptionsManageTooltip] = useState(false)
   const [optionsManageTooltipVisible, setOptionsManageTooltipVisible] = useState(false)
   const generateButtonRef = useRef<HTMLButtonElement>(null)
-  const [isFocused, setIsFocused] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [isResponseExpanded, setIsResponseExpanded] = useState(false)
   
-  // Save state
-  const [isSaving, setIsSaving] = useState(false)
-  const [saveSuccess, setSaveSuccess] = useState(false)
-  
   // PDF generation state
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
-
-
-  // Save function
-  const handleSave = async () => {
-    setIsSaving(true)
-    setSaveSuccess(false)
-    
-    try {
-      await saveWorkspace()
-      setSaveSuccess(true)
-      setTimeout(() => setSaveSuccess(false), 2000) // Hide success message after 2s
-    } catch (error) {
-      console.error('Save failed:', error)
-    } finally {
-      setIsSaving(false)
-    }
-  }
 
   // Auto-open settings for newly created cards
   useEffect(() => {
@@ -122,7 +82,7 @@ export default function AIToolCard({
 
   // Handle textarea input changes
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onPromptChange(cardId, e.target.value)
+    updateCardPromptText(cardId, e.target.value)
   }
 
   // Insert reference at cursor position
@@ -135,7 +95,7 @@ export default function AIToolCard({
       const referenceText = `[REF: ${selectedButtonName}]`
       
       const newText = textBefore + referenceText + textAfter
-      onPromptChange(cardId, newText)
+      updateCardPromptText(cardId, newText)
       
       setTimeout(() => {
         const newCursorPosition = cursorPosition + referenceText.length
@@ -155,7 +115,7 @@ export default function AIToolCard({
       const referenceText = `[INFO: ${selectedTitle}]`
       
       const newText = textBefore + referenceText + textAfter
-      onPromptChange(cardId, newText)
+      updateCardPromptText(cardId, newText)
       
       setTimeout(() => {
         const newCursorPosition = cursorPosition + referenceText.length
@@ -174,11 +134,11 @@ export default function AIToolCard({
     }
     
     // Set generating state
-    onGeneratedContentChange(cardId, '') // Clear previous content
-    onGeneratingStateChange(cardId, true)
+    updateCardGeneratedContent(cardId, '') // Clear previous content
+    updateCardGeneratingState(cardId, true)
     
     try {
-      let resolvedPrompt = resolveReferences(promptText, columns)
+      let resolvedPrompt = resolveReferences(promptText, canvases)
       
       // Replace option placeholder with selected value if both exist
       const hasOptions = (options || []).length > 0
@@ -234,9 +194,9 @@ export default function AIToolCard({
               const content = parsed.choices?.[0]?.delta?.content || ''
               if (content) {
                 fullResponse += content
-                onGeneratedContentChange(cardId, fullResponse)
+                updateCardGeneratedContent(cardId, fullResponse)
               }
-            } catch (parseError) {
+            } catch {
               // 忽略解析错误，继续处理下一行
               console.warn('Skipping malformed JSON line:', data)
             }
@@ -253,9 +213,9 @@ export default function AIToolCard({
             const content = parsed.choices?.[0]?.delta?.content || ''
             if (content) {
               fullResponse += content
-              onGeneratedContentChange(cardId, fullResponse)
+              updateCardGeneratedContent(cardId, fullResponse)
             }
-          } catch (parseError) {
+          } catch {
             console.warn('Skipping final malformed JSON:', data)
           }
         }
@@ -264,10 +224,10 @@ export default function AIToolCard({
       setShowOptionsTooltip(false)
     } catch (error) {
       console.error('Error generating content:', error)
-      onGeneratedContentChange(cardId, 'Error generating content. Please try again.')
-      onGeneratingStateChange(cardId, false)
+      updateCardGeneratedContent(cardId, 'Error generating content. Please try again.')
+      updateCardGeneratingState(cardId, false)
     } finally {
-      onGeneratingStateChange(cardId, false)
+      updateCardGeneratingState(cardId, false)
     }
   }
 
@@ -387,7 +347,7 @@ export default function AIToolCard({
         {isGenerating && (
           <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 818-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
           </svg>
         )}
         {buttonName}
@@ -594,10 +554,7 @@ export default function AIToolCard({
             </div>
           }
           onClose={handleClosePromptTooltip}
-          onDelete={() => onDelete(cardId)}
-          onSave={handleSave}
-          isSaving={isSaving}
-          saveSuccess={saveSuccess}
+          onDelete={() => deleteCard(cardId)}
         >
           {/* Button Name */}
           <div className="mb-4">
@@ -605,8 +562,7 @@ export default function AIToolCard({
             <input
               type="text"
               value={buttonName}
-              onChange={(e) => onButtonNameChange(cardId, e.target.value)}
-              onBlur={() => onButtonNameBlur(cardId)}
+              onChange={(e) => updateCardButtonName(cardId, e.target.value)}
               placeholder="Enter button name..."
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             />
@@ -620,7 +576,7 @@ export default function AIToolCard({
                 value={aiModel}
                 onChange={(e) => {
                   const newModel = e.target.value as 'deepseek' | 'openai'
-                  onAiModelChange(cardId, newModel)
+                  updateCardAiModel(cardId, newModel)
                 }}
                 className="px-3 py-1 text-sm border border-gray-200 rounded-md text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
               >
@@ -717,7 +673,7 @@ export default function AIToolCard({
                             const optionText = '{{option}}'
                             
                             const newText = textBefore + optionText + textAfter
-                            onPromptChange(cardId, newText)
+                            updateCardPromptText(cardId, newText)
                             
                             setTimeout(() => {
                               const newCursorPosition = cursorPosition + optionText.length
@@ -741,7 +697,6 @@ export default function AIToolCard({
               </div>
             </div>
           )}
-
 
         </SettingsModal>
       </Modal>
@@ -775,7 +730,7 @@ export default function AIToolCard({
                       onChange={(e) => {
                         const newOptions = [...options]
                         newOptions[index] = e.target.value
-                        onOptionsChange(cardId, newOptions)
+                        updateCardOptions(cardId, newOptions)
                       }}
                       placeholder="Enter option..."
                       className="flex-1 px-2 py-1 text-sm border border-gray-200 rounded text-gray-700 focus:outline-none focus:ring-1 focus:ring-purple-500"
@@ -783,7 +738,7 @@ export default function AIToolCard({
                     <button
                       onClick={() => {
                         const newOptions = options.filter((_, i) => i !== index)
-                        onOptionsChange(cardId, newOptions)
+                        updateCardOptions(cardId, newOptions)
                       }}
                       className="px-2 py-1 text-red-600 hover:bg-red-50 rounded transition-colors"
                     >
@@ -794,7 +749,7 @@ export default function AIToolCard({
                 <button
                   onClick={() => {
                     const newOptions = [...options, '']
-                    onOptionsChange(cardId, newOptions)
+                    updateCardOptions(cardId, newOptions)
                   }}
                   className="w-full px-3 py-1 text-sm text-purple-600 border border-purple-200 rounded hover:bg-purple-50 transition-colors"
                 >

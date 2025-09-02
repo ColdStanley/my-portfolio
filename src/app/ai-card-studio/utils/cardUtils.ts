@@ -1,12 +1,14 @@
-import { Column, ColumnCard } from '../types'
+import { Column, ColumnCard, Canvas } from '../types'
 
-// Generate unique button name for AI Tool Cards
-export const generateUniqueButtonName = (baseName: string, columns: Column[], excludeCardId?: string): string => {
-  const existingNames = columns.flatMap(col => 
-    col.cards
-      .filter(card => card.type === 'aitool' && card.id !== excludeCardId)
-      .map(card => card.buttonName)
-      .filter(Boolean)
+// Generate unique button name for AI Tool Cards (searches across all canvases)
+export const generateUniqueButtonName = (baseName: string, canvases: Canvas[], excludeCardId?: string): string => {
+  const existingNames = canvases.flatMap(canvas => 
+    canvas.columns.flatMap(col => 
+      col.cards
+        .filter(card => card.type === 'aitool' && card.id !== excludeCardId)
+        .map(card => card.buttonName)
+        .filter(Boolean)
+    )
   )
 
   if (!existingNames.includes(baseName)) {
@@ -24,14 +26,16 @@ export const generateUniqueButtonName = (baseName: string, columns: Column[], ex
   return uniqueName
 }
 
-// Generate unique title for Info Cards
-export const generateUniqueTitle = (baseTitle: string, columns: Column[], excludeCardId?: string): string => {
+// Generate unique title for Info Cards (searches across all canvases)
+export const generateUniqueTitle = (baseTitle: string, canvases: Canvas[], excludeCardId?: string): string => {
   const isTitleExists = (title: string): boolean => {
-    return columns.some(col => 
-      col.cards.some(card => 
-        card.type === 'info' && 
-        card.id !== excludeCardId && 
-        card.title === title
+    return canvases.some(canvas =>
+      canvas.columns.some(col => 
+        col.cards.some(card => 
+          card.type === 'info' && 
+          card.id !== excludeCardId && 
+          card.title === title
+        )
       )
     )
   }
@@ -51,30 +55,34 @@ export const generateUniqueTitle = (baseTitle: string, columns: Column[], exclud
   return uniqueTitle
 }
 
-// Check if button name exists (excluding current card)
-export const isButtonNameExists = (name: string, columns: Column[], excludeCardId?: string): boolean => {
-  return columns.some(col => 
-    col.cards.some(card => 
-      card.type === 'aitool' && 
-      card.id !== excludeCardId && 
-      card.buttonName === name
+// Check if button name exists (excluding current card) (searches across all canvases)
+export const isButtonNameExists = (name: string, canvases: Canvas[], excludeCardId?: string): boolean => {
+  return canvases.some(canvas =>
+    canvas.columns.some(col => 
+      col.cards.some(card => 
+        card.type === 'aitool' && 
+        card.id !== excludeCardId && 
+        card.buttonName === name
+      )
     )
   )
 }
 
-// Check if Info Card title exists (excluding current card)  
-export const isTitleExists = (title: string, columns: Column[], excludeCardId?: string): boolean => {
-  return columns.some(col => 
-    col.cards.some(card => 
-      card.type === 'info' && 
-      card.id !== excludeCardId && 
-      card.title === title
+// Check if Info Card title exists (excluding current card) (searches across all canvases)
+export const isTitleExists = (title: string, canvases: Canvas[], excludeCardId?: string): boolean => {
+  return canvases.some(canvas =>
+    canvas.columns.some(col => 
+      col.cards.some(card => 
+        card.type === 'info' && 
+        card.id !== excludeCardId && 
+        card.title === title
+      )
     )
   )
 }
 
-// Resolve references in prompt text
-export const resolveReferences = (promptText: string, columns: Column[]): string => {
+// Resolve references in prompt text (searches across all canvases)
+export const resolveReferences = (promptText: string, canvases: Canvas[]): string => {
   let resolvedPrompt = promptText
   
   // Find all AI Card references in format [REF: ButtonName]
@@ -85,8 +93,9 @@ export const resolveReferences = (promptText: string, columns: Column[]): string
       // Extract button name from [REF: ButtonName]
       const buttonName = match.replace(/\[REF:\s*/, '').replace(/\]$/, '').trim()
       
-      // Find the corresponding AI Tool Card
-      const referencedCard = columns
+      // Find the corresponding AI Tool Card across all canvases
+      const referencedCard = canvases
+        .flatMap(canvas => canvas.columns)
         .flatMap(col => col.cards)
         .find(card => card.type === 'aitool' && card.buttonName === buttonName)
       
@@ -104,8 +113,9 @@ export const resolveReferences = (promptText: string, columns: Column[]): string
       // Extract title from [INFO: Title]
       const title = match.replace(/\[INFO:\s*/, '').replace(/\]$/, '').trim()
       
-      // Find the corresponding Info Card
-      const infoCard = columns
+      // Find the corresponding Info Card across all canvases
+      const infoCard = canvases
+        .flatMap(canvas => canvas.columns)
         .flatMap(col => col.cards)
         .find(card => card.type === 'info' && card.title === title)
       
@@ -118,21 +128,51 @@ export const resolveReferences = (promptText: string, columns: Column[]): string
   return resolvedPrompt
 }
 
-// Check references before deleting a card
-export const checkReferences = (columnId: string, cardIndex: number, buttonName: string, columns: Column[]): string[] => {
+// Check references before deleting a card (searches across all canvases)
+export const checkReferences = (cardId: string, buttonName: string, canvases: Canvas[]): string[] => {
   const references: string[] = []
   
-  columns.forEach(col => {
-    col.cards.forEach((card, index) => {
-      if (card.type === 'aitool' && card.promptText) {
-        const referencePattern = new RegExp(`\\[REF:\\s*${buttonName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`, 'g')
-        if (referencePattern.test(card.promptText)) {
-          const location = col.id === columnId ? `Card ${index + 1} in same column` : `Card ${index + 1} in another column`
-          references.push(location)
+  canvases.forEach(canvas => {
+    canvas.columns.forEach(col => {
+      col.cards.forEach((card, index) => {
+        if (card.type === 'aitool' && card.promptText && card.id !== cardId) {
+          const referencePattern = new RegExp(`\\[REF:\\s*${buttonName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`, 'g')
+          if (referencePattern.test(card.promptText)) {
+            const location = `"${buttonName}" referenced in "${canvas.name}" > Card ${index + 1}`
+            references.push(location)
+          }
         }
-      }
+      })
     })
   })
   
   return references
+}
+
+// Generate unique canvas name (searches across all canvases)
+export const generateUniqueCanvasName = (baseName: string, canvases: Canvas[], excludeCanvasId?: string): string => {
+  const existingNames = canvases
+    .filter(canvas => canvas.id !== excludeCanvasId)
+    .map(canvas => canvas.name)
+
+  if (!existingNames.includes(baseName)) {
+    return baseName
+  }
+
+  let counter = 2
+  let uniqueName = `${baseName} (${counter})`
+  
+  while (existingNames.includes(uniqueName)) {
+    counter++
+    uniqueName = `${baseName} (${counter})`
+  }
+  
+  return uniqueName
+}
+
+// Check if canvas name exists (excluding current canvas)
+export const isCanvasNameExists = (name: string, canvases: Canvas[], excludeCanvasId?: string): boolean => {
+  return canvases.some(canvas => 
+    canvas.id !== excludeCanvasId && canvas.name === name
+  )
 }

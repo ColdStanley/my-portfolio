@@ -1,11 +1,12 @@
 import { create } from 'zustand';
 import { supabase } from '../../../lib/supabaseClient';
-import { Column } from '../types';
-import { resolveReferences } from '../utils/cardUtils';
+import { Column, Canvas } from '../types';
+import { resolveReferences, generateUniqueCanvasName } from '../utils/cardUtils';
 import type { User } from '@supabase/supabase-js'
 
 interface WorkspaceState {
-  columns: Column[];
+  canvases: Canvas[];
+  activeCanvasId: string;
   user: User | null;
   isLoading: boolean;
   isInitialLoad: boolean; // 避免竞态条件的标志
@@ -13,53 +14,75 @@ interface WorkspaceState {
   columnExecutionStatus: { [columnId: string]: boolean }; // Track column execution status
   actions: {
     fetchAndHandleWorkspace: (userId: string) => Promise<void>;
-    updateColumns: (updater: (prev: Column[]) => Column[]) => void;
+    updateCanvases: (updater: (prev: Canvas[]) => Canvas[]) => void;
+    updateColumns: (updater: (prev: Column[]) => Column[]) => void; // Helper for backward compatibility
     moveColumn: (columnId: string, direction: 'left' | 'right') => void;
     moveCard: (columnId: string, cardId: string, direction: 'up' | 'down') => void;
     runColumnWorkflow: (columnId: string) => Promise<void>;
+    addCanvas: () => void;
+    deleteCanvas: (canvasId: string) => void;
+    renameCanvas: (canvasId: string, newName: string) => void;
+    setActiveCanvas: (canvasId: string) => void;
     saveWorkspace: () => Promise<void>;
     setUser: (user: User | null) => void;
     clearSaveError: () => void;
+    
+    // Fine-grained card update actions
+    updateCardTitle: (cardId: string, title: string) => void;
+    updateCardDescription: (cardId: string, description: string) => void;
+    updateCardButtonName: (cardId: string, buttonName: string) => void;
+    updateCardPromptText: (cardId: string, promptText: string) => void;
+    updateCardOptions: (cardId: string, options: string[]) => void;
+    updateCardAiModel: (cardId: string, aiModel: 'deepseek' | 'openai') => void;
+    updateCardGeneratedContent: (cardId: string, content: string) => void;
+    updateCardGeneratingState: (cardId: string, isGenerating: boolean) => void;
+    deleteCard: (columnId: string, cardId: string) => void;
   };
 }
 
-const defaultColumns: Column[] = [
+const defaultCanvases: Canvas[] = [
   {
-    id: 'col-1',
-    cards: [
+    id: 'canvas-1',
+    name: 'Default Canvas',
+    columns: [
       {
-        id: 'info-1',
-        type: 'info',
-        title: 'Info Card',
-        description: 'Display static information, instructions, or reference content without AI processing.'
+        id: 'col-1',
+        cards: [
+          {
+            id: 'info-1',
+            type: 'info',
+            title: 'Info Card',
+            description: 'Display static information, instructions, or reference content without AI processing.'
+          },
+          {
+            id: 'aitool-1',
+            type: 'aitool',
+            buttonName: 'Start',
+            promptText: '',
+            generatedContent: '',
+            aiModel: 'deepseek'
+          }
+        ]
       },
       {
-        id: 'aitool-1',
-        type: 'aitool',
-        buttonName: 'Start',
-        promptText: '',
-        generatedContent: '',
-        aiModel: 'deepseek'
-      }
-    ]
-  },
-  {
-    id: 'col-2',
-    cards: [
-      {
-        id: 'info-2',
-        type: 'info',
-        title: 'Usage Tips',
-        description: 'Use [REF: Start] to reference other AI tool outputs in your prompts. Use {{option}} for user-selectable options.'
-      },
-      {
-        id: 'aitool-2',
-        type: 'aitool',
-        buttonName: 'Analyze Data',
-        promptText: 'Analyze the following data: {{option}}',
-        generatedContent: '',
-        options: ['Sales Report', 'User Feedback', 'Performance Metrics'],
-        aiModel: 'deepseek'
+        id: 'col-2',
+        cards: [
+          {
+            id: 'info-2',
+            type: 'info',
+            title: 'Usage Tips',
+            description: 'Use [REF: Start] to reference other AI tool outputs in your prompts. Use {{option}} for user-selectable options.'
+          },
+          {
+            id: 'aitool-2',
+            type: 'aitool',
+            buttonName: 'Analyze Data',
+            promptText: 'Analyze the following data: {{option}}',
+            generatedContent: '',
+            options: ['Sales Report', 'User Feedback', 'Performance Metrics'],
+            aiModel: 'deepseek'
+          }
+        ]
       }
     ]
   }
@@ -68,7 +91,8 @@ const defaultColumns: Column[] = [
 // Manual save only - no debounce
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
-  columns: [],
+  canvases: [],
+  activeCanvasId: '',
   user: null,
   isLoading: true,
   isInitialLoad: true,
@@ -100,10 +124,15 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
         if (error && error.code === 'PGRST116') {
           // No existing workspace, create new one with timeout
+          const workspaceData = {
+            canvases: defaultCanvases,
+            activeCanvasId: defaultCanvases[0].id
+          };
+          
           const insertWithTimeout = Promise.race([
             supabase
               .from('ai_card_studios')
-              .insert({ user_id: userId, data: defaultColumns })
+              .insert({ user_id: userId, data: workspaceData })
               .select('data')
               .single(),
             new Promise((_, reject) =>
@@ -116,45 +145,113 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
             
             if (insertError) {
               console.error('Error creating new workspace:', insertError.message);
-              set({ columns: defaultColumns, saveError: 'Failed to create workspace' });
+              set({ 
+                canvases: defaultCanvases, 
+                activeCanvasId: defaultCanvases[0].id,
+                saveError: 'Failed to create workspace' 
+              });
             } else {
-              set({ columns: newWorkspace.data as Column[], saveError: null });
+              const workspaceData = newWorkspace.data;
+              set({ 
+                canvases: workspaceData.canvases as Canvas[], 
+                activeCanvasId: workspaceData.activeCanvasId,
+                saveError: null 
+              });
             }
           } catch (insertErr) {
             console.error('Insert operation timeout:', insertErr);
-            set({ columns: defaultColumns, saveError: 'Database connection slow, using defaults' });
+            set({ 
+              canvases: defaultCanvases, 
+              activeCanvasId: defaultCanvases[0].id,
+              saveError: 'Database connection slow, using defaults' 
+            });
           }
         } else if (error && error.message !== 'Database timeout') {
           console.error('Error fetching workspace:', error.message);
-          set({ columns: defaultColumns, saveError: 'Failed to load workspace' });
+          set({ 
+            canvases: defaultCanvases, 
+            activeCanvasId: defaultCanvases[0].id,
+            saveError: 'Failed to load workspace' 
+          });
         } else if (data && data.data) {
           console.log('Loaded workspace data:', data.data);
-          set({ columns: data.data as Column[], saveError: null });
+          const workspaceData = data.data;
+          
+          // Expect new format (canvases array)
+          if (workspaceData.canvases && workspaceData.activeCanvasId) {
+            set({ 
+              canvases: workspaceData.canvases as Canvas[], 
+              activeCanvasId: workspaceData.activeCanvasId,
+              saveError: null 
+            });
+          } else {
+            // Fallback to default
+            set({ 
+              canvases: defaultCanvases, 
+              activeCanvasId: defaultCanvases[0].id,
+              saveError: null 
+            });
+          }
         } else {
           console.log('No workspace data found, using defaults');
-          set({ columns: defaultColumns, saveError: null });
+          set({ 
+            canvases: defaultCanvases, 
+            activeCanvasId: defaultCanvases[0].id,
+            saveError: null 
+          });
         }
       } catch (err: any) {
         console.error('Workspace fetch error:', err);
         if (err.message === 'Database timeout') {
-          set({ columns: defaultColumns, saveError: 'Connection timeout, using defaults' });
+          set({ 
+            canvases: defaultCanvases, 
+            activeCanvasId: defaultCanvases[0].id,
+            saveError: 'Connection timeout, using defaults' 
+          });
         } else {
-          set({ columns: defaultColumns, saveError: 'Unexpected error occurred' });
+          set({ 
+            canvases: defaultCanvases, 
+            activeCanvasId: defaultCanvases[0].id,
+            saveError: 'Unexpected error occurred' 
+          });
         }
       }
       
       set({ isLoading: false, isInitialLoad: false });
     },
 
-    updateColumns: (updater) => {
-      set((state) => ({ columns: updater(state.columns) }));
+    updateCanvases: (updater) => {
+      set((state) => ({ canvases: updater(state.canvases) }));
       
-      // Debug: Log when columns are updated (no auto-save anymore)
-      console.log('Columns updated. Use Save button to save changes.');
+      // Debug: Log when canvases are updated (no auto-save anymore)
+      console.log('Canvases updated. Use Save button to save changes.');
+    },
+
+    updateColumns: (updater) => {
+      // Helper function for backward compatibility - updates active canvas columns
+      const { canvases, activeCanvasId } = get();
+      const activeCanvas = canvases.find(canvas => canvas.id === activeCanvasId);
+      if (!activeCanvas) return;
+      
+      const updatedColumns = updater(activeCanvas.columns);
+      
+      set((state) => ({
+        canvases: state.canvases.map(canvas => 
+          canvas.id === activeCanvasId 
+            ? { ...canvas, columns: updatedColumns }
+            : canvas
+        )
+      }));
+      
+      console.log('Active canvas columns updated. Use Save button to save changes.');
     },
 
     moveColumn: (columnId, direction) => {
-      const { columns } = get();
+      const { canvases, activeCanvasId } = get();
+      const activeCanvas = canvases.find(canvas => canvas.id === activeCanvasId);
+      if (!activeCanvas) return;
+      
+      const columns = activeCanvas.columns;
       const currentIndex = columns.findIndex(col => col.id === columnId);
       
       if (currentIndex === -1) return;
@@ -167,14 +264,21 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       const newColumns = [...columns];
       [newColumns[currentIndex], newColumns[newIndex]] = [newColumns[newIndex], newColumns[currentIndex]];
       
-      set({ columns: newColumns });
-      
-      // Auto-save after move
-      get().actions.saveWorkspace();
+      set((state) => ({
+        canvases: state.canvases.map(canvas => 
+          canvas.id === activeCanvasId 
+            ? { ...canvas, columns: newColumns }
+            : canvas
+        )
+      }));
     },
 
     moveCard: (columnId, cardId, direction) => {
-      const { columns } = get();
+      const { canvases, activeCanvasId } = get();
+      const activeCanvas = canvases.find(canvas => canvas.id === activeCanvasId);
+      if (!activeCanvas) return;
+      
+      const columns = activeCanvas.columns;
       
       // Find the target column
       const columnIndex = columns.findIndex(col => col.id === columnId);
@@ -206,13 +310,23 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         cards: newCards
       };
       
-      set({ columns: newColumns });
+      set((state) => ({
+        canvases: state.canvases.map(canvas => 
+          canvas.id === activeCanvasId 
+            ? { ...canvas, columns: newColumns }
+            : canvas
+        )
+      }));
       
       console.log('Card moved. Use Save button to save changes.');
     },
 
     runColumnWorkflow: async (columnId) => {
-      const { columns, columnExecutionStatus } = get();
+      const { canvases, activeCanvasId, columnExecutionStatus } = get();
+      const activeCanvas = canvases.find(canvas => canvas.id === activeCanvasId);
+      if (!activeCanvas) return;
+      
+      const columns = activeCanvas.columns;
       
       // Check if column is already executing
       if (columnExecutionStatus[columnId]) return;
@@ -253,9 +367,9 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
             )
           })));
           
-          // Resolve references using current state
-          const currentColumns = get().columns;
-          let resolvedPrompt = resolveReferences(promptText, currentColumns);
+          // Resolve references using all canvases
+          const currentCanvases = get().canvases;
+          let resolvedPrompt = resolveReferences(promptText, currentCanvases);
           
           // Handle options - automatically use first option if available
           const options = card.options || [];
@@ -393,15 +507,91 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       }
     },
 
+    addCanvas: () => {
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substr(2, 9);
+      const newCanvasId = `canvas-${timestamp}-${randomId}`;
+      
+      const newCanvas: Canvas = {
+        id: newCanvasId,
+        name: 'New Canvas',
+        columns: []
+      };
+      
+      set((state) => ({
+        canvases: [...state.canvases, newCanvas],
+        activeCanvasId: newCanvasId
+      }));
+      
+      console.log('New canvas created and activated');
+    },
+
+    deleteCanvas: (canvasId: string) => {
+      const { canvases, activeCanvasId } = get();
+      
+      // Don't allow deleting the last canvas
+      if (canvases.length <= 1) {
+        console.warn('Cannot delete the last canvas');
+        return;
+      }
+      
+      const filteredCanvases = canvases.filter(canvas => canvas.id !== canvasId);
+      
+      // If deleting active canvas, switch to first available
+      const newActiveId = activeCanvasId === canvasId 
+        ? filteredCanvases[0].id 
+        : activeCanvasId;
+      
+      set({
+        canvases: filteredCanvases,
+        activeCanvasId: newActiveId
+      });
+      
+      console.log('Canvas deleted, active canvas:', newActiveId);
+    },
+
+    renameCanvas: (canvasId: string, newName: string) => {
+      const { canvases } = get();
+      const trimmedName = newName.trim() || 'Untitled Canvas';
+      
+      // Generate unique name if there's a conflict
+      const uniqueName = generateUniqueCanvasName(trimmedName, canvases, canvasId);
+      
+      set((state) => ({
+        canvases: state.canvases.map(canvas => 
+          canvas.id === canvasId 
+            ? { ...canvas, name: uniqueName }
+            : canvas
+        )
+      }));
+      
+      console.log('Canvas renamed to:', uniqueName);
+    },
+
+    setActiveCanvas: (canvasId: string) => {
+      const { canvases } = get();
+      const canvasExists = canvases.find(canvas => canvas.id === canvasId);
+      
+      if (canvasExists) {
+        set({ activeCanvasId: canvasId });
+        console.log('Active canvas changed to:', canvasId);
+      }
+    },
+
     saveWorkspace: async () => {
-      const { columns, user, isInitialLoad } = get();
+      const { canvases, activeCanvasId, user, isInitialLoad } = get();
       if (isInitialLoad || !user) return;
 
       try {
-        console.log('Saving workspace data:', columns);
+        const workspaceData = {
+          canvases,
+          activeCanvasId
+        };
+        
+        console.log('Saving workspace data:', workspaceData);
         const { error } = await supabase
           .from('ai_card_studios')
-          .update({ data: columns })
+          .update({ data: workspaceData })
           .eq('user_id', user.id);
 
         if (error) {
@@ -415,6 +605,148 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         console.error('Unexpected save error:', err);
         set({ saveError: 'Failed to save changes' });
       }
+    },
+
+    // Fine-grained card update actions
+    updateCardTitle: (cardId: string, title: string) => {
+      set((state) => ({
+        canvases: state.canvases.map(canvas => ({
+          ...canvas,
+          columns: canvas.columns.map(col => ({
+            ...col,
+            cards: col.cards.map(card =>
+              card.id === cardId && card.type === 'info'
+                ? { ...card, title }
+                : card
+            )
+          }))
+        }))
+      }));
+    },
+
+    updateCardDescription: (cardId: string, description: string) => {
+      set((state) => ({
+        canvases: state.canvases.map(canvas => ({
+          ...canvas,
+          columns: canvas.columns.map(col => ({
+            ...col,
+            cards: col.cards.map(card =>
+              card.id === cardId && card.type === 'info'
+                ? { ...card, description }
+                : card
+            )
+          }))
+        }))
+      }));
+    },
+
+    updateCardButtonName: (cardId: string, buttonName: string) => {
+      set((state) => ({
+        canvases: state.canvases.map(canvas => ({
+          ...canvas,
+          columns: canvas.columns.map(col => ({
+            ...col,
+            cards: col.cards.map(card =>
+              card.id === cardId && card.type === 'aitool'
+                ? { ...card, buttonName }
+                : card
+            )
+          }))
+        }))
+      }));
+    },
+
+    updateCardPromptText: (cardId: string, promptText: string) => {
+      set((state) => ({
+        canvases: state.canvases.map(canvas => ({
+          ...canvas,
+          columns: canvas.columns.map(col => ({
+            ...col,
+            cards: col.cards.map(card =>
+              card.id === cardId && card.type === 'aitool'
+                ? { ...card, promptText }
+                : card
+            )
+          }))
+        }))
+      }));
+    },
+
+    updateCardOptions: (cardId: string, options: string[]) => {
+      set((state) => ({
+        canvases: state.canvases.map(canvas => ({
+          ...canvas,
+          columns: canvas.columns.map(col => ({
+            ...col,
+            cards: col.cards.map(card =>
+              card.id === cardId && card.type === 'aitool'
+                ? { ...card, options }
+                : card
+            )
+          }))
+        }))
+      }));
+    },
+
+    updateCardAiModel: (cardId: string, aiModel: 'deepseek' | 'openai') => {
+      set((state) => ({
+        canvases: state.canvases.map(canvas => ({
+          ...canvas,
+          columns: canvas.columns.map(col => ({
+            ...col,
+            cards: col.cards.map(card =>
+              card.id === cardId && card.type === 'aitool'
+                ? { ...card, aiModel }
+                : card
+            )
+          }))
+        }))
+      }));
+    },
+
+    updateCardGeneratedContent: (cardId: string, generatedContent: string) => {
+      set((state) => ({
+        canvases: state.canvases.map(canvas => ({
+          ...canvas,
+          columns: canvas.columns.map(col => ({
+            ...col,
+            cards: col.cards.map(card =>
+              card.id === cardId && card.type === 'aitool'
+                ? { ...card, generatedContent }
+                : card
+            )
+          }))
+        }))
+      }));
+    },
+
+    updateCardGeneratingState: (cardId: string, isGenerating: boolean) => {
+      set((state) => ({
+        canvases: state.canvases.map(canvas => ({
+          ...canvas,
+          columns: canvas.columns.map(col => ({
+            ...col,
+            cards: col.cards.map(card =>
+              card.id === cardId && card.type === 'aitool'
+                ? { ...card, isGenerating }
+                : card
+            )
+          }))
+        }))
+      }));
+    },
+
+    deleteCard: (columnId: string, cardId: string) => {
+      set((state) => ({
+        canvases: state.canvases.map(canvas => ({
+          ...canvas,
+          columns: canvas.columns.map(col =>
+            col.id === columnId
+              ? { ...col, cards: col.cards.filter(card => card.id !== cardId) }
+              : col
+          )
+        }))
+      }));
     },
   },
 }));

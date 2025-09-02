@@ -1,13 +1,10 @@
-import { Column, ColumnCard } from '../types'
-import { useWorkspaceStore } from '../store/workspaceStore'
+import { Column } from '../types'
 import InfoCard from './InfoCard'
 import AIToolCard from './AIToolCard'
-import { generateUniqueButtonName, generateUniqueTitle, isButtonNameExists, isTitleExists } from '../utils/cardUtils'
 
 interface ColumnProps {
   column: Column
   onAddCard: (columnId: string) => void
-  onDeleteCard: (columnId: string, cardId: string, isTopCard: boolean) => void
   onInsertCard: (columnId: string, afterCardId?: string) => void
   onRunColumnWorkflow?: (columnId: string) => void
   isColumnExecuting?: boolean
@@ -16,148 +13,11 @@ interface ColumnProps {
 export default function ColumnComponent({ 
   column, 
   onAddCard, 
-  onDeleteCard,
   onInsertCard,
   onRunColumnWorkflow,
   isColumnExecuting = false
 }: ColumnProps) {
-  const { columns, actions } = useWorkspaceStore()
-  const { updateColumns } = actions
 
-  // Event handlers - all logic contained within this component
-  const handleTitleChange = (cardId: string, newTitle: string) => {
-    updateColumns(prev => prev.map(col => ({
-      ...col,
-      cards: col.cards.map(card =>
-        card.id === cardId
-          ? { ...card, title: newTitle }
-          : card
-      )
-    })))
-  }
-  
-  const handleTitleBlur = (cardId: string) => {
-    const currentCard = columns.find(col => 
-      col.cards.find(card => card.id === cardId)
-    )?.cards.find(card => card.id === cardId)
-    
-    if (!currentCard?.title) return
-    
-    const trimmedTitle = currentCard.title.trim()
-    if (!trimmedTitle) return
-    
-    if (isTitleExists(trimmedTitle, columns, cardId)) {
-      const uniqueTitle = generateUniqueTitle(trimmedTitle, columns, cardId)
-      updateColumns(prev => prev.map(col => ({
-        ...col,
-        cards: col.cards.map(card =>
-          card.id === cardId
-            ? { ...card, title: uniqueTitle }
-            : card
-        )
-      })))
-    }
-  }
-
-  const handleDescriptionChange = (cardId: string, newDescription: string) => {
-    updateColumns(prev => prev.map(col => ({
-      ...col,
-      cards: col.cards.map(card =>
-        card.id === cardId
-          ? { ...card, description: newDescription }
-          : card
-      )
-    })))
-  }
-
-  const handleButtonNameChange = (cardId: string, newName: string) => {
-    updateColumns(prev => prev.map(col => ({
-      ...col,
-      cards: col.cards.map(card =>
-        card.id === cardId
-          ? { ...card, buttonName: newName }
-          : card
-      )
-    })))
-  }
-  
-  const handleButtonNameBlur = (cardId: string) => {
-    const currentCard = columns.find(col => 
-      col.cards.find(card => card.id === cardId)
-    )?.cards.find(card => card.id === cardId)
-    
-    if (!currentCard?.buttonName) return
-    
-    const trimmedName = currentCard.buttonName.trim()
-    if (!trimmedName) return
-    
-    if (isButtonNameExists(trimmedName, columns, cardId)) {
-      const uniqueName = generateUniqueButtonName(trimmedName, columns, cardId)
-      updateColumns(prev => prev.map(col => ({
-        ...col,
-        cards: col.cards.map(card =>
-          card.id === cardId
-            ? { ...card, buttonName: uniqueName }
-            : card
-        )
-      })))
-    }
-  }
-
-  const handlePromptChange = (cardId: string, newPrompt: string) => {
-    updateColumns(prev => prev.map(col => ({
-      ...col,
-      cards: col.cards.map(card =>
-        card.id === cardId
-          ? { ...card, promptText: newPrompt }
-          : card
-      )
-    })))
-  }
-
-  const handleOptionsChange = (cardId: string, newOptions: string[]) => {
-    updateColumns(prev => prev.map(col => ({
-      ...col,
-      cards: col.cards.map(card =>
-        card.id === cardId
-          ? { ...card, options: newOptions }
-          : card
-      )
-    })))
-  }
-
-  const handleAiModelChange = (cardId: string, newModel: 'deepseek' | 'openai') => {
-    updateColumns(prev => prev.map(col => ({
-      ...col,
-      cards: col.cards.map(card =>
-        card.id === cardId
-          ? { ...card, aiModel: newModel }
-          : card
-      )
-    })))
-  }
-
-  const handleGeneratedContentChange = (cardId: string, newContent: string) => {
-    updateColumns(prev => prev.map(col => ({
-      ...col,
-      cards: col.cards.map(card =>
-        card.id === cardId
-          ? { ...card, generatedContent: newContent }
-          : card
-      )
-    })))
-  }
-
-  const handleGeneratingStateChange = (cardId: string, isGenerating: boolean) => {
-    updateColumns(prev => prev.map(col => ({
-      ...col,
-      cards: col.cards.map(card =>
-        card.id === cardId
-          ? { ...card, isGenerating }
-          : card
-      )
-    })))
-  }
 
   const handleRunAllCards = () => {
     if (onRunColumnWorkflow) {
@@ -252,11 +112,7 @@ export default function ColumnComponent({
                 columnId={column.id}
                 cardId={card.id}
                 isTopCard={cardIndex === 0}
-                onDelete={(cardId) => onDeleteCard(column.id, cardId, cardIndex === 0)}
                 autoOpenSettings={card.justCreated}
-                onTitleChange={handleTitleChange}
-                onTitleBlur={handleTitleBlur}
-                onDescriptionChange={handleDescriptionChange}
                 onInsertCard={onInsertCard}
                 onRunColumnWorkflow={cardIndex === 0 && hasAIToolCards ? handleRunAllCards : undefined}
                 isColumnExecuting={isColumnExecuting}
@@ -264,17 +120,8 @@ export default function ColumnComponent({
             ) : (
               <AIToolCard 
                 cardId={card.id} 
-                order={cardIndex}
                 columnId={column.id}
                 autoOpenSettings={card.justCreated}
-                onDelete={(cardId) => onDeleteCard(column.id, cardId, false)}
-                onButtonNameChange={handleButtonNameChange}
-                onButtonNameBlur={handleButtonNameBlur}
-                onPromptChange={handlePromptChange}
-                onOptionsChange={handleOptionsChange}
-                onAiModelChange={handleAiModelChange}
-                onGeneratedContentChange={handleGeneratedContentChange}
-                onGeneratingStateChange={handleGeneratingStateChange}
                 onInsertCard={onInsertCard}
               />
             )}
