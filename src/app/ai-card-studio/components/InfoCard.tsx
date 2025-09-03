@@ -5,6 +5,7 @@ import remarkBreaks from 'remark-breaks'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import Modal from './ui/Modal'
 import SettingsModal from './ui/SettingsModal'
+import MarketplaceModal from './MarketplaceModal'
 
 interface InfoCardProps {
   columnId: string
@@ -63,6 +64,9 @@ function InfoCard({
   
   // PDF generation state
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
+  
+  // Marketplace modal state
+  const [showMarketplaceModal, setShowMarketplaceModal] = useState(false)
 
   const handleSettingsClick = () => {
     setShowSettingsTooltip(true)
@@ -199,6 +203,53 @@ function InfoCard({
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
+  }
+
+  // Share to marketplace function
+  const handleShareToMarketplace = () => {
+    setShowMarketplaceModal(true)
+    handleCloseSettingsTooltip()
+  }
+
+  // Get clean column data for marketplace
+  const getCleanColumnData = () => {
+    if (!currentColumn) return null
+    
+    return {
+      ...currentColumn,
+      cards: currentColumn.cards.map(card => {
+        const { deleting, justCreated, isGenerating, generatedContent, urls, ...cleanCard } = card as any
+        return cleanCard
+      })
+    }
+  }
+
+  // Upload to marketplace
+  const handleMarketplaceUpload = async (data: { name: string; description: string; tags: string[]; columnData: any }) => {
+    try {
+      const response = await fetch('/api/marketplace', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: data.name,
+          description: data.description,
+          tags: data.tags,
+          data: data.columnData,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to upload to marketplace')
+      }
+
+      // Success - could show a success message here
+      console.log('Successfully uploaded to marketplace')
+    } catch (error: any) {
+      throw error
+    }
   }
 
   // Auto-open settings for newly created cards
@@ -470,12 +521,20 @@ function InfoCard({
             </div>
           }
           headerActions={isTopCard ? (
-            <button
-              onClick={handleExportColumn}
-              className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm font-medium transition-all duration-200"
-            >
-              Download & Share
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExportColumn}
+                className="px-3 py-1.5 bg-white border border-purple-200 text-purple-600 hover:bg-purple-50 rounded text-sm font-medium transition-all duration-200"
+              >
+                Download Column
+              </button>
+              <button
+                onClick={handleShareToMarketplace}
+                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm font-medium transition-all duration-200"
+              >
+                Share to Marketplace
+              </button>
+            </div>
           ) : undefined}
           onClose={handleCloseSettingsTooltip}
           onDelete={handleDelete}
@@ -603,6 +662,14 @@ function InfoCard({
         </>,
         document.body
       )}
+
+      {/* Marketplace Modal */}
+      <MarketplaceModal
+        isOpen={showMarketplaceModal}
+        onClose={() => setShowMarketplaceModal(false)}
+        columnData={getCleanColumnData()}
+        onUpload={handleMarketplaceUpload}
+      />
     </div>
   )
 }

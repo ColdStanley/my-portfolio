@@ -25,3 +25,34 @@ export interface Canvas {
   name: string
   columns: Column[]
 }
+
+export interface MarketplaceItem {
+  id: string
+  name: string
+  description: string
+  data: Column
+  content_hash: string
+  author_id: string
+  author_name: string
+  downloads: number
+  tags: string[]
+  created_at: string
+}
+
+export interface MarketplaceListItem {
+  id: string
+  name: string
+  description: string
+  author_id: string
+  author_name: string
+  downloads: number
+  tags: string[]
+  created_at: string
+}
+
+export interface MarketplacePagination {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
