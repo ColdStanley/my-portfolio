@@ -37,6 +37,7 @@ interface WorkspaceState {
     updateCardGeneratedContent: (cardId: string, content: string) => void;
     updateCardGeneratingState: (cardId: string, isGenerating: boolean) => void;
     deleteCard: (columnId: string, cardId: string) => void;
+    updateCardLockStatus: (cardId: string, isLocked: boolean, passwordHash?: string) => void;
   };
 }
 
@@ -815,6 +816,28 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           )
         }))
       }));
+    },
+
+    updateCardLockStatus: (cardId: string, isLocked: boolean, passwordHash?: string) => {
+      set((state) => ({
+        canvases: state.canvases.map(canvas => ({
+          ...canvas,
+          columns: canvas.columns.map(col => ({
+            ...col,
+            cards: col.cards.map(card =>
+              card.id === cardId
+                ? { 
+                    ...card, 
+                    isLocked,
+                    passwordHash: isLocked ? passwordHash : undefined
+                  }
+                : card
+            )
+          }))
+        }))
+      }));
+      
+      console.log(`Card ${cardId} ${isLocked ? 'locked' : 'unlocked'}`);
     },
   },
 }));

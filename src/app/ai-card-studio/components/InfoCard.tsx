@@ -6,6 +6,8 @@ import { useWorkspaceStore } from '../store/workspaceStore'
 import Modal from './ui/Modal'
 import SettingsModal from './ui/SettingsModal'
 import MarketplaceModal from './MarketplaceModal'
+import PasswordModal from './ui/PasswordModal'
+import { hashPassword, verifyPassword } from '../utils/crypto'
 
 interface InfoCardProps {
   columnId: string
@@ -27,7 +29,7 @@ function InfoCard({
   isColumnExecuting = false
 }: InfoCardProps) {
   const { canvases, actions } = useWorkspaceStore()
-  const { moveColumn, moveCard, updateColumns, updateCardTitle, updateCardDescription, deleteCard } = actions
+  const { moveColumn, moveCard, updateColumns, updateCardTitle, updateCardDescription, deleteCard, updateCardLockStatus } = actions
   
   // Get current column and card data from Zustand store
   const currentColumn = canvases.flatMap(canvas => canvas.columns).find(col => col.id === columnId)
@@ -51,8 +53,19 @@ function InfoCard({
   const title = currentCard?.title || ''
   const description = currentCard?.description || ''
   const urls = currentCard?.urls || []
+  const isLocked = currentCard?.isLocked || false
+  const passwordHash = currentCard?.passwordHash || ''
+  
   const [showSettingsTooltip, setShowSettingsTooltip] = useState(false)
   const [settingsTooltipVisible, setSettingsTooltipVisible] = useState(false)
+  
+  // Lock-related state
+  const [passwordModal, setPasswordModal] = useState<{ mode: 'set' | 'verify'; isOpen: boolean; shouldRender: boolean }>({
+    mode: 'set',
+    isOpen: false,
+    shouldRender: false
+  })
+  const [showLockMessage, setShowLockMessage] = useState(false)
   
   // URLs management state
   const [showUrlsTooltip, setShowUrlsTooltip] = useState(false)
@@ -69,8 +82,59 @@ function InfoCard({
   const [showMarketplaceModal, setShowMarketplaceModal] = useState(false)
 
   const handleSettingsClick = () => {
+    // If card is locked, show quick message instead
+    if (isLocked) {
+      setShowLockMessage(true)
+      setTimeout(() => setShowLockMessage(false), 2000)
+      return
+    }
+    
     setShowSettingsTooltip(true)
     setTimeout(() => setSettingsTooltipVisible(true), 10)
+  }
+
+  // Lock/unlock functions
+  const handleLockClick = () => {
+    if (isLocked) {
+      // If locked, show password verification modal to unlock
+      setPasswordModal({ mode: 'verify', isOpen: true, shouldRender: true })
+    } else {
+      // If unlocked, show set password modal to lock
+      setPasswordModal({ mode: 'set', isOpen: true, shouldRender: true })
+    }
+  }
+
+  const handlePasswordSuccess = (password: string) => {
+    if (passwordModal.mode === 'set') {
+      // Set password and lock card
+      const hash = hashPassword(password)
+      updateCardLockStatus(cardId, true, hash)
+      handlePasswordCancel()
+    } else {
+      // Verify password
+      if (verifyPassword(password, passwordHash)) {
+        if (isLocked) {
+          // Unlock card
+          updateCardLockStatus(cardId, false)
+        } else {
+          // Open settings after successful verification (for settings access)
+          setShowSettingsTooltip(true)
+          setTimeout(() => setSettingsTooltipVisible(true), 10)
+        }
+        handlePasswordCancel()
+      } else {
+        // Wrong password - let PasswordModal handle the error display
+        // Don't close modal, let user try again
+        throw new Error('Invalid password')
+      }
+    }
+  }
+
+  const handlePasswordCancel = () => {
+    setPasswordModal(prev => ({ ...prev, isOpen: false }))
+    setTimeout(() => {
+      setPasswordModal(prev => ({ ...prev, shouldRender: false }))
+    }, 300) // Wait for animation to complete
   }
 
   const handleCloseSettingsTooltip = () => {
@@ -263,7 +327,7 @@ function InfoCard({
   }, [autoOpenSettings])
 
   return (
-    <div className="bg-gradient-to-br from-white/95 to-purple-50/30 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 border border-white/50 p-4 relative transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-1 group">
+    <div className="bg-gradient-to-br from-white/95 to-purple-50/30 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 border border-white/50 p-4 pt-6 relative transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-1 group">
       
       {/* PDF Export Button - Top Right, left of Insert button */}
       <button
@@ -346,7 +410,7 @@ function InfoCard({
       <button
         onClick={handleSettingsClick}
         className="absolute top-4 right-4 w-6 h-6 bg-white/80 hover:bg-purple-50 rounded-full flex items-center justify-center text-gray-400 hover:text-purple-600 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 hover:scale-110 hover:-translate-y-0.5"
-        title="Card Settings"
+        title={isLocked ? "Card is locked - unlock to access settings" : "Card Settings"}
         style={{ pointerEvents: 'auto' }}
       >
         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -354,6 +418,33 @@ function InfoCard({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
       </button>
+
+      {/* Lock/Unlock Button - Below Settings Button, Right Aligned */}
+      <button
+        onClick={handleLockClick}
+        className="absolute top-12 right-4 w-6 h-6 bg-white/80 hover:bg-purple-50 rounded-full flex items-center justify-center text-gray-400 hover:text-purple-600 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 hover:scale-110 hover:-translate-y-0.5"
+        title={isLocked ? "Unlock card" : "Lock card"}
+        style={{ pointerEvents: 'auto' }}
+      >
+        {isLocked ? (
+          // Locked icon
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        ) : (
+          // Unlocked icon
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+          </svg>
+        )}
+      </button>
+
+      {/* Lock Message - Temporary notification */}
+      {showLockMessage && (
+        <div className="absolute top-14 right-4 bg-purple-600 text-white px-3 py-2 rounded-lg text-sm font-medium shadow-lg z-20 animate-pulse">
+          🔒 Card is locked - click unlock first
+        </div>
+      )}
 
       <div className={isTopCard ? 'border-l-4 border-purple-500 pl-4' : ''}>
         <div className="flex items-center gap-2 mb-4">
@@ -670,6 +761,17 @@ function InfoCard({
         columnData={getCleanColumnData()}
         onUpload={handleMarketplaceUpload}
       />
+
+      {/* Password Modal - Portal to document.body */}
+      {passwordModal.shouldRender && createPortal(
+        <PasswordModal
+          mode={passwordModal.mode}
+          isOpen={passwordModal.isOpen}
+          onSuccess={handlePasswordSuccess}
+          onCancel={handlePasswordCancel}
+        />,
+        document.body
+      )}
     </div>
   )
 }

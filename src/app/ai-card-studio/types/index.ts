@@ -13,6 +13,8 @@ export interface ColumnCard {
   justCreated?: boolean
   isGenerating?: boolean  // AI generation state
   urls?: string[]  // n8n workflow URLs for info cards
+  isLocked?: boolean  // Card lock status
+  passwordHash?: string  // Hashed password for locked cards
 }
 
 export interface Column {
