@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useWorkspaceStore } from '../store/workspaceStore'
-import { generateUniqueCanvasName } from '../utils/cardUtils'
 
 interface CanvasSettingsModalProps {
   isOpen: boolean
@@ -12,7 +11,7 @@ interface CanvasSettingsModalProps {
 
 export default function CanvasSettingsModal({ isOpen, onClose, canvasId }: CanvasSettingsModalProps) {
   const { canvases, actions } = useWorkspaceStore()
-  const { renameCanvas, deleteCanvas, addCanvas } = actions
+  const { renameCanvas, deleteCanvas } = actions
   
   const canvas = canvases.find(c => c.id === canvasId)
   const [name, setName] = useState(canvas?.name || '')
@@ -68,10 +67,6 @@ export default function CanvasSettingsModal({ isOpen, onClose, canvasId }: Canva
     onClose()
   }
   
-  const handleAddCanvas = () => {
-    addCanvas()
-    onClose()
-  }
   
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -135,16 +130,6 @@ export default function CanvasSettingsModal({ isOpen, onClose, canvasId }: Canva
             </div>
           </div>
           
-          {/* Add New Canvas */}
-          <button
-            onClick={handleAddCanvas}
-            className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all duration-150 flex items-center justify-center gap-2 mb-4"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Add New Canvas
-          </button>
           
           {/* Action Buttons */}
           <div className="flex items-center justify-between pt-2">

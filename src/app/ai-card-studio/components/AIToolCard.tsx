@@ -45,7 +45,7 @@ export default function AIToolCard({
   const [optionsManageTooltipVisible, setOptionsManageTooltipVisible] = useState(false)
   const generateButtonRef = useRef<HTMLButtonElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const [isResponseExpanded, setIsResponseExpanded] = useState(false)
+  const [isResponseExpanded, setIsResponseExpanded] = useState(true)
   
   // PDF generation state
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
@@ -248,6 +248,21 @@ export default function AIToolCard({
 
   return (
     <div className="bg-gradient-to-br from-white/95 to-purple-50/30 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 border border-white/50 p-4 relative transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-1 group">
+      {/* Delete AI Response Button - Top Right, left of PDF button */}
+      <button
+        onClick={() => {
+          if (!generatedContent?.trim()) return
+          updateCardGeneratedContent(cardId, '')
+        }}
+        className="absolute top-4 right-28 w-6 h-6 bg-white/80 hover:bg-purple-50 rounded-full flex items-center justify-center text-gray-400 hover:text-purple-600 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 hover:scale-110 hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
+        title="Clear AI response"
+        disabled={!generatedContent?.trim()}
+      >
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      </button>
+
       {/* PDF Export Button - Top Right, left of Insert button */}
       <button
         onClick={async () => {
@@ -487,11 +502,7 @@ export default function AIToolCard({
               </ReactMarkdown>
             </div>
           </div>
-        ) : (
-          <div className="flex items-center justify-center h-16 text-gray-400 text-sm">
-            Click the button above to generate AI content
-          </div>
-        )}
+        ) : null}
       </div>
 
       {/* Options Tooltip */}

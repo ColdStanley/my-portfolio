@@ -609,19 +609,53 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
     // Fine-grained card update actions
     updateCardTitle: (cardId: string, title: string) => {
-      set((state) => ({
-        canvases: state.canvases.map(canvas => ({
-          ...canvas,
-          columns: canvas.columns.map(col => ({
-            ...col,
-            cards: col.cards.map(card =>
-              card.id === cardId && card.type === 'info'
-                ? { ...card, title }
-                : card
-            )
+      set((state) => {
+        // First, find the old title for reference updating
+        let oldTitle = '';
+        let targetColumnId = '';
+        
+        for (const canvas of state.canvases) {
+          for (const col of canvas.columns) {
+            const targetCard = col.cards.find(card => card.id === cardId && card.type === 'info');
+            if (targetCard) {
+              oldTitle = targetCard.title || '';
+              targetColumnId = col.id;
+              break;
+            }
+          }
+          if (oldTitle) break;
+        }
+        
+        return {
+          canvases: state.canvases.map(canvas => ({
+            ...canvas,
+            columns: canvas.columns.map(col => ({
+              ...col,
+              cards: col.cards.map(card => {
+                // Update the target card's title
+                if (card.id === cardId && card.type === 'info') {
+                  return { ...card, title };
+                }
+                
+                // Update INFO references in AI Tool cards within the same column
+                if (col.id === targetColumnId && card.type === 'aitool' && card.promptText && oldTitle) {
+                  const referencePattern = new RegExp(
+                    `\\[INFO:\\s*${oldTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`, 
+                    'g'
+                  );
+                  const updatedPromptText = card.promptText.replace(referencePattern, `[INFO: ${title}]`);
+                  
+                  if (updatedPromptText !== card.promptText) {
+                    return { ...card, promptText: updatedPromptText };
+                  }
+                }
+                
+                return card;
+              })
+            }))
           }))
-        }))
-      }));
+        };
+      });
     },
 
     updateCardDescription: (cardId: string, description: string) => {
@@ -641,19 +675,53 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     },
 
     updateCardButtonName: (cardId: string, buttonName: string) => {
-      set((state) => ({
-        canvases: state.canvases.map(canvas => ({
-          ...canvas,
-          columns: canvas.columns.map(col => ({
-            ...col,
-            cards: col.cards.map(card =>
-              card.id === cardId && card.type === 'aitool'
-                ? { ...card, buttonName }
-                : card
-            )
+      set((state) => {
+        // First, find the old button name for reference updating
+        let oldButtonName = '';
+        let targetColumnId = '';
+        
+        for (const canvas of state.canvases) {
+          for (const col of canvas.columns) {
+            const targetCard = col.cards.find(card => card.id === cardId && card.type === 'aitool');
+            if (targetCard) {
+              oldButtonName = targetCard.buttonName || '';
+              targetColumnId = col.id;
+              break;
+            }
+          }
+          if (oldButtonName) break;
+        }
+        
+        return {
+          canvases: state.canvases.map(canvas => ({
+            ...canvas,
+            columns: canvas.columns.map(col => ({
+              ...col,
+              cards: col.cards.map(card => {
+                // Update the target card's button name
+                if (card.id === cardId && card.type === 'aitool') {
+                  return { ...card, buttonName };
+                }
+                
+                // Update references in other cards within the same column
+                if (col.id === targetColumnId && card.type === 'aitool' && card.id !== cardId && card.promptText && oldButtonName) {
+                  const referencePattern = new RegExp(
+                    `\\[REF:\\s*${oldButtonName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`, 
+                    'g'
+                  );
+                  const updatedPromptText = card.promptText.replace(referencePattern, `[REF: ${buttonName}]`);
+                  
+                  if (updatedPromptText !== card.promptText) {
+                    return { ...card, promptText: updatedPromptText };
+                  }
+                }
+                
+                return card;
+              })
+            }))
           }))
-        }))
-      }));
+        };
+      });
     },
 
     updateCardPromptText: (cardId: string, promptText: string) => {
