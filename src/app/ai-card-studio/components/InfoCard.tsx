@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, memo } from 'react'
 import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkBreaks from 'remark-breaks'
@@ -16,7 +16,7 @@ interface InfoCardProps {
   isColumnExecuting?: boolean
 }
 
-export default function InfoCard({ 
+function InfoCard({ 
   columnId,
   cardId,
   isTopCard,
@@ -606,3 +606,5 @@ export default function InfoCard({
     </div>
   )
 }
+
+export default memo(InfoCard)

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, memo } from 'react'
 import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
 import { resolveReferences } from '../utils/cardUtils'
@@ -13,7 +13,7 @@ interface AIToolCardProps {
   onInsertCard?: (columnId: string, afterCardId: string) => void
 }
 
-export default function AIToolCard({ 
+function AIToolCard({ 
   cardId, 
   columnId,
   autoOpenSettings = false,
@@ -786,3 +786,5 @@ export default function AIToolCard({
     </div>
   )
 }
+
+export default memo(AIToolCard)

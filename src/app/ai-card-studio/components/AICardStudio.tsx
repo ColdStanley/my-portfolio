@@ -463,7 +463,23 @@ export default function AICardStudio() {
               onClick={() => {
                 const container = document.querySelector('.horizontal-scroll-container')
                 if (container) {
-                  container.scrollBy({ left: -480, behavior: 'smooth' })
+                  const startLeft = container.scrollLeft
+                  const targetLeft = Math.max(0, startLeft - 480)
+                  const startTime = performance.now()
+                  
+                  const animateScroll = (currentTime: number) => {
+                    const elapsed = currentTime - startTime
+                    const progress = Math.min(elapsed / 400, 1)
+                    const easing = 1 - Math.pow(1 - progress, 3) // easeOut cubic
+                    
+                    container.scrollLeft = startLeft + (targetLeft - startLeft) * easing
+                    
+                    if (progress < 1) {
+                      requestAnimationFrame(animateScroll)
+                    }
+                  }
+                  
+                  requestAnimationFrame(animateScroll)
                 }
               }}
               className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/90 backdrop-blur-md rounded-full shadow-lg flex items-center justify-center text-purple-600 hover:bg-purple-50 hover:text-purple-700 transition-all duration-200"
@@ -478,7 +494,24 @@ export default function AICardStudio() {
               onClick={() => {
                 const container = document.querySelector('.horizontal-scroll-container')
                 if (container) {
-                  container.scrollBy({ left: 480, behavior: 'smooth' })
+                  const startLeft = container.scrollLeft
+                  const maxLeft = container.scrollWidth - container.clientWidth
+                  const targetLeft = Math.min(maxLeft, startLeft + 480)
+                  const startTime = performance.now()
+                  
+                  const animateScroll = (currentTime: number) => {
+                    const elapsed = currentTime - startTime
+                    const progress = Math.min(elapsed / 400, 1)
+                    const easing = 1 - Math.pow(1 - progress, 3) // easeOut cubic
+                    
+                    container.scrollLeft = startLeft + (targetLeft - startLeft) * easing
+                    
+                    if (progress < 1) {
+                      requestAnimationFrame(animateScroll)
+                    }
+                  }
+                  
+                  requestAnimationFrame(animateScroll)
                 }
               }}
               className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/90 backdrop-blur-md rounded-full shadow-lg flex items-center justify-center text-purple-600 hover:bg-purple-50 hover:text-purple-700 transition-all duration-200"
@@ -489,7 +522,7 @@ export default function AICardStudio() {
             </button>
 
             {/* Scrollable Content */}
-            <div className="horizontal-scroll-container flex gap-3 items-start overflow-x-auto scrollbar-hide pb-0 h-[calc(100vh-125px)] px-12">
+            <div className="horizontal-scroll-container flex gap-3 items-start overflow-x-auto scrollbar-hide pb-0 h-[calc(100vh-125px)] px-12 transform-gpu will-change-scroll">
               {/* Render all columns */}
               {columns.map((column) => (
                 <ColumnComponent
