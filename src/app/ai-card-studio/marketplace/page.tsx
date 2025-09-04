@@ -26,8 +26,8 @@ export default function MarketplacePage() {
   // Preview modal state
   const [previewItem, setPreviewItem] = useState<string | null>(null)
 
-  // Fetch marketplace items
-  const fetchItems = async (page: number = 1) => {
+  // Fetch marketplace items with search support
+  const fetchItems = async (page: number = 1, search: string = '') => {
     try {
       setLoading(true)
       setError('')
@@ -38,6 +38,11 @@ export default function MarketplacePage() {
         sort: sortBy,
         order: sortOrder
       })
+
+      // Add search query if provided
+      if (search.trim()) {
+        params.set('search', search.trim())
+      }
 
       const response = await fetch(`/api/marketplace?${params}`)
       if (!response.ok) {
@@ -54,14 +59,23 @@ export default function MarketplacePage() {
     }
   }
 
-  // Initial fetch
+  // Initial fetch and when sorting changes
   useEffect(() => {
-    fetchItems(1)
+    fetchItems(1, searchQuery)
   }, [sortBy, sortOrder])
+
+  // Handle search changes with API call
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchItems(1, searchQuery)
+    }, 300) // Debounce search
+
+    return () => clearTimeout(timeoutId)
+  }, [searchQuery])
 
   // Handle page change
   const handlePageChange = (page: number) => {
-    fetchItems(page)
+    fetchItems(page, searchQuery)
   }
 
   // Handle sort change
@@ -69,13 +83,6 @@ export default function MarketplacePage() {
     setSortBy(newSortBy)
     setSortOrder(newSortOrder)
   }
-
-  // Filter items based on search query
-  const filteredItems = items.filter(item =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-  )
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 pt-16 px-6 pb-20">
@@ -148,12 +155,12 @@ export default function MarketplacePage() {
           <>
             {/* Items Grid */}
             <MarketplaceGrid
-              items={filteredItems}
+              items={items}
               onPreview={setPreviewItem}
             />
 
             {/* Empty State */}
-            {!loading && filteredItems.length === 0 && (
+            {!loading && items.length === 0 && (
               <div className="text-center py-20">
                 <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />

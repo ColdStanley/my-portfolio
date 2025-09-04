@@ -1,47 +1,78 @@
 {
-  "name": "Download JSON",
-  "nodes": [
+  "id": "french-tef-learning-workflow",
+  "cards": [
     {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "download-json",
-        "options": {}
-      },
-      "id": "Webhook_1",
-      "name": "Webhook",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [240, 300]
+      "id": "plan-guide-info",
+      "type": "info",
+      "title": "学习计划列使用指南",
+      "description": "本列用于生成和调整你的个性化法语学习计划。AI工具卡片将根据你的当前水平（A1）和目标（B2+TEF）动态生成周/月任务表，包括词汇、语法、听说读写分配。每次执行后可手动调整优先级或重新生成。"
     },
     {
-      "parameters": {
-        "responseMode": "lastNode",
-        "responseData": "firstEntryJson",
-        "options": {
-          "responseContentType": "application/octet-stream",
-          "responseHeaders": {
-            "Content-Disposition": "attachment; filename=\"result.json\""
-          }
-        }
-      },
-      "id": "Respond_1",
-      "name": "Respond to Webhook",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [520, 300]
-    }
-  ],
-  "connections": {
-    "Webhook_1": {
-      "main": [
-        [
-          {
-            "node": "Respond_1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+      "id": "plan-generator-aitool",
+      "type": "aitool",
+      "buttonName": "生成A1→B2分阶段学习计划",
+      "promptText": "你是一名专业的法语教育顾问，擅长为TEF Canada考生设计学习路径。用户当前为A1水平，目标是在6个月内达到B2水平并通过TEF考试（听力、阅读、写作、口语均需达标）。\n请生成一份详细的第一周学习计划，包括：\n1. 每日学习主题（例如：基础语法、常用词汇、听力短文等）\n2. 每个主题的具体任务（例如：学习20个新单词+3条语法规则+1篇听力练习）\n3. 预估耗时（每日总学习时间控制在1.5小时内）\n4. 关联TEF考试题型（标注练习对应的考试部分，如【听力选择题训练】）\n输出格式为Markdown表格，包含列：日期、主题、任务详情、考试关联、耗时。\n注意：计划需符合循序渐进原则，第一周以A1巩固和A2入门为主。",
+      "options": ["1", "2", "3", "4", "5", "6"],
+      "aiModel": "deepseek",
+      "generatedContent": ""
+    },
+    {
+      "id": "practice-guide-info",
+      "type": "info",
+      "title": "每日练习列使用指南",
+      "description": "本列每天生成一套TEF题型练习（听力、阅读、写作、口语四选一）。点击AI工具卡片选择今日练习类型，完成后将答案输入到卡片中，AI会自动批改并反馈。批改结果可一键保存到错题管理列。"
+    },
+    {
+      "id": "practice-generator-aitool",
+      "type": "aitool",
+      "buttonName": "生成TEF每日练习（含批改）",
+      "promptText": "你是一名TEF Canada官方模拟题出题人，请根据用户选择的练习类型（{{exercise_type}}）生成一道符合TEF考试标准的题目，并提供参考答案和评分标准。\n要求：\n1. 题目难度适配当前用户水平（A1→A2过渡阶段）\n2. 若为听力或阅读：提供1道选择题或填空题，包含题目文本、选项、正确答案和解析。\n3. 若为写作：提供一个写作主题（如【描述你的周末】），明确字数要求（50-80词），并给出评分要点（语法、词汇、连贯性）。\n4. 若为口语：提供一个口语话题（如【自我介绍】），列出表达要点和常见错误提示。\n5. 用户提交答案后，对比参考答案进行批改，指出错误并给出优化建议（如语法纠正、更地道表达）。\n输出格式为Markdown，分【题目】、【参考答案】、【批改结果】三部分。",
+      "options": ["听力", "阅读", "写作", "口语"],
+      "aiModel": "deepseek",
+      "generatedContent": ""
+    },
+    {
+      "id": "mistakes-guide-info",
+      "type": "info",
+      "title": "错题管理列使用指南",
+      "description": "本列自动收录每日练习中的错题（通过[REF:生成TEF每日练习（含批改）]获取数据）。AI工具卡片会定期分析错题趋势，生成专项强化练习（如动词变位薄弱则生成变位练习题）。"
+    },
+    {
+      "id": "mistakes-analyzer-aitool",
+      "type": "aitool",
+      "buttonName": "生成错题专项练习",
+      "promptText": "根据最近保存的错题记录（来源：[REF:生成TEF每日练习（含批改）]），分析用户的薄弱知识点（如介词使用、听力细节捕捉等）。\n针对最频繁的3类错误，生成一份专项强化练习（5道题），包含：\n1. 题目（题型与TEF一致）\n2. 答案及解析\n3. 简要复习指南（例如：【注意法语介词à和de的区别：à表示去向，de表示来源】）\n输出格式为Markdown，标题为【基于错题的专项强化练习】。",
+      "aiModel": "deepseek",
+      "generatedContent": ""
+    },
+    {
+      "id": "exam-guide-info",
+      "type": "info",
+      "title": "模拟考试列使用指南",
+      "description": "本列每月生成一套完整的TEF模拟试题（听力+阅读+写作+口语）。完成考试后，AI会评分并生成评估报告，报告自动保存至进度追踪列。"
+    },
+    {
+      "id": "exam-generator-aitool",
+      "type": "aitool",
+      "buttonName": "生成TEF全真模拟试题",
+      "promptText": "你是一名TEF Canada认证考官，请生成一套完整的A2水平模拟试题（包括听力5题、阅读5题、写作1题、口语1题）。\n要求：\n1. 听力：提供一段音频文本（用户需自行朗读或使用语音工具）及选择题。\n2. 阅读：提供一篇短文及选择题。\n3. 写作：给出主题和字数要求（80词）。\n4. 口语：提供话题和回答指引。\n用户提交答案后，按照TEF评分标准（0-450分）逐项评分，并生成评估报告，包括：\n- 各模块得分\n- 强弱项分析\n- 下阶段学习建议\n输出格式为Markdown，分【试题】和【评估报告】两部分。",
+      "options": ["A1", "A2", "B1", "B2"],
+      "aiModel": "deepseek",
+      "generatedContent": ""
+    },
+    {
+      "id": "progress-guide-info",
+      "type": "info",
+      "title": "进度追踪列使用指南",
+      "description": "本列自动汇总模拟考试报告（通过[REF:生成TEF全真模拟试题]）和每日练习数据，以可视化图表展示进度趋势。AI工具卡片定期生成学习总结。"
+    },
+    {
+      "id": "progress-reporter-aitool",
+      "type": "aitool",
+      "buttonName": "生成月度学习报告",
+      "promptText": "整合以下数据：\n1. 模拟考试得分历史（来源：[REF:生成TEF全真模拟试题]）\n2. 每日练习正确率（来源：[REF:生成TEF每日练习（含批改）]）\n生成一份月度学习报告，包括：\n- 各能力模块（听、读、写、说）进度折线图（用Markdown表格模拟数据趋势）\n- 学习时长统计\n- 成就（例如【已掌握500个单词】）\n- 下月重点改进方向\n输出格式为Markdown，语言简洁鼓励，例如：【恭喜！你的阅读得分较上月提升20%】。",
+      "aiModel": "deepseek",
+      "generatedContent": ""
     }
   ]
 }
