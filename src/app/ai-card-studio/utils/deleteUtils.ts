@@ -31,20 +31,14 @@ export const checkAICardReferences = (
 
 /**
  * Generate confirmation message for card deletion
- * @param isTopCard - Whether the card is the top card (deletes entire column)
  * @param cardType - Type of the card being deleted
  * @param references - Array of reference descriptions (for AI cards)
  * @returns Confirmation message string
  */
 export const generateDeleteConfirmMessage = (
-  isTopCard: boolean,
   cardType?: 'info' | 'aitool',
   references: string[] = []
 ): string => {
-  if (isTopCard) {
-    return "Deleting this card will remove the entire column. Are you sure?"
-  }
-  
   if (cardType === 'aitool' && references.length > 0) {
     return `This card is referenced by:\n${references.join('\n')}\n\nDeleting it will break these references. Are you sure?`
   }

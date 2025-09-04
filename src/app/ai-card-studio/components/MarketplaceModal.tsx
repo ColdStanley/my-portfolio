@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import Modal from './ui/Modal'
 
 interface MarketplaceModalProps {
   isOpen: boolean
@@ -85,13 +86,11 @@ export default function MarketplaceModal({ isOpen, onClose, columnData, onUpload
     }
   }
   
-  if (!isOpen) return null
-  
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <Modal isOpen={isOpen} onClose={onClose} className="w-full max-w-lg mx-4">
       <div
         ref={modalRef}
-        className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 p-6 w-full max-w-lg mx-4"
+        className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 p-6"
         onKeyDown={handleKeyDown}
       >
         <div className="flex items-center justify-between mb-6">
@@ -226,6 +225,6 @@ export default function MarketplaceModal({ isOpen, onClose, columnData, onUpload
           </div>
         </div>
       </div>
-    </div>
+    </Modal>
   )
 }

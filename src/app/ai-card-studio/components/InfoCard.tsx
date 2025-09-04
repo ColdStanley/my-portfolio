@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef, memo } from 'react'
+import { useState, useEffect, useRef, memo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
+import { debounce } from '../utils/performanceUtils'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import Modal from './ui/Modal'
 import SettingsModal from './ui/SettingsModal'
@@ -53,6 +54,34 @@ function InfoCard({
   
   const title = currentCard?.title || ''
   const description = currentCard?.description || ''
+  
+  // Local state for optimized input performance
+  const [localTitle, setLocalTitle] = useState(title)
+  const [localDescription, setLocalDescription] = useState(description)
+  
+  // Update local state when store changes
+  useEffect(() => {
+    setLocalTitle(title)
+  }, [title])
+  
+  useEffect(() => {
+    setLocalDescription(description)
+  }, [description])
+  
+  // Debounced store updates to prevent input lag
+  const debouncedUpdateTitle = useCallback(
+    debounce((cardId: string, newTitle: string) => {
+      updateCardTitle(cardId, newTitle)
+    }, 300),
+    [updateCardTitle]
+  )
+  
+  const debouncedUpdateDescription = useCallback(
+    debounce((cardId: string, newDescription: string) => {
+      updateCardDescription(cardId, newDescription)
+    }, 300),
+    [updateCardDescription]
+  )
   const urls = currentCard?.urls || []
   const isLocked = currentCard?.isLocked || false
   const passwordHash = currentCard?.passwordHash || ''
@@ -686,8 +715,12 @@ function InfoCard({
             <label className="block text-sm font-medium text-gray-700 mb-2">Name:</label>
             <input
               type="text"
-              value={title}
-              onChange={(e) => updateCardTitle(cardId, e.target.value)}
+              value={localTitle}
+              onChange={(e) => {
+                const newValue = e.target.value
+                setLocalTitle(newValue)
+                debouncedUpdateTitle(cardId, newValue)
+              }}
               placeholder="Enter card name..."
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             />
@@ -710,8 +743,12 @@ function InfoCard({
               </button>
             </div>
             <textarea
-              value={description}
-              onChange={(e) => updateCardDescription(cardId, e.target.value)}
+              value={localDescription}
+              onChange={(e) => {
+                const newValue = e.target.value
+                setLocalDescription(newValue)
+                debouncedUpdateDescription(cardId, newValue)
+              }}
               placeholder="Enter description..."
               className="w-full h-32 p-3 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
             />

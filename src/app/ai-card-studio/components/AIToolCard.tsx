@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect, memo } from 'react'
+import { useState, useRef, useEffect, memo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
+import { debounce } from '../utils/performanceUtils'
 import { resolveReferences } from '../utils/cardUtils'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import Modal from './ui/Modal'
@@ -38,6 +39,34 @@ function AIToolCard({
   
   const buttonName = currentCard?.buttonName || 'Start'
   const promptText = currentCard?.promptText || ''
+  
+  // Local state for optimized input performance
+  const [localButtonName, setLocalButtonName] = useState(buttonName)
+  const [localPromptText, setLocalPromptText] = useState(promptText)
+  
+  // Update local state when store changes
+  useEffect(() => {
+    setLocalButtonName(buttonName)
+  }, [buttonName])
+  
+  useEffect(() => {
+    setLocalPromptText(promptText)
+  }, [promptText])
+  
+  // Debounced store updates to prevent input lag
+  const debouncedUpdateButtonName = useCallback(
+    debounce((cardId: string, newName: string) => {
+      updateCardButtonName(cardId, newName)
+    }, 300),
+    [updateCardButtonName]
+  )
+  
+  const debouncedUpdatePromptText = useCallback(
+    debounce((cardId: string, newPrompt: string) => {
+      updateCardPromptText(cardId, newPrompt)
+    }, 300),
+    [updateCardPromptText]
+  )
   const options = currentCard?.options || []
   const aiModel = currentCard?.aiModel || 'deepseek'
   const generatedContent = currentCard?.generatedContent || ''
@@ -95,9 +124,11 @@ function AIToolCard({
       description: card.description || ''
     })) || []
 
-  // Handle textarea input changes
+  // Handle textarea input changes with debouncing
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    updateCardPromptText(cardId, e.target.value)
+    const newValue = e.target.value
+    setLocalPromptText(newValue)
+    debouncedUpdatePromptText(cardId, newValue)
   }
 
   // Insert reference at cursor position
@@ -105,12 +136,13 @@ function AIToolCard({
     if (textareaRef.current) {
       const textarea = textareaRef.current
       const cursorPosition = textarea.selectionStart
-      const textBefore = promptText.substring(0, cursorPosition)
-      const textAfter = promptText.substring(textarea.selectionEnd)
+      const textBefore = localPromptText.substring(0, cursorPosition)
+      const textAfter = localPromptText.substring(textarea.selectionEnd)
       const referenceText = `[REF: ${selectedButtonName}]`
       
       const newText = textBefore + referenceText + textAfter
-      updateCardPromptText(cardId, newText)
+      setLocalPromptText(newText)
+      debouncedUpdatePromptText(cardId, newText)
       
       setTimeout(() => {
         const newCursorPosition = cursorPosition + referenceText.length
@@ -125,12 +157,13 @@ function AIToolCard({
     if (textareaRef.current) {
       const textarea = textareaRef.current
       const cursorPosition = textarea.selectionStart
-      const textBefore = promptText.substring(0, cursorPosition)
-      const textAfter = promptText.substring(textarea.selectionEnd)
+      const textBefore = localPromptText.substring(0, cursorPosition)
+      const textAfter = localPromptText.substring(textarea.selectionEnd)
       const referenceText = `[INFO: ${selectedTitle}]`
       
       const newText = textBefore + referenceText + textAfter
-      updateCardPromptText(cardId, newText)
+      setLocalPromptText(newText)
+      debouncedUpdatePromptText(cardId, newText)
       
       setTimeout(() => {
         const newCursorPosition = cursorPosition + referenceText.length
@@ -726,8 +759,12 @@ function AIToolCard({
             <label className="block text-sm font-medium text-gray-700 mb-2">Button Name:</label>
             <input
               type="text"
-              value={buttonName}
-              onChange={(e) => updateCardButtonName(cardId, e.target.value)}
+              value={localButtonName}
+              onChange={(e) => {
+                const newValue = e.target.value
+                setLocalButtonName(newValue)
+                debouncedUpdateButtonName(cardId, newValue)
+              }}
               placeholder="Enter button name..."
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             />
@@ -752,7 +789,7 @@ function AIToolCard({
             <div className="relative">
               <textarea
                 ref={textareaRef}
-                value={promptText}
+                value={localPromptText}
                 onChange={handlePromptChange}
                 placeholder="Enter your AI prompt here..."
                 className="w-full min-h-32 p-3 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
@@ -833,12 +870,13 @@ function AIToolCard({
                           if (textareaRef.current) {
                             const textarea = textareaRef.current
                             const cursorPosition = textarea.selectionStart
-                            const textBefore = promptText.substring(0, cursorPosition)
-                            const textAfter = promptText.substring(textarea.selectionEnd)
+                            const textBefore = localPromptText.substring(0, cursorPosition)
+                            const textAfter = localPromptText.substring(textarea.selectionEnd)
                             const optionText = '{{option}}'
                             
                             const newText = textBefore + optionText + textAfter
-                            updateCardPromptText(cardId, newText)
+                            setLocalPromptText(newText)
+                            debouncedUpdatePromptText(cardId, newText)
                             
                             setTimeout(() => {
                               const newCursorPosition = cursorPosition + optionText.length

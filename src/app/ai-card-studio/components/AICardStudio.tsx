@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Column, ColumnCard } from '../types'
 import { generateUniqueButtonName, generateUniqueTitle } from '../utils/cardUtils'
-import { useCardDeletion } from '../hooks/useCardDeletion'
 import ColumnComponent from './Column'
 import CanvasSettingsModal from './CanvasSettingsModal'
 import { useWorkspaceStore } from '../store/workspaceStore'
@@ -16,7 +15,6 @@ export default function AICardStudio() {
   // Get active canvas and its columns
   const activeCanvas = canvases.find(canvas => canvas.id === activeCanvasId)
   const columns = activeCanvas?.columns || []
-  const { deleteCard } = useCardDeletion()
   
   const [showCardTypeModal, setShowCardTypeModal] = useState(false)
   const [cardTypeModalVisible, setCardTypeModalVisible] = useState(false)
@@ -540,7 +538,6 @@ export default function AICardStudio() {
                   key={column.id}
                   column={column}
                   onAddCard={handleAddCard}
-                  onDeleteCard={deleteCard}
                   onInsertCard={handleAddCard}
                   onRunColumnWorkflow={runColumnWorkflow}
                   isColumnExecuting={columnExecutionStatus[column.id] || false}
