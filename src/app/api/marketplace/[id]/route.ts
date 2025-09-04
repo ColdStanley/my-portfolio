@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
+const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Demo data fallback (same as in main route)
 const demoMarketplaceItems: any[] = [
@@ -201,9 +201,13 @@ export async function GET(
     }
 
     // Add author name with improved logic
+    // Get current user session to determine if item belongs to current user
+    const { data: { session } } = await supabase.auth.getSession()
+    const currentUserId = session?.user?.id
+    
     const itemWithAuthor = {
       ...item,
-      author_name: item.author_id === 'placeholder-user-id' ? 'You' : 'Community'
+      author_name: item.author_id === currentUserId ? 'You' : 'Community'
     }
 
     return NextResponse.json(itemWithAuthor)
@@ -274,6 +278,16 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Verify user authentication first
+    const { data: { session }, error: authError } = await supabase.auth.getSession()
+    
+    if (authError || !session) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const { id } = await params
 
     if (!id) {
@@ -284,11 +298,12 @@ export async function DELETE(
     }
 
     try {
-      // Try to delete from database first
+      // Try to delete from database first - only allow users to delete their own items
       const { error } = await supabase
         .from('marketplace_items')
         .delete()
         .eq('id', id)
+        .eq('author_id', session.user.id)
 
       if (!error) {
         return NextResponse.json({ success: true })

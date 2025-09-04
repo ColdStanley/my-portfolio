@@ -3,9 +3,9 @@ import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
+const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Demo data fallback
 const demoMarketplaceItems: any[] = [
@@ -161,6 +161,16 @@ const demoMarketplaceItems: any[] = [
 // POST: Upload column to marketplace
 export async function POST(request: NextRequest) {
   try {
+    // Verify user authentication first
+    const { data: { session }, error: authError } = await supabase.auth.getSession()
+    
+    if (authError || !session) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     const { name, description, tags, data } = body
 
@@ -224,9 +234,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // For now, we'll use a placeholder user ID since we don't have auth
-    // In a real app, this would come from the authenticated user
-    const authorId = 'placeholder-user-id'
+    // Use the authenticated user's ID as the author
+    const authorId = session.user.id
 
     // Add original_author_id to cleaned data
     const finalData = {
@@ -353,9 +362,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Add author names with improved logic
+    // Get current user session to determine if item belongs to current user
+    const { data: { session } } = await supabase.auth.getSession()
+    const currentUserId = session?.user?.id
+    
     const itemsWithAuthors = items.map(item => ({
       ...item,
-      author_name: item.author_id === 'placeholder-user-id' ? 'You' : 'Community'
+      author_name: item.author_id === currentUserId ? 'You' : 'Community'
     }))
 
     return NextResponse.json({
