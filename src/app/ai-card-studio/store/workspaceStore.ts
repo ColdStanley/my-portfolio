@@ -809,11 +809,18 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       set((state) => ({
         canvases: state.canvases.map(canvas => ({
           ...canvas,
-          columns: canvas.columns.map(col =>
-            col.id === columnId
-              ? { ...col, cards: col.cards.filter(card => card.id !== cardId) }
-              : col
-          )
+          columns: canvas.columns.reduce((acc, col) => {
+            if (col.id === columnId) {
+              const updatedCards = col.cards.filter(card => card.id !== cardId);
+              // If this was the last card in the column, delete the entire column
+              if (updatedCards.length === 0) {
+                return acc; // Don't include this column in the result
+              }
+              // Otherwise, keep the column with updated cards
+              return [...acc, { ...col, cards: updatedCards }];
+            }
+            return [...acc, col];
+          }, [] as Column[])
         }))
       }));
     },
