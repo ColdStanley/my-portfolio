@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, memo } from 'react'
 import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
+import remarkBreaks from 'remark-breaks'
+import remarkGfm from 'remark-gfm'
 import { resolveReferences } from '../utils/cardUtils'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import Modal from './ui/Modal'
@@ -535,6 +537,7 @@ function AIToolCard({
             )}
             <div className="prose prose-sm max-w-none text-gray-700">
               <ReactMarkdown
+                remarkPlugins={[remarkBreaks, remarkGfm]}
                 components={{
                   h1: ({node, ...props}) => (
                     <h1 className="text-xl font-bold text-gray-800 mb-3 mt-4 first:mt-0 border-b border-gray-200 pb-1" {...props} />
@@ -549,37 +552,45 @@ function AIToolCard({
                     <h4 className="text-sm font-medium text-gray-800 mb-1 mt-2 first:mt-0" {...props} />
                   ),
                   p: ({node, ...props}) => (
-                    <p className="text-gray-700 mb-3 leading-relaxed text-sm" {...props} />
+                    <p className="text-gray-600 mb-3 leading-relaxed text-sm" {...props} />
                   ),
                   ul: ({node, ...props}) => (
-                    <ul className="list-disc list-outside ml-4 mb-3 text-gray-700 space-y-1" {...props} />
+                    <ul className="list-disc list-inside mb-3 text-gray-600 space-y-1" {...props} />
                   ),
                   ol: ({node, ...props}) => (
-                    <ol className="list-decimal list-outside ml-4 mb-3 text-gray-700 space-y-1" {...props} />
+                    <ol className="list-decimal list-inside mb-3 text-gray-600 space-y-1" {...props} />
                   ),
                   li: ({node, ...props}) => (
-                    <li className="text-sm leading-relaxed" {...props} />
+                    <li className="text-sm leading-relaxed mb-1" {...props} />
                   ),
                   code: ({node, inline, ...props}) => 
                     inline ? (
-                      <code className="bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded text-xs font-mono border border-purple-200" {...props} />
+                      <code className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-xs font-mono" {...props} />
                     ) : (
-                      <code className="block bg-gray-100 text-gray-800 p-3 rounded-lg text-xs font-mono overflow-x-auto whitespace-pre border border-gray-200 my-2" {...props} />
+                      <code className="block bg-gray-100 text-gray-800 p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre" {...props} />
                     ),
                   pre: ({node, ...props}) => (
                     <pre className="bg-gray-100 rounded-lg p-3 overflow-x-auto border border-gray-200 my-3" {...props} />
                   ),
                   blockquote: ({node, ...props}) => (
-                    <blockquote className="border-l-4 border-purple-300 pl-4 pr-2 py-1 italic text-gray-600 mb-3 bg-purple-50/30 rounded-r-lg" {...props} />
+                    <blockquote className="border-l-4 border-purple-300 pl-3 italic text-gray-600 mb-2" {...props} />
                   ),
                   strong: ({node, ...props}) => (
                     <strong className="font-semibold text-gray-800" {...props} />
                   ),
                   em: ({node, ...props}) => (
-                    <em className="italic text-gray-700" {...props} />
+                    <em className="italic" {...props} />
                   ),
-                  a: ({node, ...props}) => (
-                    <a className="text-purple-600 hover:text-purple-700 underline decoration-purple-300 hover:decoration-purple-500 transition-colors" {...props} />
+                  a: ({ href, children, ...props }) => (
+                    <a 
+                      href={href} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-purple-600 hover:text-purple-800 underline"
+                      {...props}
+                    >
+                      {children}
+                    </a>
                   ),
                   hr: ({node, ...props}) => (
                     <hr className="border-t border-gray-200 my-4" {...props} />
@@ -592,11 +603,41 @@ function AIToolCard({
                   thead: ({node, ...props}) => (
                     <thead className="bg-gray-50" {...props} />
                   ),
+                  tbody: ({node, ...props}) => (
+                    <tbody {...props} />
+                  ),
+                  tr: ({node, ...props}) => (
+                    <tr className="hover:bg-gray-50/50" {...props} />
+                  ),
                   th: ({node, ...props}) => (
                     <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 border-b border-gray-200" {...props} />
                   ),
                   td: ({node, ...props}) => (
-                    <td className="px-3 py-2 text-sm text-gray-700 border-b border-gray-100" {...props} />
+                    <td className="px-3 py-2 text-sm text-gray-600 border-b border-gray-100" {...props} />
+                  ),
+                  del: ({node, ...props}) => (
+                    <del className="line-through text-gray-500" {...props} />
+                  ),
+                  input: ({node, ...props}) => {
+                    const { type, checked, disabled } = props as any;
+                    if (type === 'checkbox') {
+                      return (
+                        <input 
+                          type="checkbox" 
+                          checked={checked} 
+                          disabled={disabled}
+                          className="mr-2 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                          {...props} 
+                        />
+                      );
+                    }
+                    return <input {...props} />;
+                  },
+                  sup: ({node, ...props}) => (
+                    <sup className="text-xs" {...props} />
+                  ),
+                  sub: ({node, ...props}) => (
+                    <sub className="text-xs" {...props} />
                   )
                 }}
               >

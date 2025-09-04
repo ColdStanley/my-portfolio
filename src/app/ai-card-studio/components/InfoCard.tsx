@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, memo } from 'react'
 import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkBreaks from 'remark-breaks'
+import remarkGfm from 'remark-gfm'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import Modal from './ui/Modal'
 import SettingsModal from './ui/SettingsModal'
@@ -519,7 +520,7 @@ function InfoCard({
         {description ? (
           <div className="prose prose-sm max-w-none">
             <ReactMarkdown
-              remarkPlugins={[remarkBreaks]}
+              remarkPlugins={[remarkBreaks, remarkGfm]}
               components={{
                 h1: ({node, ...props}) => <h1 className="text-lg font-bold text-gray-800 mb-2" {...props} />,
                 h2: ({node, ...props}) => <h2 className="text-base font-semibold text-gray-800 mb-2" {...props} />,
@@ -545,6 +546,56 @@ function InfoCard({
                   >
                     {children}
                   </a>
+                ),
+                hr: ({node, ...props}) => (
+                  <hr className="border-t border-gray-200 my-4" {...props} />
+                ),
+                table: ({node, ...props}) => (
+                  <div className="overflow-x-auto my-3">
+                    <table className="min-w-full border border-gray-200 rounded-lg" {...props} />
+                  </div>
+                ),
+                thead: ({node, ...props}) => (
+                  <thead className="bg-gray-50" {...props} />
+                ),
+                tbody: ({node, ...props}) => (
+                  <tbody {...props} />
+                ),
+                tr: ({node, ...props}) => (
+                  <tr className="hover:bg-gray-50/50" {...props} />
+                ),
+                th: ({node, ...props}) => (
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 border-b border-gray-200" {...props} />
+                ),
+                td: ({node, ...props}) => (
+                  <td className="px-3 py-2 text-sm text-gray-600 border-b border-gray-100" {...props} />
+                ),
+                del: ({node, ...props}) => (
+                  <del className="line-through text-gray-500" {...props} />
+                ),
+                input: ({node, ...props}) => {
+                  const { type, checked, disabled } = props as any;
+                  if (type === 'checkbox') {
+                    return (
+                      <input 
+                        type="checkbox" 
+                        checked={checked} 
+                        disabled={disabled}
+                        className="mr-2 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                        {...props} 
+                      />
+                    );
+                  }
+                  return <input {...props} />;
+                },
+                sup: ({node, ...props}) => (
+                  <sup className="text-xs" {...props} />
+                ),
+                sub: ({node, ...props}) => (
+                  <sub className="text-xs" {...props} />
+                ),
+                pre: ({node, ...props}) => (
+                  <pre className="bg-gray-100 rounded-lg p-3 overflow-x-auto border border-gray-200 my-3" {...props} />
                 )
               }}
             >
