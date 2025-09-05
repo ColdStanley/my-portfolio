@@ -24,9 +24,9 @@ export default function MarketplaceCard({ item, onPreview }: MarketplaceCardProp
   }
 
   return (
-    <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl border border-white/20 p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 group cursor-pointer">
-      {/* Header */}
-      <div className="mb-4">
+    <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl border border-white/20 p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 group cursor-pointer h-80 flex flex-col">
+      {/* Header - Fixed Height */}
+      <div className="mb-4 h-16 flex-shrink-0">
         <h3 className="text-lg font-semibold text-gray-800 line-clamp-2 group-hover:text-purple-600 transition-colors">
           {item.name}
         </h3>
@@ -35,14 +35,16 @@ export default function MarketplaceCard({ item, onPreview }: MarketplaceCardProp
         </p>
       </div>
 
-      {/* Description */}
-      <p className="text-gray-600 text-sm line-clamp-3 mb-4 leading-relaxed">
-        {item.description}
-      </p>
+      {/* Description - Fixed Height */}
+      <div className="mb-4 h-16 flex-shrink-0">
+        <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed">
+          {item.description}
+        </p>
+      </div>
 
-      {/* Tags */}
-      {item.tags.length > 0 && (
-        <div className="mb-4">
+      {/* Tags - Fixed Height */}
+      <div className="mb-4 h-8 flex-shrink-0">
+        {item.tags.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {item.tags.slice(0, 3).map((tag, index) => (
               <span
@@ -58,11 +60,16 @@ export default function MarketplaceCard({ item, onPreview }: MarketplaceCardProp
               </span>
             )}
           </div>
-        </div>
-      )}
+        ) : (
+          <div></div>
+        )}
+      </div>
 
-      {/* Stats */}
-      <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+      {/* Spacer - Flexible */}
+      <div className="flex-grow"></div>
+
+      {/* Stats - Fixed Position */}
+      <div className="flex items-center justify-between text-sm text-gray-500 mb-4 flex-shrink-0">
         <div className="flex items-center gap-1">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
@@ -71,8 +78,8 @@ export default function MarketplaceCard({ item, onPreview }: MarketplaceCardProp
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-2">
+      {/* Actions - Fixed Position */}
+      <div className="flex items-center gap-2 flex-shrink-0">
         <button
           onClick={(e) => {
             e.stopPropagation()
