@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 
 // POST: Setup marketplace with sample data (for testing)
 export async function POST(request: NextRequest) {
   try {
-    // Verify user authentication first
-    const { data: { session }, error: authError } = await supabase.auth.getSession()
+    // Create Supabase client with request context
+    const cookieStore = await cookies()
+    const supabase = createServerComponentClient({ cookies: () => cookieStore })
     
-    if (authError || !session) {
+    // Verify user authentication first
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -33,10 +33,14 @@ export async function POST(request: NextRequest) {
         sqlScript: `
 -- Run this SQL in your Supabase SQL Editor:
 
+-- First drop the existing constraint if it exists
+ALTER TABLE marketplace_items DROP CONSTRAINT IF EXISTS marketplace_items_description_check;
+
+-- Create or recreate the table with updated constraints
 CREATE TABLE IF NOT EXISTS marketplace_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL CHECK (length(name) <= 100),
-  description TEXT CHECK (length(description) <= 500),
+  description TEXT CHECK (length(description) <= 2000),
   data JSONB NOT NULL,
   content_hash VARCHAR(64) UNIQUE NOT NULL,
   author_id UUID NOT NULL,
@@ -44,6 +48,9 @@ CREATE TABLE IF NOT EXISTS marketplace_items (
   tags TEXT[] DEFAULT '{}',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Add the updated constraint for existing tables
+ALTER TABLE marketplace_items ADD CONSTRAINT marketplace_items_description_check CHECK (length(description) <= 2000);
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_marketplace_content_hash ON marketplace_items(content_hash);
@@ -63,6 +70,21 @@ END;
 $$ LANGUAGE plpgsql;
         `
       }, { status: 400 })
+    }
+
+    // Update constraint for existing tables
+    try {
+      // First try to drop the old constraint
+      await supabase.rpc('exec_sql', {
+        sql: 'ALTER TABLE marketplace_items DROP CONSTRAINT IF EXISTS marketplace_items_description_check;'
+      })
+      // Add the new constraint
+      await supabase.rpc('exec_sql', {
+        sql: 'ALTER TABLE marketplace_items ADD CONSTRAINT marketplace_items_description_check CHECK (length(description) <= 2000);'
+      })
+      console.log('Successfully updated description constraint')
+    } catch (error) {
+      console.log('Constraint update may have failed (this is expected if exec_sql RPC doesn\'t exist):', error)
     }
 
     // Create some sample data for testing

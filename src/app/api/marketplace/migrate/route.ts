@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
    * CREATE TABLE IF NOT EXISTS marketplace_items (
    *   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
    *   name TEXT NOT NULL CHECK (length(name) <= 100),
-   *   description TEXT CHECK (length(description) <= 500),
+   *   description TEXT CHECK (length(description) <= 2000),
    *   data JSONB NOT NULL,
    *   content_hash VARCHAR(64) UNIQUE NOT NULL,
    *   author_id UUID NOT NULL,

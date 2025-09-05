@@ -70,10 +70,23 @@ export default function PreviewModal({ itemId, onClose }: PreviewModalProps) {
   }
 
   const handleImport = async () => {
-    if (!item || !item.data) return
+    if (!item || !item.data) {
+      console.log('Import failed: No item or item data')
+      return
+    }
+
+    // Check if workspace is loaded
+    if (canvases.length === 0 || !activeCanvasId) {
+      console.error('Workspace not loaded - canvases:', canvases.length, 'activeCanvasId:', activeCanvasId)
+      setError('Workspace not loaded. Please return to AI Card Studio first, then try importing again.')
+      return
+    }
 
     try {
       setImporting(true)
+      console.log('Starting import process for item:', item.id)
+      console.log('Current canvases before import:', canvases.length)
+      console.log('Active canvas ID:', activeCanvasId)
       
       // Generate new IDs for the column and all cards to avoid conflicts
       const timestamp = Date.now()
@@ -101,6 +114,8 @@ export default function PreviewModal({ itemId, onClose }: PreviewModalProps) {
         })
       }
 
+      console.log('Generated imported column:', importedColumn)
+
       // Add metadata to mark this as imported from marketplace
       const importedColumnWithMetadata = {
         ...importedColumn,
@@ -112,22 +127,34 @@ export default function PreviewModal({ itemId, onClose }: PreviewModalProps) {
         }
       }
 
+      console.log('Adding column to active canvas:', activeCanvasId)
+      
       // Add to the current active canvas
-      updateCanvases(prev => prev.map(canvas => 
-        canvas.id === activeCanvasId 
-          ? { ...canvas, columns: [...canvas.columns, importedColumnWithMetadata] }
-          : canvas
-      ))
+      updateCanvases(prev => {
+        console.log('UpdateCanvases called with prev:', prev.length, 'canvases')
+        const updated = prev.map(canvas => {
+          if (canvas.id === activeCanvasId) {
+            console.log('Found active canvas, adding column. Current columns:', canvas.columns.length)
+            return { ...canvas, columns: [...canvas.columns, importedColumnWithMetadata] }
+          }
+          return canvas
+        })
+        console.log('UpdateCanvases returning:', updated.length, 'canvases')
+        return updated
+      })
 
       // Increment download count
+      console.log('Incrementing download count for item:', itemId)
       await fetch(`/api/marketplace/${itemId}`, {
         method: 'PUT'
       })
 
       // Auto-save after import
+      console.log('Saving workspace after import')
       await saveWorkspace()
 
       // Close modal and redirect back to studio
+      console.log('Import completed, redirecting to studio')
       onClose()
       router.push('/ai-card-studio')
 

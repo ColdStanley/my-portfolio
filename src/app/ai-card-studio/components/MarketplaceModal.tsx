@@ -146,10 +146,10 @@ export default function MarketplaceModal({ isOpen, onClose, columnData, onUpload
               rows={4}
               className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-50 resize-none"
               placeholder="Describe what this column does and how it can be used..."
-              maxLength={500}
+              maxLength={2000}
             />
             <div className="text-right text-xs text-gray-500 mt-1">
-              {description.length}/500
+              {description.length}/2000
             </div>
           </div>
           

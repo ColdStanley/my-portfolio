@@ -1,77 +1,40 @@
 {
-  "id": "english-challenge-camp",
+  "id": "ielts-writing-part1-practice",
   "cards": [
     {
-      "id": "column-info",
+      "id": "preparation-instructions",
       "type": "info",
-      "title": "英语闯关训练营",
-      "description": "本列通过三个阶段的互动练习，帮助巩固词汇、掌握句型、熟悉考试题型。每个阶段包含游戏化任务和即时解析，完成后自动进入下一环节。家长可引导孩子按顺序完成，全程无需手动切换。"
+      "title": "练习准备与说明",
+      "description": "选择图表类型后，AI将生成符合雅思标准的题目和数据，并提取关键趋势。考生需先阅读题目和趋势总结，再进入写作阶段。"
     },
     {
-      "id": "stage1-info",
+      "id": "question-generator",
+      "type": "aitool",
+      "buttonName": "动态题目生成器",
+      "promptText": "你是一名雅思写作考官，专注于A类Part 1图表题。根据用户选择的图表类型（{{option}}），生成一道完整的雅思写作Part 1题目。要求：\n1. 题目包含真实、合理的数据（如时间范围、百分比、数值等），符合雅思考试标准。\n2. 数据量适中（5-8个数据点），包含明显趋势（如上升、下降、波动、对比）。\n3. 以Markdown格式输出，包括：\n   - **题目标题**：简要描述图表内容（如\"The chart below shows...\"）\n   - **图表类型**：明确说明（如线图、柱状图等）\n   - **数据描述**：用列表或表格形式呈现数据（确保清晰可读）\n   - **核心趋势提示**：用1-2句话总结图表中最显著的趋势（如峰值、最低点、对比关系）。\n\n示例输出格式：\n# 雅思写作Part 1题目\n**图表类型**：线图\n**题目描述**：The line graph below shows the changes in the number of international tourists visiting three countries from 2000 to 2020.\n**数据**：\n- Country A: 2000 (1M), 2010 (3M), 2020 (5M)\n- Country B: 2000 (2M), 2010 (4M), 2020 (3M)\n- Country C: 2000 (0.5M), 2010 (2M), 2020 (6M)\n**核心趋势**：总体上升趋势，其中Country C增长最快，Country B在2020年略有下降。",
+      "aiModel": "deepseek",
+      "generatedContent": "",
+      "options": ["线图", "柱状图", "饼图", "表格", "混合图表"]
+    },
+    {
+      "id": "writing-assistant",
+      "type": "aitool",
+      "buttonName": "写作助手",
+      "promptText": "你是一名雅思写作教师，帮助考生优化Part 1写作。基于以下题目和趋势：\n[REF: 动态题目生成器]\n\n请提供：\n1. **词汇替换建议**：针对常见趋势词汇（如increase/decrease/stable），列出3-5个高阶替换（例如：\"increase\"可替换为\"surge\", \"climb\", \"escalate\"）。\n2. **句型模板**：提供3个复杂句型模板（需包含从句、对比结构等），适用于描述该图表的数据（如：\"While X showed a steady rise, Y experienced a sharp decline.\"）。\n3. **逻辑结构参考**：用Markdown列出推荐段落结构（引言-总览-细节分段），并强调连贯词（如however/furthermore/similarly）的使用位置。\n\n输出格式：\n# 写作辅助指南\n## 词汇替换\n- [趋势1]：替换1, 替换2, 替换3\n- [趋势2]：替换1, 替换2\n## 句型模板\n1. 模板句子1（说明适用场景）\n2. 模板句子2\n## 段落结构建议\n- 引言： paraphrase题目\n- 总览： 总结核心趋势\n- 细节分段： 按数据特征分组描述（如时间顺序、类别对比）",
+      "aiModel": "deepseek",
+      "generatedContent": ""
+    },
+    {
+      "id": "writing-submission",
       "type": "info",
-      "title": "阶段一：词汇大冒险",
-      "description": "目标：通过分类记忆和趣味挑战巩固200个基础词汇。\n使用方式：依次完成【词汇分类游戏】和【拼写闯关】，AI会自动生成错误分析并推送至下一阶段。"
+      "title": "提交你的写作",
+      "description": "请根据前序题目和辅助指南，在20分钟内完成一篇150字以上的写作，并将全文粘贴到下方AI工具卡片的输入框中（手动输入）。AI将评估内容并给出修改建议。"
     },
     {
-      "id": "vocabulary-game",
+      "id": "writing-evaluator",
       "type": "aitool",
-      "buttonName": "词汇分类游戏",
-      "promptText": "你是一名小学英语教师，请为三年级学生设计一个词汇分类游戏。\n主题分类：{{option}}\n可选选项：[\"家庭与人物\", \"动物与自然\", \"颜色与形状\", \"数字与食物\"]\n要求：\n1. 生成一组10个单词（选自人教版三年级上册课本），混合属于/不属于该分类的词汇；\n2. 以表格形式列出单词，并提问【哪些单词属于【{{option}}】类？】；\n3. 标记正确答案（仅属该类别的单词），并在回复末尾用【答案：...】标注。\n回复格式：严格使用Markdown。",
-      "options": ["家庭与人物", "动物与自然", "颜色与形状", "数字与食物"],
-      "aiModel": "deepseek",
-      "generatedContent": ""
-    },
-    {
-      "id": "spelling-challenge",
-      "type": "aitool",
-      "buttonName": "拼写闯关",
-      "promptText": "根据词汇分类游戏中的单词列表（参考：[REF: 词汇分类游戏]），生成拼写练习：\n1. 从上述单词中随机选取5个，给出中文释义和例句提示（例句需简单、贴近生活）；\n2. 要求填写英文单词，格式为：【1. (中文释义) ______ (例句)】；\n3. 在末尾用【答案：单词1, 单词2...】标注正确答案。\n回复格式：严格使用Markdown。",
-      "aiModel": "deepseek",
-      "generatedContent": ""
-    },
-    {
-      "id": "stage2-info",
-      "type": "info",
-      "title": "阶段二：句型小剧场",
-      "description": "目标：通过场景对话和纠错练习提升句型应用能力。\n使用方式：完成【情景对话生成】后，系统自动生成易错点分析，用于后续题型训练。"
-    },
-    {
-      "id": "dialogue-generator",
-      "type": "aitool",
-      "buttonName": "情景对话生成",
-      "promptText": "你是一名英语教研员，请为三年级学生生成一段情景对话练习。\n场景主题：{{option}}\n可选选项：[\"自我介绍与问候\", \"描述动物/物品\", \"询问喜好\", \"家庭日常\"]\n要求：\n1. 对话包含4-6轮，使用简单句型（如【I am...】, 【What color...】, 【Do you like...】）；\n2. 预留2处语法错误（常见错误如：名词单复数、be动词误用、主谓一致），并在回复末尾用【错误点：1. ... 2. ...】标注；\n3. 对话后提问：【请找出并改正对话中的错误】。\n回复格式：严格使用Markdown。",
-      "options": ["自我介绍与问候", "描述动物/物品", "询问喜好", "家庭日常"],
-      "aiModel": "deepseek",
-      "generatedContent": ""
-    },
-    {
-      "id": "grammar-correction",
-      "type": "aitool",
-      "buttonName": "句型纠错解析",
-      "promptText": "针对情景对话中的错误（参考：[REF: 情景对话生成]的【错误点】部分），生成解析：\n1. 逐条解释错误原因（如：为什么此处要用【are】而不是【is】）；\n2. 提供正确例句；\n3. 额外补充1个同类句型的巩固练习题（选择题形式）。\n回复格式：严格使用Markdown。",
-      "aiModel": "deepseek",
-      "generatedContent": ""
-    },
-    {
-      "id": "stage3-info",
-      "type": "info",
-      "title": "阶段三：考场模拟器",
-      "description": "目标：综合前两阶段内容生成模拟试题，强化考试适应能力。\n使用方式：完成试题后查看自动解析，错误点将关联至薄弱环节提示。"
-    },
-    {
-      "id": "test-generator",
-      "type": "aitool",
-      "buttonName": "题型生成器",
-      "promptText": "结合以下内容生成一套三年级英语模拟试题（含3道题）：\n- 词汇范围：[REF: 词汇分类游戏]中的单词\n- 句型重点：[REF: 情景对话生成]中的句型及错误点\n题型要求：\n1. 选择题：考查词汇含义或语法细节（如单复数）；\n2. 连线题：匹配单词与图片/中文释义；\n3. 看图写话：提供简单图片描述提示（如【一只猫在桌子上】），要求写1句完整句子。\n试题后附答案及解析，解析需引用前序练习中的知识点（如：【此题类似[REF: 句型纠错解析]中第2点】）。\n回复格式：严格使用Markdown。",
-      "aiModel": "deepseek",
-      "generatedContent": ""
-    },
-    {
-      "id": "weakness-analysis",
-      "type": "aitool",
-      "buttonName": "薄弱环节提示",
-      "promptText": "根据本列所有练习结果（参考：[REF: 词汇分类游戏]、[REF: 拼写闯关]、[REF: 句型纠错解析]、[REF: 题型生成器]），总结：\n1. 易错词汇类型（如颜色类单词拼写错误率高）；\n2. 语法薄弱点（如be动词用法）；\n3. 给出针对性复习建议（例如：【建议重点复习动物类词汇，参考[REF: 词汇分类游戏]中选项【动物与自然】】）。\n回复格式：严格使用Markdown。",
+      "buttonName": "写作评估器",
+      "promptText": "你是一名严格的雅思写作考官，针对考生提交的Part 1作文进行评估。\n首先，参考原始题目和数据：\n[REF: 动态题目生成器]\n\n考生作文内容如下（用户手动输入）：\n[INFO: 提交你的写作]\n\n请评估以下方面，并用Markdown格式输出：\n1. **内容覆盖**：是否遗漏关键数据或趋势？列出遗漏点（如有）。\n2. **逻辑组织**：段落结构是否清晰（引言-总览-细节）？连贯词使用是否恰当？\n3. **语言表达**：\n   - 词汇多样性：是否重复基础词汇？提供3-5个高阶替换建议。\n   - 语法准确性：指出语法错误并修正。\n   - 句型复杂度：是否使用复杂句？提供1-2个优化句子的示例。\n4. **总体评分与建议**：模拟雅思评分标准（任务完成/连贯与衔接/词汇语法），给出简要分数区间（如6.0-6.5）和3条改进建议。\n\n输出格式：\n# 写作评估报告\n## 内容覆盖\n- 遗漏点：[列表]\n## 逻辑组织\n- 优点与问题：[说明]\n## 语言表达\n- 词汇替换建议：[列表]\n- 语法修正：[错误句子] → [修正后]\n- 句型优化示例：[原句] → [优化后]\n## 总体评价\n评分区间：X-X\n改进建议：\n1. [建议1]\n2. [建议2]\n3. [建议3]",
       "aiModel": "deepseek",
       "generatedContent": ""
     }

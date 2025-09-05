@@ -6,6 +6,8 @@ import { MarketplaceListItem, MarketplacePagination } from '../types'
 import MarketplaceGrid from './components/MarketplaceGrid'
 import MarketplaceFilters from './components/MarketplaceFilters'
 import PreviewModal from './components/PreviewModal'
+import { useWorkspaceStore } from '../store/workspaceStore'
+import { supabase } from '../../../lib/supabaseClient'
 
 export default function MarketplacePage() {
   const [items, setItems] = useState<MarketplaceListItem[]>([])
@@ -26,9 +28,35 @@ export default function MarketplacePage() {
   // Preview modal state
   const [previewItem, setPreviewItem] = useState<string | null>(null)
 
+  // Initialize workspace store for importing functionality
+  const { actions } = useWorkspaceStore()
+
+  // Initialize workspace on component mount
+  useEffect(() => {
+    const initWorkspace = async () => {
+      try {
+        console.log('Initializing workspace for marketplace')
+        const { data: { session }, error: authError } = await supabase.auth.getSession()
+        
+        if (!authError && session?.user) {
+          console.log('User authenticated, loading workspace for:', session.user.id)
+          actions.setUser(session.user)
+          await actions.fetchAndHandleWorkspace(session.user.id)
+        } else {
+          console.log('No authenticated user or auth error:', authError)
+        }
+      } catch (error) {
+        console.error('Failed to initialize workspace:', error)
+      }
+    }
+
+    initWorkspace()
+  }, [])
+
   // Fetch marketplace items with search support
   const fetchItems = async (page: number = 1, search: string = '') => {
     try {
+      console.log('Fetching marketplace items, page:', page, 'search:', search)
       setLoading(true)
       setError('')
       
@@ -44,15 +72,24 @@ export default function MarketplacePage() {
         params.set('search', search.trim())
       }
 
-      const response = await fetch(`/api/marketplace?${params}`)
+      const url = `/api/marketplace?${params}`
+      console.log('Fetching from URL:', url)
+      
+      const response = await fetch(url)
+      console.log('Response status:', response.status, 'ok:', response.ok)
+      
       if (!response.ok) {
         throw new Error('Failed to fetch marketplace items')
       }
 
       const data = await response.json()
+      console.log('Received data:', data)
+      console.log('Items count:', data.items?.length)
+      
       setItems(data.items)
       setPagination(data.pagination)
     } catch (err: any) {
+      console.error('Fetch error:', err)
       setError(err.message || 'An error occurred')
     } finally {
       setLoading(false)

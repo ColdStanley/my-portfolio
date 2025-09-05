@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 
 // Demo data fallback (same as in main route)
 const demoMarketplaceItems: any[] = [
@@ -173,6 +169,9 @@ export async function GET(
     }
 
     let item: any = null
+    // Create Supabase client for GET request (no auth required)
+    const cookieStore = await cookies()
+    const supabase = createServerComponentClient({ cookies: () => cookieStore })
 
     try {
       // Try to fetch from database first
@@ -201,9 +200,9 @@ export async function GET(
     }
 
     // Add author name with improved logic
-    // Get current user session to determine if item belongs to current user
-    const { data: { session } } = await supabase.auth.getSession()
-    const currentUserId = session?.user?.id
+    // Get current user to determine if item belongs to current user
+    const { data: { user } } = await supabase.auth.getUser()
+    const currentUserId = user?.id
     
     const itemWithAuthor = {
       ...item,
@@ -237,6 +236,10 @@ export async function PUT(
     }
 
     try {
+      // Create Supabase client for PUT request (no auth required for downloads)
+      const cookieStore = await cookies()
+      const supabase = createServerComponentClient({ cookies: () => cookieStore })
+      
       // Try to increment in database first
       const { error } = await supabase
         .rpc('increment_downloads', { item_id: id })
@@ -278,10 +281,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Verify user authentication first
-    const { data: { session }, error: authError } = await supabase.auth.getSession()
+    // Create Supabase client with request context
+    const cookieStore = await cookies()
+    const supabase = createServerComponentClient({ cookies: () => cookieStore })
     
-    if (authError || !session) {
+    // Verify user authentication first
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -303,7 +310,7 @@ export async function DELETE(
         .from('marketplace_items')
         .delete()
         .eq('id', id)
-        .eq('author_id', session.user.id)
+        .eq('author_id', user.id)
 
       if (!error) {
         return NextResponse.json({ success: true })

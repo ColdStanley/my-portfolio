@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 import crypto from 'crypto'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Demo data fallback
 const demoMarketplaceItems: any[] = [
@@ -161,10 +157,14 @@ const demoMarketplaceItems: any[] = [
 // POST: Upload column to marketplace
 export async function POST(request: NextRequest) {
   try {
-    // Verify user authentication first
-    const { data: { session }, error: authError } = await supabase.auth.getSession()
+    // Create Supabase client with request context
+    const cookieStore = await cookies()
+    const supabase = createServerComponentClient({ cookies: () => cookieStore })
     
-    if (authError || !session) {
+    // Verify user authentication first
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -190,9 +190,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (description.length > 500) {
+    if (description.length > 2000) {
       return NextResponse.json(
-        { error: 'Description must be 500 characters or less' },
+        { error: 'Description must be 2000 characters or less' },
         { status: 400 }
       )
     }
@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Use the authenticated user's ID as the author
-    const authorId = session.user.id
+    const authorId = user.id
 
     // Add original_author_id to cleaned data
     const finalData = {
@@ -286,6 +286,10 @@ export async function POST(request: NextRequest) {
 // GET: Fetch marketplace items
 export async function GET(request: NextRequest) {
   try {
+    // Create Supabase client with request context
+    const cookieStore = await cookies()
+    const supabase = createServerComponentClient({ cookies: () => cookieStore })
+
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50) // Max 50 items per page
@@ -324,8 +328,15 @@ export async function GET(request: NextRequest) {
       if (!error && dbItems) {
         items = dbItems
         count = dbCount || 0
+        console.log('Successfully fetched from database:', items.length, 'items')
       } else {
-        throw new Error('Database not available')
+        console.log('Database error details:', {
+          error: error,
+          errorCode: error?.code,
+          errorMessage: error?.message,
+          dbItems: dbItems
+        })
+        throw new Error('Database not available: ' + (error?.message || 'Unknown error'))
       }
     } catch (error) {
       // Fallback to demo data if database fails
@@ -362,9 +373,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Add author names with improved logic
-    // Get current user session to determine if item belongs to current user
-    const { data: { session } } = await supabase.auth.getSession()
-    const currentUserId = session?.user?.id
+    // Get current user to determine if item belongs to current user (optional for GET)
+    let currentUserId: string | undefined
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      currentUserId = user?.id
+    } catch (error) {
+      // Ignore auth errors for public GET request
+      console.log('No authenticated user for GET request (this is normal)')
+    }
     
     const itemsWithAuthors = items.map(item => ({
       ...item,
