@@ -1,75 +1,51 @@
 {
-  "id": "french-learning-montreal",
+  "id": "french-learning-workflow",
   "cards": [
     {
-      "id": "card-1",
+      "id": "welcome-card",
       "type": "info",
-      "title": "🎉 Bonjour, French Explorer!",
-      "description": "Welcome! This column will guide you through building practical French skills for daily life in Montreal. Each card has a specific role:\n- Cards 2–3: Define your learning focus (scenarios & tones).\n- Cards 4–7: Generate vocabulary and sentences tailored to your needs.\n- Cards 8–9: Practice dialogues and get feedback.\n- Card 10: Review your progress and plan next steps.\nLet's begin!"
+      "title": "欢迎启程！",
+      "description": "✨ 欢迎来到法语学习工作流！本列包含4个核心阶段：\n1. **基础巩固与场景定向**：强化词汇，明确高频场景。\n2. **场景深度表达学习**：分场景学习完整对话与句型。\n3. **多场景灵活应用训练**：跨场景混合练习与应变表达。\n4. **实战模拟与自我评估**：模拟真实对话并检验效果。\n🎯 每个阶段由一张AI工具卡片执行，只需点击按钮，即可获得专业、结构化的法语学习内容！\n💡 提示：所有内容均以Markdown格式输出，清晰易读，专注实用表达。"
     },
     {
-      "id": "card-2",
-      "type": "info",
-      "title": "🛍️ Your Daily Scenarios",
-      "description": "Enter 2-3 common situations you encounter (e.g., \"ordering at a café,\" \"asking for directions,\" \"grocery shopping\"). This will customize your vocabulary and phrases."
-    },
-    {
-      "id": "card-3",
-      "type": "info",
-      "title": "🎚️ Choose Your Communication Style",
-      "description": "Select a tone for generated sentences:\n- **Formal:** For professional or respectful interactions (e.g., with strangers/elders).\n- **Casual:** For friends or informal settings.\n- **Urgent:** For quick, clear requests (e.g., emergencies)."
-    },
-    {
-      "id": "card-4",
+      "id": "scene-vocabulary-card",
       "type": "aitool",
-      "buttonName": "Generate Scenario Vocabulary",
-      "promptText": "Act as a French language tutor for beginners. Using the scenarios provided in [INFO: 🛍️ Your Daily Scenarios], generate 8-10 essential vocabulary words or short phrases (in French) for each scenario. Include English translations and brief usage notes (e.g., \"C'est combien?\" → \"How much?\" – used when asking prices). Format the output in Markdown with clear headings for each scenario. Avoid tables.\n\nFocus on generating vocabulary related to {{option}} for the scenarios.",
+      "buttonName": "场景定向与词汇巩固",
+      "promptText": "你是一名专业法语教育专家，擅长为具备基础词汇的学习者设计场景化学习内容。请基于用户选择的场景【{{option}}】，完成以下任务：\n- **角色设定**：法语母语教师，用语亲切、清晰、实用。\n- **任务目标**：列出该场景下最常用的10个核心词汇（附中文释义），并提供一个简短的基础表达框架（例如：典型问句+答句）。\n- **输出格式**：使用Markdown格式，分为【核心词汇】和【基础表达】两部分，无需开场白或结束语。\n- **注意事项**：避免复杂语法，聚焦日常实用表达；不要输出无关内容或额外解释。\n请直接开始输出内容。",
       "aiModel": "deepseek",
       "generatedContent": "",
-      "options": ["Basic Nouns/Verbs", "Common Questions", "Polite Expressions"]
+      "options": ["餐饮场景", "购物场景", "交通出行", "社交问候", "紧急求助", "旅行问路", "健康医疗", "休闲娱乐"]
     },
     {
-      "id": "card-5",
+      "id": "deep-dialogue-card",
       "type": "aitool",
-      "buttonName": "Build Practical Sentences",
-      "promptText": "As a French tutor, use the vocabulary from [REF: Generate Scenario Vocabulary] and the tone from [INFO: 🎚️ Choose Your Communication Style] to create 3-4 simple, actionable sentences per scenario. Ensure sentences are practical for daily use (e.g., \"Je voudrais un café, s'il vous plaît\"). Include English translations and pronunciation tips (e.g., \"s'il vous plaît\" → \"see voo play\"). Output in Markdown with scenario headings.\n\nGenerate sentences specifically for making {{option}} in the given scenarios.",
-      "aiModel": "deepseek",
-      "generatedContent": "",
-      "options": ["Requests", "Questions", "Responses"]
-    },
-    {
-      "id": "card-6",
-      "type": "info",
-      "title": "💬 Practice Dialogue Prompt",
-      "description": "Based on your scenarios, here's a practice prompt:\n\"Imagine you're at a bakery. Ask for a croissant and confirm the price.\"\nTry responding in French!"
-    },
-    {
-      "id": "card-7",
-      "type": "aitool",
-      "buttonName": "Generate Model Dialogue",
-      "promptText": "As a French tutor, create a natural, short dialogue (2-3 exchanges) based on the prompt in [INFO: 💬 Practice Dialogue Prompt]. Use the tone from [INFO: 🎚️ Choose Your Communication Style] and incorporate relevant vocabulary from [REF: Generate Scenario Vocabulary]. Provide the dialogue in French with English translations below each line. Format in Markdown.",
+      "buttonName": "深度场景对话学习",
+      "promptText": "你是一名资深法语对话设计师，请基于前一阶段【[REF: 场景定向与词汇巩固]】中提取的场景和词汇，为该场景设计一段完整、自然的日常对话。要求如下：\n- **角色设定**：模拟真实生活情境（如顾客与店员、朋友之间等）。\n- **任务目标**：对话包含4-6轮问答，覆盖典型句型，标注中文翻译。\n- **输出格式**：Markdown格式，对话部分使用引用块（>）区分角色，翻译置于括号内。\n- **避免事项**：不要添加额外评论或总结，仅输出对话内容。\n立即开始输出。",
       "aiModel": "deepseek",
       "generatedContent": ""
     },
     {
-      "id": "card-8",
-      "type": "info",
-      "title": "✏️ Your Attempt",
-      "description": "Type your French response to the dialogue prompt here. Don't worry about mistakes—this is for practice!"
+      "id": "mixed-scene-card",
+      "type": "aitool",
+      "buttonName": "多场景混合应用训练",
+      "promptText": "你是一名法语情景教学导师，请基于用户选择的复合场景【{{option}}】，设计一个连贯的跨场景对话练习。要求：\n- **角色设定**：用户作为主导者，在不同情境中切换表达。\n- **任务目标**：对话需自然过渡，涵盖两个场景的典型表达，每部分3-4轮对话，附中文翻译。\n- **输出格式**：Markdown格式，使用标题区分场景部分，对话用引用块标注。\n- **重点强调**：确保表达实用、连贯，无冗余内容。\n直接输出对话内容。",
+      "aiModel": "deepseek",
+      "generatedContent": "",
+      "options": ["餐厅点餐 + 问路", "购物砍价 + 社交寒暄", "交通购票 + 紧急求助", "旅行咨询 + 休闲推荐"]
     },
     {
-      "id": "card-9",
+      "id": "practice-evaluation-card",
       "type": "aitool",
-      "buttonName": "Feedback on Your French",
-      "promptText": "As a supportive French tutor, compare the user's attempt in [INFO: ✏️ Your Attempt] with the model dialogue in [REF: Generate Model Dialogue]. Provide constructive feedback:\n- Highlight 1-2 strengths (e.g., good vocabulary choice).\n- Gently correct 1-2 errors (e.g., grammar, pronunciation tips).\n- Suggest a improvement tip.\nKeep the tone encouraging. Output in Markdown.",
+      "buttonName": "实战模拟与自我评估",
+      "promptText": "你是一名法语考官，请基于前序所有阶段的学习内容（尤其是[REF: 多场景混合应用训练]），生成一个模拟真实生活的对话情境，并随后提供一份简单的自我评估指南。要求：\n- **角色设定**：考官与学习者对话模式。\n- **任务目标**：\n  1. 输出一段5-7轮的对话（仅法语），模拟随机生活场景（如市场购物时突然问路）。\n  2. 在对话后提供评估要点（如发音、流利度、用词准确性），以清单形式列出。\n- **输出格式**：Markdown格式，对话部分清晰分段，评估部分使用无序列表。\n- **禁止项**：无需输出参考答案或额外解释。\n现在开始输出。",
       "aiModel": "deepseek",
       "generatedContent": ""
     },
     {
-      "id": "card-10",
+      "id": "completion-card",
       "type": "info",
-      "title": "🌟 Progress & Next Steps",
-      "description": "Great job! You've:\n- Learned scenario-specific vocabulary and sentences.\n- Practiced a dialogue and received feedback.\nRevisit this workflow anytime to try new scenarios or tones! For deeper learning, duplicate this column and modify the scenarios in Card 2."
+      "title": "学习完成！🎉",
+      "description": "恭喜你完成本列所有阶段！现在你已经：\n✅ 巩固了核心场景词汇\n✅ 掌握了深度对话表达\n✅ 进行了跨场景灵活练习\n✅ 体验了实战模拟与评估\n🌟 记得多重复练习，真实语境中勇敢开口～如需复习，可随时点击任意卡片重新生成内容！"
     }
   ]
 }
