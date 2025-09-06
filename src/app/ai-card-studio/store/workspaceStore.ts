@@ -109,8 +109,22 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       set({ isLoading: true });
       
       try {
+        // Check session validity before database access
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session || !session.user) {
+          console.warn('No valid session found, using default workspace')
+          set({ 
+            canvases: defaultCanvases, 
+            activeCanvasId: defaultCanvases[0].id,
+            saveError: null,
+            isLoading: false,
+            isInitialLoad: false
+          });
+          return;
+        }
+        
         // Retry logic for better Vercel reliability
-        const fetchWithRetry = async (retries = 3): Promise<any> => {
+        const fetchWithRetry = async (retries = 2): Promise<any> => {
           for (let i = 0; i < retries; i++) {
             try {
               const fetchWithTimeout = Promise.race([
@@ -120,7 +134,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
                   .eq('user_id', userId)
                   .single(),
                 new Promise((_, reject) =>
-                  setTimeout(() => reject(new Error('Database timeout')), 25000)
+                  setTimeout(() => reject(new Error('Database timeout')), 15000)
                 )
               ]) as Promise<any>;
 
@@ -128,8 +142,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
             } catch (error: any) {
               console.warn(`Database fetch attempt ${i + 1} failed:`, error.message);
               if (i === retries - 1) throw error;
-              // Wait before retry with exponential backoff
-              await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
+              // Shorter retry delay for production
+              await new Promise(resolve => setTimeout(resolve, 1000 + (i * 500)));
             }
           }
         };

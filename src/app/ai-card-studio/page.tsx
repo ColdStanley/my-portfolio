@@ -30,13 +30,35 @@ export default function AICardStudioPage() {
 
     const initializeAuth = async () => {
       try {
-        // Get initial session with extended timeout for Vercel
-        const { data: { session }, error } = await Promise.race([
-          supabase.auth.getSession(),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Session timeout')), 20000)
-          )
-        ]) as any
+        // Ensure client-side execution for session retrieval
+        if (typeof window === 'undefined') {
+          setLoading(false)
+          return
+        }
+        
+        // Get initial session with retry logic for production
+        let session = null
+        let error = null
+        
+        // Try to get session with timeout
+        try {
+          const result = await Promise.race([
+            supabase.auth.getSession(),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Session timeout')), 15000)
+            )
+          ]) as any
+          
+          session = result.data?.session
+          error = result.error
+        } catch (timeoutError) {
+          console.warn('Session fetch timed out, attempting auth state check')
+          // Fallback: check if user is already in auth state
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user) {
+            session = { user }
+          }
+        }
         
         if (!mounted) return
         

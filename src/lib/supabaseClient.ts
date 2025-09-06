@@ -7,6 +7,13 @@ export const supabase = createClientComponentClient({
     db: {
       schema: 'public',
     },
+    auth: {
+      // Critical: Enable session persistence for production
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storageKey: 'sb-ai-card-studio-auth-token',
+    },
     global: {
       // Set headers for better performance in serverless
       headers: {
