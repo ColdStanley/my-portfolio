@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAdminAuth } from '../../hooks/useAdminAuth'
+import { useAdminPanel } from '../../hooks/useAdminPanel'
 import { useAdminUsers, useAdminWorkspaces, useAdminMarketplace } from '../../hooks/useAdminDataLoader'
 
 /**
@@ -46,7 +46,7 @@ interface MarketplaceItem {
 }
 
 export default function DataMasterModule() {
-  const { makeAdminRequest } = useAdminAuth()
+  const { makeAdminRequest } = useAdminPanel()
   
   // Use custom hooks for data loading
   const { data: usersData, loading: usersLoading, refresh: refreshUsers } = useAdminUsers()

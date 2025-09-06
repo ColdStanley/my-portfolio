@@ -37,15 +37,13 @@ export async function validateAdminPermissions(request: NextRequest): Promise<{
     const cookieStore = await cookies()
     const supabase = createServerComponentClient({ cookies: () => cookieStore })
     
-    // Check user authentication
-    const { data: { session }, error: authError } = await supabase.auth.getSession()
+    // Check user authentication - use getUser() for secure authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
     
-    if (authError || !session?.user) {
+    if (authError || !user) {
       console.warn('[ADMIN_MIDDLEWARE] Unauthenticated access attempt')
       return { authorized: false, error: 'Authentication required' }
     }
-
-    const user = session.user
     
     // Validate admin ID whitelist
     if (!adminIds.includes(user.id)) {

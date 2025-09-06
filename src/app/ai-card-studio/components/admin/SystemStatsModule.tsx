@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAdminAuth } from '../../hooks/useAdminAuth'
+import { useAdminPanel } from '../../hooks/useAdminPanel'
 
 /**
  * System Stats Module - Comprehensive Analytics Dashboard
@@ -33,7 +33,7 @@ interface SystemStats {
 }
 
 export default function SystemStatsModule() {
-  const { makeAdminRequest } = useAdminAuth()
+  const { makeAdminRequest } = useAdminPanel()
   const [stats, setStats] = useState<SystemStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)

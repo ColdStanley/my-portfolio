@@ -6,6 +6,7 @@ import DataMasterModule from './admin/DataMasterModule'
 import DebugMonitorModule from './admin/DebugMonitorModule'
 import QuickActionsModule from './admin/QuickActionsModule'
 import SystemStatsModule from './admin/SystemStatsModule'
+import { AdminProvider } from './admin/AdminContext'
 
 /**
  * Developer Panel - God Mode Control Center
@@ -248,12 +249,14 @@ export default function DeveloperPanel({ isVisible, onClose }: DeveloperPanelPro
         {/* Main Content Area */}
         <div className="flex-1 bg-gray-950/95 backdrop-blur-md overflow-y-auto">
           {isAuthenticated ? (
-            <div className="p-8">
-              {activeModule === 'data' && <DataMasterModule />}
-              {activeModule === 'debug' && <DebugMonitorModule />}
-              {activeModule === 'actions' && <QuickActionsModule />}
-              {activeModule === 'stats' && <SystemStatsModule />}
-            </div>
+            <AdminProvider isAuthenticated={isAuthenticated} masterKey={masterKey}>
+              <div className="p-8">
+                {activeModule === 'data' && <DataMasterModule />}
+                {activeModule === 'debug' && <DebugMonitorModule />}
+                {activeModule === 'actions' && <QuickActionsModule />}
+                {activeModule === 'stats' && <SystemStatsModule />}
+              </div>
+            </AdminProvider>
           ) : (
             <div className="h-full flex items-center justify-center">
               <div className="text-center text-gray-500">

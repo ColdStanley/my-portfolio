@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useAdminAuth } from './useAdminAuth'
+import { useAdminPanel } from './useAdminPanel'
 
 interface UseAdminDataLoaderOptions {
   url: string
@@ -19,7 +19,7 @@ export function useAdminDataLoader<T = any>(
   options: UseAdminDataLoaderOptions
 ): UseAdminDataLoaderResult<T> {
   const { url, autoLoad = true, refreshInterval } = options
-  const { makeAdminRequest } = useAdminAuth()
+  const { makeAdminRequest } = useAdminPanel()
   
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState<boolean>(false)

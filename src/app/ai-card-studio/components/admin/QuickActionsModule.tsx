@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useAdminAuth } from '../../hooks/useAdminAuth'
+import { useAdminPanel } from '../../hooks/useAdminPanel'
 
 /**
  * Quick Actions Module - Powerful Bulk Operations
@@ -11,7 +11,7 @@ import { useAdminAuth } from '../../hooks/useAdminAuth'
  */
 
 export default function QuickActionsModule() {
-  const { makeAdminRequest } = useAdminAuth()
+  const { makeAdminRequest } = useAdminPanel()
   const [loading, setLoading] = useState<string | null>(null)
   const [results, setResults] = useState<string[]>([])
 

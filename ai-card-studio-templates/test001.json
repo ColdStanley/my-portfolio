@@ -1,75 +1,75 @@
 {
-  "id": "economist-reading-assistant",
+  "id": "french-learning-montreal",
   "cards": [
     {
-      "id": "card1",
+      "id": "card-1",
       "type": "info",
-      "title": "欢迎来到经济学人精读之旅！🌟",
-      "description": "请在此输入完整的《经济学人》文章内容（直接粘贴文本）。之后，您将在后续步骤中选择要学习的自然段（1-10）。本工作流将帮助您逐层解析段落结构、句式、词组和词汇，并生成练习以巩固学习。准备好开始了吗？加油！"
+      "title": "🎉 Bonjour, French Explorer!",
+      "description": "Welcome! This column will guide you through building practical French skills for daily life in Montreal. Each card has a specific role:\n- Cards 2–3: Define your learning focus (scenarios & tones).\n- Cards 4–7: Generate vocabulary and sentences tailored to your needs.\n- Cards 8–9: Practice dialogues and get feedback.\n- Card 10: Review your progress and plan next steps.\nLet's begin!"
     },
     {
-      "id": "card2",
+      "id": "card-2",
+      "type": "info",
+      "title": "🛍️ Your Daily Scenarios",
+      "description": "Enter 2-3 common situations you encounter (e.g., \"ordering at a café,\" \"asking for directions,\" \"grocery shopping\"). This will customize your vocabulary and phrases."
+    },
+    {
+      "id": "card-3",
+      "type": "info",
+      "title": "🎚️ Choose Your Communication Style",
+      "description": "Select a tone for generated sentences:\n- **Formal:** For professional or respectful interactions (e.g., with strangers/elders).\n- **Casual:** For friends or informal settings.\n- **Urgent:** For quick, clear requests (e.g., emergencies)."
+    },
+    {
+      "id": "card-4",
       "type": "aitool",
-      "buttonName": "段落提取器",
-      "promptText": "你是一个专业的文本处理助手。任务是从用户提供的完整文章中提取指定段落的文本。\n- 输入：完整文章来自 [INFO: 欢迎来到经济学人精读之旅！🌟]\n- 用户将通过动态选项选择段落编号（1-10），对应文章中的自然段。\n- 输出要求：仅返回所选段落的纯文本内容，不要添加任何额外解释或格式。\n- 注意：确保提取准确，段落以换行符为分隔。\n\n提取文章中的第 {{option}}。",
+      "buttonName": "Generate Scenario Vocabulary",
+      "promptText": "Act as a French language tutor for beginners. Using the scenarios provided in [INFO: 🛍️ Your Daily Scenarios], generate 8-10 essential vocabulary words or short phrases (in French) for each scenario. Include English translations and brief usage notes (e.g., \"C'est combien?\" → \"How much?\" – used when asking prices). Format the output in Markdown with clear headings for each scenario. Avoid tables.\n\nFocus on generating vocabulary related to {{option}} for the scenarios.",
       "aiModel": "deepseek",
       "generatedContent": "",
-      "options": ["段落1", "段落2", "段落3", "段落4", "段落5", "段落6", "段落7", "段落8", "段落9", "段落10"]
+      "options": ["Basic Nouns/Verbs", "Common Questions", "Polite Expressions"]
     },
     {
-      "id": "card3",
+      "id": "card-5",
       "type": "aitool",
-      "buttonName": "段落结构解析师",
-      "promptText": "你是一名经验丰富的英语写作分析师，擅长解析段落逻辑结构。\n- 任务：分析给定段落的组织结构（如论点-论据-结论、对比、因果、递进等）。\n- 输入段落： [REF: 段落提取器]\n- 输出要求：以Markdown格式简要描述段落结构，指出核心逻辑关系（例如：本段采用【论点-论据-结论】结构，首句提出论点，中间提供数据支撑，末句总结）。避免使用表格，保持清晰简洁。\n- 注意：聚焦整体结构，而非细节语法或词汇。",
-      "aiModel": "deepseek",
-      "generatedContent": ""
-    },
-    {
-      "id": "card4",
-      "type": "aitool",
-      "buttonName": "高级句式与语法解析器",
-      "promptText": "你是一名语法专家，专注于识别和解释英语高级句式及语法亮点。\n- 任务：逐句分析给定段落中的复杂句型（如倒装、虚拟语气、嵌套从句、强调句等）及其语法作用。\n- 输入段落： [REF: 段落提取器]\n- 输出要求：以Markdown格式列出每个句子，并附上句式类型和简明规则说明（例如：**句子1**: 【...】 → 使用虚拟语气，表示假设；**句子2**: 【...】 → 包含定语从句，修饰主语）。避免使用表格，确保解释通俗易懂。\n- 注意：不要重复段落结构分析，专注语法层面。",
-      "aiModel": "deepseek",
-      "generatedContent": ""
-    },
-    {
-      "id": "card5",
-      "type": "aitool",
-      "buttonName": "词组与搭配挖掘机",
-      "promptText": "你是一名英语词组和搭配收集专家，擅长提取高级表达。\n- 任务：从给定段落中找出所有值得学习的词组、固定搭配及惯用表达。\n- 输入段落： [REF: 段落提取器]\n- 输出要求：以Markdown格式列出每个词组/搭配，提供中文释义和1个典型用例（例句），并简要说明适用场景（如正式写作、口语等）。格式示例：\n  - **词组1**: 释义 - 用例 - 场景\n  - **词组2**: 释义 - 用例 - 场景\n- 注意：优先选择高频或高阶表达，避免过于基础的词汇。",
-      "aiModel": "deepseek",
-      "generatedContent": ""
-    },
-    {
-      "id": "card6",
-      "type": "aitool",
-      "buttonName": "词汇深度学习助手",
-      "promptText": "你是一名词汇教学专家，专注于深度学习高阶词汇。\n- 任务：筛选给定段落中的重点词汇（至少5个），提供详细解析。\n- 输入段落： [REF: 段落提取器]\n- 输出要求：以Markdown格式为每个词汇提供：\n  - 词汇（加粗）\n  - 释义（中英文）\n  - 同义词/反义词（可选）\n  - 1-2个例句\n  - 使用技巧（如常见搭配、易错点）\n  示例：\n  **词汇**: ameliorate\n  **释义**: 改善（improve）\n  **同义词**: improve, enhance\n  **反义词**: worsen\n  **例句**: The new policy aims to ameliorate living conditions.\n  **技巧**: 多用于正式语境，常与【conditions】、【situation】搭配。\n- 注意：避免使用表格，保持条目清晰。",
-      "aiModel": "deepseek",
-      "generatedContent": ""
-    },
-    {
-      "id": "card7",
-      "type": "aitool",
-      "buttonName": "综合练习生成器",
-      "promptText": "你是一名英语教育设计师，擅长生成针对性练习。\n- 任务：基于所学内容（段落结构、句式、词组、词汇）生成巩固练习。\n- 输入参考：\n  - 段落结构: [REF: 段落结构解析师]\n  - 句式解析: [REF: 高级句式与语法解析器]\n  - 词组搭配: [REF: 词组与搭配挖掘机]\n  - 词汇详解: [REF: 词汇深度学习助手]\n- 输出要求：根据用户选择的 {{option}} 生成3-5道练习题目（含答案或示例）。以Markdown格式输出，题目清晰编号。\n  示例（若选【句子改写】）：\n  1. 原句: ... → 要求: 使用虚拟语气改写。\n     答案: ...\n  2. ...\n- 注意：练习需贴合所学内容，难度适中。",
+      "buttonName": "Build Practical Sentences",
+      "promptText": "As a French tutor, use the vocabulary from [REF: Generate Scenario Vocabulary] and the tone from [INFO: 🎚️ Choose Your Communication Style] to create 3-4 simple, actionable sentences per scenario. Ensure sentences are practical for daily use (e.g., \"Je voudrais un café, s'il vous plaît\"). Include English translations and pronunciation tips (e.g., \"s'il vous plaît\" → \"see voo play\"). Output in Markdown with scenario headings.\n\nGenerate sentences specifically for making {{option}} in the given scenarios.",
       "aiModel": "deepseek",
       "generatedContent": "",
-      "options": ["句子改写", "填空练习", "写作提示"]
+      "options": ["Requests", "Questions", "Responses"]
     },
     {
-      "id": "card8",
+      "id": "card-6",
+      "type": "info",
+      "title": "💬 Practice Dialogue Prompt",
+      "description": "Based on your scenarios, here's a practice prompt:\n\"Imagine you're at a bakery. Ask for a croissant and confirm the price.\"\nTry responding in French!"
+    },
+    {
+      "id": "card-7",
       "type": "aitool",
-      "buttonName": "学习反馈与总结顾问",
-      "promptText": "你是一名学习辅导顾问，擅长汇总要点并提供复习建议。\n- 任务：总结本段落学习核心内容，并生成自我测试或复习计划。\n- 输入参考：\n  - 结构: [REF: 段落结构解析师]\n  - 句式: [REF: 高级句式与语法解析器]\n  - 词组: [REF: 词组与搭配挖掘机]\n  - 词汇: [REF: 词汇深度学习助手]\n- 输出要求：以Markdown格式输出：\n  1. **本段学习要点总结**（分点列出关键结构、句式、词组和词汇）\n  2. **自我测试建议**（如：尝试用所学词汇造句；回顾段落结构并复述）\n  3. **复习计划**（例如：次日复习词组，第三日练习句式）\n- 注意：保持鼓励语气，如【您已掌握...接下来建议...】。",
+      "buttonName": "Generate Model Dialogue",
+      "promptText": "As a French tutor, create a natural, short dialogue (2-3 exchanges) based on the prompt in [INFO: 💬 Practice Dialogue Prompt]. Use the tone from [INFO: 🎚️ Choose Your Communication Style] and incorporate relevant vocabulary from [REF: Generate Scenario Vocabulary]. Provide the dialogue in French with English translations below each line. Format in Markdown.",
       "aiModel": "deepseek",
       "generatedContent": ""
     },
     {
-      "id": "card9",
+      "id": "card-8",
       "type": "info",
-      "title": "恭喜完成！🎉",
-      "description": "您已成功完成本段精读学习！记得定期复习，并在实际写作中尝试应用所学内容。继续坚持，您的英语能力一定会大幅提升！如需分析新段落，请重新运行本列。"
+      "title": "✏️ Your Attempt",
+      "description": "Type your French response to the dialogue prompt here. Don't worry about mistakes—this is for practice!"
+    },
+    {
+      "id": "card-9",
+      "type": "aitool",
+      "buttonName": "Feedback on Your French",
+      "promptText": "As a supportive French tutor, compare the user's attempt in [INFO: ✏️ Your Attempt] with the model dialogue in [REF: Generate Model Dialogue]. Provide constructive feedback:\n- Highlight 1-2 strengths (e.g., good vocabulary choice).\n- Gently correct 1-2 errors (e.g., grammar, pronunciation tips).\n- Suggest a improvement tip.\nKeep the tone encouraging. Output in Markdown.",
+      "aiModel": "deepseek",
+      "generatedContent": ""
+    },
+    {
+      "id": "card-10",
+      "type": "info",
+      "title": "🌟 Progress & Next Steps",
+      "description": "Great job! You've:\n- Learned scenario-specific vocabulary and sentences.\n- Practiced a dialogue and received feedback.\nRevisit this workflow anytime to try new scenarios or tones! For deeper learning, duplicate this column and modify the scenarios in Card 2."
     }
   ]
 }

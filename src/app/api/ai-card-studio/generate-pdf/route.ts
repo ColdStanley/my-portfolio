@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import puppeteer from 'puppeteer'
+import { remark } from 'remark'
+import remarkBreaks from 'remark-breaks'
+import remarkGfm from 'remark-gfm'
+import remarkHtml from 'remark-html'
 
 interface GeneratePDFRequest {
   cardName: string
@@ -7,50 +11,24 @@ interface GeneratePDFRequest {
   generatedAt?: string
 }
 
-// Convert markdown formatting to HTML (borrowed logic from JD2CV, adapted for AI content)
-function convertMarkdownToHTML(text: string): string {
-  return text
-    // Convert **bold** to <strong>bold</strong>
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    // Convert *italic* to <em>italic</em>
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    // Convert line breaks to <br> tags
-    .replace(/\n/g, '<br>')
-    // Convert URLs to clickable links
-    .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #6366f1; text-decoration: underline;">$1</a>')
+// Convert markdown to HTML using the same processing pipeline as the frontend
+async function convertMarkdownToHTML(markdownContent: string): Promise<string> {
+  const result = await remark()
+    .use(remarkBreaks)
+    .use(remarkGfm)
+    .use(remarkHtml, { sanitize: false })
+    .process(markdownContent)
+  
+  return String(result)
 }
 
-// Split AI content into logical sections for better PDF layout
-function parseAIContentIntoSections(aiContent: string): string[] {
-  // Strategy 1: Split by double line breaks (paragraph separation)
-  let sections = aiContent.split(/\n\n+/)
-  
-  if (sections.length > 1) {
-    return sections
-      .map(section => section.trim())
-      .filter(section => section.length > 20) // Filter out very short fragments
-  }
-  
-  // Strategy 2: Split by single line breaks if no paragraph breaks found
-  sections = aiContent.split(/\n/)
-  
-  if (sections.length > 3) {
-    return sections
-      .map(section => section.trim())
-      .filter(section => section.length > 10)
-  }
-  
-  // Fallback: return as single section
-  return [aiContent]
-}
 
-function generateAICardHTML(data: GeneratePDFRequest): string {
+async function generateAICardHTML(data: GeneratePDFRequest): Promise<string> {
   const { cardName, aiContent, generatedAt } = data
   const timestamp = generatedAt || new Date().toLocaleString()
   
-  // Parse and format AI content
-  const contentSections = parseAIContentIntoSections(aiContent)
-  const formattedSections = contentSections.map(section => convertMarkdownToHTML(section))
+  // Convert entire markdown content to HTML in one go for better processing
+  const htmlContent = await convertMarkdownToHTML(aiContent)
 
   return `
 <!DOCTYPE html>
@@ -110,29 +88,180 @@ function generateAICardHTML(data: GeneratePDFRequest): string {
       line-height: 1.7;
     }
     
-    .content-wrapper strong {
+    /* Markdown styling to match frontend ReactMarkdown components */
+    .content-wrapper h1 {
+      font-size: 20px;
       font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 12px;
+      margin-top: 16px;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 4px;
+    }
+    
+    .content-wrapper h1:first-child {
+      margin-top: 0;
+    }
+    
+    .content-wrapper h2 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 8px;
+      margin-top: 12px;
+    }
+    
+    .content-wrapper h2:first-child {
+      margin-top: 0;
+    }
+    
+    .content-wrapper h3 {
+      font-size: 16px;
+      font-weight: 500;
+      color: #1f2937;
+      margin-bottom: 8px;
+      margin-top: 8px;
+    }
+    
+    .content-wrapper h3:first-child {
+      margin-top: 0;
+    }
+    
+    .content-wrapper h4 {
+      font-size: 14px;
+      font-weight: 500;
+      color: #1f2937;
+      margin-bottom: 4px;
+      margin-top: 8px;
+    }
+    
+    .content-wrapper h4:first-child {
+      margin-top: 0;
+    }
+    
+    .content-wrapper p {
+      color: #4b5563;
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+    
+    .content-wrapper ul, .content-wrapper ol {
+      margin-bottom: 12px;
+      color: #4b5563;
+      padding-left: 20px;
+    }
+    
+    .content-wrapper li {
+      margin-bottom: 4px;
+      line-height: 1.6;
+    }
+    
+    .content-wrapper code {
+      background: #f3f4f6;
+      color: #1f2937;
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 11px;
+    }
+    
+    .content-wrapper pre {
+      background: #f3f4f6;
+      border-radius: 8px;
+      padding: 12px;
+      overflow-x: auto;
+      border: 1px solid #e5e7eb;
+      margin: 12px 0;
+    }
+    
+    .content-wrapper pre code {
+      background: none;
+      padding: 0;
+      font-size: 11px;
+      color: #1f2937;
+    }
+    
+    .content-wrapper blockquote {
+      border-left: 4px solid #a855f7;
+      padding-left: 12px;
+      font-style: italic;
+      color: #4b5563;
+      margin-bottom: 8px;
+    }
+    
+    .content-wrapper strong {
+      font-weight: 600;
       color: #1f2937;
     }
     
     .content-wrapper em {
       font-style: italic;
-      color: #374151;
     }
     
     .content-wrapper a {
-      color: #6366f1;
+      color: #7c3aed;
       text-decoration: underline;
       word-break: break-word;
     }
     
-    .content-wrapper a:hover {
-      color: #4f46e5;
+    .content-wrapper hr {
+      border: none;
+      border-top: 1px solid #e5e7eb;
+      margin: 16px 0;
     }
     
-    .section-divider {
+    .content-wrapper table {
+      width: 100%;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin: 12px 0;
+      font-size: 11px;
+    }
+    
+    .content-wrapper thead {
+      background: #f9fafb;
+    }
+    
+    .content-wrapper th {
+      padding: 8px 12px;
+      text-align: left;
+      font-weight: 500;
+      color: #374151;
       border-bottom: 1px solid #e5e7eb;
-      margin: 20px 0;
+      font-size: 11px;
+    }
+    
+    .content-wrapper td {
+      padding: 8px 12px;
+      color: #4b5563;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: 11px;
+    }
+    
+    .content-wrapper tr:last-child td {
+      border-bottom: none;
+    }
+    
+    .content-wrapper del {
+      text-decoration: line-through;
+      color: #6b7280;
+    }
+    
+    .content-wrapper sup {
+      font-size: 9px;
+    }
+    
+    .content-wrapper sub {
+      font-size: 9px;
+    }
+    
+    .content-wrapper input[type="checkbox"] {
+      margin-right: 8px;
+      border-radius: 2px;
+      border: 1px solid #d1d5db;
+      color: #7c3aed;
     }
     
     .footer {
@@ -167,12 +296,7 @@ function generateAICardHTML(data: GeneratePDFRequest): string {
 
     <!-- AI Content -->
     <div class="content-wrapper">
-      ${formattedSections.map((section, index) => `
-        <div class="content-section">
-          ${section}
-          ${index < formattedSections.length - 1 ? '<div class="section-divider"></div>' : ''}
-        </div>
-      `).join('')}
+      ${htmlContent}
     </div>
 
     <!-- Footer -->
@@ -206,7 +330,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate HTML content
-    const htmlContent = generateAICardHTML(body)
+    const htmlContent = await generateAICardHTML(body)
 
     // Generate PDF using Puppeteer
     const browser = await puppeteer.launch({
@@ -242,7 +366,7 @@ export async function POST(request: NextRequest) {
     const filename = `${cleanCardName}_${timestamp}.pdf`
 
     // Return PDF as response
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(Buffer.from(pdfBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

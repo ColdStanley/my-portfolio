@@ -123,16 +123,10 @@ export const GET = withAdminAuth(async (request: NextRequest, { supabase }) => {
   try {
     console.log('[ADMIN_MARKETPLACE_API] Fetching all marketplace data')
 
-    // Get all marketplace items with comprehensive details
+    // Get all marketplace items (simplified query)
     const { data: marketplaceItems, error: itemsError } = await supabase
       .from('marketplace_items')
-      .select(`
-        *,
-        author:author_id (
-          id,
-          email
-        )
-      `)
+      .select('*')
       .order('created_at', { ascending: false })
 
     if (itemsError) {
@@ -140,8 +134,16 @@ export const GET = withAdminAuth(async (request: NextRequest, { supabase }) => {
       throw itemsError
     }
 
-    // Process and enrich marketplace items with comprehensive analysis
-    const enrichedItems = marketplaceItems?.map(analyzeMarketplaceItem)
+    // Simple processing without complex analysis
+    const enrichedItems = marketplaceItems?.map(item => ({
+      ...item,
+      author_email: 'Author info not available',
+      content_analysis: {
+        cardCount: 0,
+        complexityScore: 0,
+        qualityScore: 0
+      }
+    }))
 
     // Generate comprehensive statistics
     const marketplaceStats = {

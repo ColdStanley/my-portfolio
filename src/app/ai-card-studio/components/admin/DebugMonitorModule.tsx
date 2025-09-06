@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAdminAuth } from '../../hooks/useAdminAuth'
+import { useAdminPanel } from '../../hooks/useAdminPanel'
 
 /**
  * Production Debug Monitor Module - Real-Time System Monitoring
@@ -31,7 +31,7 @@ interface SystemLog {
 }
 
 export default function DebugMonitorModule() {
-  const { makeAdminRequest } = useAdminAuth()
+  const { makeAdminRequest } = useAdminPanel()
   const [logs, setLogs] = useState<SystemLog[]>([])
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics>({
     uptime: 'Loading...',
