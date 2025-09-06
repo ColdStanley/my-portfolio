@@ -29,41 +29,24 @@ export default function AICardStudioPage() {
     let mounted = true
 
     const initializeAuth = async () => {
+      // Ensure client-side execution only
+      if (typeof window === 'undefined') {
+        setLoading(false)
+        return
+      }
+
+      if (!mounted) return
+      
       try {
-        // Ensure client-side execution for session retrieval
-        if (typeof window === 'undefined') {
-          setLoading(false)
-          return
-        }
-        
-        // Get initial session with retry logic for production
-        let session = null
-        let error = null
-        
-        // Try to get session with timeout
-        try {
-          const result = await Promise.race([
-            supabase.auth.getSession(),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Session timeout')), 15000)
-            )
-          ]) as any
-          
-          session = result.data?.session
-          error = result.error
-        } catch (timeoutError) {
-          console.warn('Session fetch timed out, attempting auth state check')
-          // Fallback: check if user is already in auth state
-          const { data: { user } } = await supabase.auth.getUser()
-          if (user) {
-            session = { user }
-          }
-        }
+        // Non-blocking session check - don't await with timeout
+        const { data: { session }, error } = await supabase.auth.getSession()
         
         if (!mounted) return
         
         if (error) {
-          console.error('Auth session error:', error)
+          console.warn('Session error, showing auth UI:', error.message)
+          setUser(null)
+          actions.setUser(null)
           setLoading(false)
           return
         }
@@ -72,16 +55,21 @@ export default function AICardStudioPage() {
         setUser(currentUser)
         actions.setUser(currentUser)
         
+        // Only fetch workspace if user exists and not already initialized
         if (currentUser && !initializedRef.current) {
           initializedRef.current = true
-          await actions.fetchAndHandleWorkspace(currentUser.id)
+          // Non-blocking workspace fetch
+          actions.fetchAndHandleWorkspace(currentUser.id).catch(error => {
+            console.error('Workspace fetch failed:', error)
+            // Continue anyway with default workspace
+          })
         }
         
         setLoading(false)
       } catch (error) {
-        console.error('Auth initialization failed:', error)
+        console.warn('Auth initialization error:', error)
         if (mounted) {
-          // Set user to null instead of showing error for better UX
+          // Fail gracefully - show auth UI instead of hanging
           setUser(null)
           actions.setUser(null)
           setLoading(false)

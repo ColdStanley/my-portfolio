@@ -109,46 +109,12 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       set({ isLoading: true });
       
       try {
-        // Check session validity before database access
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session || !session.user) {
-          console.warn('No valid session found, using default workspace')
-          set({ 
-            canvases: defaultCanvases, 
-            activeCanvasId: defaultCanvases[0].id,
-            saveError: null,
-            isLoading: false,
-            isInitialLoad: false
-          });
-          return;
-        }
-        
-        // Retry logic for better Vercel reliability
-        const fetchWithRetry = async (retries = 2): Promise<any> => {
-          for (let i = 0; i < retries; i++) {
-            try {
-              const fetchWithTimeout = Promise.race([
-                supabase
-                  .from('ai_card_studios')
-                  .select('data')
-                  .eq('user_id', userId)
-                  .single(),
-                new Promise((_, reject) =>
-                  setTimeout(() => reject(new Error('Database timeout')), 15000)
-                )
-              ]) as Promise<any>;
-
-              return await fetchWithTimeout;
-            } catch (error: any) {
-              console.warn(`Database fetch attempt ${i + 1} failed:`, error.message);
-              if (i === retries - 1) throw error;
-              // Shorter retry delay for production
-              await new Promise(resolve => setTimeout(resolve, 1000 + (i * 500)));
-            }
-          }
-        };
-
-        const { data, error } = await fetchWithRetry();
+        // Direct database query - session already validated by caller
+        const { data, error } = await supabase
+          .from('ai_card_studios')
+          .select('data')
+          .eq('user_id', userId)
+          .single();
 
         if (error && error.code === 'PGRST116') {
           // No existing workspace, create new one with timeout
@@ -157,41 +123,25 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
             activeCanvasId: defaultCanvases[0].id
           };
           
-          const insertWithTimeout = Promise.race([
-            supabase
-              .from('ai_card_studios')
-              .insert({ user_id: userId, data: workspaceData })
-              .select('data')
-              .single(),
-            new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('Insert timeout')), 25000)
-            )
-          ]) as Promise<any>;
-
-          try {
-            const { data: newWorkspace, error: insertError } = await insertWithTimeout;
+          const { data: newWorkspace, error: insertError } = await supabase
+            .from('ai_card_studios')
+            .insert({ user_id: userId, data: workspaceData })
+            .select('data')
+            .single()
             
-            if (insertError) {
-              console.error('Error creating new workspace:', insertError.message);
-              set({ 
-                canvases: defaultCanvases, 
-                activeCanvasId: defaultCanvases[0].id,
-                saveError: 'Failed to create workspace' 
-              });
-            } else {
-              const workspaceData = newWorkspace.data;
-              set({ 
-                canvases: workspaceData.canvases as Canvas[], 
-                activeCanvasId: workspaceData.activeCanvasId,
-                saveError: null 
-              });
-            }
-          } catch (insertErr) {
-            console.error('Insert operation timeout:', insertErr);
+          if (insertError) {
+            console.error('Error creating new workspace:', insertError.message);
             set({ 
               canvases: defaultCanvases, 
               activeCanvasId: defaultCanvases[0].id,
-              saveError: 'Database connection slow, using defaults' 
+              saveError: 'Failed to create workspace' 
+            });
+          } else {
+            const workspaceData = newWorkspace.data;
+            set({ 
+              canvases: workspaceData.canvases as Canvas[], 
+              activeCanvasId: workspaceData.activeCanvasId,
+              saveError: null 
             });
           }
         } else if (error && error.message !== 'Database timeout') {

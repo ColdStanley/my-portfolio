@@ -11,7 +11,7 @@ export const supabase = createClientComponentClient({
       // Critical: Enable session persistence for production
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: true,
+      // Remove detectSessionInUrl - not needed for email/password auth
       storageKey: 'sb-ai-card-studio-auth-token',
     },
     global: {
