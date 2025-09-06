@@ -109,19 +109,32 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       set({ isLoading: true });
       
       try {
-        // Add timeout to database operations
-        const fetchWithTimeout = Promise.race([
-          supabase
-            .from('ai_card_studios')
-            .select('data')
-            .eq('user_id', userId)
-            .single(),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Database timeout')), 15000)
-          )
-        ]) as Promise<any>;
+        // Retry logic for better Vercel reliability
+        const fetchWithRetry = async (retries = 3): Promise<any> => {
+          for (let i = 0; i < retries; i++) {
+            try {
+              const fetchWithTimeout = Promise.race([
+                supabase
+                  .from('ai_card_studios')
+                  .select('data')
+                  .eq('user_id', userId)
+                  .single(),
+                new Promise((_, reject) =>
+                  setTimeout(() => reject(new Error('Database timeout')), 25000)
+                )
+              ]) as Promise<any>;
 
-        const { data, error } = await fetchWithTimeout;
+              return await fetchWithTimeout;
+            } catch (error: any) {
+              console.warn(`Database fetch attempt ${i + 1} failed:`, error.message);
+              if (i === retries - 1) throw error;
+              // Wait before retry with exponential backoff
+              await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
+            }
+          }
+        };
+
+        const { data, error } = await fetchWithRetry();
 
         if (error && error.code === 'PGRST116') {
           // No existing workspace, create new one with timeout
@@ -137,7 +150,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
               .select('data')
               .single(),
             new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('Insert timeout')), 15000)
+              setTimeout(() => reject(new Error('Insert timeout')), 25000)
             )
           ]) as Promise<any>;
 

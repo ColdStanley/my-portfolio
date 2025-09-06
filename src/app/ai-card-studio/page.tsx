@@ -30,11 +30,11 @@ export default function AICardStudioPage() {
 
     const initializeAuth = async () => {
       try {
-        // Get initial session with timeout
+        // Get initial session with extended timeout for Vercel
         const { data: { session }, error } = await Promise.race([
           supabase.auth.getSession(),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Session timeout')), 10000)
+            setTimeout(() => reject(new Error('Session timeout')), 20000)
           )
         ]) as any
         
@@ -59,6 +59,9 @@ export default function AICardStudioPage() {
       } catch (error) {
         console.error('Auth initialization failed:', error)
         if (mounted) {
+          // Set user to null instead of showing error for better UX
+          setUser(null)
+          actions.setUser(null)
           setLoading(false)
         }
       }
