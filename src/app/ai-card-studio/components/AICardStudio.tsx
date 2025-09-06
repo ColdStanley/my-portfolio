@@ -6,11 +6,14 @@ import { Column, ColumnCard } from '../types'
 import { generateUniqueButtonName, generateUniqueTitle } from '../utils/cardUtils'
 import ColumnComponent from './Column'
 import CanvasSettingsModal from './CanvasSettingsModal'
+import DeveloperPanel from './DeveloperPanel'
 import { useWorkspaceStore } from '../store/workspaceStore'
+import { useAdminAuth } from '../hooks/useAdminAuth'
 
 export default function AICardStudio() {
   const { canvases, activeCanvasId, isLoading, saveError, columnExecutionStatus, actions } = useWorkspaceStore()
   const { updateColumns, updateCanvases, clearSaveError, saveWorkspace, runColumnWorkflow, addCanvas, setActiveCanvas } = actions
+  const { isAdmin } = useAdminAuth()
   
   // Get active canvas and its columns
   const activeCanvas = canvases.find(canvas => canvas.id === activeCanvasId)
@@ -34,6 +37,9 @@ export default function AICardStudio() {
   
   // Import functionality
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Developer Panel State - God Mode Access
+  const [developerPanelOpen, setDeveloperPanelOpen] = useState(false)
 
   // Show loading while data is being fetched
   if (isLoading) {
@@ -282,6 +288,29 @@ export default function AICardStudio() {
     // Any time canvases change, mark as unsaved
     setHasUnsavedChanges(true)
   }, [canvases])
+
+  // Developer Panel Keyboard Shortcut - God Mode Access
+  useEffect(() => {
+    const handleKeyboardShortcut = (event: KeyboardEvent) => {
+      // Check for Ctrl+Shift+D combination
+      if (event.ctrlKey && event.shiftKey && event.key === 'D') {
+        event.preventDefault()
+        
+        // Only allow if user has admin privileges
+        if (isAdmin) {
+          console.log('[DEVELOPER_PANEL] God Mode activated via keyboard shortcut')
+          setDeveloperPanelOpen(prev => !prev)
+        } else {
+          console.warn('[DEVELOPER_PANEL] Access denied - insufficient privileges')
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyboardShortcut)
+    return () => {
+      document.removeEventListener('keydown', handleKeyboardShortcut)
+    }
+  }, [isAdmin])
 
   return (
     <>
@@ -635,6 +664,14 @@ export default function AICardStudio() {
         onClose={handleSettingsClose}
         canvasId={settingsCanvasId}
       />
+
+      {/* Developer Panel - God Mode Access */}
+      {isAdmin && (
+        <DeveloperPanel
+          isVisible={developerPanelOpen}
+          onClose={() => setDeveloperPanelOpen(false)}
+        />
+      )}
 
     </div>
     </>
