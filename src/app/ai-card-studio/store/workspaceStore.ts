@@ -26,6 +26,7 @@ interface WorkspaceState {
     saveWorkspace: () => Promise<void>;
     setUser: (user: User | null) => void;
     clearSaveError: () => void;
+    resetWorkspace: () => void;
     
     // Fine-grained card update actions
     updateCardTitle: (cardId: string, title: string) => void;
@@ -104,6 +105,13 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     setUser: (user) => set({ user }),
 
     clearSaveError: () => set({ saveError: null }),
+
+    resetWorkspace: () => set({
+      canvases: [],
+      activeCanvasId: '',
+      isLoading: false,  // ⚠️ 最关键
+      saveError: null
+    }),
 
     fetchAndHandleWorkspace: async (userId) => {
       set({ isLoading: true });

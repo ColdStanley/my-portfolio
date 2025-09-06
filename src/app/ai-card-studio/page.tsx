@@ -47,6 +47,7 @@ export default function AICardStudioPage() {
           console.warn('Session error, showing auth UI:', error.message)
           setUser(null)
           actions.setUser(null)
+          actions.resetWorkspace()  // ⚠️ 重置 isLoading
           setLoading(false)
           return
         }
@@ -63,6 +64,9 @@ export default function AICardStudioPage() {
             console.error('Workspace fetch failed:', error)
             // Continue anyway with default workspace
           })
+        } else if (!currentUser) {
+          // ⚠️ 关键修复：未登录用户重置工作区状态
+          actions.resetWorkspace()
         }
         
         setLoading(false)
@@ -72,6 +76,7 @@ export default function AICardStudioPage() {
           // Fail gracefully - show auth UI instead of hanging
           setUser(null)
           actions.setUser(null)
+          actions.resetWorkspace()  // ⚠️ 重置 isLoading
           setLoading(false)
         }
       }
