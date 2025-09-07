@@ -62,17 +62,37 @@ export default function AICardStudioPage() {
         
         if (!mounted) return
         
-        if (error || (session && !session.user)) {
-          console.warn('Session invalid, clearing storage:', error?.message || 'No user in session')
+        if (error || !session) {
+          console.warn('Session invalid, clearing all tokens:', error?.message || 'No session found')
           
-          // 🔧 强制清理坏 token
+          // 🔧 强制清理所有可能的坏 token
           try {
+            // Clear SDK internal state first
             await supabase.auth.signOut()
-            localStorage.removeItem('sb-ai-card-studio-auth-token')
-            // Clear all supabase related storage
+            
+            // Clear all possible token storage keys
+            const tokensToRemove = [
+              'sb-ai-card-studio-auth-token',
+              'supabase.auth.token',
+              'sb-' + (process.env.NEXT_PUBLIC_SUPABASE_URL?.split('//')[1]?.split('.')[0] || '') + '-auth-token'
+            ]
+            
+            tokensToRemove.forEach(key => {
+              if (key) localStorage.removeItem(key)
+            })
+            
+            // Comprehensive cleanup of all supabase storage
             Object.keys(localStorage).forEach(key => {
-              if (key.startsWith('sb-') || key.includes('supabase')) {
+              if (key.startsWith('sb-') || key.includes('supabase') || key.includes('auth')) {
+                console.log('Removing token:', key)
                 localStorage.removeItem(key)
+              }
+            })
+            
+            // Also clear sessionStorage
+            Object.keys(sessionStorage).forEach(key => {
+              if (key.startsWith('sb-') || key.includes('supabase') || key.includes('auth')) {
+                sessionStorage.removeItem(key)
               }
             })
           } catch (cleanupError) {
