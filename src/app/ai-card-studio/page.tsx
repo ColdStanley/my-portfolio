@@ -37,17 +37,51 @@ export default function AICardStudioPage() {
 
       if (!mounted) return
       
+      // 🔧 Emergency timeout - never let initialization hang forever
+      const emergencyTimeout = setTimeout(() => {
+        if (mounted) {
+          console.warn('Auth initialization taking too long, forcing fallback')
+          setUser(null)
+          actions.setUser(null)
+          actions.resetWorkspace()
+          setLoading(false)
+        }
+      }, 10000) // 10 seconds max
+      
       try {
-        // Non-blocking session check - don't await with timeout
-        const { data: { session }, error } = await supabase.auth.getSession()
+        // Session check with reasonable timeout
+        const sessionPromise = supabase.auth.getSession()
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session check timeout')), 5000)
+        )
+        
+        const { data: { session }, error } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]) as any
         
         if (!mounted) return
         
-        if (error) {
-          console.warn('Session error, showing auth UI:', error.message)
+        if (error || (session && !session.user)) {
+          console.warn('Session invalid, clearing storage:', error?.message || 'No user in session')
+          
+          // 🔧 强制清理坏 token
+          try {
+            await supabase.auth.signOut()
+            localStorage.removeItem('sb-ai-card-studio-auth-token')
+            // Clear all supabase related storage
+            Object.keys(localStorage).forEach(key => {
+              if (key.startsWith('sb-') || key.includes('supabase')) {
+                localStorage.removeItem(key)
+              }
+            })
+          } catch (cleanupError) {
+            console.warn('Storage cleanup failed:', cleanupError)
+          }
+          
           setUser(null)
           actions.setUser(null)
-          actions.resetWorkspace()  // ⚠️ 重置 isLoading
+          actions.resetWorkspace()
           setLoading(false)
           return
         }
@@ -66,17 +100,33 @@ export default function AICardStudioPage() {
           })
         } else if (!currentUser) {
           // ⚠️ 关键修复：未登录用户重置工作区状态
+          console.log('No current user, resetting workspace')
           actions.resetWorkspace()
         }
         
+        clearTimeout(emergencyTimeout)
         setLoading(false)
       } catch (error) {
-        console.warn('Auth initialization error:', error)
+        console.error('Auth initialization error:', error)
+        clearTimeout(emergencyTimeout)
         if (mounted) {
+          // 🔧 Clean up potentially corrupted storage on error
+          try {
+            await supabase.auth.signOut()
+            localStorage.removeItem('sb-ai-card-studio-auth-token')
+            Object.keys(localStorage).forEach(key => {
+              if (key.startsWith('sb-') || key.includes('supabase')) {
+                localStorage.removeItem(key)
+              }
+            })
+          } catch (cleanupError) {
+            console.warn('Error cleanup failed:', cleanupError)
+          }
+          
           // Fail gracefully - show auth UI instead of hanging
           setUser(null)
           actions.setUser(null)
-          actions.resetWorkspace()  // ⚠️ 重置 isLoading
+          actions.resetWorkspace()
           setLoading(false)
         }
       }
