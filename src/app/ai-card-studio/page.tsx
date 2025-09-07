@@ -68,6 +68,24 @@ export default function AICardStudioPage() {
         }
       }
 
+      // 🎯 统一 fallback 处理函数
+      const handleSessionFailure = async (reason: string) => {
+        if (!mounted) return
+        
+        console.warn(`Session failure (${reason}), falling back to Auth UI`)
+        
+        // 统一的 fallback 处理
+        try {
+          await clearBadTokens()
+          actions.resetWorkspace()
+          setUser(null)
+          actions.setUser(null)
+          setShowAuthUI(true)
+        } catch (error) {
+          console.error('Fallback cleanup failed:', error)
+        }
+      }
+
       // 📡 监听 auth 状态变化
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (!mounted) return
@@ -89,27 +107,27 @@ export default function AICardStudioPage() {
             }
           }
         } else {
-          console.warn('No valid session, fallback to Auth UI')
-          
-          // Clear bad tokens to avoid death loop
-          await clearBadTokens()
-          
-          setUser(null)
-          actions.setUser(null)
-          actions.resetWorkspace()
-          setShowAuthUI(true)
+          await handleSessionFailure('auth state change')
         }
       })
 
-      // 🎯 非阻塞地尝试恢复一次 session
-      supabase.auth.getSession().then(({ data: { session }, error }) => {
-        if (!mounted) return
-        
-        if (error || !session) {
-          console.warn('Session invalid on init, showing Auth UI:', error?.message)
-          setShowAuthUI(true)
-          actions.resetWorkspace()
-        } else {
+      // 🎯 非阻塞 Session 恢复 + 超时保护
+      const sessionTimeout = setTimeout(() => {
+        handleSessionFailure('timeout')
+      }, 5000) // 5秒超时保护
+
+      // 非阻塞 getSession 调用
+      supabase.auth.getSession()
+        .then(({ data: { session }, error }) => {
+          clearTimeout(sessionTimeout)
+          if (!mounted) return
+          
+          if (error || !session) {
+            handleSessionFailure(error?.message || 'no session')
+            return
+          }
+          
+          // 成功恢复 session
           console.log('Session restored:', session.user.email)
           setUser(session.user)
           actions.setUser(session.user)
@@ -121,24 +139,21 @@ export default function AICardStudioPage() {
               console.error('Workspace fetch failed:', error)
             })
           }
-        }
-      }).catch((error) => {
-        console.error('Session check failed:', error)
-        if (mounted) {
-          clearBadTokens()
-          setShowAuthUI(true)
-          actions.resetWorkspace()
-        }
-      })
+        })
+        .catch((error) => {
+          clearTimeout(sessionTimeout)
+          handleSessionFailure(`exception: ${error.message}`)
+        })
 
-      return subscription
+      return { subscription, sessionTimeout }
     }
 
-    const subscription = initializeAuth()
+    const { subscription, sessionTimeout } = initializeAuth()
 
     return () => {
       mounted = false
       subscription?.unsubscribe()
+      clearTimeout(sessionTimeout)  // 🔧 清理超时器
       initializedRef.current = false
     }
   }, [])
