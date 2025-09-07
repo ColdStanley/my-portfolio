@@ -14,9 +14,8 @@ export default function AICardStudioPage() {
   const [showAuthUI, setShowAuthUI] = useState(true)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
-  const { isLoading: workspaceLoading, actions } = useWorkspaceStore()
+  const { isLoading: workspaceLoading, canvases, saveError, actions } = useWorkspaceStore()
   const initializedRef = useRef(false)
-  const sessionCacheRef = useRef<{ user: User; timestamp: number } | null>(null)
   const visibilityRef = useRef(true) // Track page visibility
   const sessionTimeoutRef = useRef<NodeJS.Timeout | null>(null) // Track session timeout
 
@@ -53,14 +52,8 @@ export default function AICardStudioPage() {
       visibilityRef.current = !document.hidden
       if (visibilityRef.current) {
         console.log('👀 Page became visible')
-        // 页面重新可见时，检查session缓存是否仍然有效
-        const cache = sessionCacheRef.current
-        if (cache && Date.now() - cache.timestamp > 300000) { // 5分钟后过期
-          console.log('🔄 Session cache expired, clearing...')
-          sessionCacheRef.current = null
-        }
         
-        // 🎯 精准修复：如果有悬挂的session超时器，立即触发检查
+        // 🎯 智能恢复：处理悬挂的session和workspace loading
         if (sessionTimeoutRef.current && !user) {
           console.log('🔧 Clearing hanging session timeout and retrying...')
           clearTimeout(sessionTimeoutRef.current)
@@ -69,12 +62,53 @@ export default function AICardStudioPage() {
           supabase.auth.getSession().then(({ data: { session } }) => {
             if (session?.user) {
               console.log('✅ Session recovered after visibility change')
-              // 这里会触发onAuthStateChange，不需要手动设置状态
+              
+              // 🔄 统一恢复入口 - 缓存优先策略
+              console.log('🔄 Recovering workspace after session recovery...')
+              
+              // 先加载缓存，立即显示数据
+              const hasCache = actions.loadFromCache()
+              console.log(hasCache ? '✅ Cache loaded successfully' : '⚠️ No cache available')
+              
+              // 🕐 延迟500ms再发请求
+              setTimeout(() => {
+                console.log('🔄 Starting delayed session recovery refresh...')
+                actions.fetchAndHandleWorkspace(session.user.id).catch(error => {
+                  if (error.message?.includes('AbortError')) {
+                    console.log('🚫 Background refresh cancelled')
+                  } else {
+                    console.error('Background workspace refresh failed:', error)
+                  }
+                })
+              }, 500)
             }
           })
         }
+        
+        // 🔧 统一恢复入口 - 页面可见时处理workspace问题
+        if (user) {
+          console.log('🔄 Page became visible, recovering workspace...')
+          
+          // 先加载缓存，立即显示数据
+          const hasCache = actions.loadFromCache()
+          console.log(hasCache ? '✅ Cache loaded successfully' : '⚠️ No cache available')
+          
+          // 🕐 延迟500ms再发请求，给浏览器调度恢复的时间
+          setTimeout(() => {
+            console.log('🔄 Starting delayed workspace refresh...')
+            actions.fetchAndHandleWorkspace(user.id).catch(error => {
+              if (error.message?.includes('AbortError')) {
+                console.log('🚫 Background refresh cancelled')
+              } else {
+                console.error('Background workspace refresh failed:', error)
+              }
+            })
+          }, 500)
+        }
       } else {
-        console.log('🙈 Page became hidden')
+        console.log('🙈 Page became hidden, canceling requests...')
+        // 🚫 页面隐藏时取消当前请求
+        actions.cancelCurrentRequest()
       }
     }
 
@@ -94,30 +128,7 @@ export default function AICardStudioPage() {
         return
       }
 
-      // 🎯 检查session缓存，避免不必要的闪烁
-      const checkSessionCache = () => {
-        const cache = sessionCacheRef.current
-        if (cache && Date.now() - cache.timestamp < 30000) { // 30秒内的缓存有效
-          console.log('🎯 Using cached session for:', cache.user.email)
-          setUser(cache.user)
-          actions.setUser(cache.user)
-          setShowAuthUI(false)
-          
-          if (!initializedRef.current) {
-            initializedRef.current = true
-            actions.fetchAndHandleWorkspace(cache.user.id).catch(error => {
-              console.error('Cached workspace fetch failed:', error)
-            })
-          }
-          return true
-        }
-        return false
-      }
-
-      // 如果有有效缓存，优先使用
-      if (checkSessionCache()) {
-        return { subscription: null, sessionTimeout: null }
-      }
+      // 🎯 简化：让Supabase SDK处理session持久化，移除复杂缓存逻辑
 
       // 清理坏 token 的工具函数
       const clearBadTokens = async () => {
@@ -160,8 +171,6 @@ export default function AICardStudioPage() {
         
         // 统一的 fallback 处理
         try {
-          // 🎯 清理session缓存
-          sessionCacheRef.current = null
           // 🎯 清理recent session标记
           localStorage.removeItem('ai-card-studio-recent-session')
           
@@ -190,12 +199,6 @@ export default function AICardStudioPage() {
           console.log('👤 User authenticated:', session.user.email)
           console.log('🆔 User ID:', session.user.id)
           
-          // 🎯 更新session缓存
-          sessionCacheRef.current = {
-            user: session.user,
-            timestamp: Date.now()
-          }
-          
           // 🎯 设置recent session标记，避免刷新时闪烁
           localStorage.setItem('ai-card-studio-recent-session', Date.now().toString())
           
@@ -203,40 +206,41 @@ export default function AICardStudioPage() {
           actions.setUser(session.user)
           setShowAuthUI(false)
           
-          // 🎯 确保 workspace 初始化，特别是登录事件
+          // 🎯 统一恢复入口 - 登录事件处理
           if (event === 'SIGNED_IN' || !initializedRef.current) {
-            console.log('🚀 Initializing workspace for user:', session.user.id)
+            console.log('🚀 Initializing workspace for user:', session.user.id, { event })
             initializedRef.current = true
             
-            // 重置 workspace loading 状态，防止卡死
-            actions.resetWorkspace()
+            // 🔧 缓存优先策略：先加载缓存，再后台刷新
+            const hasCache = actions.loadFromCache()
+            console.log(hasCache ? '💾 Cache loaded on sign in' : '🔄 No cache, fetching from network')
             
-            try {
-              await actions.fetchAndHandleWorkspace(session.user.id)
-              console.log('✅ Workspace initialized successfully')
-            } catch (error) {
-              console.error('❌ Workspace fetch failed:', error)
-              // 🔧 兜底：即使失败也要停止 loading
-              actions.resetWorkspace()
-            }
+            // 后台刷新最新数据
+            setTimeout(() => {
+              actions.fetchAndHandleWorkspace(session.user.id).catch(error => {
+                if (error.message?.includes('AbortError')) {
+                  console.log('🚫 Background refresh cancelled')
+                } else {
+                  console.error('Background workspace refresh failed:', error)
+                }
+              })
+            }, hasCache ? 500 : 0) // 有缓存时延迟，无缓存时立即
           } else {
-            console.log('⏭️ Skipping workspace fetch (already initialized)')
+            console.log('⏭️ User session updated, workspace already initialized')
           }
         } else {
           console.log('🚪 User signed out or no session')
-          // 🎯 清理session缓存
-          sessionCacheRef.current = null
-          // 🎯 清理recent session标记
+          // 🎯 清理recent session标记  
           localStorage.removeItem('ai-card-studio-recent-session')
           await handleSessionFailure('auth state change - no session')
         }
       })
 
-      // 🎯 非阻塞 Session 恢复 + 超时保护
+      // 🎯 非阻塞 Session 恢复 + 超时保护 - 与workspace重试机制协调
       const sessionTimeout = setTimeout(() => {
         sessionTimeoutRef.current = null
-        handleSessionFailure('timeout')
-      }, 15000) // 15秒超时保护，给session恢复更多时间
+        handleSessionFailure('session timeout')
+      }, 20000) // 20秒超时，给workspace重试机制留出时间
       
       // 记录超时器引用，用于页面可见性恢复
       sessionTimeoutRef.current = sessionTimeout
@@ -256,12 +260,6 @@ export default function AICardStudioPage() {
           // 成功恢复 session
           console.log('Session restored:', session.user.email)
           
-          // 🎯 更新session缓存
-          sessionCacheRef.current = {
-            user: session.user,
-            timestamp: Date.now()
-          }
-          
           // 🎯 设置recent session标记，避免刷新时闪烁
           localStorage.setItem('ai-card-studio-recent-session', Date.now().toString())
           
@@ -271,9 +269,22 @@ export default function AICardStudioPage() {
           
           if (!initializedRef.current) {
             initializedRef.current = true
-            actions.fetchAndHandleWorkspace(session.user.id).catch(error => {
-              console.error('Workspace fetch failed:', error)
-            })
+            
+            // Session恢复：缓存优先策略
+            const hasCache = actions.loadFromCache()
+            console.log(hasCache ? '💾 Cache loaded on session recovery' : '🔄 No cache, fetching from network')
+            
+            // 🕐 延迟500ms后台刷新最新数据
+            setTimeout(() => {
+              console.log('🔄 Starting delayed getSession refresh...')
+              actions.fetchAndHandleWorkspace(session.user.id).catch(error => {
+                if (error.message?.includes('AbortError')) {
+                  console.log('🚫 Background refresh cancelled')
+                } else {
+                  console.error('Background workspace fetch failed:', error)
+                }
+              })
+            }, 500)
           }
         })
         .catch((error) => {
@@ -316,8 +327,7 @@ export default function AICardStudioPage() {
         alert('Sign out failed: ' + error.message)
       } else {
         console.log('Sign out successful')
-        // 🎯 清理所有缓存和标记
-        sessionCacheRef.current = null
+        // 🎯 清理recent session标记
         localStorage.removeItem('ai-card-studio-recent-session')
         
         // Reset user state immediately

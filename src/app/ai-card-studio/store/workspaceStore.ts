@@ -12,8 +12,12 @@ interface WorkspaceState {
   isInitialLoad: boolean; // 避免竞态条件的标志
   saveError: string | null;
   columnExecutionStatus: { [columnId: string]: boolean }; // Track column execution status
+  currentAbortController: AbortController | null; // 管理请求取消
   actions: {
-    fetchAndHandleWorkspace: (userId: string) => Promise<void>;
+    fetchAndHandleWorkspace: (userId: string, abortSignal?: AbortSignal) => Promise<void>;
+    cancelCurrentRequest: () => void;
+    cleanAllAIReplies: () => Promise<void>;
+    loadFromCache: () => boolean;
     updateCanvases: (updater: (prev: Canvas[]) => Canvas[]) => void;
     updateColumns: (updater: (prev: Column[]) => Column[]) => void; // Helper for backward compatibility
     moveColumn: (columnId: string, direction: 'left' | 'right') => void;
@@ -92,136 +96,410 @@ const defaultCanvases: Canvas[] = [
 
 // Manual save only - no debounce
 
+// 🔧 确保AI工具卡片有正确的初始字段
+const ensureAIToolCardFields = (card: any) => {
+  if (card.type === 'aitool') {
+    return {
+      ...card,
+      generatedContent: '',  // 始终为空字符串
+      isGenerating: false,   // 初始化为false
+      // 其他字段保持原样
+    }
+  }
+  return card
+}
+
+// 🔧 清理并初始化canvas数据
+const normalizeCanvases = (canvases: Canvas[]) => {
+  return canvases.map(canvas => ({
+    ...canvas,
+    columns: canvas.columns.map(col => ({
+      ...col,
+      cards: col.cards.map(ensureAIToolCardFields)
+    }))
+  }))
+}
+
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   canvases: [],
   activeCanvasId: '',
   user: null,
-  isLoading: true,
+  isLoading: false, // 🔧 初始不loading，缓存优先策略
   isInitialLoad: true,
   saveError: null,
   columnExecutionStatus: {},
+  currentAbortController: null,
 
   actions: {
     setUser: (user) => set({ user }),
 
     clearSaveError: () => set({ saveError: null }),
 
+    // 🚫 取消当前请求
+    cancelCurrentRequest: () => {
+      const { currentAbortController } = get()
+      if (currentAbortController) {
+        console.log('🚫 Canceling current workspace request')
+        currentAbortController.abort()
+        set({ 
+          currentAbortController: null,
+          isLoading: false 
+        })
+      }
+    },
+
+    // 🧹 清理所有用户数据中的AI回复（一次性运行）
+    cleanAllAIReplies: async () => {
+      console.log('🧹 Starting to clean all AI replies from database...')
+      
+      try {
+        // 获取所有用户数据
+        const { data: allWorkspaces, error: fetchError } = await supabase
+          .from('ai_card_studios')
+          .select('user_id, data');
+
+        if (fetchError) {
+          console.error('Error fetching workspaces:', fetchError)
+          return
+        }
+
+        console.log(`Found ${allWorkspaces?.length || 0} workspaces to clean`)
+
+        if (!allWorkspaces || allWorkspaces.length === 0) {
+          console.log('No workspaces found')
+          return
+        }
+
+        // 清理每个workspace
+        for (const workspace of allWorkspaces) {
+          const { user_id, data } = workspace
+          
+          if (!data || !data.canvases) {
+            console.log(`Skipping user ${user_id} - no canvases data`)
+            continue
+          }
+
+          // 清理AI回复
+          const cleanCanvases = data.canvases.map((canvas: any) => ({
+            ...canvas,
+            columns: canvas.columns.map((col: any) => ({
+              ...col,
+              cards: col.cards.map((card: any) => {
+                if (card.type === 'aitool') {
+                  const { generatedContent, isGenerating, ...cleanCard } = card
+                  console.log(`Cleaned AI reply from card ${card.id || 'unknown'}`)
+                  return cleanCard
+                }
+                return card
+              })
+            }))
+          }))
+
+          const cleanData = {
+            canvases: cleanCanvases,
+            activeCanvasId: data.activeCanvasId
+          }
+
+          // 更新数据库
+          const { error: updateError } = await supabase
+            .from('ai_card_studios')
+            .update({ data: cleanData })
+            .eq('user_id', user_id)
+
+          if (updateError) {
+            console.error(`Error updating user ${user_id}:`, updateError)
+          } else {
+            console.log(`✅ Cleaned workspace for user ${user_id}`)
+          }
+        }
+
+        console.log('🎉 All workspaces cleaned successfully!')
+        
+      } catch (error) {
+        console.error('Error during cleaning process:', error)
+      }
+    },
+
     resetWorkspace: () => set({
       canvases: [],
       activeCanvasId: '',
       isLoading: false,  // ⚠️ 最关键
-      saveError: null
+      saveError: null,
+      currentAbortController: null
     }),
 
-    fetchAndHandleWorkspace: async (userId) => {
+    // 💾 从缓存加载workspace数据
+    loadFromCache: () => {
+      try {
+        const cachedData = localStorage.getItem('workspace-cache')
+        if (cachedData) {
+          const workspaceData = JSON.parse(cachedData)
+          if (workspaceData.canvases && workspaceData.activeCanvasId) {
+            console.log('💾 Loading workspace from cache', {
+              canvasCount: workspaceData.canvases.length,
+              activeCanvasId: workspaceData.activeCanvasId
+            })
+            
+            // 🔧 确保AI字段正确初始化
+            const normalizedCanvases = normalizeCanvases(workspaceData.canvases as Canvas[])
+            
+            set({
+              canvases: normalizedCanvases,
+              activeCanvasId: workspaceData.activeCanvasId,
+              isLoading: false,
+              saveError: null
+            })
+            return true // 成功加载
+          }
+        }
+        console.log('💾 No valid cache found')
+        return false // 没有缓存或无效
+      } catch (e) {
+        console.warn('⚠️ Failed to load from cache:', e)
+        return false
+      }
+    },
+
+
+    fetchAndHandleWorkspace: async (userId, externalAbortSignal) => {
       console.log('🔄 fetchAndHandleWorkspace called for userId:', userId)
-      set({ isLoading: true });
       
-      // 🔧 超时保护 - 确保永远不会无限卡死
-      const workspaceTimeout = setTimeout(() => {
-        console.warn('⚠️ Workspace fetch timeout, using defaults')
+      // 🔧 页面可见性检查 - 只在页面可见时发请求
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
+        console.log('📱 Page is hidden, skipping fetch to avoid timeout')
+        return
+      }
+      
+      // 🚫 取消之前的请求
+      const { currentAbortController } = get()
+      if (currentAbortController) {
+        console.log('🚫 Canceling previous request')
+        currentAbortController.abort()
+      }
+      
+      // 🔧 创建新的AbortController
+      const abortController = new AbortController()
+      const abortSignal = externalAbortSignal || abortController.signal
+      
+      // 🔧 智能幂等保护 - 区分重复调用和首次加载卡死
+      const currentState = get()
+      const hasData = currentState.canvases && currentState.canvases.length > 0
+      
+      if (currentState.isLoading && hasData && !abortSignal.aborted) {
+        console.log('⏭️ Workspace is loading but has data, skipping duplicate call')
+        return
+      }
+      
+      if (currentState.isLoading && !hasData) {
+        console.log('🔧 Workspace is loading but no data, continuing fetch (possible stuck state)')
+      }
+      
+      // 🔧 只在没有数据时才显示loading
+      const shouldShowLoading = !hasData
+      
+      set({ 
+        isLoading: shouldShowLoading,
+        currentAbortController: abortController
+      });
+      
+      // 🕐 记录loading开始时间，用于hang检测
+      localStorage.setItem('workspace-loading-start', Date.now().toString());
+      
+      // 🔧 轻量级超时保护
+      const fetchTimeout = setTimeout(() => {
+        console.warn('⚠️ Workspace fetch timeout, keeping current data')
+        localStorage.removeItem('workspace-loading-start')
+        
+        // 失败时保持现有数据
+        const currentCanvases = get().canvases
+        const hasExistingData = currentCanvases && currentCanvases.length > 0
+        
         set({ 
-          canvases: defaultCanvases, 
-          activeCanvasId: defaultCanvases[0].id,
-          saveError: 'Workspace loading timed out',
+          canvases: hasExistingData ? currentCanvases : defaultCanvases,
+          activeCanvasId: hasExistingData ? get().activeCanvasId : defaultCanvases[0].id,
+          saveError: 'Workspace loading timeout, showing cached data',
           isLoading: false,
           isInitialLoad: false
         });
-      }, 25000); // 25秒兜底，为大型workspace留出更多时间
+      }, 30000); // 简化为30秒超时
       
       try {
-        // Direct database query - session already validated by caller
-        console.log('📡 Querying database for workspace...')
+        console.log('🚀 Workspace fetch started', { userId, hasAbortSignal: !!abortSignal })
+        
+        // 🚫 检查是否已被取消
+        if (abortSignal.aborted) {
+          console.log('🚫 Request already aborted, skipping')
+          return
+        }
+        
         const { data, error } = await supabase
           .from('ai_card_studios')
           .select('data')
           .eq('user_id', userId)
+          .abortSignal(abortSignal)
           .single();
         
-        clearTimeout(workspaceTimeout); // 清除超时器
+        console.log('📡 Supabase query completed', {
+          hasData: !!data,
+          hasError: !!error,
+          errorCode: error?.code
+        })
 
-        if (error && error.code === 'PGRST116') {
-          // No existing workspace, create new one with timeout
-          const workspaceData = {
-            canvases: defaultCanvases,
-            activeCanvasId: defaultCanvases[0].id
-          };
-          
-          const { data: newWorkspace, error: insertError } = await supabase
-            .from('ai_card_studios')
-            .insert({ user_id: userId, data: workspaceData })
-            .select('data')
-            .single()
+          if (error && error.code === 'PGRST116') {
+            // No existing workspace, create new one
+            console.log('🆕 Creating new workspace...')
+            const workspaceData = {
+              canvases: defaultCanvases,
+              activeCanvasId: defaultCanvases[0].id
+            };
             
-          if (insertError) {
-            console.error('Error creating new workspace:', insertError.message);
+            const { data: newWorkspace, error: insertError } = await supabase
+              .from('ai_card_studios')
+              .insert({ user_id: userId, data: workspaceData })
+              .select('data')
+              .single()
+              
+            if (insertError) {
+              console.error('Error creating new workspace:', insertError.message);
+              throw new Error(`Failed to create workspace: ${insertError.message}`);
+            } else {
+              const workspaceData = newWorkspace.data;
+              console.log('✅ New workspace created successfully', {
+                canvasCount: workspaceData.canvases?.length,
+                activeCanvasId: workspaceData.activeCanvasId
+              })
+              localStorage.removeItem('workspace-loading-start') // 清理loading时间戳
+              
+              // 🔧 确保AI字段正确初始化
+              const normalizedCanvases = normalizeCanvases(workspaceData.canvases as Canvas[])
+              
+              // 💾 保存到缓存（规范化后的数据）
+              try {
+                localStorage.setItem('workspace-cache', JSON.stringify({
+                  canvases: normalizedCanvases,
+                  activeCanvasId: workspaceData.activeCanvasId
+                }))
+                console.log('💾 Workspace cached successfully')
+              } catch (e) {
+                console.warn('⚠️ Failed to cache workspace:', e)
+              }
+              
+              set({ 
+                canvases: normalizedCanvases,
+                activeCanvasId: workspaceData.activeCanvasId,
+                saveError: null,
+                isLoading: false,
+                isInitialLoad: false
+              });
+            }
+          } else if (error) {
+            // 🚫 特殊处理AbortError，避免抛出错误
+            if (error.message?.includes('AbortError') || abortSignal.aborted) {
+              console.log('🚫 Database request was cancelled')
+              return
+            }
+            console.error('📊 Database error fetching workspace:', error.message);
+            throw new Error(`Database error: ${error.message}`);
+          } else if (data && data.data) {
+            console.log('📦 Loaded workspace data successfully', {
+              dataSize: JSON.stringify(data.data).length,
+              hasCanvases: !!data.data.canvases,
+              hasActiveCanvasId: !!data.data.activeCanvasId
+            })
+            const workspaceData = data.data;
+            
+            // Expect new format (canvases array)
+            if (workspaceData.canvases && workspaceData.activeCanvasId) {
+              console.log('✅ Valid workspace format loaded', {
+                canvasCount: workspaceData.canvases.length,
+                activeCanvasId: workspaceData.activeCanvasId
+              })
+              localStorage.removeItem('workspace-loading-start') // 清理loading时间戳
+              
+              // 🔧 确保AI字段正确初始化
+              const normalizedCanvases = normalizeCanvases(workspaceData.canvases as Canvas[])
+              
+              // 💾 保存到缓存（规范化后的数据）
+              try {
+                localStorage.setItem('workspace-cache', JSON.stringify({
+                  canvases: normalizedCanvases,
+                  activeCanvasId: workspaceData.activeCanvasId
+                }))
+                console.log('💾 Workspace cached successfully')
+              } catch (e) {
+                console.warn('⚠️ Failed to cache workspace:', e)
+              }
+              
+              set({ 
+                canvases: normalizedCanvases,
+                activeCanvasId: workspaceData.activeCanvasId,
+                saveError: null,
+                isLoading: false,
+                isInitialLoad: false
+              });
+            } else {
+              console.log('⚠️ Invalid workspace format, using defaults', {
+                workspaceData: workspaceData
+              })
+              localStorage.removeItem('workspace-loading-start') // 清理loading时间戳
+              set({ 
+                canvases: defaultCanvases, 
+                activeCanvasId: defaultCanvases[0].id,
+                saveError: null,
+                isLoading: false,
+                isInitialLoad: false
+              });
+            }
+          } else {
+            console.log('🆕 No workspace data found, using defaults', {
+              data: data,
+              dataData: data?.data
+            });
+            localStorage.removeItem('workspace-loading-start') // 清理loading时间戳
             set({ 
               canvases: defaultCanvases, 
               activeCanvasId: defaultCanvases[0].id,
-              saveError: 'Failed to create workspace' 
-            });
-          } else {
-            const workspaceData = newWorkspace.data;
-            set({ 
-              canvases: workspaceData.canvases as Canvas[], 
-              activeCanvasId: workspaceData.activeCanvasId,
-              saveError: null 
-            });
-          }
-        } else if (error) {
-          console.error('📊 Database error fetching workspace:', error.message);
-          set({ 
-            canvases: defaultCanvases, 
-            activeCanvasId: defaultCanvases[0].id,
-            saveError: 'Failed to load workspace',
-            isLoading: false,  // 🔧 确保重置 loading
-            isInitialLoad: false
-          });
-          return; // 早期返回
-        } else if (data && data.data) {
-          console.log('📦 Loaded workspace data:', data.data);
-          const workspaceData = data.data;
-          
-          // Expect new format (canvases array)
-          if (workspaceData.canvases && workspaceData.activeCanvasId) {
-            console.log('✅ Valid workspace format loaded')
-            set({ 
-              canvases: workspaceData.canvases as Canvas[], 
-              activeCanvasId: workspaceData.activeCanvasId,
               saveError: null,
-              isLoading: false,  // 🔧 确保重置 loading
-              isInitialLoad: false
-            });
-          } else {
-            console.log('⚠️ Invalid workspace format, using defaults')
-            set({ 
-              canvases: defaultCanvases, 
-              activeCanvasId: defaultCanvases[0].id,
-              saveError: null,
-              isLoading: false,  // 🔧 确保重置 loading
+              isLoading: false,
               isInitialLoad: false
             });
           }
-        } else {
-          console.log('🆕 No workspace data found, using defaults');
-          set({ 
-            canvases: defaultCanvases, 
-            activeCanvasId: defaultCanvases[0].id,
-            saveError: null,
-            isLoading: false,  // 🔧 确保重置 loading
-            isInitialLoad: false
-          });
-        }
       } catch (err: any) {
-        clearTimeout(workspaceTimeout); // 清除超时器
-        console.error('💥 Workspace fetch exception:', err);
+        // 🚫 如果是取消错误，静默处理
+        if (err.name === 'AbortError' || abortSignal.aborted) {
+          console.log('🚫 Request was cancelled')
+          return
+        }
+        
+        console.warn('⚠️ Workspace fetch failed, keeping current data:', err.message)
+        
+        // 失败时保持现有数据
+        const currentCanvases = get().canvases
+        const hasExistingData = currentCanvases && currentCanvases.length > 0
+        
         set({ 
-          canvases: defaultCanvases, 
-          activeCanvasId: defaultCanvases[0].id,
-          saveError: `Workspace error: ${err.message}`,
-          isLoading: false,  // 🔧 确保重置 loading
+          canvases: hasExistingData ? currentCanvases : defaultCanvases,
+          activeCanvasId: hasExistingData ? get().activeCanvasId : defaultCanvases[0].id,
+          saveError: 'Workspace fetch failed, showing cached data',
+          isLoading: false,
           isInitialLoad: false
         });
+      } finally {
+        // 🔧 无论成功失败，都要清理资源并重置loading状态
+        clearTimeout(fetchTimeout);
+        localStorage.removeItem('workspace-loading-start')
+        
+        // 清理AbortController
+        const finalState = get()
+        if (finalState.currentAbortController === abortController) {
+          set({ currentAbortController: null })
+        }
+        
+        // 确保isLoading被重置（防止卡死）
+        if (finalState.isLoading && !abortSignal.aborted) {
+          console.warn('🚨 Force resetting isLoading to prevent hang')
+          set({ isLoading: false })
+        }
       }
     },
 
@@ -588,12 +866,28 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       if (isInitialLoad || !user) return;
 
       try {
+        // 🔧 过滤AI回复内容，不保存到数据库
+        const cleanCanvases = canvases.map(canvas => ({
+          ...canvas,
+          columns: canvas.columns.map(col => ({
+            ...col,
+            cards: col.cards.map(card => {
+              if (card.type === 'aitool') {
+                // 移除AI回复相关字段
+                const { generatedContent, isGenerating, ...cleanCard } = card
+                return cleanCard
+              }
+              return card
+            })
+          }))
+        }))
+
         const workspaceData = {
-          canvases,
+          canvases: cleanCanvases,
           activeCanvasId
         };
         
-        console.log('Saving workspace data:', workspaceData);
+        console.log('Saving workspace data (AI replies filtered):', workspaceData);
         const { error } = await supabase
           .from('ai_card_studios')
           .update({ data: workspaceData })
@@ -603,7 +897,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           console.error('Error updating workspace:', error.message);
           set({ saveError: 'Failed to save changes' });
         } else {
-          console.log('Workspace saved successfully');
+          console.log('Workspace saved successfully (without AI replies)');
           set({ saveError: null });
         }
       } catch (err) {
