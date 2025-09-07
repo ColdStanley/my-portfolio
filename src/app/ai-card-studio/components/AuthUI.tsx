@@ -15,28 +15,141 @@ export default function AuthUI() {
     setLoading(true);
     setError(null);
     setMessage(null);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      setError(error.message);
+    
+    try {
+      // 🔧 获取完整的 session 数据
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password 
+      });
+      
+      if (error) {
+        console.error('Sign in error:', error);
+        setError(error.message);
+        setLoading(false);
+        return;
+      }
+      
+      // 🎯 调试登录成功的 session 数据
+      console.log('🎉 Sign in successful!');
+      console.log('Session data:', data.session);
+      console.log('User ID:', data.session?.user?.id);
+      console.log('Access Token:', data.session?.access_token ? 'Present' : 'Missing');
+      console.log('Refresh Token:', data.session?.refresh_token ? 'Present' : 'Missing');
+      
+      // 🔧 验证 session 完整性
+      if (!data.session || !data.session.user || !data.session.user.id) {
+        console.error('❌ Invalid session returned:', data);
+        setError('Login succeeded but session is invalid. Please try again.');
+        setLoading(false);
+        return;
+      }
+      
+      // 🔧 确保 session 被正确保存
+      try {
+        // 手动设置 session 确保 SDK 状态一致
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token
+        });
+        
+        if (sessionError) {
+          console.error('Session setting error:', sessionError);
+          setError('Failed to establish session. Please try again.');
+          setLoading(false);
+          return;
+        }
+        
+        console.log('✅ Session successfully set in Supabase SDK');
+        
+        // 🎯 验证 localStorage 存储
+        setTimeout(() => {
+          const storageKeys = Object.keys(localStorage).filter(key => 
+            key.includes('supabase') || key.includes('auth') || key.startsWith('sb-')
+          );
+          console.log('📦 Auth tokens in localStorage:', storageKeys);
+          
+          storageKeys.forEach(key => {
+            const value = localStorage.getItem(key);
+            if (value) {
+              try {
+                const parsed = JSON.parse(value);
+                console.log(`${key}:`, {
+                  hasAccessToken: !!parsed.access_token,
+                  hasRefreshToken: !!parsed.refresh_token,
+                  expiresAt: parsed.expires_at
+                });
+              } catch (e) {
+                console.log(`${key}: ${value.substring(0, 50)}...`);
+              }
+            }
+          });
+        }, 100);
+        
+        setMessage('Login successful! Loading workspace...');
+        
+        // 🔧 让 onAuthStateChange 有时间处理，然后完成登录
+        setTimeout(() => {
+          setLoading(false);
+        }, 1000);
+        
+      } catch (sessionErr) {
+        console.error('Session setup error:', sessionErr);
+        setError('Failed to setup session. Please try again.');
+        setLoading(false);
+      }
+      
+    } catch (err) {
+      console.error('Login process error:', err);
+      setError('Login failed unexpectedly. Please try again.');
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleSignUp = async () => {
     setLoading(true);
     setError(null);
     setMessage(null);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-    if (error) {
-      setError(error.message);
-    } else {
-      // No email confirmation required - user will be signed in automatically
-      setMessage("Account created successfully! You will be signed in shortly.");
+    
+    try {
+      // 🔧 获取完整的 session 数据
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      
+      if (error) {
+        console.error('Sign up error:', error);
+        setError(error.message);
+        setLoading(false);
+        return;
+      }
+      
+      // 🎯 调试注册结果
+      console.log('🎉 Sign up response:', data);
+      console.log('Session:', data.session);
+      console.log('User:', data.user);
+      
+      if (data.session && data.user) {
+        // Auto sign-in successful
+        console.log('✅ Auto sign-in successful with User ID:', data.user.id);
+        setMessage("Account created successfully! Loading workspace...");
+        
+        // Let onAuthStateChange handle the workspace loading
+        setTimeout(() => {
+          setLoading(false);
+        }, 1000);
+      } else {
+        // Email confirmation might be required
+        setMessage("Account created successfully! Please check your email for verification.");
+        setLoading(false);
+      }
+      
+    } catch (err) {
+      console.error('Sign up process error:', err);
+      setError('Registration failed unexpectedly. Please try again.');
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {

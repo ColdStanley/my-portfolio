@@ -114,15 +114,31 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     }),
 
     fetchAndHandleWorkspace: async (userId) => {
+      console.log('🔄 fetchAndHandleWorkspace called for userId:', userId)
       set({ isLoading: true });
+      
+      // 🔧 超时保护 - 确保永远不会无限卡死
+      const workspaceTimeout = setTimeout(() => {
+        console.warn('⚠️ Workspace fetch timeout, using defaults')
+        set({ 
+          canvases: defaultCanvases, 
+          activeCanvasId: defaultCanvases[0].id,
+          saveError: 'Workspace loading timed out',
+          isLoading: false,
+          isInitialLoad: false
+        });
+      }, 10000); // 10秒兜底
       
       try {
         // Direct database query - session already validated by caller
+        console.log('📡 Querying database for workspace...')
         const { data, error } = await supabase
           .from('ai_card_studios')
           .select('data')
           .eq('user_id', userId)
           .single();
+        
+        clearTimeout(workspaceTimeout); // 清除超时器
 
         if (error && error.code === 'PGRST116') {
           // No existing workspace, create new one with timeout
@@ -152,58 +168,61 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
               saveError: null 
             });
           }
-        } else if (error && error.message !== 'Database timeout') {
-          console.error('Error fetching workspace:', error.message);
+        } else if (error) {
+          console.error('📊 Database error fetching workspace:', error.message);
           set({ 
             canvases: defaultCanvases, 
             activeCanvasId: defaultCanvases[0].id,
-            saveError: 'Failed to load workspace' 
+            saveError: 'Failed to load workspace',
+            isLoading: false,  // 🔧 确保重置 loading
+            isInitialLoad: false
           });
+          return; // 早期返回
         } else if (data && data.data) {
-          console.log('Loaded workspace data:', data.data);
+          console.log('📦 Loaded workspace data:', data.data);
           const workspaceData = data.data;
           
           // Expect new format (canvases array)
           if (workspaceData.canvases && workspaceData.activeCanvasId) {
+            console.log('✅ Valid workspace format loaded')
             set({ 
               canvases: workspaceData.canvases as Canvas[], 
               activeCanvasId: workspaceData.activeCanvasId,
-              saveError: null 
+              saveError: null,
+              isLoading: false,  // 🔧 确保重置 loading
+              isInitialLoad: false
             });
           } else {
-            // Fallback to default
+            console.log('⚠️ Invalid workspace format, using defaults')
             set({ 
               canvases: defaultCanvases, 
               activeCanvasId: defaultCanvases[0].id,
-              saveError: null 
+              saveError: null,
+              isLoading: false,  // 🔧 确保重置 loading
+              isInitialLoad: false
             });
           }
         } else {
-          console.log('No workspace data found, using defaults');
+          console.log('🆕 No workspace data found, using defaults');
           set({ 
             canvases: defaultCanvases, 
             activeCanvasId: defaultCanvases[0].id,
-            saveError: null 
+            saveError: null,
+            isLoading: false,  // 🔧 确保重置 loading
+            isInitialLoad: false
           });
         }
       } catch (err: any) {
-        console.error('Workspace fetch error:', err);
-        if (err.message === 'Database timeout') {
-          set({ 
-            canvases: defaultCanvases, 
-            activeCanvasId: defaultCanvases[0].id,
-            saveError: 'Connection timeout, using defaults' 
-          });
-        } else {
-          set({ 
-            canvases: defaultCanvases, 
-            activeCanvasId: defaultCanvases[0].id,
-            saveError: 'Unexpected error occurred' 
-          });
-        }
+        clearTimeout(workspaceTimeout); // 清除超时器
+        console.error('💥 Workspace fetch exception:', err);
+        set({ 
+          canvases: defaultCanvases, 
+          activeCanvasId: defaultCanvases[0].id,
+          saveError: `Workspace error: ${err.message}`,
+          isLoading: false,  // 🔧 确保重置 loading
+          isInitialLoad: false
+        });
       }
-      
-      set({ isLoading: false, isInitialLoad: false });
     },
 
     updateCanvases: (updater) => {

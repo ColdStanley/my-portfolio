@@ -90,24 +90,43 @@ export default function AICardStudioPage() {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (!mounted) return
         
+        console.log(`🔔 Auth state change: ${event}`, { 
+          hasSession: !!session, 
+          hasUser: !!session?.user,
+          userId: session?.user?.id,
+          email: session?.user?.email 
+        })
+        
         if (session?.user) {
-          console.log('User authenticated:', session.user.email)
+          console.log('👤 User authenticated:', session.user.email)
+          console.log('🆔 User ID:', session.user.id)
+          
           setUser(session.user)
           actions.setUser(session.user)
           setShowAuthUI(false)
           
-          // Fetch workspace for authenticated user
-          if (!initializedRef.current) {
+          // 🎯 确保 workspace 初始化，特别是登录事件
+          if (event === 'SIGNED_IN' || !initializedRef.current) {
+            console.log('🚀 Initializing workspace for user:', session.user.id)
             initializedRef.current = true
+            
+            // 重置 workspace loading 状态，防止卡死
+            actions.resetWorkspace()
+            
             try {
               await actions.fetchAndHandleWorkspace(session.user.id)
+              console.log('✅ Workspace initialized successfully')
             } catch (error) {
-              console.error('Workspace fetch failed:', error)
-              // Continue with default workspace
+              console.error('❌ Workspace fetch failed:', error)
+              // 🔧 兜底：即使失败也要停止 loading
+              actions.resetWorkspace()
             }
+          } else {
+            console.log('⏭️ Skipping workspace fetch (already initialized)')
           }
         } else {
-          await handleSessionFailure('auth state change')
+          console.log('🚪 User signed out or no session')
+          await handleSessionFailure('auth state change - no session')
         }
       })
 
@@ -206,51 +225,51 @@ export default function AICardStudioPage() {
       
       <PageTransition>
         <div className="min-h-screen">
-          {showAuthUI ? (
-            <AuthUI />
-          ) : (
-            <div className="relative">
-              {/* User menu - top right corner */}
-              {user && (
-                <div ref={userMenuRef} className="fixed top-4 right-4 z-50">
-                  {/* User email button */}
-                  <button
-                    onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="px-2 py-1 text-xs text-gray-400 hover:text-purple-500 transition-all duration-200 flex items-center gap-2"
+          {/* 🔧 Auth UI - 只在需要时显示 */}
+          {showAuthUI && <AuthUI />}
+          
+          {/* 🔧 Main App - 始终渲染但可能隐藏，避免 hooks 顺序问题 */}
+          <div className={`relative ${showAuthUI ? 'hidden' : ''}`}>
+            {/* User menu - top right corner */}
+            {user && (
+              <div ref={userMenuRef} className="fixed top-4 right-4 z-50">
+                {/* User email button */}
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="px-2 py-1 text-xs text-gray-400 hover:text-purple-500 transition-all duration-200 flex items-center gap-2"
+                >
+                  {user.email}
+                  <svg 
+                    className={`w-3 h-3 transition-transform duration-200 ${showUserMenu ? 'rotate-180' : ''}`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
                   >
-                    {user.email}
-                    <svg 
-                      className={`w-3 h-3 transition-transform duration-200 ${showUserMenu ? 'rotate-180' : ''}`} 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
 
-                  {/* Dropdown menu */}
-                  {showUserMenu && (
-                    <div className="absolute top-full right-0 mt-2 w-32 bg-white/95 backdrop-blur-md rounded-lg shadow-xl border border-gray-200 py-2">
-                      <button
-                        onClick={() => {
-                          setShowUserMenu(false)
-                          handleSignOut()
-                        }}
-                        className="w-full px-1.5 py-0.5 text-xs text-left text-purple-600 hover:bg-purple-50 transition-all duration-200 flex items-center gap-1"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                        Sign Out
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-              <AICardStudio />
-            </div>
-          )}
+                {/* Dropdown menu */}
+                {showUserMenu && (
+                  <div className="absolute top-full right-0 mt-2 w-32 bg-white/95 backdrop-blur-md rounded-lg shadow-xl border border-gray-200 py-2">
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false)
+                        handleSignOut()
+                      }}
+                      className="w-full px-1.5 py-0.5 text-xs text-left text-purple-600 hover:bg-purple-50 transition-all duration-200 flex items-center gap-1"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            <AICardStudio />
+          </div>
         </div>
       </PageTransition>
     </>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Column, ColumnCard } from '../types'
 import { generateUniqueButtonName, generateUniqueTitle } from '../utils/cardUtils'
@@ -41,21 +41,8 @@ export default function AICardStudio() {
   // Developer Panel State - God Mode Access
   const [developerPanelOpen, setDeveloperPanelOpen] = useState(false)
 
-  // Show loading while data is being fetched
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
-        <div className="flex items-center gap-3 text-purple-600">
-          <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-          </svg>
-          <span className="text-sm font-medium">Loading workspace...</span>
-        </div>
-      </div>
-    )
-  }
-
+  // 🔧 All hooks must be called before any conditional returns
+  
   const addNewColumn = () => {
     const timestamp = Date.now()
     const randomId = Math.random().toString(36).substr(2, 9)
@@ -138,7 +125,6 @@ export default function AICardStudio() {
     // Close modal
     handleCloseCardTypeModal()
   }
-
 
   const handleAddCard = (columnId: string, afterCardId?: string) => {
     setSelectedColumnId(columnId)
@@ -264,7 +250,6 @@ export default function AICardStudio() {
   }, [dropdownOpen])
 
   // Settings modal functions
-
   const handleSettingsClose = () => {
     setSettingsModalOpen(false)
     setSettingsCanvasId('')
@@ -312,9 +297,24 @@ export default function AICardStudio() {
     }
   }, [isAdmin])
 
+  // 🔧 Use conditional rendering instead of conditional returns to maintain hook order
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
+        <div className="flex items-center gap-3 text-purple-600">
+          <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+          </svg>
+          <span className="text-sm font-medium">Loading workspace...</span>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <>
-      <style jsx global>{`
+    <div>
+      <style>{`
         @keyframes gradient-flow {
           0% {
             background-position: 0% 50%;
@@ -342,7 +342,7 @@ export default function AICardStudio() {
           animation: gradient-flow 12s ease-in-out infinite;
         }
       `}</style>
-      <div>
+      
       {/* Save Error Notification */}
       {saveError && (
         <div className="fixed top-20 right-4 z-50 bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
@@ -493,7 +493,6 @@ export default function AICardStudio() {
               </button>
             </div>
           </div>
-          
           
           <div className="relative">
             {/* Left Arrow */}
@@ -672,8 +671,6 @@ export default function AICardStudio() {
           onClose={() => setDeveloperPanelOpen(false)}
         />
       )}
-
     </div>
-    </>
   )
 }
