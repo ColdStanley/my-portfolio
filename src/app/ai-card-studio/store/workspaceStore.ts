@@ -18,6 +18,7 @@ interface WorkspaceState {
     cancelCurrentRequest: () => void;
     cleanAllAIReplies: () => Promise<void>;
     loadFromCache: () => boolean;
+    syncToCache: () => void;
     updateCanvases: (updater: (prev: Canvas[]) => Canvas[]) => void;
     updateColumns: (updater: (prev: Column[]) => Column[]) => void; // Helper for backward compatibility
     moveColumn: (columnId: string, direction: 'left' | 'right') => void;
@@ -260,6 +261,21 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       }
     },
 
+    // 💾 同步当前状态到缓存
+    syncToCache: () => {
+      try {
+        const { canvases, activeCanvasId } = get()
+        if (canvases.length > 0) {
+          localStorage.setItem('workspace-cache', JSON.stringify({
+            canvases,
+            activeCanvasId
+          }))
+          console.log('💾 Workspace synced to cache')
+        }
+      } catch (e) {
+        console.warn('⚠️ Failed to sync to cache:', e)
+      }
+    },
 
     fetchAndHandleWorkspace: async (userId, externalAbortSignal) => {
       console.log('🔄 fetchAndHandleWorkspace called for userId:', userId)
@@ -506,8 +522,10 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     updateCanvases: (updater) => {
       set((state) => ({ canvases: updater(state.canvases) }));
       
-      // Debug: Log when canvases are updated (no auto-save anymore)
-      console.log('Canvases updated. Use Save button to save changes.');
+      // 🔧 实时同步到LocalStorage缓存
+      get().actions.syncToCache();
+      
+      console.log('Canvases updated and cached. Use Save button for cloud sync.');
     },
 
     updateColumns: (updater) => {
@@ -526,7 +544,10 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         )
       }));
       
-      console.log('Active canvas columns updated. Use Save button to save changes.');
+      // 🔧 实时同步到LocalStorage缓存
+      get().actions.syncToCache();
+      
+      console.log('Active canvas columns updated and cached. Use Save button for cloud sync.');
     },
 
     moveColumn: (columnId, direction) => {
@@ -601,7 +622,10 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         )
       }));
       
-      console.log('Card moved. Use Save button to save changes.');
+      // 🔧 实时同步到LocalStorage缓存
+      get().actions.syncToCache();
+      
+      console.log('Card moved and cached. Use Save button for cloud sync.');
     },
 
     runColumnWorkflow: async (columnId) => {
@@ -955,6 +979,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           }))
         };
       });
+      
+      // 🔧 实时同步到LocalStorage缓存
+      get().actions.syncToCache();
+      
+      console.log('Info card title updated and cached. Use Save button for cloud sync.');
     },
 
     updateCardDescription: (cardId: string, description: string) => {
@@ -971,6 +1000,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           }))
         }))
       }));
+      
+      // 🔧 实时同步到LocalStorage缓存
+      get().actions.syncToCache();
+      
+      console.log('Info card description updated and cached. Use Save button for cloud sync.');
     },
 
     updateCardButtonName: (cardId: string, buttonName: string) => {
@@ -1021,6 +1055,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           }))
         };
       });
+      
+      // 🔧 实时同步到LocalStorage缓存
+      get().actions.syncToCache();
+      
+      console.log('AI card button name updated and cached. Use Save button for cloud sync.');
     },
 
     updateCardPromptText: (cardId: string, promptText: string) => {
@@ -1037,6 +1076,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           }))
         }))
       }));
+      
+      // 🔧 实时同步到LocalStorage缓存
+      get().actions.syncToCache();
+      
+      console.log('AI card prompt text updated and cached. Use Save button for cloud sync.');
     },
 
     updateCardOptions: (cardId: string, options: string[]) => {
@@ -1053,6 +1097,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           }))
         }))
       }));
+      
+      // 🔧 实时同步到LocalStorage缓存
+      get().actions.syncToCache();
+      
+      console.log('AI card options updated and cached. Use Save button for cloud sync.');
     },
 
     updateCardAiModel: (cardId: string, aiModel: 'deepseek' | 'openai') => {
@@ -1069,6 +1118,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           }))
         }))
       }));
+      
+      // 🔧 实时同步到LocalStorage缓存
+      get().actions.syncToCache();
+      
+      console.log('AI card model updated and cached. Use Save button for cloud sync.');
     },
 
     updateCardGeneratedContent: (cardId: string, generatedContent: string) => {
@@ -1085,6 +1139,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           }))
         }))
       }));
+      
+      // 🔧 实时同步到LocalStorage缓存
+      get().actions.syncToCache();
+      
+      console.log('AI card generated content updated and cached. Use Save button for cloud sync.');
     },
 
     updateCardGeneratingState: (cardId: string, isGenerating: boolean) => {
@@ -1121,6 +1180,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           }, [] as Column[])
         }))
       }));
+      
+      // 🔧 实时同步到LocalStorage缓存
+      get().actions.syncToCache();
+      
+      console.log('Card deleted and cached. Use Save button for cloud sync.');
     },
 
     updateCardLockStatus: (cardId: string, isLocked: boolean, passwordHash?: string) => {
@@ -1142,7 +1206,10 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         }))
       }));
       
-      console.log(`Card ${cardId} ${isLocked ? 'locked' : 'unlocked'}`);
+      // 🔧 实时同步到LocalStorage缓存
+      get().actions.syncToCache();
+      
+      console.log(`Card ${cardId} ${isLocked ? 'locked' : 'unlocked'} and cached. Use Save button for cloud sync.`);
     },
   },
 }));
