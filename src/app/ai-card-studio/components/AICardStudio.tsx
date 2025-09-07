@@ -271,6 +271,8 @@ export default function AICardStudio() {
   // Track changes to set unsaved state
   useEffect(() => {
     // Any time canvases change, mark as unsaved
+    // Note: AI-generated content won't be saved to database but user interactions 
+    // (like editing prompts, button names) still need to be saved
     setHasUnsavedChanges(true)
   }, [canvases])
 
