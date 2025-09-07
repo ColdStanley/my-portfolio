@@ -10,11 +10,15 @@ import type { User } from '@supabase/supabase-js'
 
 export default function AICardStudioPage() {
   const [user, setUser] = useState<User | null>(null)
-  const [showAuthUI, setShowAuthUI] = useState(true)  // 🔧 默认显示 Auth UI
+  // 🎯 默认显示AuthUI，在客户端检查后可能会隐藏
+  const [showAuthUI, setShowAuthUI] = useState(true)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
   const { isLoading: workspaceLoading, actions } = useWorkspaceStore()
   const initializedRef = useRef(false)
+  const sessionCacheRef = useRef<{ user: User; timestamp: number } | null>(null)
+  const visibilityRef = useRef(true) // Track page visibility
+  const sessionTimeoutRef = useRef<NodeJS.Timeout | null>(null) // Track session timeout
 
   // Set page title
   useEffect(() => {
@@ -22,6 +26,61 @@ export default function AICardStudioPage() {
     
     return () => {
       document.title = "Stanley's Portfolio" // Reset on unmount
+    }
+  }, [])
+
+  // 🎯 客户端初始化：检查recent session，避免SSR不匹配
+  useEffect(() => {
+    // 只在客户端执行，检查localStorage中的recent session标记
+    const recentSession = localStorage.getItem('ai-card-studio-recent-session')
+    if (recentSession) {
+      const timestamp = parseInt(recentSession)
+      const hourAgo = Date.now() - (60 * 60 * 1000) // 1小时
+      if (timestamp > hourAgo) {
+        console.log('🎯 Found valid recent session, hiding AuthUI')
+        setShowAuthUI(false)
+      } else {
+        // 过期了，清理掉
+        console.log('🎯 Recent session expired, clearing')
+        localStorage.removeItem('ai-card-studio-recent-session')
+      }
+    }
+  }, [])
+
+  // 🎯 监听页面可见性变化，避免离开浏览器时的不必要验证
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      visibilityRef.current = !document.hidden
+      if (visibilityRef.current) {
+        console.log('👀 Page became visible')
+        // 页面重新可见时，检查session缓存是否仍然有效
+        const cache = sessionCacheRef.current
+        if (cache && Date.now() - cache.timestamp > 300000) { // 5分钟后过期
+          console.log('🔄 Session cache expired, clearing...')
+          sessionCacheRef.current = null
+        }
+        
+        // 🎯 精准修复：如果有悬挂的session超时器，立即触发检查
+        if (sessionTimeoutRef.current && !user) {
+          console.log('🔧 Clearing hanging session timeout and retrying...')
+          clearTimeout(sessionTimeoutRef.current)
+          sessionTimeoutRef.current = null
+          // 重新触发session检查
+          supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user) {
+              console.log('✅ Session recovered after visibility change')
+              // 这里会触发onAuthStateChange，不需要手动设置状态
+            }
+          })
+        }
+      } else {
+        console.log('🙈 Page became hidden')
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [])
 
@@ -33,6 +92,31 @@ export default function AICardStudioPage() {
       // Ensure client-side execution only
       if (typeof window === 'undefined') {
         return
+      }
+
+      // 🎯 检查session缓存，避免不必要的闪烁
+      const checkSessionCache = () => {
+        const cache = sessionCacheRef.current
+        if (cache && Date.now() - cache.timestamp < 30000) { // 30秒内的缓存有效
+          console.log('🎯 Using cached session for:', cache.user.email)
+          setUser(cache.user)
+          actions.setUser(cache.user)
+          setShowAuthUI(false)
+          
+          if (!initializedRef.current) {
+            initializedRef.current = true
+            actions.fetchAndHandleWorkspace(cache.user.id).catch(error => {
+              console.error('Cached workspace fetch failed:', error)
+            })
+          }
+          return true
+        }
+        return false
+      }
+
+      // 如果有有效缓存，优先使用
+      if (checkSessionCache()) {
+        return { subscription: null, sessionTimeout: null }
       }
 
       // 清理坏 token 的工具函数
@@ -76,6 +160,11 @@ export default function AICardStudioPage() {
         
         // 统一的 fallback 处理
         try {
+          // 🎯 清理session缓存
+          sessionCacheRef.current = null
+          // 🎯 清理recent session标记
+          localStorage.removeItem('ai-card-studio-recent-session')
+          
           await clearBadTokens()
           actions.resetWorkspace()
           setUser(null)
@@ -100,6 +189,15 @@ export default function AICardStudioPage() {
         if (session?.user) {
           console.log('👤 User authenticated:', session.user.email)
           console.log('🆔 User ID:', session.user.id)
+          
+          // 🎯 更新session缓存
+          sessionCacheRef.current = {
+            user: session.user,
+            timestamp: Date.now()
+          }
+          
+          // 🎯 设置recent session标记，避免刷新时闪烁
+          localStorage.setItem('ai-card-studio-recent-session', Date.now().toString())
           
           setUser(session.user)
           actions.setUser(session.user)
@@ -126,19 +224,28 @@ export default function AICardStudioPage() {
           }
         } else {
           console.log('🚪 User signed out or no session')
+          // 🎯 清理session缓存
+          sessionCacheRef.current = null
+          // 🎯 清理recent session标记
+          localStorage.removeItem('ai-card-studio-recent-session')
           await handleSessionFailure('auth state change - no session')
         }
       })
 
       // 🎯 非阻塞 Session 恢复 + 超时保护
       const sessionTimeout = setTimeout(() => {
+        sessionTimeoutRef.current = null
         handleSessionFailure('timeout')
-      }, 5000) // 5秒超时保护
+      }, 15000) // 15秒超时保护，给session恢复更多时间
+      
+      // 记录超时器引用，用于页面可见性恢复
+      sessionTimeoutRef.current = sessionTimeout
 
       // 非阻塞 getSession 调用
       supabase.auth.getSession()
         .then(({ data: { session }, error }) => {
           clearTimeout(sessionTimeout)
+          sessionTimeoutRef.current = null
           if (!mounted) return
           
           if (error || !session) {
@@ -148,6 +255,16 @@ export default function AICardStudioPage() {
           
           // 成功恢复 session
           console.log('Session restored:', session.user.email)
+          
+          // 🎯 更新session缓存
+          sessionCacheRef.current = {
+            user: session.user,
+            timestamp: Date.now()
+          }
+          
+          // 🎯 设置recent session标记，避免刷新时闪烁
+          localStorage.setItem('ai-card-studio-recent-session', Date.now().toString())
+          
           setUser(session.user)
           actions.setUser(session.user)
           setShowAuthUI(false)
@@ -161,6 +278,7 @@ export default function AICardStudioPage() {
         })
         .catch((error) => {
           clearTimeout(sessionTimeout)
+          sessionTimeoutRef.current = null
           handleSessionFailure(`exception: ${error.message}`)
         })
 
@@ -198,6 +316,10 @@ export default function AICardStudioPage() {
         alert('Sign out failed: ' + error.message)
       } else {
         console.log('Sign out successful')
+        // 🎯 清理所有缓存和标记
+        sessionCacheRef.current = null
+        localStorage.removeItem('ai-card-studio-recent-session')
+        
         // Reset user state immediately
         setUser(null)
         actions.setUser(null)

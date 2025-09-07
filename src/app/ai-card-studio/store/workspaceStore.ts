@@ -127,7 +127,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           isLoading: false,
           isInitialLoad: false
         });
-      }, 10000); // 10秒兜底
+      }, 25000); // 25秒兜底，为大型workspace留出更多时间
       
       try {
         // Direct database query - session already validated by caller
