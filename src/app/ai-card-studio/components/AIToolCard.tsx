@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect, memo } from 'react'
+import { useState, useRef, useEffect, memo, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
 import { resolveReferences } from '../utils/cardUtils'
 import { useWorkspaceStore } from '../store/workspaceStore'
+import { parseMarkdownToStructure } from '../utils/markdownParser'
 import Modal from './ui/Modal'
 import SettingsModal from './ui/SettingsModal'
 import PasswordModal from './ui/PasswordModal'
@@ -39,9 +40,17 @@ function AIToolCard({
   const buttonName = currentCard?.buttonName || 'Start'
   const promptText = currentCard?.promptText || ''
   
+  // Memoize options to prevent infinite loops from object reference changes
+  const options = useMemo(() => currentCard?.options || [], [currentCard?.options])
+  const aiModel = currentCard?.aiModel || 'deepseek'
+  
   // Local state for optimized input performance
   const [localButtonName, setLocalButtonName] = useState(buttonName)
   const [localPromptText, setLocalPromptText] = useState(promptText)
+  
+  // Local state for manual save architecture
+  const [localOptions, setLocalOptions] = useState(options)
+  const [localAiModel, setLocalAiModel] = useState(aiModel)
   
   // Update local state when store changes
   useEffect(() => {
@@ -52,9 +61,13 @@ function AIToolCard({
     setLocalPromptText(promptText)
   }, [promptText])
   
-  // Debounced functions removed - now using manual save only
-  const options = currentCard?.options || []
-  const aiModel = currentCard?.aiModel || 'deepseek'
+  useEffect(() => {
+    setLocalOptions(options)
+  }, [options])
+  
+  useEffect(() => {
+    setLocalAiModel(aiModel)
+  }, [aiModel])
   const generatedContent = currentCard?.generatedContent || ''
   const isGenerating = currentCard?.isGenerating || false
   const isLocked = currentCard?.isLocked || false
@@ -93,6 +106,40 @@ function AIToolCard({
       }, 100)
     }
   }, [autoOpenSettings])
+
+  // Prevent data loss on page leave and route changes
+  useEffect(() => {
+    // Check if there are unsaved local changes
+    const hasLocalChanges = 
+      localButtonName !== buttonName || 
+      localPromptText !== promptText ||
+      JSON.stringify(localOptions) !== JSON.stringify(options) ||
+      localAiModel !== aiModel
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasLocalChanges) {
+        e.preventDefault()
+        return (e.returnValue = '您有未保存的更改')
+      }
+    }
+    
+    const handlePopstate = (event: PopStateEvent) => {
+      if (hasLocalChanges) {
+        const confirmed = window.confirm('您有未保存的更改，确定要离开吗？')
+        if (!confirmed) {
+          window.history.pushState(null, '', window.location.href)
+          event.preventDefault()
+        }
+      }
+    }
+    
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    window.addEventListener('popstate', handlePopstate)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      window.removeEventListener('popstate', handlePopstate)
+    }
+  }, [localButtonName, buttonName, localPromptText, promptText, localOptions, options, localAiModel, aiModel])
 
   // Get previous AIToolCards from current column for reference dropdown
   const referenceCardIndex = currentColumn?.cards.findIndex(card => card.id === cardId) || 0
@@ -212,7 +259,8 @@ function AIToolCard({
       // 同步当前编辑的值到store
       updateCardButtonName(cardId, localButtonName)
       updateCardPromptText(cardId, localPromptText)
-      // AI模型和选项已经实时更新到store了
+      updateCardOptions(cardId, localOptions)
+      updateCardAiModel(cardId, localAiModel)
       
       // 缓存到localStorage
       syncToCache()
@@ -248,7 +296,7 @@ function AIToolCard({
   const handleGenerateClick = async (selectedOption?: string) => {
     if (!promptText.trim()) return
     
-    if ((options || []).length > 0 && !selectedOption) {
+    if ((localOptions || []).length > 0 && !selectedOption) {
       setShowOptionsTooltip(true)
       return
     }
@@ -261,7 +309,7 @@ function AIToolCard({
       let resolvedPrompt = resolveReferences(promptText, canvases, columnId)
       
       // Replace option placeholder with selected value if both exist
-      const hasOptions = (options || []).length > 0
+      const hasOptions = (localOptions || []).length > 0
       if (hasOptions && selectedOption && typeof selectedOption === 'string') {
         resolvedPrompt = resolvedPrompt.replace(/\{\{option\}\}/g, selectedOption)
       }
@@ -295,8 +343,24 @@ function AIToolCard({
       let lastDisplayUpdate = 0
       const THROTTLE_MS = 100 // 100ms节流
       
-      // 找到显示元素用于实时更新
-      const displayElement = document.querySelector(`[data-ai-response="${cardId}"]`) as HTMLElement
+      // 等待DOM元素渲染完成
+      const waitForElement = async (selector: string, timeout = 1000): Promise<HTMLElement | null> => {
+        const start = Date.now()
+        while (Date.now() - start < timeout) {
+          const element = document.querySelector(selector) as HTMLElement
+          if (element) {
+            console.log('🔧 Debug: Display element found after', Date.now() - start, 'ms')
+            return element
+          }
+          await new Promise(resolve => setTimeout(resolve, 10))
+        }
+        console.warn('🔧 Debug: Display element not found after', timeout, 'ms timeout')
+        return null
+      }
+      
+      // 等待显示元素渲染
+      const displayElement = await waitForElement(`[data-ai-response="${cardId}"]`)
+      console.log('🔧 Debug: Display element ready:', !!displayElement, 'for cardId:', cardId)
 
       while (true) {
         const { done, value } = await reader.read()
@@ -321,12 +385,18 @@ function AIToolCard({
               const content = parsed.choices?.[0]?.delta?.content || ''
               if (content) {
                 fullResponse += content
+                console.log('🔧 Debug: Received content chunk:', content.length, 'chars, total:', fullResponse.length)
                 
                 // 🔧 节流更新显示 - 直接DOM操作，不触发状态更新
                 const now = Date.now()
                 if (displayElement && now - lastDisplayUpdate > THROTTLE_MS) {
                   displayElement.textContent = fullResponse
+                  console.log('🔧 Debug: DOM updated with', fullResponse.length, 'chars')
                   lastDisplayUpdate = now
+                } else if (!displayElement) {
+                  console.warn('🔧 Debug: Skipping DOM update - element not found')
+                } else {
+                  console.log('🔧 Debug: Skipping DOM update - throttled')
                 }
               }
             } catch {
@@ -385,6 +455,8 @@ function AIToolCard({
     // 恢复到store原值
     setLocalButtonName(buttonName)
     setLocalPromptText(promptText)
+    setLocalOptions(options)
+    setLocalAiModel(aiModel)
     
     setPromptTooltipVisible(false)
     setTimeout(() => setShowPromptTooltip(false), 250)
@@ -422,6 +494,9 @@ function AIToolCard({
           try {
             console.log('Generating PDF for card:', buttonName)
             
+            // Parse markdown to structured data (no more dual rendering)
+            const parsedContent = parseMarkdownToStructure(generatedContent)
+            
             const response = await fetch('/api/ai-card-studio/generate-pdf', {
               method: 'POST',
               headers: {
@@ -429,7 +504,7 @@ function AIToolCard({
               },
               body: JSON.stringify({
                 cardName: buttonName,
-                aiContent: generatedContent,
+                parsedContent: parsedContent,
                 generatedAt: new Date().toLocaleString()
               })
             })
@@ -439,9 +514,8 @@ function AIToolCard({
             }
 
             const blob = await response.blob()
-            const cleanCardName = buttonName.replace(/[^a-z0-9]/gi, '_')
-            const timestamp = new Date().toISOString().split('T')[0]
-            const filename = `${cleanCardName}_${timestamp}.pdf`
+            // Backend now handles filename generation, no double cleaning needed
+            const filename = `${buttonName.replace(/[^a-zA-Z0-9\s]/g, '')}_AI_Card.pdf`
             
             // Download the PDF
             const url = window.URL.createObjectURL(blob)
@@ -612,7 +686,9 @@ function AIToolCard({
               <div 
                 className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap"
                 data-ai-response={cardId}
-              />
+              >
+                {console.log('🔧 Debug: Streaming layer rendered for cardId:', cardId)}
+              </div>
             )}
             
             {/* 🔧 最终显示层 - 完成后使用ReactMarkdown */}
@@ -834,10 +910,10 @@ function AIToolCard({
             <div className="flex justify-between items-center mb-2">
               <label className="text-sm font-medium text-gray-700">Prompt:</label>
               <select
-                value={aiModel}
+                value={localAiModel}
                 onChange={(e) => {
                   const newModel = e.target.value as 'deepseek' | 'openai'
-                  updateCardAiModel(cardId, newModel)
+                  setLocalAiModel(newModel)
                 }}
                 className="px-3 py-1 text-sm border border-gray-200 rounded-md text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
               >
@@ -950,7 +1026,7 @@ function AIToolCard({
                     )}
                     {(options || []).length > 0 && (
                       <span className="px-2 py-1 text-xs text-gray-500 bg-gray-50 rounded">
-                        {options.length} option{options.length !== 1 ? 's' : ''} configured
+                        {localOptions.length} option{localOptions.length !== 1 ? 's' : ''} configured
                       </span>
                     )}
                   </div>
@@ -991,15 +1067,15 @@ function AIToolCard({
                       onChange={(e) => {
                         const newOptions = [...options]
                         newOptions[index] = e.target.value
-                        updateCardOptions(cardId, newOptions)
+                        setLocalOptions(newOptions)
                       }}
                       placeholder="Enter option..."
                       className="flex-1 px-2 py-1 text-sm border border-gray-200 rounded text-gray-700 focus:outline-none focus:ring-1 focus:ring-purple-500"
                     />
                     <button
                       onClick={() => {
-                        const newOptions = options.filter((_, i) => i !== index)
-                        updateCardOptions(cardId, newOptions)
+                        const newOptions = localOptions.filter((_, i) => i !== index)
+                        setLocalOptions(newOptions)
                       }}
                       className="px-2 py-1 text-red-600 hover:bg-red-50 rounded transition-colors"
                     >

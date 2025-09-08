@@ -1,43 +1,102 @@
 import { NextRequest, NextResponse } from 'next/server'
 import puppeteer from 'puppeteer'
-import { marked } from 'marked'
+
+// Enhanced structured data interface (matching frontend parser)
+interface ParsedContent {
+  type: 'heading' | 'paragraph' | 'list' | 'code' | 'blockquote' | 'table' | 'hr' | 'image'
+  level?: number  // for headings (1-6)
+  content: string
+  items?: string[]  // for lists
+  language?: string  // for code blocks
+  inline?: boolean   // for inline code
+  listType?: 'ordered' | 'unordered'  // for lists
+  src?: string  // for images
+  alt?: string  // for images
+  headers?: string[]  // for tables
+  rows?: string[][]  // for tables
+}
 
 interface GeneratePDFRequest {
   cardName: string
-  aiContent: string
+  parsedContent: ParsedContent[]
   generatedAt?: string
 }
 
-// Convert markdown to HTML using marked library
-function convertMarkdownToHTML(markdownContent: string): string {
-  try {
-    console.log('Converting markdown, length:', markdownContent.length)
-    
-    // Configure marked for better compatibility
-    marked.setOptions({
-      breaks: true,
-      gfm: true,
-      headerIds: false,
-      mangle: false
-    })
-    
-    const result = marked(markdownContent) as string
-    console.log('Markdown converted successfully, HTML length:', result.length)
-    return result
-  } catch (error) {
-    console.error('Markdown conversion error:', error)
-    // Fallback to basic text
-    return `<p>${markdownContent.replace(/\n/g, '<br>')}</p>`
-  }
+// Process inline formatting (bold, italic, code, links)
+function processInlineFormatting(text: string): string {
+  return text
+    // Bold
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/__(.*?)__/g, '<strong>$1</strong>')
+    // Italic  
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/_(.*?)_/g, '<em>$1</em>')
+    // Inline code
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    // Links
+    .replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+}
+
+// Enhanced HTML conversion for Info Card & AI Tool Card content
+function convertStructuredContentToHTML(content: ParsedContent[]): string {
+  return content.map(item => {
+    switch (item.type) {
+      case 'heading':
+        const level = Math.min(Math.max(item.level || 1, 1), 6)
+        return `<h${level}>${processInlineFormatting(item.content)}</h${level}>`
+        
+      case 'paragraph':
+        return `<p>${processInlineFormatting(item.content)}</p>`
+        
+      case 'list':
+        if (item.items && item.items.length > 0) {
+          const listItems = item.items.map(listItem => 
+            `<li>${processInlineFormatting(listItem)}</li>`
+          ).join('')
+          const listTag = item.listType === 'ordered' ? 'ol' : 'ul'
+          return `<${listTag}>${listItems}</${listTag}>`
+        }
+        return ''
+        
+      case 'code':
+        if (item.inline) {
+          return `<code>${item.content}</code>`
+        } else {
+          return `<pre><code${item.language ? ` class="language-${item.language}"` : ''}>${item.content}</code></pre>`
+        }
+        
+      case 'blockquote':
+        return `<blockquote>${processInlineFormatting(item.content)}</blockquote>`
+        
+      case 'table':
+        if (item.headers && item.rows) {
+          const headerRow = item.headers.map(h => `<th>${processInlineFormatting(h)}</th>`).join('')
+          const bodyRows = item.rows.map(row => 
+            `<tr>${row.map(cell => `<td>${processInlineFormatting(cell)}</td>`).join('')}</tr>`
+          ).join('')
+          return `<table><thead><tr>${headerRow}</tr></thead><tbody>${bodyRows}</tbody></table>`
+        }
+        return ''
+        
+      case 'image':
+        return `<img src="${item.src}" alt="${item.alt || ''}" />`
+        
+      case 'hr':
+        return '<hr>'
+        
+      default:
+        return `<p>${processInlineFormatting(item.content || '')}</p>`
+    }
+  }).join('')
 }
 
 
 function generateAICardHTML(data: GeneratePDFRequest): string {
-  const { cardName, aiContent, generatedAt } = data
+  const { cardName, parsedContent, generatedAt } = data
   const timestamp = generatedAt || new Date().toLocaleString()
   
-  // Convert entire markdown content to HTML in one go for better processing
-  const htmlContent = convertMarkdownToHTML(aiContent)
+  // Convert structured content to HTML (no more markdown parsing)
+  const htmlContent = convertStructuredContentToHTML(parsedContent)
 
   return `
 <!DOCTYPE html>
@@ -47,211 +106,234 @@ function generateAICardHTML(data: GeneratePDFRequest): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${cardName} - AI Generated Content</title>
   <style>
+    /* Professional PDF Styling - Based on JD2CV Full */
+    @page {
+      size: A4;
+      margin: 0.6in 0.75in;
+    }
+    
     * {
-      margin: 0;
-      padding: 0;
       box-sizing: border-box;
     }
     
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    html, body {
+      font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", "WenQuanYi Zen Hei", "WenQuanYi Micro Hei", sans-serif;
+      font-size: 11pt;
       line-height: 1.6;
-      color: #333;
-      font-size: 14px;
-      background: white;
+      color: #1f2937;
       margin: 0;
       padding: 0;
+      background: white;
     }
     
     .document {
       max-width: 100%;
-      padding: 30px;
+      padding: 0;
       background: white;
       min-height: 100vh;
     }
     
     .header {
-      text-align: center;
-      border-bottom: 3px solid #6366f1;
-      padding-bottom: 20px;
-      margin-bottom: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #374151;
     }
     
     .header h1 {
-      font-size: 24px;
+      font-size: 16pt;
       font-weight: 700;
       color: #1f2937;
       margin: 0;
+      text-align: left;
+    }
+    
+    .timestamp {
+      font-size: 9pt;
+      color: #6b7280;
+      white-space: nowrap;
     }
     
     .content-wrapper {
       background: white;
-      padding: 20px;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      font-family: inherit;
-      line-height: 1.6;
+      padding: 0;
+      margin: 0;
       word-wrap: break-word;
       overflow-wrap: break-word;
+      page-break-inside: avoid;
     }
     
-    /* Clean markdown styling */
-    .content-wrapper h1, .content-wrapper h2, .content-wrapper h3, .content-wrapper h4, .content-wrapper h5, .content-wrapper h6 {
+    /* Professional content styling - matching frontend display */
+    h1, h2, h3, h4, h5, h6 {
       color: #1f2937;
       font-weight: 600;
-      margin: 16px 0 8px 0;
+      margin: 12pt 0 6pt 0;
       line-height: 1.3;
+      break-after: avoid-page;
     }
     
-    .content-wrapper h1 { font-size: 24px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; }
-    .content-wrapper h2 { font-size: 20px; }
-    .content-wrapper h3 { font-size: 18px; }
-    .content-wrapper h4 { font-size: 16px; }
-    .content-wrapper h5 { font-size: 14px; }
-    .content-wrapper h6 { font-size: 14px; }
+    h1 { font-size: 14pt; font-weight: 700; margin-top: 0; }
+    h2 { font-size: 12pt; font-weight: 600; }
+    h3 { font-size: 11pt; font-weight: 600; }
+    h4 { font-size: 11pt; font-weight: 500; }
+    h5 { font-size: 10pt; font-weight: 500; }
+    h6 { font-size: 10pt; font-weight: 500; }
     
-    .content-wrapper p {
-      color: #1f2937;
-      margin: 12px 0;
+    p {
+      color: #4b5563;
+      margin: 8pt 0;
       line-height: 1.6;
-      font-size: 14px;
+      font-size: 10.5pt;
+      break-inside: avoid;
     }
     
-    .content-wrapper ul, .content-wrapper ol {
-      margin: 12px 0;
-      padding-left: 24px;
-      color: #1f2937;
-      font-size: 14px;
+    ul, ol {
+      margin: 8pt 0;
+      padding-left: 16pt;
+      color: #4b5563;
+      font-size: 10.5pt;
     }
     
-    .content-wrapper li {
-      margin: 4px 0;
+    ul {
+      list-style: none;
+    }
+    
+    ol {
+      list-style: decimal;
+      padding-left: 20pt;
+    }
+    
+    ul li, ol li {
+      margin: 3pt 0;
       line-height: 1.6;
-      color: #1f2937;
-      font-size: 14px;
+      color: #4b5563;
+      font-size: 10.5pt;
+      position: relative;
+      break-inside: avoid;
     }
     
-    .content-wrapper strong {
+    ul li::before {
+      content: "•";
+      position: absolute;
+      left: -12pt;
+      color: #1f2937;
+    }
+    
+    strong {
       font-weight: 700;
       color: #1f2937;
     }
     
-    .content-wrapper em {
+    em {
       font-style: italic;
     }
     
-    .content-wrapper code {
-      background: #f1f5f9;
-      color: #1e293b;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-family: 'Courier New', monospace;
-      font-size: 13px;
+    code {
+      background: #f3f4f6;
+      color: #374151;
+      padding: 1pt 3pt;
+      border-radius: 2pt;
+      font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+      font-size: 9.5pt;
     }
     
-    .content-wrapper pre {
-      background: #f1f5f9;
-      border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      padding: 16px;
-      margin: 16px 0;
+    pre {
+      background: #f9fafb;
+      border: 1pt solid #e5e7eb;
+      border-radius: 4pt;
+      padding: 12pt;
+      margin: 12pt 0;
       overflow-x: auto;
       white-space: pre-wrap;
       word-wrap: break-word;
+      break-inside: avoid;
     }
     
-    .content-wrapper pre code {
+    pre code {
       background: none;
       padding: 0;
       border-radius: 0;
+      font-size: 9pt;
     }
     
-    .content-wrapper blockquote {
-      border-left: 4px solid #7c3aed;
-      padding-left: 16px;
-      margin: 16px 0;
+    blockquote {
+      border-left: 3pt solid #8b5cf6;
+      padding-left: 12pt;
+      margin: 12pt 0;
       color: #6b7280;
       font-style: italic;
+      break-inside: avoid;
     }
     
-    .content-wrapper a {
-      color: #7c3aed;
+    a {
+      color: #8b5cf6;
       text-decoration: underline;
     }
     
-    .content-wrapper hr {
+    hr {
       border: none;
-      border-top: 1px solid #e5e7eb;
-      margin: 24px 0;
+      border-top: 1pt solid #e5e7eb;
+      margin: 16pt 0;
     }
     
-    .content-wrapper table {
+    table {
       width: 100%;
       border-collapse: collapse;
-      margin: 16px 0;
-      font-size: 13px;
+      margin: 12pt 0;
+      font-size: 9.5pt;
+      break-inside: avoid;
     }
     
-    .content-wrapper th, .content-wrapper td {
-      border: 1px solid #e5e7eb;
-      padding: 8px 12px;
+    th, td {
+      border: 1pt solid #e5e7eb;
+      padding: 6pt 8pt;
       text-align: left;
     }
     
-    .content-wrapper th {
+    th {
       background: #f8fafc;
       font-weight: 600;
       color: #374151;
     }
     
-    .content-wrapper td {
-      color: #1f2937;
-      font-size: 13px;
+    td {
+      color: #4b5563;
+      font-size: 9.5pt;
     }
     
-    .content-wrapper img {
+    img {
       max-width: 100%;
       height: auto;
     }
     
     .footer {
-      margin-top: 40px;
-      padding-top: 20px;
-      border-top: 1px solid #e5e7eb;
-      text-align: right;
-      font-size: 10px;
+      margin-top: 24pt;
+      padding-top: 12pt;
+      border-top: 1pt solid #e5e7eb;
+      text-align: center;
+      font-size: 8pt;
       color: #9ca3af;
-    }
-    
-    /* Print optimizations */
-    @media print {
-      body { 
-        font-size: 11px; 
-      }
-      .document { 
-        padding: 20px; 
-      }
-      .content-section {
-        page-break-inside: avoid;
-      }
     }
   </style>
 </head>
 <body>
   <div class="document">
-    <!-- Header -->
+    <!-- Header - Professional Layout -->
     <div class="header">
       <h1>${cardName}</h1>
+      <div class="timestamp">${timestamp}</div>
     </div>
 
-    <!-- AI Content -->
+    <!-- AI Content - Direct rendering without wrapper -->
     <div class="content-wrapper">
       ${htmlContent}
     </div>
 
-    <!-- Footer -->
+    <!-- Footer - Clean and minimal -->
     <div class="footer">
-      <p>By AI Card Studio | Stanley Hi ${timestamp}</p>
+      <p>Generated by AI Card Studio</p>
     </div>
   </div>
 </body>
@@ -264,11 +346,11 @@ export async function POST(request: NextRequest) {
   
   try {
     const body: GeneratePDFRequest = await request.json()
-    console.log('Request body:', { cardName: body.cardName, contentLength: body.aiContent?.length })
+    console.log('Request body:', { cardName: body.cardName, contentLength: body.parsedContent?.length })
     
-    const { cardName, aiContent } = body
+    const { cardName, parsedContent } = body
 
-    // Basic validation
+    // Enhanced validation for structured data
     if (!cardName?.trim()) {
       console.log('Error: Card name missing')
       return NextResponse.json(
@@ -277,10 +359,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!aiContent?.trim()) {
-      console.log('Error: AI content missing')
+    if (!parsedContent || !Array.isArray(parsedContent) || parsedContent.length === 0) {
+      console.log('Error: Parsed content missing or invalid')
       return NextResponse.json(
-        { success: false, error: 'AI content is required' },
+        { success: false, error: 'Content is required for PDF generation' },
         { status: 400 }
       )
     }
@@ -289,73 +371,92 @@ export async function POST(request: NextRequest) {
     // Generate HTML content
     const htmlContent = generateAICardHTML(body)
     console.log('HTML content generated, length:', htmlContent.length)
+    
+    // Debug: Check if Chinese characters are in HTML
+    console.log('Content preview:', htmlContent.substring(320, 400))
+    console.log('Contains Chinese chars:', /[\u4e00-\u9fff]/.test(htmlContent))
 
     console.log('Launching Puppeteer...')
-    // Generate PDF using Puppeteer
+    // Generate PDF using Puppeteer - JD2CV improved configuration
     const browser = await puppeteer.launch({
-      headless: true,
+      headless: 'new',
       args: [
         '--no-sandbox',
-        '--disable-setuid-sandbox', 
+        '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-gpu',
-        '--disable-web-security',
-        '--disable-extensions',
-        '--no-first-run',
-        '--disable-default-apps'
-      ],
-      timeout: 30000  // 30 seconds launch timeout
+        '--font-render-hinting=none',
+        '--disable-font-subpixel-positioning',
+        '--disable-features=VizDisplayCompositor',
+        '--force-color-profile=generic-rgb'
+      ]
     })
 
-    console.log('Creating new page...')
     const page = await browser.newPage()
-    
-    console.log('Setting page content...')
-    // Set content and wait for rendering - use simpler wait strategy
-    await page.setContent(htmlContent, { 
-      waitUntil: 'load',
-      timeout: 10000
-    })
-    
-    console.log('Content set, proceeding to PDF generation...')
-    // Minimal wait - PDF generation should be fast
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    console.log('Generating PDF...')
-    const pdfBuffer = await page.pdf({
-      format: 'a4',
-      printBackground: true,
-      preferCSSPageSize: false,
-      margin: {
-        top: '15mm',
-        right: '15mm', 
-        bottom: '15mm',
-        left: '15mm'
-      },
-      displayHeaderFooter: false,
-      timeout: 10000  // 10 seconds timeout
-    })
 
-    console.log('PDF generated, size:', pdfBuffer.length)
-    await browser.close()
-    console.log('Browser closed')
+    try {
+      console.log('Setting page content...')
+      
+      // Set user agent to ensure proper font loading
+      await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+      
+      // JD2CV improvement: Better wait strategy
+      await page.setContent(htmlContent, { 
+        waitUntil: 'networkidle0',  // Wait for network to be idle
+        timeout: 30000
+      })
+      
+      // Force font loading completion
+      await page.evaluate(() => document.fonts.ready)
 
-    // Generate filename
-    const cleanCardName = cardName.replace(/[^a-z0-9]/gi, '_')
-    const timestamp = new Date().toISOString().split('T')[0] // YYYY-MM-DD format
-    const filename = `${cleanCardName}_${timestamp}.pdf`
-    console.log('Generated filename:', filename)
+      console.log('Generating PDF...')
+      // JD2CV improvement: Use CSS @page for sizing, no manual margins
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        preferCSSPageSize: true,  // Use CSS @page settings
+        margin: { top: 0, right: 0, bottom: 0, left: 0 }  // CSS controls margins
+      })
 
-    console.log('Returning PDF response...')
-    // Return PDF as response
-    return new NextResponse(Buffer.from(pdfBuffer), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-        'Cache-Control': 'no-cache'
+      await browser.close()
+
+      // JD2CV improvement: File size validation
+      const sizeInMB = pdfBuffer.length / (1024 * 1024)
+      console.log('PDF generated, size:', `${sizeInMB.toFixed(2)}MB`)
+
+      if (sizeInMB > 2) {
+        return NextResponse.json(
+          { 
+            error: 'PDF exceeds 2MB limit', 
+            actualSize: `${sizeInMB.toFixed(2)}MB`,
+            suggestion: 'Consider reducing content length'
+          },
+          { status: 413 }
+        )
       }
-    })
+
+      // Generate filename (no double cleaning - remove frontend duplication)
+      const cleanCardName = cardName.replace(/[^a-z0-9]/gi, '_')
+      const timestamp = new Date().toISOString().split('T')[0] // YYYY-MM-DD format
+      const filename = `${cleanCardName}_${timestamp}.pdf`
+      console.log('Generated filename:', filename)
+
+      console.log('Returning PDF response...')
+      // Return PDF as response
+      return new NextResponse(Buffer.from(pdfBuffer), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+          'Content-Length': pdfBuffer.length.toString(),
+          'Cache-Control': 'no-cache'
+        }
+      })
+
+    } catch (pdfError) {
+      await browser.close()
+      throw pdfError
+    }
 
   } catch (error: any) {
     console.error('=== PDF Generation Error ===')

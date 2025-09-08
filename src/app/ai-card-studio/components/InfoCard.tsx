@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, memo } from 'react'
+import { useState, useEffect, useRef, memo, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
 import { useWorkspaceStore } from '../store/workspaceStore'
+import { parseMarkdownToStructure } from '../utils/markdownParser'
 import { supabase } from '../../../lib/supabaseClient'
 import Modal from './ui/Modal'
 import SettingsModal from './ui/SettingsModal'
@@ -59,6 +60,12 @@ function InfoCard({
   const [localTitle, setLocalTitle] = useState(title)
   const [localDescription, setLocalDescription] = useState(description)
   
+  // Memoize URLs to prevent infinite loops from object reference changes
+  const urls = useMemo(() => currentCard?.urls || [], [currentCard?.urls])
+  
+  // Local state for manual save architecture
+  const [localUrls, setLocalUrls] = useState(urls)
+  
   // Update local state when store changes
   useEffect(() => {
     setLocalTitle(title)
@@ -68,8 +75,9 @@ function InfoCard({
     setLocalDescription(description)
   }, [description])
   
-  // Debounced functions removed - now using manual save only
-  const urls = currentCard?.urls || []
+  useEffect(() => {
+    setLocalUrls(urls)
+  }, [urls])
   const isLocked = currentCard?.isLocked || false
   const passwordHash = currentCard?.passwordHash || ''
   
@@ -185,7 +193,20 @@ function InfoCard({
       // 同步当前编辑的值到store
       updateCardTitle(cardId, localTitle)
       updateCardDescription(cardId, localDescription)
-      // URLs和密码锁已经实时更新到store了
+      
+      // 更新URLs到store
+      updateColumns(prev => prev.map(col =>
+        col.id === columnId
+          ? {
+              ...col,
+              cards: col.cards.map(card =>
+                card.id === cardId
+                  ? { ...card, urls: localUrls }
+                  : card
+              )
+            }
+          : col
+      ))
       
       // 缓存到localStorage
       syncToCache()
@@ -221,34 +242,14 @@ function InfoCard({
   const addUrl = () => {
     if (!newUrl.trim()) return
     
-    updateColumns(prev => prev.map(col =>
-      col.id === columnId
-        ? {
-            ...col,
-            cards: col.cards.map(card =>
-              card.id === cardId
-                ? { ...card, urls: [...(card.urls || []), newUrl.trim()] }
-                : card
-            )
-          }
-        : col
-    ))
+    // 使用本地状态管理
+    setLocalUrls(prev => [...prev, newUrl.trim()])
     setNewUrl('')
   }
 
   const removeUrl = (urlIndex: number) => {
-    updateColumns(prev => prev.map(col =>
-      col.id === columnId
-        ? {
-            ...col,
-            cards: col.cards.map(card =>
-              card.id === cardId
-                ? { ...card, urls: (card.urls || []).filter((_, i) => i !== urlIndex) }
-                : card
-            )
-          }
-        : col
-    ))
+    // 使用本地状态管理
+    setLocalUrls(prev => prev.filter((_, i) => i !== urlIndex))
   }
 
   // Trigger n8n workflows
@@ -286,9 +287,11 @@ function InfoCard({
 
       // Update description with results
       updateCardDescription(cardId, results)
+      syncToCache()
     } catch (error) {
       console.error('Trigger failed:', error)
       updateCardDescription(cardId, 'Error: Failed to trigger workflows')
+      syncToCache()
     } finally {
       setIsTriggering(false)
     }
@@ -392,6 +395,39 @@ function InfoCard({
     }
   }, [autoOpenSettings])
 
+  // Prevent data loss on page leave and route changes
+  useEffect(() => {
+    // Check if there are unsaved local changes
+    const hasLocalChanges = 
+      localTitle !== title || 
+      localDescription !== description ||
+      JSON.stringify(localUrls) !== JSON.stringify(urls)
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasLocalChanges) {
+        e.preventDefault()
+        return (e.returnValue = '您有未保存的更改')
+      }
+    }
+    
+    const handlePopstate = (event: PopStateEvent) => {
+      if (hasLocalChanges) {
+        const confirmed = window.confirm('您有未保存的更改，确定要离开吗？')
+        if (!confirmed) {
+          window.history.pushState(null, '', window.location.href)
+          event.preventDefault()
+        }
+      }
+    }
+    
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    window.addEventListener('popstate', handlePopstate)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      window.removeEventListener('popstate', handlePopstate)
+    }
+  }, [localTitle, title, localDescription, description, localUrls, urls])
+
   return (
     <div className="bg-gradient-to-br from-white/95 to-purple-50/30 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 border border-white/50 p-4 pt-6 relative transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-1 group">
       
@@ -405,6 +441,9 @@ function InfoCard({
           try {
             console.log('Generating PDF for Info Card:', title)
             
+            // Parse description markdown to structured data
+            const parsedContent = parseMarkdownToStructure(description)
+            
             const response = await fetch('/api/ai-card-studio/generate-pdf', {
               method: 'POST',
               headers: {
@@ -412,7 +451,7 @@ function InfoCard({
               },
               body: JSON.stringify({
                 cardName: title || 'Info Card',
-                aiContent: description,
+                parsedContent: parsedContent,
                 generatedAt: new Date().toLocaleString()
               })
             })
@@ -422,9 +461,8 @@ function InfoCard({
             }
 
             const blob = await response.blob()
-            const cleanCardName = (title || 'Info_Card').replace(/[^a-z0-9]/gi, '_')
-            const timestamp = new Date().toISOString().split('T')[0]
-            const filename = `${cleanCardName}_${timestamp}.pdf`
+            // Backend handles filename generation
+            const filename = `${(title || 'Info_Card').replace(/[^a-zA-Z0-9\s]/g, '')}_Info.pdf`
             
             // Download the PDF
             const url = window.URL.createObjectURL(blob)
@@ -852,8 +890,8 @@ function InfoCard({
             
             {/* URLs list */}
             <div className="space-y-2 max-h-48 overflow-y-auto">
-              {urls.length > 0 ? (
-                urls.map((url, index) => (
+              {localUrls.length > 0 ? (
+                localUrls.map((url, index) => (
                   <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
                     <span className="flex-1 text-sm text-gray-700 truncate" title={url}>
                       {url}
