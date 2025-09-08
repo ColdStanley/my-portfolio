@@ -33,7 +33,7 @@
     "js-sha256": "^0.11.1",
     "jspdf": "^3.0.1",
     "lucide-react": "^0.511.0",
-    "marked": "^16.1.2",
+    "marked": "^16.2.1",
     "next": "15.3.3",
     "nodemailer": "^7.0.5",
     "notion-client": "^7.3.0",

@@ -11,8 +11,8 @@ import { useWorkspaceStore } from '../store/workspaceStore'
 import { useAdminAuth } from '../hooks/useAdminAuth'
 
 export default function AICardStudio() {
-  const { canvases, activeCanvasId, isLoading, saveError, columnExecutionStatus, actions } = useWorkspaceStore()
-  const { updateColumns, updateCanvases, clearSaveError, saveWorkspace, runColumnWorkflow, addCanvas, setActiveCanvas } = actions
+  const { canvases, activeCanvasId, isLoading, saveError, columnExecutionStatus, hasUnsavedChanges, actions } = useWorkspaceStore()
+  const { updateColumns, updateCanvases, clearSaveError, saveWorkspace, runColumnWorkflow, addCanvas, setActiveCanvas, setHasUnsavedChanges } = actions
   const { isAdmin } = useAdminAuth()
   
   // Get active canvas and its columns
@@ -33,7 +33,7 @@ export default function AICardStudio() {
   
   // Global save state
   const [isSaving, setIsSaving] = useState(false)
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  // hasUnsavedChanges现在来自store
   
   // Import functionality
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -260,7 +260,7 @@ export default function AICardStudio() {
     setIsSaving(true)
     try {
       await saveWorkspace()
-      setHasUnsavedChanges(false)
+      setHasUnsavedChanges(false) // 重置store中的状态
     } catch (error) {
       console.error('Save failed:', error)
     } finally {
@@ -268,13 +268,8 @@ export default function AICardStudio() {
     }
   }
 
-  // Track changes to set unsaved state
-  useEffect(() => {
-    // Any time canvases change, mark as unsaved
-    // Note: AI-generated content won't be saved to database but user interactions 
-    // (like editing prompts, button names) still need to be saved
-    setHasUnsavedChanges(true)
-  }, [canvases])
+  // 🔧 移除自动触发的hasUnsavedChanges
+  // 现在只有用户点击卡片Save按钮时才设置hasUnsavedChanges=true
 
   // Developer Panel Keyboard Shortcut - God Mode Access
   useEffect(() => {

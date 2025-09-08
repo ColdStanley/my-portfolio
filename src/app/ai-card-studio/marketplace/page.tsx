@@ -32,7 +32,7 @@ export default function MarketplacePage() {
   // Initialize workspace store for importing functionality
   const { actions } = useWorkspaceStore()
 
-  // Initialize workspace on component mount
+  // Initialize workspace on component mount - cache-first strategy
   useEffect(() => {
     const initWorkspace = async () => {
       try {
@@ -42,7 +42,15 @@ export default function MarketplacePage() {
         if (!authError && session?.user) {
           console.log('User authenticated, loading workspace for:', session.user.id)
           actions.setUser(session.user)
-          await actions.fetchAndHandleWorkspace(session.user.id)
+          
+          // 🔧 缓存优先策略 - 优先加载缓存，避免覆盖用户修改
+          const hasCache = actions.loadFromCache()
+          if (!hasCache) {
+            console.log('No cache found, loading from database')
+            await actions.fetchAndHandleWorkspace(session.user.id)
+          } else {
+            console.log('Workspace loaded from cache for marketplace')
+          }
         } else {
           console.log('No authenticated user or auth error:', authError)
         }

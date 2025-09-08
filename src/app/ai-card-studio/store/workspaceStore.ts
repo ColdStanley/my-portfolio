@@ -13,6 +13,7 @@ interface WorkspaceState {
   saveError: string | null;
   columnExecutionStatus: { [columnId: string]: boolean }; // Track column execution status
   currentAbortController: AbortController | null; // 管理请求取消
+  hasUnsavedChanges: boolean; // 全局保存状态
   actions: {
     fetchAndHandleWorkspace: (userId: string, abortSignal?: AbortSignal) => Promise<void>;
     cancelCurrentRequest: () => void;
@@ -32,6 +33,7 @@ interface WorkspaceState {
     setUser: (user: User | null) => void;
     clearSaveError: () => void;
     resetWorkspace: () => void;
+    setHasUnsavedChanges: (hasChanges: boolean) => void;
     
     // Fine-grained card update actions
     updateCardTitle: (cardId: string, title: string) => void;
@@ -95,15 +97,17 @@ const defaultCanvases: Canvas[] = [
   }
 ];
 
-// Manual save only - no debounce
+// Manual save only
 
-// 🔧 确保AI工具卡片有正确的初始字段
+// 🔧 确保AI工具卡片有正确的初始字段，保留内容但重置状态
 const ensureAIToolCardFields = (card: any) => {
   if (card.type === 'aitool') {
     return {
       ...card,
-      generatedContent: '',  // 始终为空字符串
-      isGenerating: false,   // 初始化为false
+      // 🔧 保留现有AI回复内容
+      generatedContent: card.generatedContent ?? '',
+      // 🔧 页面刷新后总是重置生成状态（异步操作已中断）
+      isGenerating: false,
       // 其他字段保持原样
     }
   }
@@ -130,11 +134,17 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   saveError: null,
   columnExecutionStatus: {},
   currentAbortController: null,
+  hasUnsavedChanges: false,
 
   actions: {
     setUser: (user) => set({ user }),
 
     clearSaveError: () => set({ saveError: null }),
+    
+    setHasUnsavedChanges: (hasChanges: boolean) => {
+      console.log('🔧 Setting hasUnsavedChanges:', hasChanges)
+      set({ hasUnsavedChanges: hasChanges })
+    },
 
     // 🚫 取消当前请求
     cancelCurrentRequest: () => {
@@ -522,10 +532,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     updateCanvases: (updater) => {
       set((state) => ({ canvases: updater(state.canvases) }));
       
-      // 🔧 实时同步到LocalStorage缓存
-      get().actions.syncToCache();
-      
-      console.log('Canvases updated and cached. Use Save button for cloud sync.');
+      // 🔧 移除自动缓存 - 只在用户明确保存时才缓存
+      console.log('Canvases updated (no auto-cache).');
     },
 
     updateColumns: (updater) => {
@@ -544,10 +552,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         )
       }));
       
-      // 🔧 实时同步到LocalStorage缓存
-      get().actions.syncToCache();
-      
-      console.log('Active canvas columns updated and cached. Use Save button for cloud sync.');
+      // 🔧 移除自动缓存
+      console.log('Active canvas columns updated (no auto-cache).');
     },
 
     moveColumn: (columnId, direction) => {
@@ -622,10 +628,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         )
       }));
       
-      // 🔧 实时同步到LocalStorage缓存
-      get().actions.syncToCache();
-      
-      console.log('Card moved and cached. Use Save button for cloud sync.');
+      // 🔧 移除自动缓存
+      console.log('Card moved (no auto-cache).');
     },
 
     runColumnWorkflow: async (columnId) => {
@@ -710,6 +714,13 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           const decoder = new TextDecoder();
           let fullResponse = '';
           let buffer = '';
+          
+          // 🔧 Claude风格节流更新 - 显示与状态分离
+          let lastDisplayUpdate = 0;
+          const THROTTLE_MS = 100; // 100ms节流
+          
+          // 找到显示元素用于实时更新
+          const displayElement = document.querySelector(`[data-ai-response="${cardId}"]`) as HTMLElement;
 
           // Process streaming response
           while (true) {
@@ -735,15 +746,13 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
                   const content = parsed.choices?.[0]?.delta?.content || '';
                   if (content) {
                     fullResponse += content;
-                    // Update content in real-time
-                    get().actions.updateColumns(prev => prev.map(col => ({
-                      ...col,
-                      cards: col.cards.map(c =>
-                        c.id === cardId
-                          ? { ...c, generatedContent: fullResponse }
-                          : c
-                      )
-                    })));
+                    
+                    // 🔧 节流更新显示 - 直接DOM操作，不触发状态更新
+                    const now = Date.now();
+                    if (displayElement && now - lastDisplayUpdate > THROTTLE_MS) {
+                      displayElement.textContent = fullResponse;
+                      lastDisplayUpdate = now;
+                    }
                   }
                 } catch (parseError) {
                   console.warn('Skipping malformed JSON line:', data);
@@ -761,20 +770,26 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
                 const content = parsed.choices?.[0]?.delta?.content || '';
                 if (content) {
                   fullResponse += content;
-                  get().actions.updateColumns(prev => prev.map(col => ({
-                    ...col,
-                    cards: col.cards.map(c =>
-                      c.id === cardId
-                        ? { ...c, generatedContent: fullResponse }
-                        : c
-                    )
-                  })));
+                  // 最终显示更新
+                  if (displayElement) {
+                    displayElement.textContent = fullResponse;
+                  }
                 }
               } catch (parseError) {
                 console.warn('Skipping final malformed JSON:', data);
               }
             }
           }
+          
+          // 🔧 完成后一次性状态更新和缓存同步
+          get().actions.updateColumns(prev => prev.map(col => ({
+            ...col,
+            cards: col.cards.map(c =>
+              c.id === cardId
+                ? { ...c, generatedContent: fullResponse }
+                : c
+            )
+          })));
           
           // Mark as completed
           get().actions.updateColumns(prev => prev.map(col => ({
@@ -980,10 +995,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         };
       });
       
-      // 🔧 实时同步到LocalStorage缓存
-      get().actions.syncToCache();
-      
-      console.log('Info card title updated and cached. Use Save button for cloud sync.');
+      // 🔧 移除自动缓存
+      console.log('Info card title updated (no auto-cache).');
     },
 
     updateCardDescription: (cardId: string, description: string) => {
@@ -1001,10 +1014,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         }))
       }));
       
-      // 🔧 实时同步到LocalStorage缓存
-      get().actions.syncToCache();
-      
-      console.log('Info card description updated and cached. Use Save button for cloud sync.');
+      // 🔧 移除自动缓存  
+      console.log('Info card description updated (no auto-cache).');
     },
 
     updateCardButtonName: (cardId: string, buttonName: string) => {
@@ -1056,10 +1067,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         };
       });
       
-      // 🔧 实时同步到LocalStorage缓存
-      get().actions.syncToCache();
-      
-      console.log('AI card button name updated and cached. Use Save button for cloud sync.');
+      // 🔧 移除自动缓存
+      console.log('AI card button name updated (no auto-cache).');
     },
 
     updateCardPromptText: (cardId: string, promptText: string) => {
@@ -1077,10 +1086,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         }))
       }));
       
-      // 🔧 实时同步到LocalStorage缓存
-      get().actions.syncToCache();
-      
-      console.log('AI card prompt text updated and cached. Use Save button for cloud sync.');
+      // 🔧 移除自动缓存
+      console.log('AI card prompt text updated (no auto-cache).');
     },
 
     updateCardOptions: (cardId: string, options: string[]) => {
@@ -1098,10 +1105,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         }))
       }));
       
-      // 🔧 实时同步到LocalStorage缓存
-      get().actions.syncToCache();
-      
-      console.log('AI card options updated and cached. Use Save button for cloud sync.');
+      // 🔧 移除自动缓存
+      console.log('AI card options updated (no auto-cache).');
     },
 
     updateCardAiModel: (cardId: string, aiModel: 'deepseek' | 'openai') => {
@@ -1119,13 +1124,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         }))
       }));
       
-      // 🔧 实时同步到LocalStorage缓存
-      get().actions.syncToCache();
-      
-      console.log('AI card model updated and cached. Use Save button for cloud sync.');
+      // 🔧 移除自动缓存
+      console.log('AI card model updated (no auto-cache).');
     },
 
-    updateCardGeneratedContent: (cardId: string, generatedContent: string) => {
+    updateCardGeneratedContent: (cardId: string, generatedContent: string, shouldCache = true) => {
       set((state) => ({
         canvases: state.canvases.map(canvas => ({
           ...canvas,
@@ -1140,10 +1143,13 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         }))
       }));
       
-      // 🔧 实时同步到LocalStorage缓存
-      get().actions.syncToCache();
-      
-      console.log('AI card generated content updated and cached. Use Save button for cloud sync.');
+      // 🔧 只有在最终完成时才同步缓存
+      if (shouldCache) {
+        get().actions.syncToCache();
+        console.log('AI card generated content updated and cached. Use Save button for cloud sync.');
+      } else {
+        console.log('AI card generated content updated (no cache sync).');
+      }
     },
 
     updateCardGeneratingState: (cardId: string, isGenerating: boolean) => {
@@ -1181,10 +1187,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         }))
       }));
       
-      // 🔧 实时同步到LocalStorage缓存
-      get().actions.syncToCache();
-      
-      console.log('Card deleted and cached. Use Save button for cloud sync.');
+      // 🔧 移除自动缓存
+      console.log('Card deleted (no auto-cache).');
     },
 
     updateCardLockStatus: (cardId: string, isLocked: boolean, passwordHash?: string) => {
@@ -1206,10 +1210,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         }))
       }));
       
-      // 🔧 实时同步到LocalStorage缓存
-      get().actions.syncToCache();
-      
-      console.log(`Card ${cardId} ${isLocked ? 'locked' : 'unlocked'} and cached. Use Save button for cloud sync.`);
+      // 🔧 移除自动缓存
+      console.log(`Card ${cardId} ${isLocked ? 'locked' : 'unlocked'} (no auto-cache).`);
     },
   },
 }));
