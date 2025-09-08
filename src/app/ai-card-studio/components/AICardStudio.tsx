@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { useRouter } from 'next/navigation'
 import { Column, ColumnCard } from '../types'
 import { generateUniqueButtonName, generateUniqueTitle } from '../utils/cardUtils'
 import ColumnComponent from './Column'
@@ -14,6 +15,7 @@ export default function AICardStudio() {
   const { canvases, activeCanvasId, isLoading, saveError, columnExecutionStatus, hasUnsavedChanges, actions } = useWorkspaceStore()
   const { updateColumns, updateCanvases, clearSaveError, saveWorkspace, runColumnWorkflow, addCanvas, setActiveCanvas, setHasUnsavedChanges } = actions
   const { isAdmin } = useAdminAuth()
+  const router = useRouter()
   
   // Get active canvas and its columns
   const activeCanvas = canvases.find(canvas => canvas.id === activeCanvasId)
@@ -293,6 +295,25 @@ export default function AICardStudio() {
       document.removeEventListener('keydown', handleKeyboardShortcut)
     }
   }, [isAdmin])
+
+  // Route change protection - prevent navigation with unsaved changes
+  useEffect(() => {
+    const handlePopstate = (event: PopStateEvent) => {
+      if (hasUnsavedChanges) {
+        const confirmed = window.confirm('您有未保存的更改，确定要离开吗？')
+        if (!confirmed) {
+          // Push current state back to prevent navigation
+          window.history.pushState(null, '', window.location.href)
+          event.preventDefault()
+        }
+      }
+    }
+
+    window.addEventListener('popstate', handlePopstate)
+    return () => {
+      window.removeEventListener('popstate', handlePopstate)
+    }
+  }, [hasUnsavedChanges])
 
   // 🔧 Use conditional rendering instead of conditional returns to maintain hook order
   if (isLoading) {
