@@ -1,9 +1,8 @@
-import { useState, useRef, useEffect, memo, useCallback } from 'react'
+import { useState, useRef, useEffect, memo } from 'react'
 import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
-import { debounce } from '../utils/performanceUtils'
 import { resolveReferences } from '../utils/cardUtils'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import Modal from './ui/Modal'
@@ -25,7 +24,7 @@ function AIToolCard({
   onInsertCard
 }: AIToolCardProps) {
   const { canvases, actions } = useWorkspaceStore()
-  const { moveCard, updateCardButtonName, updateCardPromptText, updateCardOptions, updateCardAiModel, updateCardGeneratedContent, updateCardGeneratingState, deleteCard, updateCardLockStatus } = actions
+  const { moveCard, updateCardButtonName, updateCardPromptText, updateCardOptions, updateCardAiModel, updateCardGeneratedContent, updateCardGeneratingState, deleteCard, updateCardLockStatus, syncToCache, setHasUnsavedChanges } = actions
   
   // Get current card data from Zustand store
   const currentColumn = canvases.flatMap(canvas => canvas.columns).find(col => col.id === columnId)
@@ -53,20 +52,7 @@ function AIToolCard({
     setLocalPromptText(promptText)
   }, [promptText])
   
-  // Debounced store updates to prevent input lag
-  const debouncedUpdateButtonName = useCallback(
-    debounce((cardId: string, newName: string) => {
-      updateCardButtonName(cardId, newName)
-    }, 300),
-    [updateCardButtonName]
-  )
-  
-  const debouncedUpdatePromptText = useCallback(
-    debounce((cardId: string, newPrompt: string) => {
-      updateCardPromptText(cardId, newPrompt)
-    }, 300),
-    [updateCardPromptText]
-  )
+  // Debounced functions removed - now using manual save only
   const options = currentCard?.options || []
   const aiModel = currentCard?.aiModel || 'deepseek'
   const generatedContent = currentCard?.generatedContent || ''
@@ -93,6 +79,10 @@ function AIToolCard({
   
   // PDF generation state
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
+  
+  // Card save state
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
 
   // Auto-open settings for newly created cards
   useEffect(() => {
@@ -124,11 +114,10 @@ function AIToolCard({
       description: card.description || ''
     })) || []
 
-  // Handle textarea input changes with debouncing
+  // Handle textarea input changes (local only, no auto-save)
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value
     setLocalPromptText(newValue)
-    debouncedUpdatePromptText(cardId, newValue)
   }
 
   // Insert reference at cursor position
@@ -142,7 +131,6 @@ function AIToolCard({
       
       const newText = textBefore + referenceText + textAfter
       setLocalPromptText(newText)
-      debouncedUpdatePromptText(cardId, newText)
       
       setTimeout(() => {
         const newCursorPosition = cursorPosition + referenceText.length
@@ -163,7 +151,6 @@ function AIToolCard({
       
       const newText = textBefore + referenceText + textAfter
       setLocalPromptText(newText)
-      debouncedUpdatePromptText(cardId, newText)
       
       setTimeout(() => {
         const newCursorPosition = cursorPosition + referenceText.length
@@ -214,6 +201,35 @@ function AIToolCard({
     setTimeout(() => {
       setPasswordModal(prev => ({ ...prev, shouldRender: false }))
     }, 300) // Wait for animation to complete
+  }
+
+  // 🔧 卡片保存功能
+  const handleCardSave = async () => {
+    setIsSaving(true)
+    setSaveSuccess(false)
+    
+    try {
+      // 同步当前编辑的值到store
+      updateCardButtonName(cardId, localButtonName)
+      updateCardPromptText(cardId, localPromptText)
+      // AI模型和选项已经实时更新到store了
+      
+      // 缓存到localStorage
+      syncToCache()
+      
+      // 标记全局有未保存更改
+      setHasUnsavedChanges(true)
+      
+      setSaveSuccess(true)
+      console.log('🔧 Card saved to localStorage and marked for cloud sync')
+      
+      // 2秒后清除成功状态
+      setTimeout(() => setSaveSuccess(false), 2000)
+    } catch (error) {
+      console.error('Card save failed:', error)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   // Modified settings click to check for lock
@@ -274,6 +290,13 @@ function AIToolCard({
       const decoder = new TextDecoder()
       let fullResponse = ''
       let buffer = '' // 添加缓冲区
+      
+      // 🔧 Claude风格节流更新 - 显示与状态分离
+      let lastDisplayUpdate = 0
+      const THROTTLE_MS = 100 // 100ms节流
+      
+      // 找到显示元素用于实时更新
+      const displayElement = document.querySelector(`[data-ai-response="${cardId}"]`) as HTMLElement
 
       while (true) {
         const { done, value } = await reader.read()
@@ -298,7 +321,13 @@ function AIToolCard({
               const content = parsed.choices?.[0]?.delta?.content || ''
               if (content) {
                 fullResponse += content
-                updateCardGeneratedContent(cardId, fullResponse)
+                
+                // 🔧 节流更新显示 - 直接DOM操作，不触发状态更新
+                const now = Date.now()
+                if (displayElement && now - lastDisplayUpdate > THROTTLE_MS) {
+                  displayElement.textContent = fullResponse
+                  lastDisplayUpdate = now
+                }
               }
             } catch {
               // 忽略解析错误，继续处理下一行
@@ -317,13 +346,19 @@ function AIToolCard({
             const content = parsed.choices?.[0]?.delta?.content || ''
             if (content) {
               fullResponse += content
-              updateCardGeneratedContent(cardId, fullResponse)
+              // 最终显示更新
+              if (displayElement) {
+                displayElement.textContent = fullResponse
+              }
             }
           } catch {
             console.warn('Skipping final malformed JSON:', data)
           }
         }
       }
+      
+      // 🔧 完成后一次性状态更新和缓存同步  
+      updateCardGeneratedContent(cardId, fullResponse, true) // shouldCache = true
       
       setShowOptionsTooltip(false)
     } catch (error) {
@@ -347,6 +382,10 @@ function AIToolCard({
   }
 
   const handleClosePromptTooltip = () => {
+    // 恢复到store原值
+    setLocalButtonName(buttonName)
+    setLocalPromptText(promptText)
+    
     setPromptTooltipVisible(false)
     setTimeout(() => setShowPromptTooltip(false), 250)
   }
@@ -568,10 +607,20 @@ function AIToolCard({
                 </svg>
               </div>
             )}
-            <div className="prose prose-sm max-w-none text-gray-700">
-              <ReactMarkdown
-                remarkPlugins={[remarkBreaks, remarkGfm]}
-                components={{
+            {/* 🔧 流式显示层 - 生成时使用 */}
+            {isGenerating && (
+              <div 
+                className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap"
+                data-ai-response={cardId}
+              />
+            )}
+            
+            {/* 🔧 最终显示层 - 完成后使用ReactMarkdown */}
+            {!isGenerating && (
+              <div className="prose prose-sm max-w-none text-gray-700">
+                <ReactMarkdown
+                  remarkPlugins={[remarkBreaks, remarkGfm]}
+                  components={{
                   h1: ({node, ...props}) => (
                     <h1 className="text-xl font-bold text-gray-800 mb-3 mt-4 first:mt-0 border-b border-gray-200 pb-1" {...props} />
                   ),
@@ -673,10 +722,11 @@ function AIToolCard({
                     <sub className="text-xs" {...props} />
                   )
                 }}
-              >
-                {generatedContent}
-              </ReactMarkdown>
-            </div>
+                >
+                  {generatedContent}
+                </ReactMarkdown>
+              </div>
+            )}
           </div>
         ) : null}
       </div>
@@ -752,6 +802,9 @@ function AIToolCard({
             </div>
           }
           onClose={handleClosePromptTooltip}
+          onSave={handleCardSave}
+          isSaving={isSaving}
+          saveSuccess={saveSuccess}
           onDelete={() => {
             // Trigger close animation first
             setPromptTooltipVisible(false)
@@ -770,7 +823,6 @@ function AIToolCard({
               onChange={(e) => {
                 const newValue = e.target.value
                 setLocalButtonName(newValue)
-                debouncedUpdateButtonName(cardId, newValue)
               }}
               placeholder="Enter button name..."
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -883,7 +935,6 @@ function AIToolCard({
                             
                             const newText = textBefore + optionText + textAfter
                             setLocalPromptText(newText)
-                            debouncedUpdatePromptText(cardId, newText)
                             
                             setTimeout(() => {
                               const newCursorPosition = cursorPosition + optionText.length

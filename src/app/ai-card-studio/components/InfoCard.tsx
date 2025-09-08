@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef, memo, useCallback } from 'react'
+import { useState, useEffect, useRef, memo } from 'react'
 import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
-import { debounce } from '../utils/performanceUtils'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import { supabase } from '../../../lib/supabaseClient'
 import Modal from './ui/Modal'
@@ -32,7 +31,7 @@ function InfoCard({
   isColumnExecuting = false
 }: InfoCardProps) {
   const { canvases, actions } = useWorkspaceStore()
-  const { moveColumn, moveCard, updateColumns, updateCardTitle, updateCardDescription, deleteCard, updateCardLockStatus } = actions
+  const { moveColumn, moveCard, updateColumns, updateCardTitle, updateCardDescription, deleteCard, updateCardLockStatus, syncToCache, setHasUnsavedChanges } = actions
   
   // Get current column and card data from Zustand store
   const currentColumn = canvases.flatMap(canvas => canvas.columns).find(col => col.id === columnId)
@@ -69,20 +68,7 @@ function InfoCard({
     setLocalDescription(description)
   }, [description])
   
-  // Debounced store updates to prevent input lag
-  const debouncedUpdateTitle = useCallback(
-    debounce((cardId: string, newTitle: string) => {
-      updateCardTitle(cardId, newTitle)
-    }, 300),
-    [updateCardTitle]
-  )
-  
-  const debouncedUpdateDescription = useCallback(
-    debounce((cardId: string, newDescription: string) => {
-      updateCardDescription(cardId, newDescription)
-    }, 300),
-    [updateCardDescription]
-  )
+  // Debounced functions removed - now using manual save only
   const urls = currentCard?.urls || []
   const isLocked = currentCard?.isLocked || false
   const passwordHash = currentCard?.passwordHash || ''
@@ -108,6 +94,10 @@ function InfoCard({
   
   // PDF generation state
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
+  
+  // Card save state
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
   
   // Marketplace modal state
   const [showMarketplaceModal, setShowMarketplaceModal] = useState(false)
@@ -169,6 +159,10 @@ function InfoCard({
   }
 
   const handleCloseSettingsTooltip = () => {
+    // 恢复到store原值
+    setLocalTitle(title)
+    setLocalDescription(description)
+    
     setSettingsTooltipVisible(false)
     setTimeout(() => setShowSettingsTooltip(false), 250)
   }
@@ -180,6 +174,35 @@ function InfoCard({
       setShowSettingsTooltip(false)
       deleteCard(columnId, cardId)
     }, 250) // Wait for animation to complete
+  }
+
+  // 🔧 Info卡片保存功能
+  const handleCardSave = async () => {
+    setIsSaving(true)
+    setSaveSuccess(false)
+    
+    try {
+      // 同步当前编辑的值到store
+      updateCardTitle(cardId, localTitle)
+      updateCardDescription(cardId, localDescription)
+      // URLs和密码锁已经实时更新到store了
+      
+      // 缓存到localStorage
+      syncToCache()
+      
+      // 标记全局有未保存更改
+      setHasUnsavedChanges(true)
+      
+      setSaveSuccess(true)
+      console.log('🔧 Info card saved to localStorage and marked for cloud sync')
+      
+      // 2秒后清除成功状态
+      setTimeout(() => setSaveSuccess(false), 2000)
+    } catch (error) {
+      console.error('Info card save failed:', error)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   // URLs management
@@ -721,6 +744,9 @@ function InfoCard({
             </div>
           ) : undefined}
           onClose={handleCloseSettingsTooltip}
+          onSave={handleCardSave}
+          isSaving={isSaving}
+          saveSuccess={saveSuccess}
           onDelete={handleDelete}
         >
           {/* Card Name */}
@@ -732,7 +758,6 @@ function InfoCard({
               onChange={(e) => {
                 const newValue = e.target.value
                 setLocalTitle(newValue)
-                debouncedUpdateTitle(cardId, newValue)
               }}
               placeholder="Enter card name..."
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -760,7 +785,6 @@ function InfoCard({
               onChange={(e) => {
                 const newValue = e.target.value
                 setLocalDescription(newValue)
-                debouncedUpdateDescription(cardId, newValue)
               }}
               placeholder="Enter description..."
               className="w-full h-32 p-3 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
