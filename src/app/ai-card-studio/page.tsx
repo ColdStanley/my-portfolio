@@ -19,6 +19,7 @@ export default function AICardStudioPage() {
   const initializedRef = useRef(false)
   const visibilityRef = useRef(true) // Track page visibility
 
+
   // Set page title
   useEffect(() => {
     document.title = "AI Card Studio | Stanley Hi"
@@ -34,15 +35,13 @@ export default function AICardStudioPage() {
     const handleVisibilityChange = () => {
       visibilityRef.current = !document.hidden
       if (visibilityRef.current) {
-        console.log('👀 Page became visible')
-        
-        // 🔧 页面可见时恢复 - 极简缓存加载
+        // 🔧 页面可见时恢复 - 轻量检查更新
         if (user) {
-          console.log('👀 Page became visible, loading from cache...')
-          actions.loadFromCache()
+          actions.checkForUpdates(user.id).catch(error => {
+            console.warn('Update check failed:', error)
+          })
         }
       } else {
-        console.log('🙈 Page became hidden, canceling requests...')
         // 🚫 页面隐藏时取消当前请求
         actions.cancelCurrentRequest()
       }
@@ -71,16 +70,8 @@ export default function AICardStudioPage() {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (!mounted) return
         
-        console.log(`🔔 Auth state change: ${event}`, { 
-          hasSession: !!session, 
-          hasUser: !!session?.user,
-          userId: session?.user?.id,
-          email: session?.user?.email 
-        })
         
         if (session?.user) {
-          console.log('👤 User authenticated:', session.user.email)
-          console.log('🆔 User ID:', session.user.id)
           
           // 🎯 设置recent session标记，避免刷新时闪烁
           localStorage.setItem('ai-card-studio-recent-session', Date.now().toString())
@@ -89,39 +80,25 @@ export default function AICardStudioPage() {
           setUser(session.user)
           actions.setUser(session.user)
           
-          // 🎯 首次初始化或登录事件处理
-          if (event === 'SIGNED_IN' || !initializedRef.current) {
-            console.log('🚀 Initializing workspace for user:', session.user.id)
+          // 🎯 首次初始化或真正的登录事件处理
+          if (!initializedRef.current) {
             initializedRef.current = true
             
-            // 优先加载缓存，无缓存时从数据库加载
-            const hasCache = actions.loadFromCache()
-            if (hasCache) {
-              console.log('💾 Cache loaded, setting authenticated state')
-              setAuthState('authenticated')
-            } else {
-              console.log('🔄 No cache, fetching from database')
-              actions.fetchAndHandleWorkspace(session.user.id)
-                .then(() => {
-                  console.log('✅ Database loaded, setting authenticated state')
-                  setAuthState('authenticated')
-                })
-                .catch(error => {
-                  if (error.message?.includes('AbortError')) {
-                    console.log('🚫 Initial fetch cancelled')
-                  } else {
-                    console.error('Initial workspace fetch failed:', error)
-                    // 即使失败也设置为已认证，显示默认内容
-                    setAuthState('authenticated')
-                  }
-                })
-            }
+            // 🔧 使用新的智能加载逻辑
+            actions.loadWorkspace(session.user.id)
+              .then(() => {
+                setAuthState('authenticated')
+              })
+              .catch(error => {
+                console.error('Smart workspace load failed:', error)
+                // 即使失败也设置为已认证，显示默认内容
+                setAuthState('authenticated')
+              })
           } else {
             // 已初始化的情况，直接设置为已认证
             setAuthState('authenticated')
           }
         } else {
-          console.log('🚪 User signed out or no session')
           localStorage.removeItem('ai-card-studio-recent-session')
           setUser(null)
           actions.setUser(null)
@@ -135,45 +112,32 @@ export default function AICardStudioPage() {
           if (!mounted) return
           
           if (error || !session) {
-            console.log('No session found, setting unauthenticated')
             setAuthState('unauthenticated')
             return
           }
           
           // 成功恢复session
-          console.log('✅ Session restored:', session.user.email)
           localStorage.setItem('ai-card-studio-recent-session', Date.now().toString())
           
           setUser(session.user)
           actions.setUser(session.user)
           
-          // 首次初始化：优先缓存，统一状态更新
+          // 首次初始化：使用智能加载逻辑
           if (!initializedRef.current) {
             initializedRef.current = true
-            const hasCache = actions.loadFromCache()
-            if (hasCache) {
-              console.log('💾 Session restored with cache, setting authenticated')
-              setAuthState('authenticated')
-            } else {
-              console.log('🔄 Session restored, no cache, fetching from database')
-              actions.fetchAndHandleWorkspace(session.user.id)
-                .then(() => {
-                  console.log('✅ Database loaded after session restore')
-                  setAuthState('authenticated')
-                })
-                .catch(() => {
-                  console.log('❌ Database failed, but setting authenticated anyway')
-                  setAuthState('authenticated')
-                })
-            }
+            actions.loadWorkspace(session.user.id)
+              .then(() => {
+                setAuthState('authenticated')
+              })
+              .catch(() => {
+                setAuthState('authenticated')
+              })
           } else {
             // 已初始化，直接设置认证状态
-            console.log('💾 Session restored, already initialized')
             setAuthState('authenticated')
           }
         })
         .catch((error) => {
-          console.log('Session check failed:', error.message)
           setAuthState('unauthenticated')
         })
 
@@ -203,13 +167,11 @@ export default function AICardStudioPage() {
 
   const handleSignOut = async () => {
     try {
-      console.log('Signing out...')
       const { error } = await supabase.auth.signOut()
       if (error) {
         console.error('Sign out error:', error.message)
         alert('Sign out failed: ' + error.message)
       } else {
-        console.log('Sign out successful')
         // 🎯 清理recent session标记
         localStorage.removeItem('ai-card-studio-recent-session')
         

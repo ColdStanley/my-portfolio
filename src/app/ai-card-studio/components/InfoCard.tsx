@@ -32,7 +32,7 @@ function InfoCard({
   isColumnExecuting = false
 }: InfoCardProps) {
   const { canvases, actions } = useWorkspaceStore()
-  const { moveColumn, moveCard, updateColumns, updateCardTitle, updateCardDescription, deleteCard, updateCardLockStatus, syncToCache, setHasUnsavedChanges } = actions
+  const { moveColumn, moveCard, updateColumns, updateCardTitle, updateCardDescription, deleteCard, updateCardLockStatus, setHasUnsavedChanges } = actions
   
   // Get current column and card data from Zustand store
   const currentColumn = canvases.flatMap(canvas => canvas.columns).find(col => col.id === columnId)
@@ -140,17 +140,17 @@ function InfoCard({
       updateCardLockStatus(cardId, true, hash)
       handlePasswordCancel()
     } else {
-      // Verify password
+      // Verify password to unlock
       if (verifyPassword(password, passwordHash)) {
-        if (isLocked) {
-          // Unlock card
-          updateCardLockStatus(cardId, false)
-        } else {
-          // Open settings after successful verification (for settings access)
+        // Unlock card
+        updateCardLockStatus(cardId, false)
+        handlePasswordCancel()
+        
+        // Auto-open settings after unlocking
+        setTimeout(() => {
           setShowSettingsTooltip(true)
           setTimeout(() => setSettingsTooltipVisible(true), 10)
-        }
-        handlePasswordCancel()
+        }, 100)
       } else {
         // Wrong password - let PasswordModal handle the error display
         // Don't close modal, let user try again
@@ -208,14 +208,11 @@ function InfoCard({
           : col
       ))
       
-      // 缓存到localStorage
-      syncToCache()
-      
-      // 标记全局有未保存更改
+      // 标记全局有未保存更改 
       setHasUnsavedChanges(true)
       
       setSaveSuccess(true)
-      console.log('🔧 Info card saved to localStorage and marked for cloud sync')
+      console.log('🔧 Info card saved and marked for cloud sync')
       
       // 2秒后清除成功状态
       setTimeout(() => setSaveSuccess(false), 2000)
@@ -254,16 +251,16 @@ function InfoCard({
 
   // Trigger n8n workflows
   const handleTriggerWorkflows = async () => {
-    if (!urls.length || isTriggering) return
+    if (!localUrls.length || isTriggering) return
 
     setIsTriggering(true)
     
     try {
       const responses = await Promise.allSettled(
-        urls.map(url => {
+        localUrls.map(url => {
           // Prepare payload - only include text if description has content
-          const payload = description.trim() 
-            ? { text: description.trim() }
+          const payload = localDescription.trim() 
+            ? { text: localDescription.trim() }
             : {}
           
           return fetch(url, {
@@ -287,11 +284,9 @@ function InfoCard({
 
       // Update description with results
       updateCardDescription(cardId, results)
-      syncToCache()
     } catch (error) {
       console.error('Trigger failed:', error)
       updateCardDescription(cardId, 'Error: Failed to trigger workflows')
-      syncToCache()
     } finally {
       setIsTriggering(false)
     }
@@ -434,7 +429,7 @@ function InfoCard({
       {/* PDF Export Button - Top Right, left of Insert button */}
       <button
         onClick={async () => {
-          if (!description?.trim() || isGeneratingPDF) return
+          if (!localDescription?.trim() || isGeneratingPDF) return
           
           setIsGeneratingPDF(true)
           
@@ -442,7 +437,7 @@ function InfoCard({
             console.log('Generating PDF for Info Card:', title)
             
             // Parse description markdown to structured data
-            const parsedContent = parseMarkdownToStructure(description)
+            const parsedContent = parseMarkdownToStructure(localDescription)
             
             const response = await fetch('/api/ai-card-studio/generate-pdf', {
               method: 'POST',
@@ -579,7 +574,7 @@ function InfoCard({
       </div>
       
       {/* Trigger Button - only show if URLs are configured, positioned between title and description */}
-      {urls.length > 0 && (
+      {localUrls.length > 0 && (
         <button
           onClick={handleTriggerWorkflows}
           disabled={isTriggering}

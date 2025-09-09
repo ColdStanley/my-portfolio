@@ -43,14 +43,9 @@ export default function MarketplacePage() {
           console.log('User authenticated, loading workspace for:', session.user.id)
           actions.setUser(session.user)
           
-          // 🔧 缓存优先策略 - 优先加载缓存，避免覆盖用户修改
-          const hasCache = actions.loadFromCache()
-          if (!hasCache) {
-            console.log('No cache found, loading from database')
-            await actions.fetchAndHandleWorkspace(session.user.id)
-          } else {
-            console.log('Workspace loaded from cache for marketplace')
-          }
+          // 🔧 使用智能加载逻辑
+          console.log('Loading workspace intelligently for marketplace')
+          await actions.loadWorkspace(session.user.id)
         } else {
           console.log('No authenticated user or auth error:', authError)
         }

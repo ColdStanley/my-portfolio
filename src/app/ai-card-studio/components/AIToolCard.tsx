@@ -25,7 +25,7 @@ function AIToolCard({
   onInsertCard
 }: AIToolCardProps) {
   const { canvases, actions } = useWorkspaceStore()
-  const { moveCard, updateCardButtonName, updateCardPromptText, updateCardOptions, updateCardAiModel, updateCardGeneratedContent, updateCardGeneratingState, deleteCard, updateCardLockStatus, syncToCache, setHasUnsavedChanges } = actions
+  const { moveCard, updateCardButtonName, updateCardPromptText, updateCardOptions, updateCardAiModel, updateCardGeneratedContent, updateCardGeneratingState, deleteCard, updateCardLockStatus, setHasUnsavedChanges } = actions
   
   // Get current card data from Zustand store
   const currentColumn = canvases.flatMap(canvas => canvas.columns).find(col => col.id === columnId)
@@ -225,17 +225,17 @@ function AIToolCard({
       updateCardLockStatus(cardId, true, hash)
       handlePasswordCancel()
     } else {
-      // Verify password
+      // Verify password to unlock
       if (verifyPassword(password, passwordHash)) {
-        if (isLocked) {
-          // Unlock card
-          updateCardLockStatus(cardId, false)
-        } else {
-          // Open settings after successful verification (for settings access)
+        // Unlock card
+        updateCardLockStatus(cardId, false)
+        handlePasswordCancel()
+        
+        // Auto-open settings after unlocking
+        setTimeout(() => {
           setShowPromptTooltip(true)
           setTimeout(() => setPromptTooltipVisible(true), 10)
-        }
-        handlePasswordCancel()
+        }, 100)
       } else {
         // Wrong password - let PasswordModal handle the error display
         throw new Error('Invalid password')
@@ -262,14 +262,11 @@ function AIToolCard({
       updateCardOptions(cardId, localOptions)
       updateCardAiModel(cardId, localAiModel)
       
-      // 缓存到localStorage
-      syncToCache()
-      
       // 标记全局有未保存更改
       setHasUnsavedChanges(true)
       
       setSaveSuccess(true)
-      console.log('🔧 Card saved to localStorage and marked for cloud sync')
+      console.log('🔧 Card saved and marked for cloud sync')
       
       // 2秒后清除成功状态
       setTimeout(() => setSaveSuccess(false), 2000)
@@ -294,7 +291,7 @@ function AIToolCard({
   }
 
   const handleGenerateClick = async (selectedOption?: string) => {
-    if (!promptText.trim()) return
+    if (!localPromptText.trim()) return
     
     if ((localOptions || []).length > 0 && !selectedOption) {
       setShowOptionsTooltip(true)
@@ -306,7 +303,7 @@ function AIToolCard({
     updateCardGeneratingState(cardId, true)
     
     try {
-      let resolvedPrompt = resolveReferences(promptText, canvases, columnId)
+      let resolvedPrompt = resolveReferences(localPromptText, canvases, columnId)
       
       // Replace option placeholder with selected value if both exist
       const hasOptions = (localOptions || []).length > 0
@@ -1065,7 +1062,7 @@ function AIToolCard({
                       type="text"
                       value={optionValue}
                       onChange={(e) => {
-                        const newOptions = [...options]
+                        const newOptions = [...localOptions]
                         newOptions[index] = e.target.value
                         setLocalOptions(newOptions)
                       }}
@@ -1085,8 +1082,8 @@ function AIToolCard({
                 ))}
                 <button
                   onClick={() => {
-                    const newOptions = [...options, '']
-                    updateCardOptions(cardId, newOptions)
+                    const newOptions = [...localOptions, '']
+                    setLocalOptions(newOptions)
                   }}
                   className="w-full px-3 py-1 text-sm text-purple-600 border border-purple-200 rounded hover:bg-purple-50 transition-colors"
                 >

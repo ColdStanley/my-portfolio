@@ -17,9 +17,18 @@ export default function AICardStudio() {
   const { isAdmin } = useAdminAuth()
   const router = useRouter()
   
-  // Get active canvas and its columns
+  // Get active canvas and its columns - auto-set if no active canvas
+  useEffect(() => {
+    if (canvases.length > 0 && !activeCanvasId) {
+      setActiveCanvas(canvases[0].id)
+    }
+  }, [canvases, activeCanvasId, setActiveCanvas])
+  
   const activeCanvas = canvases.find(canvas => canvas.id === activeCanvasId)
   const columns = activeCanvas?.columns || []
+  
+  // Show loading until data is properly loaded
+  const isDataLoaded = canvases.length > 0 && activeCanvasId && activeCanvas
   
   const [showCardTypeModal, setShowCardTypeModal] = useState(false)
   const [cardTypeModalVisible, setCardTypeModalVisible] = useState(false)
@@ -61,6 +70,9 @@ export default function AICardStudio() {
     }
 
     updateColumns(prev => [...prev, newColumn])
+    
+    // Mark as having unsaved changes
+    setHasUnsavedChanges(true)
 
     // Remove justCreated flag after animation
     setTimeout(() => {
@@ -107,6 +119,9 @@ export default function AICardStudio() {
           }
         : col
     ))
+    
+    // Mark as having unsaved changes
+    setHasUnsavedChanges(true)
 
     // Remove justCreated flag after animation
     setTimeout(() => {
@@ -206,6 +221,9 @@ export default function AICardStudio() {
 
       // Auto-save after import
       await saveWorkspace()
+      
+      // 🔧 导入成功后同步缓存，确保刷新后能看到导入的内容
+      actions.syncToCache()
 
       // Clear the file input
       if (fileInputRef.current) {
@@ -259,14 +277,18 @@ export default function AICardStudio() {
 
   // Global save functions
   const handleGlobalSave = async () => {
+    console.log('🔄 Global Save button clicked!', { hasUnsavedChanges, isSaving })
     setIsSaving(true)
     try {
+      console.log('📤 Calling saveWorkspace...')
       await saveWorkspace()
+      console.log('✅ saveWorkspace completed successfully')
       setHasUnsavedChanges(false) // 重置store中的状态
     } catch (error) {
-      console.error('Save failed:', error)
+      console.error('❌ Save failed:', error)
     } finally {
       setIsSaving(false)
+      console.log('🏁 Global Save process finished')
     }
   }
 
@@ -316,7 +338,7 @@ export default function AICardStudio() {
   }, [hasUnsavedChanges])
 
   // 🔧 Use conditional rendering instead of conditional returns to maintain hook order
-  if (isLoading) {
+  if (isLoading || !isDataLoaded) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
         <div className="flex items-center gap-3 text-purple-600">
@@ -454,7 +476,7 @@ export default function AICardStudio() {
                   onClick={toggleDropdown}
                   className="flex items-center gap-2 px-4 py-2 bg-white border border-purple-200 rounded-lg text-purple-600 font-medium hover:bg-purple-50 transition-all duration-200 min-w-[200px] justify-between"
                 >
-                  <span>{activeCanvas?.name || 'Select Canvas'}</span>
+                  <span>{activeCanvas?.name || (canvases.length > 0 ? canvases[0].name : 'Loading...')}</span>
                   <svg 
                     className={`w-4 h-4 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`}
                     fill="none" 
