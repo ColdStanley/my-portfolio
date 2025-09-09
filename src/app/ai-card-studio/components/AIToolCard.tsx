@@ -1052,7 +1052,7 @@ function AIToolCard({
               </div>
               
               <div className="space-y-2">
-                {(options || []).map((optionValue, index) => (
+                {(localOptions || []).map((optionValue, index) => (
                   <div key={index} className="flex gap-2">
                     <input
                       type="text"
