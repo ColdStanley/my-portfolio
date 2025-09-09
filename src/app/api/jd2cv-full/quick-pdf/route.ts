@@ -61,6 +61,10 @@ function generateHTML(pdfData: QuickPDFData, modules: CVModule[]): string {
 <html>
 <head>
   <meta charset="UTF-8">
+  <!-- Google Fonts for Chinese support -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     @page {
       size: A4;
@@ -74,7 +78,7 @@ function generateHTML(pdfData: QuickPDFData, modules: CVModule[]): string {
     }
     
     body {
-      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      font-family: "Noto Sans SC", "Noto Sans CJK SC", "PingFang SC", "Hiragino Sans GB", "Source Han Sans SC", "Microsoft YaHei", "Arial Unicode MS", "Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
       font-size: 11px;
       line-height: 1.4;
       color: #333;

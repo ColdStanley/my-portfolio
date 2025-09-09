@@ -148,6 +148,10 @@ function generatePDFHTML(modules: any[], format: string, title?: string): string
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${escapeHTML(title || 'CV')}</title>
+    <!-- Google Fonts for Chinese support -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* Print-specific styles */
         @page {
@@ -162,7 +166,7 @@ function generatePDFHTML(modules: any[], format: string, title?: string): string
         }
         
         body {
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+            font-family: "Noto Sans SC", "Noto Sans CJK SC", "PingFang SC", "Hiragino Sans GB", "Source Han Sans SC", "Microsoft YaHei", "Arial Unicode MS", system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
             color: #000;
             line-height: 1.4;
             margin: 0;

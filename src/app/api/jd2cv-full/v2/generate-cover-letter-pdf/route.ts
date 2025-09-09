@@ -69,6 +69,10 @@ function generateCoverLetterHTML(
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${personalInfo.fullName} - Cover Letter</title>
+  <!-- Google Fonts for Chinese support -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * {
       margin: 0;
@@ -77,7 +81,7 @@ function generateCoverLetterHTML(
     }
     
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: "Noto Sans SC", "Noto Sans CJK SC", "PingFang SC", "Hiragino Sans GB", "Source Han Sans SC", "Microsoft YaHei", "Arial Unicode MS", "Helvetica", "Arial", sans-serif;
       line-height: 1.6;
       color: #333;
       font-size: 11px;

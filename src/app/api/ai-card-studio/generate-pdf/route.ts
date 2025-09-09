@@ -3,20 +3,13 @@ import MarkdownIt from 'markdown-it'
 
 // Vercel runtime configuration
 export const runtime = 'nodejs'
-export const maxDuration = 30  // 30 seconds for PDF generation
+export const maxDuration = 45  // 45 seconds for PDF generation with Chinese font loading
 
-// Dynamic imports to handle different environments
+// Unified Puppeteer configuration for all environments
 const getPuppeteer = async () => {
-  if (process.env.NODE_ENV === 'production') {
-    // Production environment (Vercel) - use @sparticuz/chromium
-    const puppeteer = await import('puppeteer-core')
-    const chromium = await import('@sparticuz/chromium')
-    return { puppeteer: puppeteer.default, chromium: chromium.default }
-  } else {
-    // Development environment - use regular puppeteer
-    const puppeteer = await import('puppeteer')
-    return { puppeteer: puppeteer.default, chromium: null }
-  }
+  const puppeteer = await import('puppeteer-core')
+  const chromium = await import('@sparticuz/chromium')
+  return { puppeteer: puppeteer.default, chromium: chromium.default }
 }
 
 interface GeneratePDFRequest {
@@ -59,6 +52,10 @@ export async function POST(req: NextRequest) {
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>${cardName} - AI Generated Content</title>
+          <!-- Google Fonts for Chinese support -->
+          <link rel="preconnect" href="https://fonts.googleapis.com">
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+          <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
           <style>
             /* Professional PDF Styling - Enhanced for line break preservation */
             @page {
@@ -71,7 +68,7 @@ export async function POST(req: NextRequest) {
             }
             
             html, body {
-              font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", "WenQuanYi Zen Hei", "WenQuanYi Micro Hei", sans-serif;
+              font-family: "Noto Sans SC", "Noto Sans CJK SC", "PingFang SC", "Hiragino Sans GB", "Source Han Sans SC", "Microsoft YaHei", "Arial Unicode MS", "Helvetica", "Arial", sans-serif;
               font-size: 11pt;
               line-height: 1.6;
               color: #1f2937;
@@ -301,30 +298,65 @@ export async function POST(req: NextRequest) {
       </html>
     `
 
-    // 3. Environment-specific Puppeteer configuration
+    // 3. Unified Puppeteer configuration
     console.log('Launching browser...')
     const { puppeteer, chromium } = await getPuppeteer()
     
-    if (chromium) {
-      // Production environment (Vercel)
+    // Determine configuration based on environment
+    if (process.env.NODE_ENV === 'production') {
+      // Production - use @sparticuz/chromium
       browser = await puppeteer.launch({
-        args: chromium.args,
+        args: [
+          ...chromium.args,
+          '--font-render-hinting=none',
+          '--disable-font-subpixel-positioning',
+          '--disable-lcd-text'
+        ],
         defaultViewport: chromium.defaultViewport,
         executablePath: await chromium.executablePath(),
         headless: chromium.headless,
         ignoreHTTPSErrors: true
       })
     } else {
-      // Development environment
-      browser = await puppeteer.launch({
-        headless: 'new',
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu'
+      // Development - use system Chrome/Chromium or bundled browser
+      try {
+        // Try to find system Chrome first
+        const possiblePaths = [
+          '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+          '/Applications/Chromium.app/Contents/MacOS/Chromium',
+          '/usr/bin/google-chrome',
+          '/usr/bin/chromium-browser'
         ]
-      })
+        
+        let executablePath = null
+        for (const path of possiblePaths) {
+          try {
+            require('fs').accessSync(path)
+            executablePath = path
+            break
+          } catch (e) {
+            continue
+          }
+        }
+        
+        browser = await puppeteer.launch({
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--font-render-hinting=none',
+            '--disable-font-subpixel-positioning',
+            '--disable-lcd-text'
+          ],
+          executablePath, // null will use bundled Chromium if available
+          headless: 'new',
+          ignoreHTTPSErrors: true
+        })
+      } catch (devError) {
+        console.error('Development browser launch failed:', devError)
+        throw new Error('Could not launch browser in development environment')
+      }
     }
 
     const page = await browser.newPage()
@@ -336,10 +368,27 @@ export async function POST(req: NextRequest) {
       timeout: 10000  // Reduced timeout for serverless
     })
     
-    // Wait for fonts to load (with timeout)
+    // Enhanced font loading for Chinese fonts
+    await page.evaluateOnNewDocument(() => {
+      // Preload Chinese font
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'font';
+      link.href = 'https://fonts.gstatic.com/s/notosanssc/v36/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG9_FnYxNbPzS5HE.woff2';
+      link.type = 'font/woff2';
+      link.crossOrigin = 'anonymous';
+      document.head.appendChild(link);
+    });
+
+    // Wait for fonts to load with extended timeout for Chinese fonts
     await Promise.race([
-      page.evaluate(() => document.fonts.ready),
-      new Promise(resolve => setTimeout(resolve, 3000))  // Max 3s wait
+      page.evaluate(async () => {
+        await document.fonts.ready;
+        // Additional check to ensure Chinese fonts are loaded
+        await document.fonts.load('12px "Noto Sans SC"');
+        return true;
+      }),
+      new Promise(resolve => setTimeout(resolve, 8000))  // Increased to 8s for Chinese fonts
     ])
 
     // 4. Generate PDF optimized for Vercel
