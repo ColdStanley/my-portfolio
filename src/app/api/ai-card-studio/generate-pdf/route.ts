@@ -368,7 +368,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('PDF generation error:', error)
     
-    // Ensure browser is closed
+    // Ensure browser is closed 11
     if (browser) {
       try {
         await browser.close()
