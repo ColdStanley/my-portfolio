@@ -621,7 +621,7 @@ const step5_GeneratePDF = async (pdfModules: any[], jd: any, config: any) => {
     }))
     
     // 使用内部PDF生成逻辑，避免HTTP调用
-    const puppeteer = require('puppeteer')
+    const puppeteer = require("puppeteer-core")
     
     const pdfRequest = {
       config,

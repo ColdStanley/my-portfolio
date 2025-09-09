@@ -5,7 +5,6 @@ import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
 import { resolveReferences } from '../utils/cardUtils'
 import { useWorkspaceStore } from '../store/workspaceStore'
-import { parseMarkdownToStructure } from '../utils/markdownParser'
 import Modal from './ui/Modal'
 import SettingsModal from './ui/SettingsModal'
 import PasswordModal from './ui/PasswordModal'
@@ -491,9 +490,6 @@ function AIToolCard({
           try {
             console.log('Generating PDF for card:', buttonName)
             
-            // Parse markdown to structured data (no more dual rendering)
-            const parsedContent = parseMarkdownToStructure(generatedContent)
-            
             const response = await fetch('/api/ai-card-studio/generate-pdf', {
               method: 'POST',
               headers: {
@@ -501,7 +497,7 @@ function AIToolCard({
               },
               body: JSON.stringify({
                 cardName: buttonName,
-                parsedContent: parsedContent,
+                content: generatedContent,  // Send raw markdown content
                 generatedAt: new Date().toLocaleString()
               })
             })
@@ -511,7 +507,7 @@ function AIToolCard({
             }
 
             const blob = await response.blob()
-            // Backend now handles filename generation, no double cleaning needed
+            // Frontend controls filename
             const filename = `${buttonName.replace(/[^a-zA-Z0-9\s]/g, '')}_AI_Card.pdf`
             
             // Download the PDF

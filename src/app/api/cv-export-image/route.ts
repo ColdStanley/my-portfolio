@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import puppeteer from 'puppeteer'
+import puppeteer from "puppeteer-core"
 
 export async function POST(req: NextRequest) {
   try {

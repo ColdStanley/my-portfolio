@@ -4,7 +4,6 @@ import ReactMarkdown from 'react-markdown'
 import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
 import { useWorkspaceStore } from '../store/workspaceStore'
-import { parseMarkdownToStructure } from '../utils/markdownParser'
 import { supabase } from '../../../lib/supabaseClient'
 import Modal from './ui/Modal'
 import SettingsModal from './ui/SettingsModal'
@@ -436,9 +435,6 @@ function InfoCard({
           try {
             console.log('Generating PDF for Info Card:', title)
             
-            // Parse description markdown to structured data
-            const parsedContent = parseMarkdownToStructure(localDescription)
-            
             const response = await fetch('/api/ai-card-studio/generate-pdf', {
               method: 'POST',
               headers: {
@@ -446,7 +442,7 @@ function InfoCard({
               },
               body: JSON.stringify({
                 cardName: title || 'Info Card',
-                parsedContent: parsedContent,
+                content: localDescription,  // Send raw markdown content
                 generatedAt: new Date().toLocaleString()
               })
             })
