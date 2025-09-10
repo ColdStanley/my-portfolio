@@ -1,6 +1,7 @@
 import { Column } from '../types'
 import InfoCard from './InfoCard'
 import AIToolCard from './AIToolCard'
+import styles from './Column.module.css'
 
 interface ColumnProps {
   column: Column
@@ -28,42 +29,6 @@ export default function ColumnComponent({
   // Check if column has AI tool cards
   const hasAIToolCards = column.cards.some(card => card.type === 'aitool')
   return (
-    <>
-      <style jsx>{`
-        .staggered-entry {
-          opacity: 0;
-          transform: translate3d(0, 20px, 0) scale(0.95);
-          animation: staggered-fade-in 2400ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
-          will-change: transform, opacity;
-        }
-        
-        @keyframes staggered-fade-in {
-          0% {
-            opacity: 0;
-            transform: translate3d(0, 20px, 0) scale(0.95);
-          }
-          100% {
-            opacity: 1;
-            transform: translate3d(0, 0, 0) scale(1);
-          }
-        }
-        
-        .staggered-entry.animation-complete {
-          animation: none;
-          opacity: 1;
-          transform: translate3d(0, 0, 0) scale(1);
-          will-change: auto;
-        }
-        
-        .card-smooth-transition {
-          transition: transform 300ms cubic-bezier(0.4, 0.0, 0.2, 1);
-          will-change: transform;
-        }
-        
-        .card-smooth-transition:not(:hover) {
-          will-change: auto;
-        }
-      `}</style>
       <div className="flex-shrink-0 w-[480px] h-full relative">
       {/* Up Arrow - 悬浮在列外上方 */}
       <button
@@ -135,11 +100,11 @@ export default function ColumnComponent({
         {column.cards.map((card, cardIndex) => (
           <div
             key={card.id}
-            className={`relative card-smooth-transition staggered-entry ${
+            className={`relative ${styles.cardSmoothTransition} ${styles.staggeredEntry} ${
               card.deleting
                 ? 'translate-y-4 translate-x-2 opacity-0 scale-95 ease-in'
                 : card.justCreated
-                ? 'animation-complete translate-y-0 opacity-100 scale-100'
+                ? `${styles.animationComplete} translate-y-0 opacity-100 scale-100`
                 : ''
             } ${
               cardIndex === 0 && card.type === 'info' ? 'sticky top-0 z-20' : ''
@@ -184,6 +149,5 @@ export default function ColumnComponent({
         </div>
       </div>
       </div>
-    </>
   )
 }

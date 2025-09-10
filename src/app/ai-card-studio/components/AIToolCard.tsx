@@ -516,12 +516,12 @@ function AIToolCard({
   }
 
   return (
-    <div className="bg-gradient-to-br from-white/95 to-purple-50/30 dark:from-neutral-800/95 dark:to-purple-900/20 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 dark:shadow-purple-400/10 border border-white/50 dark:border-neutral-700/50 p-4 relative transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/30 dark:hover:shadow-purple-400/20 hover:-translate-y-1 group">
+    <div className="bg-gradient-to-br from-white/95 to-purple-50/30 dark:from-neutral-800/95 dark:to-purple-900/20 lakers:from-lakers-600/30 lakers:to-lakers-400/20 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 dark:shadow-purple-400/10 lakers:shadow-lakers-400/30 border border-white/50 dark:border-neutral-700/50 lakers:border-lakers-400/50 p-4 relative transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/30 dark:hover:shadow-purple-400/20 lakers:hover:shadow-lakers-400/40 hover:-translate-y-1 group">
       {/* Single Menu Button - Top Right */}
       <button
         ref={cardMenuButtonRef}
         onClick={handleCardMenuOpen}
-        className="absolute top-4 right-4 w-6 h-6 bg-white/80 dark:bg-neutral-700/80 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-full flex items-center justify-center text-gray-400 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-400/20 hover:scale-110 hover:-translate-y-0.5"
+        className="absolute top-4 right-4 w-6 h-6 bg-white/80 dark:bg-neutral-700/80 lakers:bg-lakers-400/30 hover:bg-purple-50 dark:hover:bg-purple-900/50 lakers:hover:bg-lakers-400/50 rounded-full flex items-center justify-center text-gray-400 dark:text-neutral-400 lakers:text-lakers-200 hover:text-purple-600 dark:hover:text-purple-400 lakers:hover:text-lakers-400 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-400/20 lakers:hover:shadow-lakers-400/30 hover:scale-110 hover:-translate-y-0.5"
         title="Card actions"
         style={{ pointerEvents: 'auto' }}
       >

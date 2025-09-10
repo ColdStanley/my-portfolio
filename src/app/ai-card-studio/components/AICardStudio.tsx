@@ -429,12 +429,12 @@ export default function AICardStudio() {
       )}
 
       {/* Full screen layout - optimized spacing */}
-      <div className="min-h-screen bg-white dark:bg-neutral-900 pt-16 px-6 pb-0">
+      <div className="min-h-screen bg-white dark:bg-neutral-900 lakers:bg-gradient-to-br lakers:from-lakers-600 lakers:to-lakers-700 pt-16 px-6 pb-0">
         <div className="max-w-full mx-auto">
           {/* Header Navigation Bar */}
           <div className="flex items-center justify-between mb-6">
             {/* Left side - Title */}
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 lakers:from-lakers-400 lakers:to-lakers-500 bg-clip-text text-transparent">
               AI Card Studio
             </h1>
             
@@ -443,7 +443,7 @@ export default function AICardStudio() {
               {/* Marketplace Button */}
               <a
                 href="/ai-card-studio/marketplace"
-                className="px-4 py-2 bg-white dark:bg-neutral-800 dark:bg-neutral-800 border border-purple-200 dark:border-purple-700 text-purple-600 dark:text-purple-400 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 dark:hover:bg-purple-900/20 rounded-lg font-medium transition-all duration-200 flex items-center gap-2"
+                className="px-4 py-2 bg-white dark:bg-neutral-800 lakers:bg-lakers-400/20 border border-purple-200 dark:border-purple-700 lakers:border-lakers-400 text-purple-600 dark:text-purple-400 lakers:text-lakers-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 lakers:hover:bg-lakers-400/30 rounded-lg font-medium transition-all duration-200 flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -452,19 +452,19 @@ export default function AICardStudio() {
               </a>
               
               {/* Save Status Indicator */}
-              <div className="text-sm text-gray-500 dark:text-neutral-400">
+              <div className="text-sm text-gray-500 dark:text-neutral-400 lakers:text-lakers-300">
                 {isSaving ? (
                   <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 animate-spin text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 animate-spin text-purple-600 dark:text-purple-400 lakers:text-lakers-400" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
                     </svg>
-                    <span className="text-purple-600 dark:text-purple-400 dark:text-purple-400">Saving...</span>
+                    <span className="text-purple-600 dark:text-purple-400 lakers:text-lakers-400">Saving...</span>
                   </div>
                 ) : hasUnsavedChanges ? (
-                  <span className="text-purple-600 dark:text-purple-400 dark:text-purple-400">Unsaved changes</span>
+                  <span className="text-purple-600 dark:text-purple-400 lakers:text-lakers-400">Unsaved changes</span>
                 ) : (
-                  <span className="text-purple-600 dark:text-purple-400 dark:text-purple-400">All saved</span>
+                  <span className="text-purple-600 dark:text-purple-400 lakers:text-lakers-400">All saved</span>
                 )}
               </div>
               
@@ -474,8 +474,8 @@ export default function AICardStudio() {
                 disabled={isSaving || !hasUnsavedChanges}
                 className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 relative ${
                   hasUnsavedChanges && !isSaving
-                    ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-xl animate-pulse-urgent'
-                    : 'bg-gray-100 dark:bg-neutral-700 text-gray-400 dark:text-neutral-500 cursor-not-allowed'
+                    ? 'bg-purple-600 hover:bg-purple-700 lakers:bg-lakers-400 lakers:hover:bg-lakers-500 text-white shadow-lg hover:shadow-xl animate-pulse-urgent'
+                    : 'bg-gray-100 dark:bg-neutral-700 lakers:bg-lakers-600/50 text-gray-400 dark:text-neutral-500 lakers:text-lakers-300 cursor-not-allowed'
                 }`}
                 style={{
                   ...(hasUnsavedChanges && !isSaving && {
@@ -507,7 +507,7 @@ export default function AICardStudio() {
                 {/* Dropdown Trigger */}
                 <button
                   onClick={toggleDropdown}
-                  className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 dark:bg-neutral-800 border border-purple-200 dark:border-purple-700 rounded-lg text-purple-600 dark:text-purple-400 dark:text-purple-400 font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 dark:hover:bg-purple-900/20 transition-all duration-200 min-w-[200px] justify-between"
+                  className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 lakers:bg-lakers-400/20 border border-purple-200 dark:border-purple-700 lakers:border-lakers-400 rounded-lg text-purple-600 dark:text-purple-400 lakers:text-lakers-400 font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 lakers:hover:bg-lakers-400/30 transition-all duration-200 min-w-[200px] justify-between"
                 >
                   <span>{activeCanvas?.name || (canvases.length > 0 ? canvases[0].name : 'Loading...')}</span>
                   <svg 
@@ -522,9 +522,9 @@ export default function AICardStudio() {
 
                 {/* Dropdown Menu */}
                 {dropdownOpen && (
-                  <div className="absolute top-full mt-2 left-0 z-50 bg-white dark:bg-neutral-800 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-700 p-2 min-w-[200px]">
+                  <div className="absolute top-full mt-2 left-0 z-50 bg-white dark:bg-neutral-800 lakers:bg-lakers-600 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-700 lakers:border-lakers-400/30 p-2 min-w-[200px]">
                     {/* Arrow pointing to button */}
-                    <div className="absolute -top-1 left-4 w-2 h-2 bg-white dark:bg-neutral-800 border-l border-t border-gray-200 dark:border-neutral-700 transform rotate-45"></div>
+                    <div className="absolute -top-1 left-4 w-2 h-2 bg-white dark:bg-neutral-800 lakers:bg-lakers-600 border-l border-t border-gray-200 dark:border-neutral-700 lakers:border-lakers-400/30 transform rotate-45"></div>
                     
                     {/* Canvas List */}
                     {canvases.map((canvas) => (
@@ -533,8 +533,8 @@ export default function AICardStudio() {
                         onClick={() => handleCanvasSwitch(canvas.id)}
                         className={`w-full px-3 py-2 text-sm rounded-md transition-all duration-150 text-left ${
                           canvas.id === activeCanvasId 
-                            ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/50' 
-                            : 'text-gray-600 dark:text-neutral-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/50'
+                            ? 'text-purple-600 dark:text-purple-400 lakers:text-lakers-400 bg-purple-50 dark:bg-purple-900/50 lakers:bg-lakers-400/30' 
+                            : 'text-gray-600 dark:text-neutral-300 lakers:text-lakers-300 hover:text-purple-600 dark:hover:text-purple-400 lakers:hover:text-lakers-400 hover:bg-purple-50 dark:hover:bg-purple-900/50 lakers:hover:bg-lakers-400/20'
                         }`}
                       >
                         {canvas.name}
@@ -547,7 +547,7 @@ export default function AICardStudio() {
                     {/* Management Options */}
                     <button
                       onClick={handleManageCanvases}
-                      className="w-full px-3 py-2 text-sm text-left text-gray-600 dark:text-neutral-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-md transition-all duration-150 flex items-center gap-2"
+                      className="w-full px-3 py-2 text-sm text-left text-gray-600 dark:text-neutral-300 lakers:text-lakers-300 hover:text-purple-600 dark:hover:text-purple-400 lakers:hover:text-lakers-400 hover:bg-purple-50 dark:hover:bg-purple-900/50 lakers:hover:bg-lakers-400/20 rounded-md transition-all duration-150 flex items-center gap-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -562,7 +562,7 @@ export default function AICardStudio() {
               {/* Add Canvas Button */}
               <button
                 onClick={addCanvas}
-                className="w-10 h-10 bg-white dark:bg-neutral-800 border border-purple-200 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg flex items-center justify-center transition-all duration-200"
+                className="w-10 h-10 bg-white dark:bg-neutral-800 lakers:bg-lakers-400/20 border border-purple-200 lakers:border-lakers-400 text-purple-600 dark:text-purple-400 lakers:text-lakers-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 lakers:hover:bg-lakers-400/30 rounded-lg flex items-center justify-center transition-all duration-200"
                 title="Add new canvas"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

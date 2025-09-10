@@ -325,3 +325,86 @@ html {
     box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
   }
 }
+
+/* Lakers Theme - Enhanced CSS Implementation */
+@layer utilities {
+  /* Background gradients */
+  html.lakers .min-h-screen.bg-white {
+    background: linear-gradient(135deg, #552583, #4c1d95) !important;
+  }
+  
+  /* Card backgrounds - lighter with gold accent */
+  html.lakers .bg-white {
+    background: linear-gradient(135deg, #fdfcfc, #f8f6ff) !important;
+    border: 1px solid #FDB927 !important;
+    box-shadow: 0 4px 20px rgba(253, 185, 39, 0.1) !important;
+  }
+  
+  /* Text colors - high contrast */
+  html.lakers .text-gray-600,
+  html.lakers .text-gray-700,
+  html.lakers .text-gray-800,
+  html.lakers .text-gray-900 {
+    color: #2d1b69 !important; /* Dark purple for readability */
+  }
+  
+  html.lakers .text-neutral-400,
+  html.lakers .text-neutral-500,
+  html.lakers .text-neutral-600 {
+    color: #553c9a !important; /* Medium purple */
+  }
+  
+  /* Headers and important text - Lakers gold */
+  html.lakers h1,
+  html.lakers h2,
+  html.lakers h3,
+  html.lakers .font-semibold,
+  html.lakers .font-bold {
+    color: #B8860B !important; /* Dark gold for headers */
+  }
+  
+  /* Borders and accents */
+  html.lakers .border-purple-600,
+  html.lakers .border-gray-200,
+  html.lakers .border-gray-300 {
+    border-color: #FDB927 !important;
+  }
+  
+  /* Buttons and interactive elements */
+  html.lakers .bg-purple-600,
+  html.lakers .bg-purple-500 {
+    background: linear-gradient(135deg, #FDB927, #FFCC33) !important;
+    color: #2d1b69 !important;
+  }
+  
+  html.lakers .hover\\:bg-purple-700:hover {
+    background: linear-gradient(135deg, #E6A623, #FDB927) !important;
+  }
+  
+  /* Loading spinner */
+  html.lakers .animate-spin {
+    border-color: #FDB927 !important;
+    border-top-color: transparent !important;
+  }
+  
+  /* Show less/more buttons */
+  html.lakers .text-purple-600 {
+    background: linear-gradient(135deg, #FDB927, #FFCC33) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4)) !important;
+  }
+  
+  /* Top card left border */
+  html.lakers .border-l-4,
+  html.lakers .border-l-2 {
+    border-left-color: #FDB927 !important;
+  }
+  
+  /* Marketplace left icon and add canvas plus icon */
+  html.lakers .text-gray-400.hover\\:text-purple-600 svg,
+  html.lakers .border-dashed.text-gray-300 svg {
+    color: #FDB927 !important;
+  }
+}

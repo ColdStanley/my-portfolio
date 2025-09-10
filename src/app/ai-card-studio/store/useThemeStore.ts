@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-type Theme = 'light' | 'dark'
+type Theme = 'light' | 'dark' | 'lakers'
 
 interface ThemeState {
   theme: Theme
@@ -25,11 +25,16 @@ const applyTheme = (theme: Theme) => {
   
   const root = document.documentElement
   
+  // Clear all theme classes
+  root.classList.remove('dark', 'lakers')
+  
+  // Apply selected theme class
   if (theme === 'dark') {
     root.classList.add('dark')
-  } else {
-    root.classList.remove('dark')
+  } else if (theme === 'lakers') {
+    root.classList.add('lakers')
   }
+  // light theme doesn't need a class
 }
 
 // Helper function to save theme to localStorage
@@ -49,7 +54,7 @@ const loadTheme = (): Theme | null => {
   
   try {
     const saved = localStorage.getItem('ai-card-studio-theme') as Theme | null
-    return saved && ['light', 'dark'].includes(saved) ? saved : null
+    return saved && ['light', 'dark', 'lakers'].includes(saved) ? saved : null
   } catch (error) {
     console.warn('Failed to load theme from localStorage:', error)
     return null

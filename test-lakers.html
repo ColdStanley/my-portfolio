@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lakers Theme Test</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            lakers: {
+              400: '#FDB927', // Lakers Gold
+              500: '#F4C430', // Bright Gold  
+              600: '#552583', // Lakers Purple
+              700: '#4c1d95', // Deep Purple
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .lakers .lakers-test { @apply bg-gradient-to-br from-lakers-600 to-lakers-700; }
+  </style>
+</head>
+<body class="min-h-screen bg-gray-100">
+  <div class="p-8">
+    <h1 class="text-2xl font-bold mb-4">Lakers Theme Test</h1>
+    
+    <div class="mb-4">
+      <button onclick="toggleLakersTheme()" class="px-4 py-2 bg-blue-500 text-white rounded">
+        Toggle Lakers Theme
+      </button>
+      <span id="status" class="ml-4">Current: Light</span>
+    </div>
+    
+    <div class="w-64 h-32 bg-white dark:bg-neutral-900 lakers:bg-gradient-to-br lakers:from-lakers-600 lakers:to-lakers-700 border rounded-lg p-4">
+      <div class="text-gray-900 dark:text-white lakers:text-lakers-400">
+        Theme Test Box
+      </div>
+      <div class="text-sm text-gray-600 dark:text-neutral-400 lakers:text-lakers-300 mt-2">
+        This should change to purple/gold when Lakers theme is active
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let isLakers = false;
+    
+    function toggleLakersTheme() {
+      const html = document.documentElement;
+      const status = document.getElementById('status');
+      
+      if (isLakers) {
+        html.classList.remove('lakers');
+        status.textContent = 'Current: Light';
+        isLakers = false;
+      } else {
+        html.classList.add('lakers');
+        status.textContent = 'Current: Lakers';
+        isLakers = true;
+      }
+    }
+  </script>
+</body>
+</html>
