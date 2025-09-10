@@ -95,6 +95,13 @@ function AIToolCard({
   // Card save state
   const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  
+  // Streaming state - tracks if we've started receiving data
+  const [isStreaming, setIsStreaming] = useState(false)
+  
+  // Markdown transition state
+  const [showMarkdown, setShowMarkdown] = useState(false)
+  const [isFormatting, setIsFormatting] = useState(false)
 
   // Auto-open settings for newly created cards
   useEffect(() => {
@@ -300,6 +307,9 @@ function AIToolCard({
     // Set generating state
     updateCardGeneratedContent(cardId, '') // Clear previous content
     updateCardGeneratingState(cardId, true)
+    setIsStreaming(false) // Reset streaming state
+    setShowMarkdown(false) // Reset markdown state
+    setIsFormatting(false) // Reset formatting state
     
     try {
       let resolvedPrompt = resolveReferences(localPromptText, canvases, columnId)
@@ -337,7 +347,7 @@ function AIToolCard({
       
       // 🔧 Claude风格节流更新 - 显示与状态分离
       let lastDisplayUpdate = 0
-      const THROTTLE_MS = 100 // 100ms节流
+      const THROTTLE_MS = 200 // 200ms节流优化性能
       
       // 等待DOM元素渲染完成
       const waitForElement = async (selector: string, timeout = 1000): Promise<HTMLElement | null> => {
@@ -381,6 +391,12 @@ function AIToolCard({
               const content = parsed.choices?.[0]?.delta?.content || ''
               if (content) {
                 fullResponse += content
+                
+                // Mark as streaming when we receive first content
+                if (!isStreaming) {
+                  setIsStreaming(true)
+                }
+                
                 console.log('🔧 Debug: Received content chunk:', content.length, 'chars, total:', fullResponse.length)
                 
                 // 🔧 节流更新显示 - 直接DOM操作，不触发状态更新
@@ -426,13 +442,28 @@ function AIToolCard({
       // 🔧 完成后一次性状态更新和缓存同步  
       updateCardGeneratedContent(cardId, fullResponse, true) // shouldCache = true
       
+      // 启动格式化过程
+      setTimeout(() => {
+        setIsFormatting(true)
+      }, 500)
+      
+      // 延迟2秒后启用markdown显示，让用户充分感知过渡
+      setTimeout(() => {
+        setIsFormatting(false)
+        setShowMarkdown(true)
+      }, 2500)
+      
       setShowOptionsTooltip(false)
     } catch (error) {
       console.error('Error generating content:', error)
       updateCardGeneratedContent(cardId, 'Error generating content. Please try again.')
       updateCardGeneratingState(cardId, false)
+      setIsStreaming(false)
+      setIsFormatting(false)
+      setShowMarkdown(true) // Error content can show immediately
     } finally {
       updateCardGeneratingState(cardId, false)
+      setIsStreaming(false)
     }
   }
 
@@ -644,8 +675,8 @@ function AIToolCard({
           </button>
         )}
         
-        {isGenerating && !generatedContent ? (
-          /* Skeleton Shimmer Effect - Only show when generating and no content yet */
+        {/* 骨架屏 - 独立显示条件 */}
+        {isGenerating && !isStreaming && (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="animate-pulse">
@@ -667,141 +698,197 @@ function AIToolCard({
               }
             `}</style>
           </div>
-        ) : generatedContent ? (
-          /* Show streaming content with loading indicator when generating */
+        )}
+
+        {/* 流式显示层 - 始终存在，CSS控制显示 */}
+        <div className="relative">
+          {/* 加载指示器 - 仅在流式时显示 */}
+          {isGenerating && isStreaming && (
+            <div className="absolute -top-2 -right-2 w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
+              <svg className="w-2 h-2 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 01 8-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 01 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+              </svg>
+            </div>
+          )}
+          
+          {/* 流式容器 - 始终存在，避免重建，样式与markdown保持一致 */}
+          <div 
+            className="prose prose-sm max-w-none text-gray-700 dark:text-neutral-300 whitespace-pre-wrap leading-relaxed"
+            data-ai-response={cardId}
+            style={{ 
+              display: isGenerating && isStreaming ? 'block' : 'none',
+              lineHeight: '1.6', // 与markdown保持一致
+              fontSize: '0.875rem' // 14px
+            }}
+          />
+        </div>
+
+        {/* 过渡显示层 - 完成但未启用markdown时显示纯文本 */}
+        {!isGenerating && generatedContent && !showMarkdown && (
           <div className="relative">
-            {isGenerating && (
-              <div className="absolute -top-2 -right-2 w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
-                <svg className="w-2 h-2 animate-spin text-white" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 01 8-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 01 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                </svg>
-              </div>
-            )}
-            {/* 🔧 流式显示层 - 生成时使用 */}
-            {isGenerating && (
-              <div 
-                className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap"
-                data-ai-response={cardId}
-              >
-                {console.log('🔧 Debug: Streaming layer rendered for cardId:', cardId)}
-              </div>
+            <div 
+              className="prose prose-sm max-w-none text-gray-700 dark:text-neutral-300 whitespace-pre-wrap leading-relaxed transition-all duration-500"
+              style={{
+                transform: isFormatting ? 'scale(1.01)' : 'scale(1)',
+                filter: isFormatting ? 'blur(0.5px)' : 'blur(0px)'
+              }}
+            >
+              {generatedContent}
+            </div>
+            
+            {/* 格式化中的渐变遮罩效果 */}
+            {isFormatting && (
+              <>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-50/40 dark:via-purple-900/20 to-transparent animate-pulse">
+                </div>
+                <div className="absolute top-2 right-2 flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400 bg-white/80 dark:bg-neutral-800/80 px-2 py-1 rounded-md shadow-sm">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"></div>
+                  <span>Formatting...</span>
+                </div>
+                
+                {/* 微光扫过效果 */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 dark:via-white/10 to-transparent transform -skew-x-12 animate-shimmer-sweep opacity-60">
+                </div>
+              </>
             )}
             
-            {/* 🔧 最终显示层 - 完成后使用ReactMarkdown */}
-            {!isGenerating && (
-              <div className="prose prose-sm max-w-none text-gray-700">
-                <ReactMarkdown
-                  remarkPlugins={[remarkBreaks, remarkGfm]}
-                  components={{
-                  h1: ({node, ...props}) => (
-                    <h1 className="text-xl font-bold text-gray-800 mb-3 mt-4 first:mt-0 border-b border-gray-200 pb-1" {...props} />
-                  ),
-                  h2: ({node, ...props}) => (
-                    <h2 className="text-lg font-semibold text-gray-800 mb-2 mt-3 first:mt-0" {...props} />
-                  ),
-                  h3: ({node, ...props}) => (
-                    <h3 className="text-base font-medium text-gray-800 mb-2 mt-2 first:mt-0" {...props} />
-                  ),
-                  h4: ({node, ...props}) => (
-                    <h4 className="text-sm font-medium text-gray-800 mb-1 mt-2 first:mt-0" {...props} />
-                  ),
-                  p: ({node, ...props}) => (
-                    <p className="text-gray-600 mb-3 leading-relaxed text-sm" {...props} />
-                  ),
-                  ul: ({node, ...props}) => (
-                    <ul className="list-disc list-inside mb-3 text-gray-600 space-y-1" {...props} />
-                  ),
-                  ol: ({node, ...props}) => (
-                    <ol className="list-decimal list-inside mb-3 text-gray-600 space-y-1" {...props} />
-                  ),
-                  li: ({node, ...props}) => (
-                    <li className="text-sm leading-relaxed mb-1" {...props} />
-                  ),
-                  code: ({node, inline, ...props}) => 
-                    inline ? (
-                      <code className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-xs font-mono" {...props} />
-                    ) : (
-                      <code className="block bg-gray-100 text-gray-800 p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre" {...props} />
-                    ),
-                  pre: ({node, ...props}) => (
-                    <pre className="bg-gray-100 rounded-lg p-3 overflow-x-auto border border-gray-200 my-3" {...props} />
-                  ),
-                  blockquote: ({node, ...props}) => (
-                    <blockquote className="border-l-4 border-purple-300 pl-3 italic text-gray-600 mb-2" {...props} />
-                  ),
-                  strong: ({node, ...props}) => (
-                    <strong className="font-semibold text-gray-800" {...props} />
-                  ),
-                  em: ({node, ...props}) => (
-                    <em className="italic" {...props} />
-                  ),
-                  a: ({ href, children, ...props }) => (
-                    <a 
-                      href={href} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-purple-600 hover:text-purple-800 underline"
-                      {...props}
-                    >
-                      {children}
-                    </a>
-                  ),
-                  hr: ({node, ...props}) => (
-                    <hr className="border-t border-gray-200 my-4" {...props} />
-                  ),
-                  table: ({node, ...props}) => (
-                    <div className="overflow-x-auto my-3">
-                      <table className="min-w-full border border-gray-200 rounded-lg" {...props} />
-                    </div>
-                  ),
-                  thead: ({node, ...props}) => (
-                    <thead className="bg-gray-50" {...props} />
-                  ),
-                  tbody: ({node, ...props}) => (
-                    <tbody {...props} />
-                  ),
-                  tr: ({node, ...props}) => (
-                    <tr className="hover:bg-gray-50/50" {...props} />
-                  ),
-                  th: ({node, ...props}) => (
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 border-b border-gray-200" {...props} />
-                  ),
-                  td: ({node, ...props}) => (
-                    <td className="px-3 py-2 text-sm text-gray-600 border-b border-gray-100" {...props} />
-                  ),
-                  del: ({node, ...props}) => (
-                    <del className="line-through text-gray-500" {...props} />
-                  ),
-                  input: ({node, ...props}) => {
-                    const { type, checked, disabled } = props as any;
-                    if (type === 'checkbox') {
-                      return (
-                        <input 
-                          type="checkbox" 
-                          checked={checked} 
-                          disabled={disabled}
-                          className="mr-2 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                          {...props} 
-                        />
-                      );
-                    }
-                    return <input {...props} />;
-                  },
-                  sup: ({node, ...props}) => (
-                    <sup className="text-xs" {...props} />
-                  ),
-                  sub: ({node, ...props}) => (
-                    <sub className="text-xs" {...props} />
-                  )
-                }}
-                >
-                  {generatedContent}
-                </ReactMarkdown>
-              </div>
-            )}
+            {/* 添加扫光动画CSS */}
+            <style jsx>{`
+              @keyframes shimmer-sweep {
+                0% {
+                  transform: translateX(-100%) skewX(-12deg);
+                }
+                100% {
+                  transform: translateX(200%) skewX(-12deg);
+                }
+              }
+              .animate-shimmer-sweep {
+                animation: shimmer-sweep 1.5s ease-in-out infinite;
+              }
+            `}</style>
           </div>
-        ) : null}
+        )}
+
+        {/* 最终显示层 - markdown格式化显示，带高级淡入动画 */}
+        {!isGenerating && generatedContent && showMarkdown && (
+          <div 
+            className="prose prose-sm max-w-none text-gray-700 dark:text-neutral-300 transition-all duration-1000 ease-out"
+            style={{
+              opacity: showMarkdown ? 1 : 0,
+              transform: showMarkdown ? 'translateY(0) scale(1)' : 'translateY(8px) scale(0.98)',
+              filter: showMarkdown ? 'blur(0px)' : 'blur(1px)'
+            }}
+          >
+            <ReactMarkdown
+              remarkPlugins={[remarkBreaks, remarkGfm]}
+              components={{
+              h1: ({node, ...props}) => (
+                <h1 className="text-xl font-bold text-gray-800 dark:text-neutral-200 mb-3 mt-4 first:mt-0 border-b border-gray-200 dark:border-neutral-600 pb-1" {...props} />
+              ),
+              h2: ({node, ...props}) => (
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-neutral-200 mb-2 mt-3 first:mt-0" {...props} />
+              ),
+              h3: ({node, ...props}) => (
+                <h3 className="text-base font-medium text-gray-800 dark:text-neutral-200 mb-2 mt-2 first:mt-0" {...props} />
+              ),
+              h4: ({node, ...props}) => (
+                <h4 className="text-sm font-medium text-gray-800 dark:text-neutral-200 mb-1 mt-2 first:mt-0" {...props} />
+              ),
+              p: ({node, ...props}) => (
+                <p className="text-gray-600 dark:text-neutral-400 mb-3 leading-relaxed text-sm" {...props} />
+              ),
+              ul: ({node, ...props}) => (
+                <ul className="list-disc list-inside mb-3 text-gray-600 dark:text-neutral-400 space-y-1" {...props} />
+              ),
+              ol: ({node, ...props}) => (
+                <ol className="list-decimal list-inside mb-3 text-gray-600 dark:text-neutral-400 space-y-1" {...props} />
+              ),
+              li: ({node, ...props}) => (
+                <li className="text-sm leading-relaxed mb-1" {...props} />
+              ),
+              code: ({node, inline, ...props}) => 
+                inline ? (
+                  <code className="bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 px-1 py-0.5 rounded text-xs font-mono" {...props} />
+                ) : (
+                  <code className="block bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre" {...props} />
+                ),
+              pre: ({node, ...props}) => (
+                <pre className="bg-gray-100 dark:bg-neutral-700 rounded-lg p-3 overflow-x-auto border border-gray-200 dark:border-neutral-600 my-3" {...props} />
+              ),
+              blockquote: ({node, ...props}) => (
+                <blockquote className="border-l-4 border-purple-300 dark:border-purple-500 pl-3 italic text-gray-600 dark:text-neutral-400 mb-2" {...props} />
+              ),
+              strong: ({node, ...props}) => (
+                <strong className="font-semibold text-gray-800 dark:text-neutral-200" {...props} />
+              ),
+              em: ({node, ...props}) => (
+                <em className="italic" {...props} />
+              ),
+              a: ({ href, children, ...props }) => (
+                <a 
+                  href={href} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 underline"
+                  {...props}
+                >
+                  {children}
+                </a>
+              ),
+              hr: ({node, ...props}) => (
+                <hr className="border-t border-gray-200 dark:border-neutral-600 my-4" {...props} />
+              ),
+              table: ({node, ...props}) => (
+                <div className="overflow-x-auto my-3">
+                  <table className="min-w-full border border-gray-200 dark:border-neutral-600 rounded-lg" {...props} />
+                </div>
+              ),
+              thead: ({node, ...props}) => (
+                <thead className="bg-gray-50 dark:bg-neutral-700" {...props} />
+              ),
+              tbody: ({node, ...props}) => (
+                <tbody {...props} />
+              ),
+              tr: ({node, ...props}) => (
+                <tr className="hover:bg-gray-50/50 dark:hover:bg-neutral-700/50" {...props} />
+              ),
+              th: ({node, ...props}) => (
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-neutral-300 border-b border-gray-200 dark:border-neutral-600" {...props} />
+              ),
+              td: ({node, ...props}) => (
+                <td className="px-3 py-2 text-sm text-gray-600 dark:text-neutral-400 border-b border-gray-100 dark:border-neutral-700" {...props} />
+              ),
+              del: ({node, ...props}) => (
+                <del className="line-through text-gray-500 dark:text-neutral-500" {...props} />
+              ),
+              input: ({node, ...props}) => {
+                const { type, checked, disabled } = props as any;
+                if (type === 'checkbox') {
+                  return (
+                    <input 
+                      type="checkbox" 
+                      checked={checked} 
+                      disabled={disabled}
+                      className="mr-2 rounded border-gray-300 dark:border-neutral-600 text-purple-600 focus:ring-purple-500"
+                      {...props} 
+                    />
+                  );
+                }
+                return <input {...props} />;
+              },
+              sup: ({node, ...props}) => (
+                <sup className="text-xs" {...props} />
+              ),
+              sub: ({node, ...props}) => (
+                <sub className="text-xs" {...props} />
+              )
+            }}
+            >
+              {generatedContent}
+            </ReactMarkdown>
+          </div>
+        )}
       </div>
 
       {/* Options Tooltip */}
