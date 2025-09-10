@@ -354,12 +354,9 @@ html {
     color: #553c9a !important; /* Medium purple */
   }
   
-  /* Headers and important text - Lakers gold */
-  html.lakers h1,
-  html.lakers h2,
+  /* Headers and important text - Lakers gold (excluding h1 with gradients, h2 and font-bold for InfoCard titles) */
   html.lakers h3,
-  html.lakers .font-semibold,
-  html.lakers .font-bold {
+  html.lakers .font-semibold {
     color: #B8860B !important; /* Dark gold for headers */
   }
   
@@ -387,13 +384,10 @@ html {
     border-top-color: transparent !important;
   }
   
-  /* Show less/more buttons */
-  html.lakers .text-purple-600 {
-    background: linear-gradient(135deg, #FDB927, #FFCC33) !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    background-clip: text !important;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4)) !important;
+  /* Lakers theme text overrides - force purple text to gold matching button gradient */
+  html.lakers .text-purple-600,
+  html.lakers .text-purple-400 {
+    color: #FDB927 !important; /* Match button gradient start color */
   }
   
   /* Top card left border */

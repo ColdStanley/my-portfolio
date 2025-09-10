@@ -57,8 +57,13 @@ module.exports = {
       })
     },
     // Lakers theme plugin
-    function({ addVariant }) {
+    function({ addVariant, addUtilities }) {
       addVariant('lakers', '.lakers &')
+      // Force generate Lakers text colors
+      addUtilities({
+        '.lakers .text-purple-600': { color: '#B8A082' },
+        '.lakers .text-purple-400': { color: '#B8A082' }
+      })
     }
   ],
 }

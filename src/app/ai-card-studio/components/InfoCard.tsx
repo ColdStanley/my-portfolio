@@ -648,7 +648,7 @@ function InfoCard({
               )}
             </button>
           )}
-          <h2 className={`${isTopCard ? 'text-xl font-bold' : 'text-lg font-medium'} text-purple-600 dark:text-purple-400`}>
+          <h2 className={`${isTopCard ? 'text-xl font-bold' : 'text-lg font-medium'} text-purple-600 dark:text-purple-400 lakers:text-lakers-300`}>
             {title}
           </h2>
         </div>
