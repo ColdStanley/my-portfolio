@@ -378,8 +378,35 @@ export default function AICardStudio() {
           }
         }
         
+        @keyframes pulse-urgent {
+          0% {
+            transform: scale(1);
+            box-shadow: 0 4px 14px -2px rgba(147, 51, 234, 0.4), 0 0 20px rgba(147, 51, 234, 0.2);
+          }
+          25% {
+            transform: scale(1.02);
+            box-shadow: 0 6px 20px -2px rgba(147, 51, 234, 0.5), 0 0 30px rgba(147, 51, 234, 0.3);
+          }
+          50% {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px -2px rgba(147, 51, 234, 0.6), 0 0 40px rgba(147, 51, 234, 0.4);
+          }
+          75% {
+            transform: scale(1.02);
+            box-shadow: 0 6px 20px -2px rgba(147, 51, 234, 0.5), 0 0 30px rgba(147, 51, 234, 0.3);
+          }
+          100% {
+            transform: scale(1);
+            box-shadow: 0 4px 14px -2px rgba(147, 51, 234, 0.4), 0 0 20px rgba(147, 51, 234, 0.2);
+          }
+        }
+        
         .animate-gradient-flow {
           animation: gradient-flow 12s ease-in-out infinite;
+        }
+        
+        .animate-pulse-urgent {
+          animation: pulse-urgent 2s ease-in-out infinite;
         }
       `}</style>
       
@@ -445,11 +472,17 @@ export default function AICardStudio() {
               <button
                 onClick={handleGlobalSave}
                 disabled={isSaving || !hasUnsavedChanges}
-                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
+                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 relative ${
                   hasUnsavedChanges && !isSaving
-                    ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-md'
+                    ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-xl animate-pulse-urgent'
                     : 'bg-gray-100 dark:bg-neutral-700 text-gray-400 dark:text-neutral-500 cursor-not-allowed'
                 }`}
+                style={{
+                  ...(hasUnsavedChanges && !isSaving && {
+                    boxShadow: '0 4px 14px -2px rgba(147, 51, 234, 0.4), 0 0 20px rgba(147, 51, 234, 0.2)',
+                    animation: 'pulse-urgent 2s ease-in-out infinite'
+                  })
+                }}
               >
                 {isSaving ? (
                   <>
@@ -489,14 +522,19 @@ export default function AICardStudio() {
 
                 {/* Dropdown Menu */}
                 {dropdownOpen && (
-                  <div className="absolute top-full mt-2 left-0 z-50 bg-white dark:bg-neutral-800/95 dark:bg-neutral-800/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 dark:border-neutral-700/50 py-2 min-w-[200px]">
+                  <div className="absolute top-full mt-2 left-0 z-50 bg-white dark:bg-neutral-800 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-700 p-2 min-w-[200px]">
+                    {/* Arrow pointing to button */}
+                    <div className="absolute -top-1 left-4 w-2 h-2 bg-white dark:bg-neutral-800 border-l border-t border-gray-200 dark:border-neutral-700 transform rotate-45"></div>
+                    
                     {/* Canvas List */}
                     {canvases.map((canvas) => (
                       <button
                         key={canvas.id}
                         onClick={() => handleCanvasSwitch(canvas.id)}
-                        className={`w-full px-4 py-2 text-left hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-150 ${
-                          canvas.id === activeCanvasId ? 'text-purple-600 dark:text-purple-400 bg-purple-50' : 'text-gray-700 dark:text-neutral-300'
+                        className={`w-full px-3 py-2 text-sm rounded-md transition-all duration-150 text-left ${
+                          canvas.id === activeCanvasId 
+                            ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/50' 
+                            : 'text-gray-600 dark:text-neutral-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/50'
                         }`}
                       >
                         {canvas.name}
@@ -509,7 +547,7 @@ export default function AICardStudio() {
                     {/* Management Options */}
                     <button
                       onClick={handleManageCanvases}
-                      className="w-full px-4 py-2 text-left text-gray-600 dark:text-neutral-400 hover:bg-gray-50 transition-all duration-150 flex items-center gap-2"
+                      className="w-full px-3 py-2 text-sm text-left text-gray-600 dark:text-neutral-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-md transition-all duration-150 flex items-center gap-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />

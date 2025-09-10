@@ -279,6 +279,11 @@ function AIToolCard({
       setSaveSuccess(true)
       console.log('🔧 Card saved and marked for cloud sync')
       
+      // 1.5秒后自动关闭设置窗口
+      setTimeout(() => {
+        handleClosePromptTooltip()
+      }, 1500)
+      
       // 2秒后清除成功状态
       setTimeout(() => setSaveSuccess(false), 2000)
     } catch (error) {
@@ -845,123 +850,142 @@ function AIToolCard({
           </div>
         )}
 
-        {/* 最终显示层 - markdown格式化显示，带高级淡入动画 */}
+        {/* AI Response Content - intelligent more/less display */}
         {!isGenerating && generatedContent && showMarkdown && (
-          <div 
-            className="prose prose-sm max-w-none text-gray-700 dark:text-neutral-300 transition-all duration-1000 ease-out"
-            style={{
-              opacity: showMarkdown ? 1 : 0,
-              transform: showMarkdown ? 'translateY(0) scale(1)' : 'translateY(8px) scale(0.98)',
-              filter: showMarkdown ? 'blur(0px)' : 'blur(1px)'
-            }}
-          >
-            <ReactMarkdown
-              remarkPlugins={[remarkBreaks, remarkGfm]}
-              components={{
-              h1: ({node, ...props}) => (
-                <h1 className="text-xl font-bold text-gray-800 dark:text-neutral-200 mb-3 mt-4 first:mt-0 border-b border-gray-200 dark:border-neutral-600 pb-1" {...props} />
-              ),
-              h2: ({node, ...props}) => (
-                <h2 className="text-lg font-semibold text-gray-800 dark:text-neutral-200 mb-2 mt-3 first:mt-0" {...props} />
-              ),
-              h3: ({node, ...props}) => (
-                <h3 className="text-base font-medium text-gray-800 dark:text-neutral-200 mb-2 mt-2 first:mt-0" {...props} />
-              ),
-              h4: ({node, ...props}) => (
-                <h4 className="text-sm font-medium text-gray-800 dark:text-neutral-200 mb-1 mt-2 first:mt-0" {...props} />
-              ),
-              p: ({node, ...props}) => (
-                <p className="text-gray-600 dark:text-neutral-400 mb-3 leading-relaxed text-sm" {...props} />
-              ),
-              ul: ({node, ...props}) => (
-                <ul className="list-disc list-inside mb-3 text-gray-600 dark:text-neutral-400 space-y-1" {...props} />
-              ),
-              ol: ({node, ...props}) => (
-                <ol className="list-decimal list-inside mb-3 text-gray-600 dark:text-neutral-400 space-y-1" {...props} />
-              ),
-              li: ({node, ...props}) => (
-                <li className="text-sm leading-relaxed mb-1" {...props} />
-              ),
-              code: ({node, inline, ...props}) => 
-                inline ? (
-                  <code className="bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 px-1 py-0.5 rounded text-xs font-mono" {...props} />
-                ) : (
-                  <code className="block bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre" {...props} />
-                ),
-              pre: ({node, ...props}) => (
-                <pre className="bg-gray-100 dark:bg-neutral-700 rounded-lg p-3 overflow-x-auto border border-gray-200 dark:border-neutral-600 my-3" {...props} />
-              ),
-              blockquote: ({node, ...props}) => (
-                <blockquote className="border-l-4 border-purple-300 dark:border-purple-500 pl-3 italic text-gray-600 dark:text-neutral-400 mb-2" {...props} />
-              ),
-              strong: ({node, ...props}) => (
-                <strong className="font-semibold text-gray-800 dark:text-neutral-200" {...props} />
-              ),
-              em: ({node, ...props}) => (
-                <em className="italic" {...props} />
-              ),
-              a: ({ href, children, ...props }) => (
-                <a 
-                  href={href} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 underline"
-                  {...props}
+          <div className="prose prose-sm max-w-none text-gray-700 dark:text-neutral-300">
+            {isResponseExpanded ? (
+              // Expanded view - show full markdown with "Show less" button
+              <>
+                <ReactMarkdown
+                  remarkPlugins={[remarkBreaks, remarkGfm]}
+                  components={{
+                    h1: ({node, ...props}) => (
+                      <h1 className="text-xl font-bold text-gray-800 dark:text-neutral-200 mb-3 mt-4 first:mt-0 border-b border-gray-200 dark:border-neutral-600 pb-1" {...props} />
+                    ),
+                    h2: ({node, ...props}) => (
+                      <h2 className="text-lg font-semibold text-gray-800 dark:text-neutral-200 mb-2 mt-3 first:mt-0" {...props} />
+                    ),
+                    h3: ({node, ...props}) => (
+                      <h3 className="text-base font-medium text-gray-800 dark:text-neutral-200 mb-2 mt-2 first:mt-0" {...props} />
+                    ),
+                    h4: ({node, ...props}) => (
+                      <h4 className="text-sm font-medium text-gray-800 dark:text-neutral-200 mb-1 mt-2 first:mt-0" {...props} />
+                    ),
+                    p: ({node, ...props}) => (
+                      <p className="text-gray-600 dark:text-neutral-400 mb-3 leading-relaxed text-sm" {...props} />
+                    ),
+                    ul: ({node, ...props}) => (
+                      <ul className="list-disc list-inside mb-3 text-gray-600 dark:text-neutral-400 space-y-1" {...props} />
+                    ),
+                    ol: ({node, ...props}) => (
+                      <ol className="list-decimal list-inside mb-3 text-gray-600 dark:text-neutral-400 space-y-1" {...props} />
+                    ),
+                    li: ({node, ...props}) => (
+                      <li className="text-sm leading-relaxed mb-1" {...props} />
+                    ),
+                    code: ({node, inline, ...props}) => 
+                      inline ? (
+                        <code className="bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 px-1 py-0.5 rounded text-xs font-mono" {...props} />
+                      ) : (
+                        <code className="block bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre" {...props} />
+                      ),
+                    pre: ({node, ...props}) => (
+                      <pre className="bg-gray-100 dark:bg-neutral-700 rounded-lg p-3 overflow-x-auto border border-gray-200 dark:border-neutral-600 my-3" {...props} />
+                    ),
+                    blockquote: ({node, ...props}) => (
+                      <blockquote className="border-l-4 border-purple-300 dark:border-purple-500 pl-3 italic text-gray-600 dark:text-neutral-400 mb-2" {...props} />
+                    ),
+                    strong: ({node, ...props}) => (
+                      <strong className="font-semibold text-gray-800 dark:text-neutral-200" {...props} />
+                    ),
+                    em: ({node, ...props}) => (
+                      <em className="italic" {...props} />
+                    ),
+                    a: ({ href, children, ...props }) => (
+                      <a 
+                        href={href} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 underline"
+                        {...props}
+                      >
+                        {children}
+                      </a>
+                    ),
+                    hr: ({node, ...props}) => (
+                      <hr className="border-t border-gray-200 dark:border-neutral-600 my-4" {...props} />
+                    ),
+                    table: ({node, ...props}) => (
+                      <div className="overflow-x-auto my-3">
+                        <table className="min-w-full border border-gray-200 dark:border-neutral-600 rounded-lg" {...props} />
+                      </div>
+                    ),
+                    thead: ({node, ...props}) => (
+                      <thead className="bg-gray-50 dark:bg-neutral-700" {...props} />
+                    ),
+                    tbody: ({node, ...props}) => (
+                      <tbody {...props} />
+                    ),
+                    tr: ({node, ...props}) => (
+                      <tr className="hover:bg-gray-50/50 dark:hover:bg-neutral-700/50" {...props} />
+                    ),
+                    th: ({node, ...props}) => (
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-neutral-300 border-b border-gray-200 dark:border-neutral-600" {...props} />
+                    ),
+                    td: ({node, ...props}) => (
+                      <td className="px-3 py-2 text-sm text-gray-600 dark:text-neutral-400 border-b border-gray-100 dark:border-neutral-700" {...props} />
+                    ),
+                    del: ({node, ...props}) => (
+                      <del className="line-through text-gray-500 dark:text-neutral-500" {...props} />
+                    ),
+                    input: ({node, ...props}) => {
+                      const { type, checked, disabled } = props as any;
+                      if (type === 'checkbox') {
+                        return (
+                          <input 
+                            type="checkbox" 
+                            checked={checked} 
+                            disabled={disabled}
+                            className="mr-2 rounded border-gray-300 dark:border-neutral-600 text-purple-600 focus:ring-purple-500"
+                            {...props} 
+                          />
+                        );
+                      }
+                      return <input {...props} />;
+                    },
+                    sup: ({node, ...props}) => (
+                      <sup className="text-xs" {...props} />
+                    ),
+                    sub: ({node, ...props}) => (
+                      <sub className="text-xs" {...props} />
+                    )
+                  }}
                 >
-                  {children}
-                </a>
-              ),
-              hr: ({node, ...props}) => (
-                <hr className="border-t border-gray-200 dark:border-neutral-600 my-4" {...props} />
-              ),
-              table: ({node, ...props}) => (
-                <div className="overflow-x-auto my-3">
-                  <table className="min-w-full border border-gray-200 dark:border-neutral-600 rounded-lg" {...props} />
-                </div>
-              ),
-              thead: ({node, ...props}) => (
-                <thead className="bg-gray-50 dark:bg-neutral-700" {...props} />
-              ),
-              tbody: ({node, ...props}) => (
-                <tbody {...props} />
-              ),
-              tr: ({node, ...props}) => (
-                <tr className="hover:bg-gray-50/50 dark:hover:bg-neutral-700/50" {...props} />
-              ),
-              th: ({node, ...props}) => (
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-neutral-300 border-b border-gray-200 dark:border-neutral-600" {...props} />
-              ),
-              td: ({node, ...props}) => (
-                <td className="px-3 py-2 text-sm text-gray-600 dark:text-neutral-400 border-b border-gray-100 dark:border-neutral-700" {...props} />
-              ),
-              del: ({node, ...props}) => (
-                <del className="line-through text-gray-500 dark:text-neutral-500" {...props} />
-              ),
-              input: ({node, ...props}) => {
-                const { type, checked, disabled } = props as any;
-                if (type === 'checkbox') {
-                  return (
-                    <input 
-                      type="checkbox" 
-                      checked={checked} 
-                      disabled={disabled}
-                      className="mr-2 rounded border-gray-300 dark:border-neutral-600 text-purple-600 focus:ring-purple-500"
-                      {...props} 
-                    />
-                  );
-                }
-                return <input {...props} />;
-              },
-              sup: ({node, ...props}) => (
-                <sup className="text-xs" {...props} />
-              ),
-              sub: ({node, ...props}) => (
-                <sub className="text-xs" {...props} />
-              )
-            }}
-            >
-              {generatedContent}
-            </ReactMarkdown>
+                  {generatedContent}
+                </ReactMarkdown>
+                <button
+                  onClick={() => setIsResponseExpanded(false)}
+                  className="inline text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium text-sm ml-1 transition-colors duration-200"
+                >
+                  Show less
+                </button>
+              </>
+            ) : (
+              // Collapsed view - show truncated plain text with "more" button
+              <div>
+                <span className="text-gray-600 dark:text-neutral-400 leading-relaxed text-sm">
+                  {generatedContent.length > 200 ? `${generatedContent.substring(0, 200).replace(/\s+\S*$/, '')}...` : generatedContent}
+                </span>
+                {generatedContent.length > 200 && (
+                  <button
+                    onClick={() => setIsResponseExpanded(true)}
+                    className="inline text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium text-sm ml-1 transition-colors duration-200"
+                  >
+                    more
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -182,7 +182,7 @@ export default function CanvasSettingsModal({ isOpen, onClose, canvasId }: Canva
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-700 text-white rounded-md transition-all duration-150"
+                  className="px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-all duration-150"
                 >
                   Delete
                 </button>
