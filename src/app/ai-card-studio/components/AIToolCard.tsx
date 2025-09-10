@@ -96,6 +96,11 @@ function AIToolCard({
   const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   
+  // Card menu state
+  const [showCardMenu, setShowCardMenu] = useState(false)
+  const [cardMenuVisible, setCardMenuVisible] = useState(false)
+  const cardMenuButtonRef = useRef<HTMLButtonElement>(null)
+  
   // Streaming state - tracks if we've started receiving data
   const [isStreaming, setIsStreaming] = useState(false)
   
@@ -281,6 +286,17 @@ function AIToolCard({
     } finally {
       setIsSaving(false)
     }
+  }
+
+  // Card menu handlers
+  const handleCardMenuOpen = () => {
+    setShowCardMenu(true)
+    setTimeout(() => setCardMenuVisible(true), 10)
+  }
+
+  const handleCardMenuClose = () => {
+    setCardMenuVisible(false)
+    setTimeout(() => setShowCardMenu(false), 200)
   }
 
   // Modified settings click to check for lock
@@ -495,133 +511,192 @@ function AIToolCard({
   }
 
   return (
-    <div className="bg-gradient-to-br from-white/95 to-purple-50/30 dark:from-neutral-800/95 dark:to-purple-900/20 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 dark:shadow-purple-400/10 border border-white/50 dark:border-neutral-700/50 p-4 pt-6 relative transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/30 dark:hover:shadow-purple-400/20 hover:-translate-y-1 group">
-      {/* Delete AI Response Button - Top Right, left of PDF button */}
+    <div className="bg-gradient-to-br from-white/95 to-purple-50/30 dark:from-neutral-800/95 dark:to-purple-900/20 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 dark:shadow-purple-400/10 border border-white/50 dark:border-neutral-700/50 p-4 relative transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/30 dark:hover:shadow-purple-400/20 hover:-translate-y-1 group">
+      {/* Single Menu Button - Top Right */}
       <button
-        onClick={() => {
-          if (!generatedContent?.trim()) return
-          updateCardGeneratedContent(cardId, '')
-        }}
-        className="absolute top-4 right-28 w-6 h-6 bg-white/80 dark:bg-neutral-700/80 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-full flex items-center justify-center text-gray-400 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-400/20 hover:scale-110 hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
-        title="Clear AI response"
-        disabled={!generatedContent?.trim()}
-      >
-        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-        </svg>
-      </button>
-
-      {/* PDF Export Button - Top Right, left of Insert button */}
-      <button
-        onClick={async () => {
-          if (!generatedContent?.trim() || isGeneratingPDF) return
-          
-          setIsGeneratingPDF(true)
-          
-          try {
-            console.log('Generating PDF for card:', buttonName)
-            
-            // Get selected PDF template from localStorage
-            const selectedTemplate = localStorage.getItem('pdfTemplate') as 'default' | 'resume' || 'default'
-            
-            const response = await fetch('/api/ai-card-studio/generate-pdf', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                cardName: buttonName,
-                content: generatedContent,  // Send raw markdown content
-                pdfTemplate: selectedTemplate,
-                generatedAt: new Date().toLocaleString()
-              })
-            })
-
-            if (!response.ok) {
-              throw new Error(`PDF generation failed: ${response.status}`)
-            }
-
-            const blob = await response.blob()
-            // Frontend controls filename
-            const filename = `${buttonName.replace(/[^a-zA-Z0-9\s]/g, '')}_AI_Card.pdf`
-            
-            // Download the PDF
-            const url = window.URL.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.style.display = 'none'
-            a.href = url
-            a.download = filename
-            document.body.appendChild(a)
-            a.click()
-            window.URL.revokeObjectURL(url)
-            document.body.removeChild(a)
-            
-            console.log('PDF generated successfully:', filename)
-          } catch (error) {
-            console.error('PDF generation error:', error)
-            alert('Failed to generate PDF. Please try again.')
-          } finally {
-            setIsGeneratingPDF(false)
-          }
-        }}
-        className="absolute top-4 right-20 w-6 h-6 bg-white/80 dark:bg-neutral-700/80 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-full flex items-center justify-center text-gray-400 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-400/20 hover:scale-110 hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
-        title={isGeneratingPDF ? "Generating PDF..." : "Export to PDF"}
-        disabled={!generatedContent?.trim() || isGeneratingPDF}
-      >
-        {isGeneratingPDF ? (
-          <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 01 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-          </svg>
-        ) : (
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-        )}
-      </button>
-
-      {/* Insert Card Button - Top Right, left of Settings button */}
-      <button
-        onClick={() => onInsertCard?.(columnId, cardId)}
-        className="absolute top-4 right-12 w-6 h-6 bg-white/80 dark:bg-neutral-700/80 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-full flex items-center justify-center text-gray-400 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-400/20 hover:scale-110 hover:-translate-y-0.5"
-        title="Insert card below"
-      >
-        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </svg>
-      </button>
-
-      {/* Settings Button */}
-      <button
-        onClick={handleSettingsClick}
-        className="absolute top-4 right-4 w-6 h-6 bg-white/80 dark:bg-neutral-700/80 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-full flex items-center justify-center text-gray-400 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-200 z-10"
-        title={isLocked ? "Card is locked - unlock to access settings" : "Card Settings"}
-      >
-        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      </button>
-
-      {/* Lock/Unlock Button - Below Settings Button, Right Aligned */}
-      <button
-        onClick={handleLockClick}
-        className="absolute top-12 right-4 w-6 h-6 bg-white/80 dark:bg-neutral-700/80 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-full flex items-center justify-center text-gray-400 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-400/20 hover:scale-110 hover:-translate-y-0.5"
-        title={isLocked ? "Unlock card" : "Lock card"}
+        ref={cardMenuButtonRef}
+        onClick={handleCardMenuOpen}
+        className="absolute top-4 right-4 w-6 h-6 bg-white/80 dark:bg-neutral-700/80 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-full flex items-center justify-center text-gray-400 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-400/20 hover:scale-110 hover:-translate-y-0.5"
+        title="Card actions"
         style={{ pointerEvents: 'auto' }}
       >
-        {isLocked ? (
-          // Locked icon
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
-        ) : (
-          // Unlocked icon
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
-          </svg>
-        )}
+        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+        </svg>
       </button>
+
+      {/* Card Menu Dropdown */}
+      {showCardMenu && cardMenuButtonRef.current && typeof document !== 'undefined' && createPortal(
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 z-40"
+            onClick={handleCardMenuClose}
+          />
+          
+          {/* Dropdown Menu */}
+          <div 
+            className={`fixed z-50 bg-white dark:bg-neutral-800 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-700 p-2 min-w-40 transform transition-all duration-200 ease-out ${
+              cardMenuVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+            }`}
+            style={{
+              top: cardMenuButtonRef.current.getBoundingClientRect().bottom + 8,
+              right: window.innerWidth - cardMenuButtonRef.current.getBoundingClientRect().right
+            }}
+          >
+            <div className="absolute -top-1 right-4 w-2 h-2 bg-white dark:bg-neutral-800 border-l border-t border-gray-200 dark:border-neutral-700 transform rotate-45"></div>
+            
+            <div className="flex flex-col gap-1">
+              {/* Settings */}
+              <button
+                onClick={() => {
+                  handleCardMenuClose()
+                  handleSettingsClick()
+                }}
+                className="px-3 py-2 text-sm text-gray-600 dark:text-neutral-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-md transition-all duration-150 text-left flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                {isLocked ? "Card is locked - unlock first" : "Settings"}
+              </button>
+
+              {/* Lock/Unlock */}
+              <button
+                onClick={() => {
+                  handleCardMenuClose()
+                  handleLockClick()
+                }}
+                className="px-3 py-2 text-sm text-gray-600 dark:text-neutral-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-md transition-all duration-150 text-left flex items-center gap-2"
+              >
+                {isLocked ? (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    Unlock Card
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                    </svg>
+                    Lock Card
+                  </>
+                )}
+              </button>
+
+              {/* Export to PDF */}
+              <button
+                onClick={async () => {
+                  handleCardMenuClose()
+                  
+                  if (!generatedContent?.trim() || isGeneratingPDF) return
+                  
+                  setIsGeneratingPDF(true)
+                  
+                  try {
+                    console.log('Generating PDF for card:', buttonName)
+                    
+                    // Get selected PDF template from localStorage
+                    const selectedTemplate = localStorage.getItem('pdfTemplate') as 'default' | 'resume' || 'default'
+                    
+                    const response = await fetch('/api/ai-card-studio/generate-pdf', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        cardName: buttonName,
+                        content: generatedContent,  // Send raw markdown content
+                        pdfTemplate: selectedTemplate,
+                        generatedAt: new Date().toLocaleString()
+                      })
+                    })
+
+                    if (!response.ok) {
+                      throw new Error(`PDF generation failed: ${response.status}`)
+                    }
+
+                    const blob = await response.blob()
+                    // Frontend controls filename
+                    const filename = `${buttonName.replace(/[^a-zA-Z0-9\s]/g, '')}_AI_Card.pdf`
+                    
+                    // Download the PDF
+                    const url = window.URL.createObjectURL(blob)
+                    const a = document.createElement('a')
+                    a.style.display = 'none'
+                    a.href = url
+                    a.download = filename
+                    document.body.appendChild(a)
+                    a.click()
+                    window.URL.revokeObjectURL(url)
+                    document.body.removeChild(a)
+                    
+                    console.log('PDF generated successfully:', filename)
+                  } catch (error) {
+                    console.error('PDF generation error:', error)
+                    alert('Failed to generate PDF. Please try again.')
+                  } finally {
+                    setIsGeneratingPDF(false)
+                  }
+                }}
+                disabled={!generatedContent?.trim() || isGeneratingPDF}
+                className="px-3 py-2 text-sm text-gray-600 dark:text-neutral-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-md transition-all duration-150 text-left flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGeneratingPDF ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 01 8-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 01 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                    </svg>
+                    Generating PDF...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Export to PDF
+                  </>
+                )}
+              </button>
+
+              {/* Clear AI Response */}
+              <button
+                onClick={() => {
+                  handleCardMenuClose()
+                  if (!generatedContent?.trim()) return
+                  updateCardGeneratedContent(cardId, '')
+                }}
+                disabled={!generatedContent?.trim()}
+                className="px-3 py-2 text-sm text-gray-600 dark:text-neutral-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-md transition-all duration-150 text-left flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Clear AI Response
+              </button>
+
+              {/* Insert Card Below */}
+              <button
+                onClick={() => {
+                  handleCardMenuClose()
+                  onInsertCard?.(columnId, cardId)
+                }}
+                className="px-3 py-2 text-sm text-gray-600 dark:text-neutral-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-md transition-all duration-150 text-left flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Insert Card Below
+              </button>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
 
       {/* Lock Message - Temporary notification */}
       {showLockMessage && (
@@ -630,7 +705,7 @@ function AIToolCard({
         </div>
       )}
 
-      {/* Generate Button - Small and refined */}
+      {/* Generate Button - Small and refined, aligned with menu button */}
       <button
         ref={generateButtonRef}
         onClick={() => handleGenerateClick()}
@@ -976,7 +1051,7 @@ function AIToolCard({
         >
           {/* Button Name */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Button Name:</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">Button Name:</label>
             <input
               type="text"
               value={localButtonName}
@@ -985,21 +1060,21 @@ function AIToolCard({
                 setLocalButtonName(newValue)
               }}
               placeholder="Enter button name..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg text-sm text-gray-700 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-500 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             />
           </div>
 
           {/* Prompt */}
           <div className="mb-4">
             <div className="flex justify-between items-center mb-2">
-              <label className="text-sm font-medium text-gray-700">Prompt:</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-neutral-300">Prompt:</label>
               <select
                 value={localAiModel}
                 onChange={(e) => {
                   const newModel = e.target.value as 'deepseek' | 'openai'
                   setLocalAiModel(newModel)
                 }}
-                className="px-3 py-1 text-sm border border-gray-200 rounded-md text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
+                className="px-3 py-1 text-sm border border-gray-200 dark:border-neutral-700 rounded-md text-gray-700 dark:text-neutral-200 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               >
                 <option value="deepseek">DeepSeek</option>
                 <option value="openai">OpenAI</option>
@@ -1011,7 +1086,7 @@ function AIToolCard({
                 value={localPromptText}
                 onChange={handlePromptChange}
                 placeholder="Enter your AI prompt here..."
-                className="w-full min-h-32 p-3 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                className="w-full min-h-32 p-3 border border-gray-200 dark:border-neutral-700 rounded-lg text-sm text-gray-700 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-500 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
                 style={{
                   minHeight: '128px',
                   maxHeight: '256px',
@@ -1029,13 +1104,13 @@ function AIToolCard({
                 <div className="flex-1">
                   {previousCards.length > 0 && (
                     <>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Insert Reference from AI Cards</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">Insert Reference from AI Cards</label>
                       <div className="flex flex-wrap gap-2">
                         {previousCards.map((card) => (
                           <button
                             key={card.id}
                             onClick={() => insertReference(card.buttonName)}
-                            className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                            className="px-3 py-1 text-xs bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-300 rounded-md hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors"
                           >
                             {card.buttonName}
                           </button>
@@ -1049,13 +1124,13 @@ function AIToolCard({
                 <div className="flex-1">
                   {infoCards.length > 0 && (
                     <>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Insert Reference from Info Cards</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">Insert Reference from Info Cards</label>
                       <div className="flex flex-wrap gap-2">
                         {infoCards.map((card) => (
                           <button
                             key={card.id}
                             onClick={() => insertInfoReference(card.title)}
-                            className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                            className="px-3 py-1 text-xs bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-300 rounded-md hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors"
                           >
                             {card.title}
                           </button>
@@ -1067,7 +1142,7 @@ function AIToolCard({
                 
                 {/* Right 1/3 - Options */}
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
                     Options (click Insert Option to add to prompt):
                     <button
                       onClick={() => {
