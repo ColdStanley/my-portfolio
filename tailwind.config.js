@@ -27,16 +27,16 @@ module.exports = {
       },
       colors: {
         lakers: {
-          50: '#faf5ff',
-          100: '#f3e8ff',
-          200: '#e9d5ff',
-          300: '#d946ef',
-          400: '#FDB927', // Lakers Gold
-          500: '#F4C430', // Bright Gold
-          600: '#552583', // Lakers Purple
-          700: '#4c1d95', // Deep Purple
-          800: '#3b0764',
-          900: '#2e1065',
+          50: '#2F2438',   // Ultra soft background
+          100: '#3A2B45',  // Very soft background
+          200: '#C4B4A8',  // Ultra soft gold
+          300: '#B8A082',  // Soft gold (main text)
+          400: '#E6C794',  // Gentle gold (accents)
+          500: '#D4A574',  // Warm gold
+          600: '#2A1B3D',  // Deep purple background
+          700: '#1F1429',  // Deeper purple
+          800: '#161020',  // Deepest purple (emphasis)
+          900: '#0D0815',  // Ultra deep purple
         },
       },
     },

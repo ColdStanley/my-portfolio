@@ -56,15 +56,15 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
       />
       
       {/* Panel */}
-      <div className={`fixed top-0 right-0 h-full w-96 z-50 bg-white dark:bg-neutral-900 lakers:bg-gradient-to-br lakers:from-lakers-600 lakers:to-lakers-700 shadow-2xl transform transition-all duration-300 ease-out ${
+      <div className={`fixed top-0 right-0 h-full w-96 z-50 bg-white dark:bg-neutral-900 lakers:bg-gradient-to-br lakers:from-lakers-800 lakers:to-lakers-700 shadow-2xl transform transition-all duration-300 ease-out ${
         isVisible ? 'translate-x-0' : 'translate-x-full'
       }`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-neutral-700 lakers:border-lakers-400/30">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-neutral-100 lakers:text-lakers-400">Settings</h2>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-neutral-700 lakers:border-lakers-300/30">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-neutral-100 lakers:text-lakers-300">Settings</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-neutral-800 lakers:hover:bg-lakers-400/20 rounded-lg transition-all duration-200 text-gray-500 hover:text-gray-700 dark:text-neutral-400 dark:hover:text-neutral-200 lakers:text-lakers-300 lakers:hover:text-lakers-400"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-neutral-800 lakers:hover:bg-lakers-300/20 rounded-lg transition-all duration-200 text-gray-500 hover:text-gray-700 dark:text-neutral-400 dark:hover:text-neutral-200 lakers:text-lakers-300 lakers:hover:text-lakers-300"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -76,7 +76,7 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
         <div className="p-6">
           {/* Theme Selection */}
           <div className="mb-8">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-100 lakers:text-lakers-400 mb-4">Theme</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-100 lakers:text-lakers-300 mb-4">Theme</h3>
             <p className="text-sm text-gray-600 dark:text-neutral-400 lakers:text-lakers-300 mb-4">
               Choose your preferred theme for the AI Card Studio interface.
             </p>
@@ -87,8 +87,8 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                 onClick={() => handleThemeSelect('light')}
                 className={`w-full p-4 rounded-xl border-2 transition-all duration-200 text-left ${
                   theme === 'light'
-                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-400 lakers:border-lakers-400 lakers:bg-lakers-400/20'
-                    : 'border-gray-200 dark:border-neutral-700 lakers:border-lakers-500/30 hover:border-purple-300 dark:hover:border-purple-600 lakers:hover:border-lakers-400 hover:bg-gray-50 dark:hover:bg-neutral-800 lakers:hover:bg-lakers-400/10'
+                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-400 lakers:border-lakers-300 lakers:bg-lakers-300/20'
+                    : 'border-gray-200 dark:border-neutral-700 lakers:border-lakers-200/30 hover:border-purple-300 dark:hover:border-purple-600 lakers:hover:border-lakers-300 hover:bg-gray-50 dark:hover:bg-neutral-800 lakers:hover:bg-lakers-300/10'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -98,7 +98,7 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                     </svg>
                   </div>
                   <div>
-                    <div className="font-medium text-gray-900 dark:text-neutral-100 lakers:text-lakers-200">Light</div>
+                    <div className="font-medium text-gray-900 dark:text-neutral-100 lakers:text-lakers-300">Light</div>
                     <div className="text-sm text-gray-500 dark:text-neutral-400 lakers:text-lakers-300">Clean and bright interface</div>
                   </div>
                   {theme === 'light' && (
@@ -118,8 +118,8 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                 onClick={() => handleThemeSelect('dark')}
                 className={`w-full p-4 rounded-xl border-2 transition-all duration-200 text-left ${
                   theme === 'dark'
-                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-400 lakers:border-lakers-400 lakers:bg-lakers-400/20'
-                    : 'border-gray-200 dark:border-neutral-700 lakers:border-lakers-500/30 hover:border-purple-300 dark:hover:border-purple-600 lakers:hover:border-lakers-400 hover:bg-gray-50 dark:hover:bg-neutral-800 lakers:hover:bg-lakers-400/10'
+                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-400 lakers:border-lakers-300 lakers:bg-lakers-300/20'
+                    : 'border-gray-200 dark:border-neutral-700 lakers:border-lakers-200/30 hover:border-purple-300 dark:hover:border-purple-600 lakers:hover:border-lakers-300 hover:bg-gray-50 dark:hover:bg-neutral-800 lakers:hover:bg-lakers-300/10'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -129,7 +129,7 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                     </svg>
                   </div>
                   <div>
-                    <div className="font-medium text-gray-900 dark:text-neutral-100 lakers:text-lakers-200">Dark</div>
+                    <div className="font-medium text-gray-900 dark:text-neutral-100 lakers:text-lakers-300">Dark</div>
                     <div className="text-sm text-gray-500 dark:text-neutral-400 lakers:text-lakers-300">Easy on the eyes</div>
                   </div>
                   {theme === 'dark' && (
@@ -149,24 +149,24 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                 onClick={() => handleThemeSelect('lakers')}
                 className={`w-full p-4 rounded-xl border-2 transition-all duration-200 text-left ${
                   theme === 'lakers'
-                    ? 'border-lakers-400 bg-lakers-400/20 dark:bg-lakers-400/30 dark:border-lakers-400 lakers:border-lakers-400 lakers:bg-lakers-400/20'
-                    : 'border-gray-200 dark:border-neutral-700 lakers:border-lakers-500/30 hover:border-lakers-400 dark:hover:border-lakers-400 lakers:hover:border-lakers-400 hover:bg-lakers-50 dark:hover:bg-lakers-800/20 lakers:hover:bg-lakers-400/10'
+                    ? 'border-lakers-300 bg-lakers-300/20 dark:bg-lakers-300/30 dark:border-lakers-300 lakers:border-lakers-300 lakers:bg-lakers-300/20'
+                    : 'border-gray-200 dark:border-neutral-700 lakers:border-lakers-200/30 hover:border-lakers-300 dark:hover:border-lakers-300 lakers:hover:border-lakers-300 hover:bg-lakers-100 dark:hover:bg-lakers-800/20 lakers:hover:bg-lakers-300/10'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-lakers-600 to-lakers-400 border-2 border-lakers-400 flex items-center justify-center shadow-sm">
-                    <svg className="w-4 h-4 text-lakers-400" fill="currentColor" viewBox="0 0 24 24">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-lakers-700 to-lakers-300 border-2 border-lakers-300 flex items-center justify-center shadow-sm">
+                    <svg className="w-4 h-4 text-lakers-300" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 2L13.09 8.26L22 9L13.09 9.74L12 16L10.91 9.74L2 9L10.91 8.26L12 2Z" />
                     </svg>
                   </div>
                   <div>
-                    <div className="font-medium text-gray-900 dark:text-neutral-100 lakers:text-lakers-200">Lakers</div>
+                    <div className="font-medium text-gray-900 dark:text-neutral-100 lakers:text-lakers-300">Lakers</div>
                     <div className="text-sm text-gray-500 dark:text-neutral-400 lakers:text-lakers-300">Championship energy</div>
                   </div>
                   {theme === 'lakers' && (
                     <div className="ml-auto">
-                      <div className="w-5 h-5 bg-lakers-400 rounded-full flex items-center justify-center">
-                        <svg className="w-3 h-3 text-lakers-600" fill="currentColor" viewBox="0 0 20 20">
+                      <div className="w-5 h-5 bg-lakers-300 rounded-full flex items-center justify-center">
+                        <svg className="w-3 h-3 text-lakers-700" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                       </div>
@@ -178,7 +178,7 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
           </div>
 
           {/* Future Settings Sections */}
-          <div className="border-t border-gray-200 dark:border-neutral-700 lakers:border-lakers-400/30 pt-6">
+          <div className="border-t border-gray-200 dark:border-neutral-700 lakers:border-lakers-300/30 pt-6">
             <div className="text-sm text-gray-500 dark:text-neutral-400 lakers:text-lakers-300 text-center">
               More settings coming soon...
             </div>

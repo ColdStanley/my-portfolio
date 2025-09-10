@@ -256,9 +256,9 @@ export default function AICardStudioPage() {
     switch (authState) {
       case 'loading':
         return (
-          <div className="min-h-screen bg-white dark:bg-neutral-900 lakers:bg-gradient-to-br lakers:from-lakers-600 lakers:to-lakers-700 flex items-center justify-center">
+          <div className="min-h-screen bg-white dark:bg-neutral-900 lakers:bg-gradient-to-br lakers:from-lakers-800 lakers:to-lakers-700 flex items-center justify-center">
             <div className="flex flex-col items-center gap-4">
-              <div className="w-8 h-8 border-2 border-purple-600 lakers:border-lakers-400 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-8 h-8 border-2 border-purple-600 lakers:border-lakers-300 border-t-transparent rounded-full animate-spin"></div>
               <p className="text-gray-600 dark:text-neutral-400 lakers:text-lakers-300">Loading AI Card Studio...</p>
             </div>
           </div>
