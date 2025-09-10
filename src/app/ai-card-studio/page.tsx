@@ -14,6 +14,9 @@ export default function AICardStudioPage() {
   const [authState, setAuthState] = useState<AuthState>('loading')
   const [user, setUser] = useState<User | null>(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [userMenuVisible, setUserMenuVisible] = useState(false)
+  const [showPdfTemplateMenu, setShowPdfTemplateMenu] = useState(false)
+  const [pdfTemplateMenuVisible, setPdfTemplateMenuVisible] = useState(false)
   const [pdfTemplate, setPdfTemplate] = useState<'default' | 'resume'>('default')
   const userMenuRef = useRef<HTMLDivElement>(null)
   const { isLoading: workspaceLoading, canvases, saveError, actions } = useWorkspaceStore()
@@ -166,7 +169,7 @@ export default function AICardStudioPage() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setShowUserMenu(false)
+        handleCloseUserMenu()
       }
     }
 
@@ -195,6 +198,43 @@ export default function AICardStudioPage() {
     }
   }
 
+  const handleUserMenuToggle = () => {
+    if (showUserMenu) {
+      handleCloseUserMenu()
+    } else {
+      setShowUserMenu(true)
+      setTimeout(() => setUserMenuVisible(true), 10)
+    }
+  }
+
+  const handleCloseUserMenu = () => {
+    setUserMenuVisible(false)
+    setPdfTemplateMenuVisible(false)
+    setTimeout(() => {
+      setShowUserMenu(false)
+      setShowPdfTemplateMenu(false)
+    }, 200)
+  }
+
+  const handlePdfTemplateToggle = () => {
+    if (showPdfTemplateMenu) {
+      setPdfTemplateMenuVisible(false)
+      setTimeout(() => setShowPdfTemplateMenu(false), 200)
+    } else {
+      setShowPdfTemplateMenu(true)
+      setTimeout(() => setPdfTemplateMenuVisible(true), 10)
+    }
+  }
+
+  const handlePdfTemplateSelect = (template: 'default' | 'resume') => {
+    setPdfTemplate(template)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pdfTemplate', template)
+    }
+    setPdfTemplateMenuVisible(false)
+    setTimeout(() => setShowPdfTemplateMenu(false), 200)
+  }
+
   // 🎯 统一渲染逻辑 - 基于单一authState状态
   const renderContent = () => {
     switch (authState) {
@@ -217,8 +257,8 @@ export default function AICardStudioPage() {
               <div ref={userMenuRef} className="fixed top-4 right-4 z-50">
                 {/* User email button */}
                 <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="px-2 py-1 text-xs text-gray-400 hover:text-purple-500 transition-all duration-200 flex items-center gap-2"
+                  onClick={handleUserMenuToggle}
+                  className="px-3 py-2 text-xs text-gray-400 hover:text-purple-600 hover:bg-purple-50/50 rounded-lg transition-all duration-200 flex items-center gap-2 transform hover:scale-105 active:scale-95"
                 >
                   {user.email}
                   <svg 
@@ -233,32 +273,69 @@ export default function AICardStudioPage() {
 
                 {/* Dropdown menu */}
                 {showUserMenu && (
-                  <div className="absolute top-full right-0 mt-2 w-48 bg-white/95 backdrop-blur-md rounded-lg shadow-xl border border-gray-200 p-2">
+                  <div className={`absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 p-2 transform transition-all duration-200 ease-out ${
+                    userMenuVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-2'
+                  }`}>
                     {/* PDF Template Selection */}
-                    <div className="px-2 py-2 border-b border-gray-200 mb-2">
-                      <label className="block text-xs font-medium text-gray-500 mb-1">PDF Template</label>
-                      <select
-                        value={pdfTemplate}
-                        onChange={(e) => {
-                          const newTemplate = e.target.value as 'default' | 'resume'
-                          setPdfTemplate(newTemplate)
-                          if (typeof window !== 'undefined') {
-                            localStorage.setItem('pdfTemplate', newTemplate)
-                          }
-                        }}
-                        className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    <div className="relative">
+                      <button
+                        onClick={handlePdfTemplateToggle}
+                        className="w-full px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left flex items-center justify-between transform hover:scale-[1.02] active:scale-98"
                       >
-                        <option value="default">Default</option>
-                        <option value="resume">Resume</option>
-                      </select>
+                        <span>PDF Template</span>
+                        <svg 
+                          className={`w-3 h-3 transition-transform duration-200 ${showPdfTemplateMenu ? 'rotate-180' : ''}`}
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      
+                      {/* PDF Template Submenu */}
+                      {showPdfTemplateMenu && (
+                        <div className={`absolute top-0 right-full mr-2 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-3 transform transition-all duration-200 ease-out ${
+                          pdfTemplateMenuVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                        }`}>
+                          {/* Arrow pointing to button */}
+                          <div className="absolute top-4 -right-1 w-2 h-2 bg-white border-r border-b border-gray-200 transform rotate-45"></div>
+                          
+                          <div className="flex flex-col gap-2 min-w-28">
+                            <button
+                              onClick={() => handlePdfTemplateSelect('default')}
+                              className={`px-3 py-1.5 text-sm rounded-md transition-all duration-150 text-left transform hover:scale-[1.02] active:scale-98 ${
+                                pdfTemplate === 'default' 
+                                  ? 'text-purple-600 bg-purple-50' 
+                                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
+                              }`}
+                            >
+                              Default
+                            </button>
+                            <button
+                              onClick={() => handlePdfTemplateSelect('resume')}
+                              className={`px-3 py-1.5 text-sm rounded-md transition-all duration-150 text-left transform hover:scale-[1.02] active:scale-98 ${
+                                pdfTemplate === 'resume' 
+                                  ? 'text-purple-600 bg-purple-50' 
+                                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
+                              }`}
+                            >
+                              Resume
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
+                    
+                    {/* Separator */}
+                    <hr className="my-2 border-gray-200" />
                     
                     <button
                       onClick={() => {
-                        setShowUserMenu(false)
+                        handleCloseUserMenu()
                         handleSignOut()
                       }}
-                      className="w-full px-1.5 py-0.5 text-xs text-left text-purple-600 hover:bg-purple-50 transition-all duration-200 flex items-center gap-1"
+                      className="w-full px-3 py-1.5 text-sm text-left text-purple-600 hover:bg-purple-50 transition-all duration-200 flex items-center gap-2 transform hover:scale-[1.02] active:scale-98"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
