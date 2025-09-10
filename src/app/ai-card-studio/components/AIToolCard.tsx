@@ -464,14 +464,14 @@ function AIToolCard({
   }
 
   return (
-    <div className="bg-gradient-to-br from-white/95 to-purple-50/30 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 border border-white/50 p-4 pt-6 relative transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-1 group">
+    <div className="bg-gradient-to-br from-white/95 to-purple-50/30 dark:from-neutral-800/95 dark:to-purple-900/20 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 dark:shadow-purple-400/10 border border-white/50 dark:border-neutral-700/50 p-4 pt-6 relative transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/30 dark:hover:shadow-purple-400/20 hover:-translate-y-1 group">
       {/* Delete AI Response Button - Top Right, left of PDF button */}
       <button
         onClick={() => {
           if (!generatedContent?.trim()) return
           updateCardGeneratedContent(cardId, '')
         }}
-        className="absolute top-4 right-28 w-6 h-6 bg-white/80 hover:bg-purple-50 rounded-full flex items-center justify-center text-gray-400 hover:text-purple-600 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 hover:scale-110 hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
+        className="absolute top-4 right-28 w-6 h-6 bg-white/80 dark:bg-neutral-700/80 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-full flex items-center justify-center text-gray-400 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-400/20 hover:scale-110 hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
         title="Clear AI response"
         disabled={!generatedContent?.trim()}
       >
@@ -533,7 +533,7 @@ function AIToolCard({
             setIsGeneratingPDF(false)
           }
         }}
-        className="absolute top-4 right-20 w-6 h-6 bg-white/80 hover:bg-purple-50 rounded-full flex items-center justify-center text-gray-400 hover:text-purple-600 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 hover:scale-110 hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
+        className="absolute top-4 right-20 w-6 h-6 bg-white/80 dark:bg-neutral-700/80 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-full flex items-center justify-center text-gray-400 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-400/20 hover:scale-110 hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
         title={isGeneratingPDF ? "Generating PDF..." : "Export to PDF"}
         disabled={!generatedContent?.trim() || isGeneratingPDF}
       >
@@ -552,7 +552,7 @@ function AIToolCard({
       {/* Insert Card Button - Top Right, left of Settings button */}
       <button
         onClick={() => onInsertCard?.(columnId, cardId)}
-        className="absolute top-4 right-12 w-6 h-6 bg-white/80 hover:bg-purple-50 rounded-full flex items-center justify-center text-gray-400 hover:text-purple-600 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 hover:scale-110 hover:-translate-y-0.5"
+        className="absolute top-4 right-12 w-6 h-6 bg-white/80 dark:bg-neutral-700/80 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-full flex items-center justify-center text-gray-400 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-400/20 hover:scale-110 hover:-translate-y-0.5"
         title="Insert card below"
       >
         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -563,7 +563,7 @@ function AIToolCard({
       {/* Settings Button */}
       <button
         onClick={handleSettingsClick}
-        className="absolute top-4 right-4 w-6 h-6 bg-white/80 hover:bg-purple-50 rounded-full flex items-center justify-center text-gray-400 hover:text-purple-600 transition-all duration-200 z-10"
+        className="absolute top-4 right-4 w-6 h-6 bg-white/80 dark:bg-neutral-700/80 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-full flex items-center justify-center text-gray-400 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-200 z-10"
         title={isLocked ? "Card is locked - unlock to access settings" : "Card Settings"}
       >
         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -575,7 +575,7 @@ function AIToolCard({
       {/* Lock/Unlock Button - Below Settings Button, Right Aligned */}
       <button
         onClick={handleLockClick}
-        className="absolute top-12 right-4 w-6 h-6 bg-white/80 hover:bg-purple-50 rounded-full flex items-center justify-center text-gray-400 hover:text-purple-600 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 hover:scale-110 hover:-translate-y-0.5"
+        className="absolute top-12 right-4 w-6 h-6 bg-white/80 dark:bg-neutral-700/80 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-full flex items-center justify-center text-gray-400 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-400/20 hover:scale-110 hover:-translate-y-0.5"
         title={isLocked ? "Unlock card" : "Lock card"}
         style={{ pointerEvents: 'auto' }}
       >
@@ -616,21 +616,21 @@ function AIToolCard({
       </button>
 
       {/* AI Response Area - Always visible with gray background */}
-      <div className={`relative p-4 bg-gradient-to-br from-gray-50/80 via-gray-100/40 to-gray-50/60 backdrop-blur-sm rounded-lg transition-all duration-300 border border-gray-200/50 shadow-inner ${
+      <div className={`relative p-4 bg-gradient-to-br from-gray-50/80 via-gray-100/40 to-gray-50/60 dark:from-neutral-700/80 dark:via-neutral-800/40 dark:to-neutral-700/60 backdrop-blur-sm rounded-lg transition-all duration-300 border border-gray-200/50 dark:border-neutral-600/50 shadow-inner ${
         isResponseExpanded ? 'min-h-fit' : 'min-h-24'
       } ${
         !isResponseExpanded && generatedContent ? 'max-h-24 overflow-hidden' : ''
       }`}>
         {/* Gradient Mask for Collapsed State */}
         {!isResponseExpanded && generatedContent && (
-          <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-gray-50 to-transparent pointer-events-none z-5"></div>
+          <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-gray-50 dark:from-neutral-700 to-transparent pointer-events-none z-5"></div>
         )}
         
         {/* Expand/Collapse Button - Minimal dropdown arrow */}
         {generatedContent && (
           <button
             onClick={() => setIsResponseExpanded(!isResponseExpanded)}
-            className="absolute top-2 right-2 p-1 text-gray-600 hover:text-purple-600 cursor-pointer transition-all duration-200 z-10"
+            className="absolute top-2 right-2 p-1 text-gray-600 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer transition-all duration-200 z-10"
             title={isResponseExpanded ? 'Collapse response' : 'Expand response'}
           >
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -815,13 +815,13 @@ function AIToolCard({
           
           {/* Tooltip */}
           <div 
-            className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-3"
+            className="fixed z-50 bg-white dark:bg-neutral-800 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-700 p-3"
             style={{
               top: generateButtonRef.current.getBoundingClientRect().bottom + 8,
               left: generateButtonRef.current.getBoundingClientRect().left
             }}
           >
-            <div className="absolute -top-1 left-4 w-2 h-2 bg-white border-l border-t border-gray-200 transform rotate-45"></div>
+            <div className="absolute -top-1 left-4 w-2 h-2 bg-white dark:bg-neutral-800 border-l border-t border-gray-200 dark:border-neutral-700 transform rotate-45"></div>
             <div className="flex flex-col gap-2 min-w-32">
               {(options || []).map((optionValue, index) => (
                 <button
@@ -830,7 +830,7 @@ function AIToolCard({
                     handleGenerateClick(optionValue)
                     setShowOptionsTooltip(false)
                   }}
-                  className="px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
+                  className="px-3 py-1.5 text-sm text-gray-600 dark:text-neutral-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-md transition-all duration-150 text-left"
                 >
                   {optionValue}
                 </button>
@@ -1038,18 +1038,18 @@ function AIToolCard({
       {/* Options Management Tooltip */}
       {showOptionsManageTooltip && typeof document !== 'undefined' && createPortal(
         <>
-          <div className="fixed inset-0 z-40 bg-black/20" />
+          <div className="fixed inset-0 z-40 bg-black/20 dark:bg-black/40" />
           <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-            <div className={`bg-white rounded-lg shadow-xl border border-gray-200 p-4 max-w-md w-full mx-4 pointer-events-auto transform transition-all duration-200 ease-out ${
+            <div className={`bg-white dark:bg-neutral-800 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-700 p-4 max-w-md w-full mx-4 pointer-events-auto transform transition-all duration-200 ease-out ${
               optionsManageTooltipVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
             }`}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-800">Manage Options</h3>
+                <h3 className="text-lg font-medium text-gray-800 dark:text-neutral-200">Manage Options</h3>
                 <button
                   onClick={handleCloseOptionsManageTooltip}
-                  className="p-1 hover:bg-gray-100 rounded transition-colors"
+                  className="p-1 hover:bg-gray-100 dark:hover:bg-neutral-700 rounded transition-colors"
                 >
-                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-gray-600 dark:text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -1067,14 +1067,14 @@ function AIToolCard({
                         setLocalOptions(newOptions)
                       }}
                       placeholder="Enter option..."
-                      className="flex-1 px-2 py-1 text-sm border border-gray-200 rounded text-gray-700 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                      className="flex-1 px-2 py-1 text-sm border border-gray-200 dark:border-neutral-700 rounded text-gray-700 dark:text-neutral-200 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-1 focus:ring-purple-500"
                     />
                     <button
                       onClick={() => {
                         const newOptions = localOptions.filter((_, i) => i !== index)
                         setLocalOptions(newOptions)
                       }}
-                      className="px-2 py-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                      className="px-2 py-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                     >
                       ×
                     </button>
@@ -1085,7 +1085,7 @@ function AIToolCard({
                     const newOptions = [...localOptions, '']
                     setLocalOptions(newOptions)
                   }}
-                  className="w-full px-3 py-1 text-sm text-purple-600 border border-purple-200 rounded hover:bg-purple-50 transition-colors"
+                  className="w-full px-3 py-1 text-sm text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-700 rounded hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
                 >
                   + Add Option
                 </button>

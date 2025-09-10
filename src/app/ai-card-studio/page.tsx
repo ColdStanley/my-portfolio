@@ -4,8 +4,10 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import AICardStudio from './components/AICardStudio'
 import AuthUI from './components/AuthUI'
+import SettingsPanel from './components/SettingsPanel'
 import PageTransition from '@/components/PageTransition'
 import { useWorkspaceStore } from './store/workspaceStore'
+import { useThemeStore } from './store/useThemeStore'
 import type { User } from '@supabase/supabase-js'
 
 type AuthState = 'loading' | 'authenticated' | 'unauthenticated'
@@ -17,9 +19,11 @@ export default function AICardStudioPage() {
   const [userMenuVisible, setUserMenuVisible] = useState(false)
   const [showPdfTemplateMenu, setShowPdfTemplateMenu] = useState(false)
   const [pdfTemplateMenuVisible, setPdfTemplateMenuVisible] = useState(false)
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false)
   const [pdfTemplate, setPdfTemplate] = useState<'default' | 'resume'>('default')
   const userMenuRef = useRef<HTMLDivElement>(null)
   const { isLoading: workspaceLoading, canvases, saveError, actions } = useWorkspaceStore()
+  const { actions: themeActions } = useThemeStore()
   const initializedRef = useRef(false)
   const visibilityRef = useRef(true) // Track page visibility
 
@@ -27,6 +31,9 @@ export default function AICardStudioPage() {
   // Set page title and initialize PDF template from localStorage
   useEffect(() => {
     document.title = "AI Card Studio | Stanley Hi"
+    
+    // Initialize theme
+    themeActions.initializeTheme()
     
     // Initialize PDF template from localStorage
     if (typeof window !== 'undefined') {
@@ -235,15 +242,24 @@ export default function AICardStudioPage() {
     setTimeout(() => setShowPdfTemplateMenu(false), 200)
   }
 
+  const handleOpenSettings = () => {
+    setShowSettingsPanel(true)
+    handleCloseUserMenu()
+  }
+
+  const handleCloseSettings = () => {
+    setShowSettingsPanel(false)
+  }
+
   // 🎯 统一渲染逻辑 - 基于单一authState状态
   const renderContent = () => {
     switch (authState) {
       case 'loading':
         return (
-          <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 flex items-center justify-center">
+          <div className="min-h-screen bg-white dark:bg-neutral-900 flex items-center justify-center">
             <div className="flex flex-col items-center gap-4">
               <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-gray-600">Loading AI Card Studio...</p>
+              <p className="text-gray-600 dark:text-neutral-400">Loading AI Card Studio...</p>
             </div>
           </div>
         )
@@ -258,7 +274,7 @@ export default function AICardStudioPage() {
                 {/* User email button */}
                 <button
                   onClick={handleUserMenuToggle}
-                  className="px-3 py-2 text-xs text-gray-400 hover:text-purple-600 hover:bg-purple-50/50 rounded-lg transition-all duration-200 flex items-center gap-2 transform hover:scale-105 active:scale-95"
+                  className="px-3 py-2 text-xs text-gray-400 hover:text-purple-600 hover:bg-purple-50/50 dark:text-neutral-500 dark:hover:text-purple-400 dark:hover:bg-purple-900/20 rounded-lg transition-all duration-200 flex items-center gap-2 transform hover:scale-105 active:scale-95"
                 >
                   {user.email}
                   <svg 
@@ -273,14 +289,14 @@ export default function AICardStudioPage() {
 
                 {/* Dropdown menu */}
                 {showUserMenu && (
-                  <div className={`absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 p-2 transform transition-all duration-200 ease-out ${
+                  <div className={`absolute top-full right-0 mt-2 w-48 bg-white dark:bg-neutral-800 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-700 p-2 transform transition-all duration-200 ease-out ${
                     userMenuVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-2'
                   }`}>
                     {/* PDF Template Selection */}
                     <div className="relative">
                       <button
                         onClick={handlePdfTemplateToggle}
-                        className="w-full px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left flex items-center justify-between transform hover:scale-[1.02] active:scale-98"
+                        className="w-full px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20 rounded-md transition-all duration-150 text-left flex items-center justify-between transform hover:scale-[1.02] active:scale-98"
                       >
                         <span>PDF Template</span>
                         <svg 
@@ -295,19 +311,19 @@ export default function AICardStudioPage() {
                       
                       {/* PDF Template Submenu */}
                       {showPdfTemplateMenu && (
-                        <div className={`absolute top-0 right-full mr-2 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-3 transform transition-all duration-200 ease-out ${
+                        <div className={`absolute top-0 right-full mr-2 z-50 bg-white dark:bg-neutral-800 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-700 p-3 transform transition-all duration-200 ease-out ${
                           pdfTemplateMenuVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
                         }`}>
                           {/* Arrow pointing to button */}
-                          <div className="absolute top-4 -right-1 w-2 h-2 bg-white border-r border-b border-gray-200 transform rotate-45"></div>
+                          <div className="absolute top-4 -right-1 w-2 h-2 bg-white dark:bg-neutral-800 border-r border-b border-gray-200 dark:border-neutral-700 transform rotate-45"></div>
                           
                           <div className="flex flex-col gap-2 min-w-28">
                             <button
                               onClick={() => handlePdfTemplateSelect('default')}
                               className={`px-3 py-1.5 text-sm rounded-md transition-all duration-150 text-left transform hover:scale-[1.02] active:scale-98 ${
                                 pdfTemplate === 'default' 
-                                  ? 'text-purple-600 bg-purple-50' 
-                                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
+                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20' 
+                                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
                               }`}
                             >
                               Default
@@ -316,8 +332,8 @@ export default function AICardStudioPage() {
                               onClick={() => handlePdfTemplateSelect('resume')}
                               className={`px-3 py-1.5 text-sm rounded-md transition-all duration-150 text-left transform hover:scale-[1.02] active:scale-98 ${
                                 pdfTemplate === 'resume' 
-                                  ? 'text-purple-600 bg-purple-50' 
-                                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
+                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20' 
+                                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
                               }`}
                             >
                               Resume
@@ -328,14 +344,26 @@ export default function AICardStudioPage() {
                     </div>
                     
                     {/* Separator */}
-                    <hr className="my-2 border-gray-200" />
+                    <hr className="my-2 border-gray-200 dark:border-neutral-700" />
+                    
+                    {/* Settings Button */}
+                    <button
+                      onClick={handleOpenSettings}
+                      className="w-full px-3 py-1.5 text-sm text-left text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20 transition-all duration-200 flex items-center gap-2 transform hover:scale-[1.02] active:scale-98"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Settings
+                    </button>
                     
                     <button
                       onClick={() => {
                         handleCloseUserMenu()
                         handleSignOut()
                       }}
-                      className="w-full px-3 py-1.5 text-sm text-left text-purple-600 hover:bg-purple-50 transition-all duration-200 flex items-center gap-2 transform hover:scale-[1.02] active:scale-98"
+                      className="w-full px-3 py-1.5 text-sm text-left text-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-900/20 transition-all duration-200 flex items-center gap-2 transform hover:scale-[1.02] active:scale-98"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -347,6 +375,12 @@ export default function AICardStudioPage() {
               </div>
             )}
             <AICardStudio />
+            
+            {/* Settings Panel */}
+            <SettingsPanel 
+              isOpen={showSettingsPanel} 
+              onClose={handleCloseSettings} 
+            />
           </div>
         )
       default:

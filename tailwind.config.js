@@ -3,6 +3,7 @@ module.exports = {
   content: [
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class', // Enable class-based dark mode
   safelist: ['animate-scroll-up'], // ✅ 确保 Tailwind 不裁剪类名
   theme: {
     extend: {
