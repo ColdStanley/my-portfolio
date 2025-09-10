@@ -14,15 +14,24 @@ export default function AICardStudioPage() {
   const [authState, setAuthState] = useState<AuthState>('loading')
   const [user, setUser] = useState<User | null>(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [pdfTemplate, setPdfTemplate] = useState<'default' | 'resume'>('default')
   const userMenuRef = useRef<HTMLDivElement>(null)
   const { isLoading: workspaceLoading, canvases, saveError, actions } = useWorkspaceStore()
   const initializedRef = useRef(false)
   const visibilityRef = useRef(true) // Track page visibility
 
 
-  // Set page title
+  // Set page title and initialize PDF template from localStorage
   useEffect(() => {
     document.title = "AI Card Studio | Stanley Hi"
+    
+    // Initialize PDF template from localStorage
+    if (typeof window !== 'undefined') {
+      const savedTemplate = localStorage.getItem('pdfTemplate') as 'default' | 'resume'
+      if (savedTemplate) {
+        setPdfTemplate(savedTemplate)
+      }
+    }
     
     return () => {
       document.title = "Stanley's Portfolio" // Reset on unmount
@@ -224,7 +233,26 @@ export default function AICardStudioPage() {
 
                 {/* Dropdown menu */}
                 {showUserMenu && (
-                  <div className="absolute top-full right-0 mt-2 w-32 bg-white/95 backdrop-blur-md rounded-lg shadow-xl border border-gray-200 py-2">
+                  <div className="absolute top-full right-0 mt-2 w-48 bg-white/95 backdrop-blur-md rounded-lg shadow-xl border border-gray-200 p-2">
+                    {/* PDF Template Selection */}
+                    <div className="px-2 py-2 border-b border-gray-200 mb-2">
+                      <label className="block text-xs font-medium text-gray-500 mb-1">PDF Template</label>
+                      <select
+                        value={pdfTemplate}
+                        onChange={(e) => {
+                          const newTemplate = e.target.value as 'default' | 'resume'
+                          setPdfTemplate(newTemplate)
+                          if (typeof window !== 'undefined') {
+                            localStorage.setItem('pdfTemplate', newTemplate)
+                          }
+                        }}
+                        className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                      >
+                        <option value="default">Default</option>
+                        <option value="resume">Resume</option>
+                      </select>
+                    </div>
+                    
                     <button
                       onClick={() => {
                         setShowUserMenu(false)

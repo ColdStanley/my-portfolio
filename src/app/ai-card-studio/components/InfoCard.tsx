@@ -435,6 +435,9 @@ function InfoCard({
           try {
             console.log('Generating PDF for Info Card:', title)
             
+            // Get selected PDF template from localStorage
+            const selectedTemplate = localStorage.getItem('pdfTemplate') as 'default' | 'resume' || 'default'
+            
             const response = await fetch('/api/ai-card-studio/generate-pdf', {
               method: 'POST',
               headers: {
@@ -443,6 +446,7 @@ function InfoCard({
               body: JSON.stringify({
                 cardName: title || 'Info Card',
                 content: localDescription,  // Send raw markdown content
+                pdfTemplate: selectedTemplate,
                 generatedAt: new Date().toLocaleString()
               })
             })

@@ -40,6 +40,7 @@
     "nodemailer": "^7.0.5",
     "notion-client": "^7.3.0",
     "openai": "^5.10.1",
+    "puppeteer": "^24.19.0",
     "puppeteer-core": "^24.19.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

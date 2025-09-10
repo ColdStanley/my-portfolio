@@ -490,6 +490,9 @@ function AIToolCard({
           try {
             console.log('Generating PDF for card:', buttonName)
             
+            // Get selected PDF template from localStorage
+            const selectedTemplate = localStorage.getItem('pdfTemplate') as 'default' | 'resume' || 'default'
+            
             const response = await fetch('/api/ai-card-studio/generate-pdf', {
               method: 'POST',
               headers: {
@@ -498,6 +501,7 @@ function AIToolCard({
               body: JSON.stringify({
                 cardName: buttonName,
                 content: generatedContent,  // Send raw markdown content
+                pdfTemplate: selectedTemplate,
                 generatedAt: new Date().toLocaleString()
               })
             })
