@@ -14,7 +14,7 @@ export default function Modal({ isOpen, onClose, children, className = '' }: Mod
   return createPortal(
     <>
       {/* Backdrop - no click to close */}
-      <div className="fixed inset-0 z-40 bg-black/20 dark:bg-black/40 lakers:bg-lakers-800/40 anno:bg-anno-900/40" />
+      <div className="fixed inset-0 z-40 bg-black/20 dark:bg-black/40 lakers:bg-lakers-800/40 anno:bg-anno-900/40 cyberpunk:bg-cyberpunk-900/40" />
       
       {/* Modal Content */}
       <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">

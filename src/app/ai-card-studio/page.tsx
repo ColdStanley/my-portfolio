@@ -252,7 +252,7 @@ export default function AICardStudioPage() {
     }
   }
 
-  const handleThemeSelect = (selectedTheme: 'light' | 'dark' | 'lakers' | 'anno') => {
+  const handleThemeSelect = (selectedTheme: 'light' | 'dark' | 'lakers' | 'anno' | 'cyberpunk') => {
     themeActions.setTheme(selectedTheme)
     setThemeMenuVisible(false)
     setTimeout(() => setShowThemeMenu(false), 200)
@@ -281,7 +281,7 @@ export default function AICardStudioPage() {
                 {/* User email button */}
                 <button
                   onClick={handleUserMenuToggle}
-                  className="px-3 py-2 text-xs text-gray-400 hover:text-purple-600 lakers:text-lakers-300 lakers:hover:text-lakers-400 anno:text-anno-300 anno:hover:text-anno-400 hover:bg-purple-50/50 lakers:hover:bg-lakers-300/20 anno:hover:bg-anno-300/20 dark:text-neutral-500 dark:hover:text-purple-400 dark:hover:bg-purple-900/20 rounded-lg transition-all duration-200 flex items-center gap-2 transform hover:scale-105 active:scale-95"
+                  className="px-3 py-2 text-xs text-gray-400 hover:text-purple-600 lakers:text-lakers-300 lakers:hover:text-lakers-400 anno:text-anno-300 anno:hover:text-anno-400 cyberpunk:text-cyberpunk-300 cyberpunk:hover:text-cyberpunk-400 hover:bg-purple-50/50 lakers:hover:bg-lakers-300/20 anno:hover:bg-anno-300/20 cyberpunk:hover:bg-cyberpunk-300/20 dark:text-neutral-500 dark:hover:text-purple-400 dark:hover:bg-purple-900/20 rounded-lg transition-all duration-200 flex items-center gap-2 transform hover:scale-105 active:scale-95"
                 >
                   {user.email}
                   <svg 
@@ -402,6 +402,16 @@ export default function AICardStudioPage() {
                               }`}
                             >
                               Anno
+                            </button>
+                            <button
+                              onClick={() => handleThemeSelect('cyberpunk')}
+                              className={`px-3 py-1.5 text-sm rounded-md transition-all duration-150 text-left ${
+                                theme === 'cyberpunk' 
+                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20' 
+                                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
+                              }`}
+                            >
+                              Cyberpunk
                             </button>
                           </div>
                         </div>

@@ -20,6 +20,13 @@ module.exports = {
     'text-anno-200', 'text-anno-300', 'text-anno-400',
     'border-anno-400', 'from-anno-600', 'to-anno-700',
     { pattern: /^anno:.*/, variants: ['hover', 'focus', 'active'] },
+    // Cyberpunk theme classes
+    'cyberpunk',
+    // Force include Cyberpunk colors
+    'bg-cyberpunk-400', 'bg-cyberpunk-500', 'bg-cyberpunk-600', 'bg-cyberpunk-700',
+    'text-cyberpunk-200', 'text-cyberpunk-300', 'text-cyberpunk-400',
+    'border-cyberpunk-400', 'from-cyberpunk-600', 'to-cyberpunk-700',
+    { pattern: /^cyberpunk:.*/, variants: ['hover', 'focus', 'active'] },
   ],
   theme: {
     extend: {
@@ -57,6 +64,18 @@ module.exports = {
           800: '#075985',  // 很深蓝
           900: '#0C4A6E',  // 极深蓝
         },
+        cyberpunk: {
+          50: '#F0F0FF',   // 极浅紫白（背景）
+          100: '#E0E0FF',  // 很浅紫白
+          200: '#80FFFF',  // 淡青（辅助文本）
+          300: '#00FFFF',  // 电子青（主要文本）
+          400: '#39FF14',  // 霓虹绿（强调）
+          500: '#FF0080',  // 霓虹粉（标准色）
+          600: '#CC0066',  // 深霓虹粉（主色）
+          700: '#1A1A1A',  // 暗灰（背景）
+          800: '#111111',  // 更深灰
+          900: '#0A0A0A',  // 深黑（强调背景）
+        },
       },
     },
   },
@@ -91,6 +110,15 @@ module.exports = {
       addUtilities({
         '.anno .text-purple-600': { color: '#7DD3FC' },
         '.anno .text-purple-400': { color: '#7DD3FC' }
+      })
+    },
+    // Cyberpunk theme plugin
+    function({ addVariant, addUtilities }) {
+      addVariant('cyberpunk', '.cyberpunk &')
+      // Force generate Cyberpunk text colors
+      addUtilities({
+        '.cyberpunk .text-purple-600': { color: '#00FFFF' },
+        '.cyberpunk .text-purple-400': { color: '#00FFFF' }
       })
     }
   ],

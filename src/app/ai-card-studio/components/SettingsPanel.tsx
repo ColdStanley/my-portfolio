@@ -39,7 +39,7 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
     }
   }, [isOpen, onClose])
 
-  const handleThemeSelect = (selectedTheme: 'light' | 'dark' | 'lakers' | 'anno') => {
+  const handleThemeSelect = (selectedTheme: 'light' | 'dark' | 'lakers' | 'anno' | 'cyberpunk') => {
     actions.setTheme(selectedTheme)
   }
 
@@ -198,6 +198,37 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                     <div className="ml-auto">
                       <div className="w-5 h-5 bg-anno-600 rounded-full flex items-center justify-center">
                         <svg className="w-3 h-3 text-anno-100" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </button>
+
+              {/* Cyberpunk Theme Option */}
+              <button
+                onClick={() => handleThemeSelect('cyberpunk')}
+                className={`w-full p-4 rounded-lg border transition-all duration-200 text-left ${
+                  theme === 'cyberpunk'
+                    ? 'border-cyberpunk-600 bg-cyberpunk-50 dark:bg-cyberpunk-900/20 cyberpunk:bg-cyberpunk-700/30'
+                    : 'border-gray-200 dark:border-neutral-700 cyberpunk:border-cyberpunk-300/30 hover:border-cyberpunk-300 dark:hover:border-cyberpunk-600 cyberpunk:hover:border-cyberpunk-300 hover:bg-cyberpunk-50/50 dark:hover:bg-cyberpunk-900/10 cyberpunk:hover:bg-cyberpunk-700/20'
+                }`}
+              >
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-gradient-to-br from-cyberpunk-500 to-cyberpunk-600 rounded-lg flex items-center justify-center mr-3">
+                    <svg className="w-4 h-4 text-cyberpunk-100" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M13 3L4 14h7v8l9-11h-7V3z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900 dark:text-neutral-100 cyberpunk:text-cyberpunk-300">Cyberpunk</div>
+                    <div className="text-sm text-gray-500 dark:text-neutral-400 cyberpunk:text-cyberpunk-300">Neon tech style</div>
+                  </div>
+                  {theme === 'cyberpunk' && (
+                    <div className="ml-auto">
+                      <div className="w-5 h-5 bg-cyberpunk-600 rounded-full flex items-center justify-center">
+                        <svg className="w-3 h-3 text-cyberpunk-100" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                       </div>

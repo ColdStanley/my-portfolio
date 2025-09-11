@@ -94,7 +94,7 @@ export default function MarketplaceModal({ isOpen, onClose, columnData, onUpload
         onKeyDown={handleKeyDown}
       >
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+          <h3 className="text-xl font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 lakers:from-lakers-300 lakers:to-lakers-400 anno:from-anno-300 anno:to-anno-400 cyberpunk:from-cyberpunk-300 cyberpunk:to-cyberpunk-400 bg-clip-text text-transparent">
             Share to Marketplace
           </h3>
           <button
@@ -203,7 +203,7 @@ export default function MarketplaceModal({ isOpen, onClose, columnData, onUpload
             <button
               onClick={handleSubmit}
               disabled={isUploading || !name.trim() || !description.trim()}
-              className="px-6 py-2 text-sm bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg transition-all duration-150 flex items-center gap-2"
+              className="px-6 py-2 text-sm bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 lakers:bg-lakers-300 lakers:hover:bg-lakers-400 lakers:disabled:bg-lakers-700 anno:bg-anno-600 anno:hover:bg-anno-700 anno:disabled:bg-anno-800 cyberpunk:bg-cyberpunk-600 cyberpunk:hover:bg-cyberpunk-700 cyberpunk:disabled:bg-cyberpunk-800 text-white rounded-lg transition-all duration-150 flex items-center gap-2"
             >
               {isUploading ? (
                 <>

@@ -408,6 +408,13 @@ html {
   html.lakers .text-gray-400.hover\\:text-purple-600 {
     color: #B8A082 !important; /* lakers-300 */
   }
+  
+  /* Gradient text overrides for lakers */
+  html.lakers .bg-gradient-to-r.from-purple-600.to-indigo-600 {
+    background: linear-gradient(to right, #FDB927, #FFCC33) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+  }
 }
 
 /* Anno Theme - MyGO白金燐子风格 (冷静深蓝) */
@@ -492,4 +499,125 @@ html {
   html.anno .text-gray-400.hover\\:text-purple-600 {
     color: #7DD3FC !important; /* anno-300 */
   }
+  
+  /* Gradient text overrides for anno */
+  html.anno .bg-gradient-to-r.from-purple-600.to-indigo-600 {
+    background: linear-gradient(to right, #0EA5E9, #38BDF8) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+  }
+}
+
+/* Cyberpunk Theme - 赛博朋克风格 (霓虹科技) */
+html.cyberpunk .bg-white {
+  background: linear-gradient(135deg, #0A0A0A, #1A1A1A) !important;
+  border: 1px solid #00FFFF !important;
+}
+
+html.cyberpunk .text-purple-600,
+html.cyberpunk .text-purple-400 {
+  color: #00FFFF !important;
+}
+
+html.cyberpunk .bg-gradient-to-br {
+  background: linear-gradient(135deg, #1A1A1A, #0A0A0A) !important;
+}
+
+html.cyberpunk .border-purple-200,
+html.cyberpunk .border-purple-700 {
+  border-color: #00FFFF !important;
+}
+
+html.cyberpunk .hover\\:bg-purple-50:hover,
+html.cyberpunk .hover\\:bg-purple-900\\/20:hover {
+  background-color: rgba(0, 255, 255, 0.1) !important;
+}
+
+html.cyberpunk .bg-purple-600 {
+  background-color: #FF0080 !important;
+}
+
+html.cyberpunk .hover\\:bg-purple-700:hover {
+  background-color: #CC0066 !important;
+}
+
+html.cyberpunk .text-gray-500,
+html.cyberpunk .text-gray-600,
+html.cyberpunk .text-gray-400 {
+  color: #80FFFF !important;
+}
+
+html.cyberpunk .bg-gray-100 {
+  background-color: #1A1A1A !important;
+}
+
+html.cyberpunk .shadow-xl {
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3) !important;
+}
+
+html.cyberpunk .shadow-lg {
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2) !important;
+}
+
+/* Card gradient backgrounds */
+html.cyberpunk .bg-gradient-to-br.from-white\\/95 {
+  background: linear-gradient(135deg, rgba(26, 26, 26, 0.95), rgba(10, 10, 10, 0.95)) !important;
+}
+
+/* User email button text */
+html.cyberpunk .text-gray-400.hover\\:text-purple-600 {
+  color: #00FFFF !important; /* cyberpunk-300 */
+}
+
+/* Neon glow effects for cyberpunk */
+html.cyberpunk .border {
+  box-shadow: 0 0 5px rgba(0, 255, 255, 0.3) !important;
+}
+
+html.cyberpunk .bg-purple-50 {
+  background-color: rgba(0, 255, 255, 0.1) !important;
+}
+
+/* Missing button states and borders for cyberpunk */
+html.cyberpunk .bg-purple-500 {
+  background-color: #FF0080 !important;
+}
+
+html.cyberpunk .hover\\:bg-purple-600:hover {
+  background-color: #FF0080 !important;
+}
+
+html.cyberpunk .disabled\\:bg-purple-400:disabled,
+html.cyberpunk .disabled\\:bg-purple-300:disabled {
+  background-color: #555555 !important;
+}
+
+/* Top card left border and other borders */
+html.cyberpunk .border-l-4,
+html.cyberpunk .border-l-2 {
+  border-left-color: #00FFFF !important;
+}
+
+html.cyberpunk .border-purple-500,
+html.cyberpunk .border-purple-300,
+html.cyberpunk .border-purple-600 {
+  border-color: #00FFFF !important;
+}
+
+/* Hover border colors */
+html.cyberpunk .hover\\:bg-purple-50:hover {
+  background-color: rgba(0, 255, 255, 0.1) !important;
+}
+
+/* Border colors for forms and modals */
+html.cyberpunk .border-gray-200,
+html.cyberpunk .border-gray-300 {
+  border-color: #00FFFF !important;
+}
+
+/* Gradient text overrides for cyberpunk */
+html.cyberpunk .bg-gradient-to-r.from-purple-600.to-indigo-600 {
+  background: linear-gradient(to right, #00FFFF, #39FF14) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
 }

@@ -447,13 +447,13 @@ function InfoCard({
   }
 
   return (
-    <div className="bg-gradient-to-br from-white/95 to-purple-50/30 dark:from-neutral-800/95 dark:to-purple-900/20 lakers:bg-gradient-to-br lakers:from-lakers-700/30 lakers:to-lakers-300/20 anno:bg-gradient-to-br anno:from-anno-800/30 anno:to-anno-300/20 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 dark:shadow-purple-400/10 lakers:shadow-lakers-300/30 anno:shadow-anno-300/30 border border-white/50 dark:border-neutral-700/50 lakers:border-lakers-300/50 anno:border-anno-300/50 p-4 relative transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/30 dark:hover:shadow-purple-400/20 lakers:hover:shadow-lakers-300/40 anno:hover:shadow-anno-300/40 hover:-translate-y-1 group">
+    <div className="bg-gradient-to-br from-white/95 to-purple-50/30 dark:from-neutral-800/95 dark:to-purple-900/20 lakers:bg-gradient-to-br lakers:from-lakers-700/30 lakers:to-lakers-300/20 anno:bg-gradient-to-br anno:from-anno-800/30 anno:to-anno-300/20 cyberpunk:bg-gradient-to-br cyberpunk:from-cyberpunk-800/30 cyberpunk:to-cyberpunk-300/20 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 dark:shadow-purple-400/10 lakers:shadow-lakers-300/30 anno:shadow-anno-300/30 cyberpunk:shadow-cyberpunk-300/30 border border-white/50 dark:border-neutral-700/50 lakers:border-lakers-300/50 anno:border-anno-300/50 cyberpunk:border-cyberpunk-300/50 p-4 relative transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/30 dark:hover:shadow-purple-400/20 lakers:hover:shadow-lakers-300/40 anno:hover:shadow-anno-300/40 cyberpunk:hover:shadow-cyberpunk-300/40 hover:-translate-y-1 group">
       
       {/* Single Menu Button - Top Right */}
       <button
         ref={cardMenuButtonRef}
         onClick={handleCardMenuOpen}
-        className="absolute top-4 right-4 w-6 h-6 bg-white/80 dark:bg-neutral-700/80 lakers:bg-lakers-300/30 anno:bg-anno-700/30 hover:bg-purple-50 dark:hover:bg-purple-900/50 lakers:hover:bg-lakers-300/50 anno:hover:bg-anno-300/50 rounded-full flex items-center justify-center text-gray-400 dark:text-neutral-400 lakers:text-lakers-200 anno:text-anno-200 hover:text-purple-600 dark:hover:text-purple-400 lakers:hover:text-lakers-300 anno:hover:text-anno-300 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-400/20 lakers:hover:shadow-lakers-300/30 anno:hover:shadow-anno-300/30 hover:scale-110 hover:-translate-y-0.5"
+        className="absolute top-4 right-4 w-6 h-6 bg-white/80 dark:bg-neutral-700/80 lakers:bg-lakers-300/30 anno:bg-anno-700/30 cyberpunk:bg-cyberpunk-700/30 hover:bg-purple-50 dark:hover:bg-purple-900/50 lakers:hover:bg-lakers-300/50 anno:hover:bg-anno-300/50 cyberpunk:hover:bg-cyberpunk-300/50 rounded-full flex items-center justify-center text-gray-400 dark:text-neutral-400 lakers:text-lakers-200 anno:text-anno-200 cyberpunk:text-cyberpunk-200 hover:text-purple-600 dark:hover:text-purple-400 lakers:hover:text-lakers-300 anno:hover:text-anno-300 cyberpunk:hover:text-cyberpunk-300 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-400/20 lakers:hover:shadow-lakers-300/30 anno:hover:shadow-anno-300/30 cyberpunk:hover:shadow-cyberpunk-300/30 hover:scale-110 hover:-translate-y-0.5"
         title="Card actions"
         style={{ pointerEvents: 'auto' }}
       >
@@ -626,14 +626,14 @@ function InfoCard({
         </div>
       )}
 
-      <div className={isTopCard ? 'border-l-4 border-purple-500 pl-4' : ''}>
+      <div className={isTopCard ? 'border-l-4 border-purple-500 lakers:border-lakers-300 anno:border-anno-300 cyberpunk:border-cyberpunk-300 pl-4' : ''}>
         <div className="flex items-start gap-2 mb-4">
           {/* Run All Cards Button - 仅在顶部Info Card且列中有AI工具卡片时显示 */}
           {onRunColumnWorkflow && (
             <button
               onClick={onRunColumnWorkflow}
               disabled={isColumnExecuting}
-              className="flex-shrink-0 w-7 h-7 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 disabled:cursor-not-allowed rounded-full shadow-md flex items-center justify-center text-white transition-all duration-200"
+              className="flex-shrink-0 w-7 h-7 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 lakers:bg-lakers-300 lakers:hover:bg-lakers-400 lakers:disabled:bg-lakers-700 anno:bg-anno-600 anno:hover:bg-anno-700 anno:disabled:bg-anno-800 cyberpunk:bg-cyberpunk-600 cyberpunk:hover:bg-cyberpunk-700 cyberpunk:disabled:bg-cyberpunk-800 disabled:cursor-not-allowed rounded-full shadow-md flex items-center justify-center text-white transition-all duration-200"
               title={isColumnExecuting ? "Workflow is running..." : "Run all AI tool cards in this column"}
             >
               {isColumnExecuting ? (
@@ -648,7 +648,7 @@ function InfoCard({
               )}
             </button>
           )}
-          <h2 className={`${isTopCard ? 'text-xl font-bold' : 'text-lg font-medium'} text-purple-600 dark:text-purple-400 lakers:text-lakers-300 anno:text-anno-300`}>
+          <h2 className={`${isTopCard ? 'text-xl font-bold' : 'text-lg font-medium'} text-purple-600 dark:text-purple-400 lakers:text-lakers-300 anno:text-anno-300 cyberpunk:text-cyberpunk-300`}>
             {title}
           </h2>
         </div>
@@ -659,7 +659,7 @@ function InfoCard({
         <button
           onClick={handleTriggerWorkflows}
           disabled={isTriggering}
-          className="px-3 py-1.5 text-sm bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300 text-white rounded-md font-medium transition-all duration-200 flex items-center gap-1.5 mb-4"
+          className="px-3 py-1.5 text-sm bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300 lakers:bg-lakers-300 lakers:hover:bg-lakers-400 lakers:disabled:bg-lakers-700 anno:bg-anno-600 anno:hover:bg-anno-700 anno:disabled:bg-anno-800 cyberpunk:bg-cyberpunk-600 cyberpunk:hover:bg-cyberpunk-700 cyberpunk:disabled:bg-cyberpunk-800 text-white rounded-md font-medium transition-all duration-200 flex items-center gap-1.5 mb-4"
         >
           {isTriggering ? (
             <>
@@ -697,7 +697,7 @@ function InfoCard({
                       inline 
                         ? <code className="bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 px-1 py-0.5 rounded text-xs font-mono" {...props} />
                         : <code className="block bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre" {...props} />,
-                    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-300 dark:border-purple-600 pl-3 italic text-gray-600 dark:text-neutral-300 mb-2" {...props} />,
+                    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-300 dark:border-purple-600 lakers:border-lakers-300 anno:border-anno-300 cyberpunk:border-cyberpunk-300 pl-3 italic text-gray-600 dark:text-neutral-300 mb-2" {...props} />,
                     a: ({ href, children, ...props }) => (
                       <a 
                         href={href} 
@@ -851,13 +851,13 @@ function InfoCard({
             <div className="flex items-center gap-2">
               <button
                 onClick={handleExportColumn}
-                className="px-3 py-1.5 bg-white border border-purple-200 text-purple-600 hover:bg-purple-50 rounded text-sm font-medium transition-all duration-200"
+                className="px-3 py-1.5 bg-white border border-purple-200 lakers:border-lakers-300 anno:border-anno-300 cyberpunk:border-cyberpunk-300 text-purple-600 lakers:text-lakers-300 anno:text-anno-300 cyberpunk:text-cyberpunk-300 hover:bg-purple-50 lakers:hover:bg-lakers-300/20 anno:hover:bg-anno-300/20 cyberpunk:hover:bg-cyberpunk-300/20 rounded text-sm font-medium transition-all duration-200"
               >
                 Download Column
               </button>
               <button
                 onClick={handleShareToMarketplace}
-                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm font-medium transition-all duration-200"
+                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 lakers:bg-lakers-300 lakers:hover:bg-lakers-400 anno:bg-anno-600 anno:hover:bg-anno-700 cyberpunk:bg-cyberpunk-600 cyberpunk:hover:bg-cyberpunk-700 text-white rounded text-sm font-medium transition-all duration-200"
               >
                 Share to Marketplace
               </button>
@@ -964,7 +964,7 @@ function InfoCard({
               <button
                 onClick={addUrl}
                 disabled={!newUrl.trim()}
-                className="px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 dark:disabled:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
+                className="px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 dark:disabled:bg-purple-700 lakers:bg-lakers-300 lakers:hover:bg-lakers-400 lakers:disabled:bg-lakers-700 anno:bg-anno-600 anno:hover:bg-anno-700 anno:disabled:bg-anno-800 cyberpunk:bg-cyberpunk-600 cyberpunk:hover:bg-cyberpunk-700 cyberpunk:disabled:bg-cyberpunk-800 text-white rounded-lg text-sm font-medium transition-colors"
               >
                 Add
               </button>

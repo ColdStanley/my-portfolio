@@ -87,7 +87,7 @@ export default function CanvasSettingsModal({ isOpen, onClose, canvasId }: Canva
         className="bg-white/95 dark:bg-neutral-800/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 dark:border-neutral-700/50 p-6 w-96 max-w-sm mx-4"
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+          <h3 className="text-lg font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 lakers:from-lakers-300 lakers:to-lakers-400 anno:from-anno-300 anno:to-anno-400 cyberpunk:from-cyberpunk-300 cyberpunk:to-cyberpunk-400 bg-clip-text text-transparent">
             Manage Canvases
           </h3>
           <button
@@ -153,7 +153,7 @@ export default function CanvasSettingsModal({ isOpen, onClose, canvasId }: Canva
               </button>
               <button
                 onClick={handleSave}
-                className="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all duration-150"
+                className="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 lakers:bg-lakers-300 lakers:hover:bg-lakers-400 anno:bg-anno-600 anno:hover:bg-anno-700 cyberpunk:bg-cyberpunk-600 cyberpunk:hover:bg-cyberpunk-700 text-white rounded-lg transition-all duration-150"
               >
                 Save
               </button>
@@ -182,7 +182,7 @@ export default function CanvasSettingsModal({ isOpen, onClose, canvasId }: Canva
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-all duration-150"
+                  className="px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 lakers:bg-lakers-300 lakers:hover:bg-lakers-400 anno:bg-anno-600 anno:hover:bg-anno-700 cyberpunk:bg-cyberpunk-600 cyberpunk:hover:bg-cyberpunk-700 text-white rounded-md transition-all duration-150"
                 >
                   Delete
                 </button>
