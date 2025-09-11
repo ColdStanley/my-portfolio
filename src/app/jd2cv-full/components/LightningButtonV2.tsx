@@ -70,8 +70,8 @@ export default function LightningButtonV2({ jd, className = '', onPDFUploaded }:
       try {
         // Call n8n webhook to get AI-generated experience
         const n8nUrl = process.env.NODE_ENV === 'development' 
-          ? 'http://localhost:5678/webhook/cf88dabc-821e-4ce5-b78a-d2699bfa1851'
-          : 'https://agentworkflow.stanleyhi.com/webhook/cf88dabc-821e-4ce5-b78a-d2699bfa1851'
+          ? 'http://localhost:5678/webhook/jd2cv-full'
+          : 'https://agentworkflow.stanleyhi.com/webhook/jd2cv-full'
         
         const webhookResponse = await fetch(n8nUrl, {
           method: 'POST',
