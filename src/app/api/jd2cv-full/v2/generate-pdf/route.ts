@@ -150,11 +150,21 @@ function generateResumeHTML(data: GeneratePDFRequest): string {
     
     .contact-info {
       display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 15px;
+      justify-content: space-between;
+      gap: 20px;
       font-size: 10px;
       color: #6b7280;
+    }
+    
+    .contact-left, .contact-right {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .contact-row {
+      display: flex;
+      gap: 15px;
     }
     
     .contact-info span {
@@ -170,6 +180,10 @@ function generateResumeHTML(data: GeneratePDFRequest): string {
     }
     
     .section {
+      margin-bottom: 18px;
+    }
+    
+    .column .section {
       margin-bottom: 25px;
     }
     
@@ -296,15 +310,11 @@ function generateResumeHTML(data: GeneratePDFRequest): string {
     .two-column-container {
       display: flex;
       gap: 20px;
-      margin-bottom: 25px;
+      margin-bottom: 18px;
     }
     
     .column {
       flex: 1;
-    }
-    
-    .column .section {
-      margin-bottom: 0;
     }
   </style>
 </head>
@@ -314,37 +324,45 @@ function generateResumeHTML(data: GeneratePDFRequest): string {
     <div class="header">
       <h1>${personalInfo.fullName}</h1>
       <div class="contact-info">
-        ${personalInfo.email ? `<span>
-          <svg fill="currentColor" viewBox="0 0 20 20">
-            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
-            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
-          </svg>
-          ${personalInfo.email}
-        </span>` : ''}
-        ${personalInfo.phone ? `<span>
-          <svg fill="currentColor" viewBox="0 0 20 20">
-            <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
-          </svg>
-          ${personalInfo.phone}
-        </span>` : ''}
-        ${personalInfo.location ? `<span>
-          <svg fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"/>
-          </svg>
-          ${personalInfo.location}
-        </span>` : ''}
-        ${personalInfo.linkedin ? `<span>
-          <svg fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd"/>
-          </svg>
-          ${personalInfo.linkedin}
-        </span>` : ''}
-        ${personalInfo.website ? `<span>
-          <svg fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M4.083 9h1.946c.089-1.546.383-2.97.837-4.118A6.004 6.004 0 004.083 9zM10 2a8 8 0 100 16 8 8 0 000-16zm0 2c-.076 0-.232.032-.465.262-.238.234-.497.623-.737 1.182-.389.907-.673 2.142-.766 3.556h3.936c-.093-1.414-.377-2.649-.766-3.556-.24-.56-.5-.948-.737-1.182C10.232 4.032 10.076 4 10 4zm3.971 5c-.089-1.546-.383-2.97-.837-4.118A6.004 6.004 0 0115.917 9h-1.946zm-2.003 2H8.032c.093 1.414.377 2.649.766 3.556.24.56.5.948.737 1.182.233.23.389.262.465.262.076 0 .232-.032.465-.262.238-.234.498-.623.737-1.182.389-.907.673-2.142.766-3.556zm1.166 4.118c.454-1.147.748-2.572.837-4.118h1.946a6.004 6.004 0 01-2.783 4.118zm-6.268 0C6.412 13.97 6.118 12.546 6.03 11H4.083a6.004 6.004 0 002.783 4.118z" clipRule="evenodd"/>
-          </svg>
-          ${personalInfo.website}
-        </span>` : ''}
+        <div class="contact-left">
+          <div class="contact-row">
+            ${personalInfo.email ? `<span>
+              <svg fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
+                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
+              </svg>
+              ${personalInfo.email}
+            </span>` : ''}
+          </div>
+          <div class="contact-row">
+            ${personalInfo.phone ? `<span>
+              <svg fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
+              </svg>
+              ${personalInfo.phone}
+            </span>` : ''}
+            ${personalInfo.location ? `<span>
+              <svg fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"/>
+              </svg>
+              ${personalInfo.location}
+            </span>` : ''}
+          </div>
+        </div>
+        <div class="contact-right">
+          ${personalInfo.linkedin ? `<span>
+            <svg fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd"/>
+            </svg>
+            ${personalInfo.linkedin}
+          </span>` : ''}
+          ${personalInfo.website ? `<span>
+            <svg fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M4.083 9h1.946c.089-1.546.383-2.97.837-4.118A6.004 6.004 0 004.083 9zM10 2a8 8 0 100 16 8 8 0 000-16zm0 2c-.076 0-.232.032-.465.262-.238.234-.497.623-.737 1.182-.389.907-.673 2.142-.766 3.556h3.936c-.093-1.414-.377-2.649-.766-3.556-.24-.56-.5-.948-.737-1.182C10.232 4.032 10.076 4 10 4zm3.971 5c-.089-1.546-.383-2.97-.837-4.118A6.004 6.004 0 0115.917 9h-1.946zm-2.003 2H8.032c.093 1.414.377 2.649.766 3.556.24.56.5.948.737 1.182.233.23.389.262.465.262.076 0 .232-.032.465-.262.238-.234.498-.623.737-1.182.389-.907.673-2.142.766-3.556zm1.166 4.118c.454-1.147.748-2.572.837-4.118h1.946a6.004 6.004 0 01-2.783 4.118zm-6.268 0C6.412 13.97 6.118 12.546 6.03 11H4.083a6.004 6.004 0 002.783 4.118z" clipRule="evenodd"/>
+            </svg>
+            ${personalInfo.website}
+          </span>` : ''}
+        </div>
       </div>
     </div>
 
@@ -370,8 +388,8 @@ function generateResumeHTML(data: GeneratePDFRequest): string {
       </div>
     </div>
 
-    <!-- Technical Skills & Languages (Two Column Layout) -->
-    ${(personalInfo.technicalSkills.length > 0 || personalInfo.languages.length > 0) ? `
+    <!-- Skills, Education, Certifications & Languages (Two Column Layout) -->
+    ${(personalInfo.technicalSkills.length > 0 || personalInfo.education.length > 0 || personalInfo.certificates.length > 0 || personalInfo.languages.length > 0) ? `
     <div class="two-column-container">
       <div class="column">
         ${personalInfo.technicalSkills.length > 0 ? `
@@ -383,22 +401,6 @@ function generateResumeHTML(data: GeneratePDFRequest): string {
         </div>
         ` : ''}
       </div>
-      <div class="column">
-        ${personalInfo.languages.length > 0 ? `
-        <div class="section">
-          <h2 class="section-title">Languages</h2>
-          <div class="languages-grid">
-            ${personalInfo.languages.map(lang => `<span class="language-tag">${lang}</span>`).join('')}
-          </div>
-        </div>
-        ` : ''}
-      </div>
-    </div>
-    ` : ''}
-
-    <!-- Education & Certifications (Two Column Layout) -->
-    ${(personalInfo.education.length > 0 || personalInfo.certificates.length > 0) ? `
-    <div class="two-column-container">
       <div class="column">
         ${personalInfo.education.length > 0 ? `
         <div class="section">
@@ -413,14 +415,20 @@ function generateResumeHTML(data: GeneratePDFRequest): string {
           `).join('')}
         </div>
         ` : ''}
-      </div>
-      <div class="column">
         ${personalInfo.certificates.length > 0 ? `
         <div class="section">
           <h2 class="section-title">Certifications</h2>
           <ul class="certificates-list">
             ${personalInfo.certificates.map(cert => `<li>${cert}</li>`).join('')}
           </ul>
+        </div>
+        ` : ''}
+        ${personalInfo.languages.length > 0 ? `
+        <div class="section">
+          <h2 class="section-title">Languages</h2>
+          <div class="languages-grid">
+            ${personalInfo.languages.map(lang => `<span class="language-tag">${lang}</span>`).join('')}
+          </div>
         </div>
         ` : ''}
       </div>
