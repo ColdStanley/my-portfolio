@@ -300,9 +300,18 @@ export default function AICardStudioPage() {
                     userMenuVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-2'
                   }`}>
                     {/* PDF Template Selection */}
-                    <div className="relative">
+                    <div 
+                      className="relative"
+                      onMouseEnter={() => {
+                        setShowPdfTemplateMenu(true)
+                        setTimeout(() => setPdfTemplateMenuVisible(true), 10)
+                      }}
+                      onMouseLeave={() => {
+                        setPdfTemplateMenuVisible(false)
+                        setTimeout(() => setShowPdfTemplateMenu(false), 200)
+                      }}
+                    >
                       <button
-                        onClick={handlePdfTemplateToggle}
                         className="w-full px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20 rounded-md transition-all duration-150 text-left flex items-center"
                       >
                         <span>PDF Template</span>
@@ -310,18 +319,18 @@ export default function AICardStudioPage() {
                       
                       {/* PDF Template Submenu */}
                       {showPdfTemplateMenu && (
-                        <div className={`absolute top-0 right-full mr-2 z-50 bg-white dark:bg-neutral-800 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-700 p-3 transform transition-all duration-200 ease-out ${
-                          pdfTemplateMenuVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                        <div className={`absolute top-0 right-full mr-2 z-50 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 dark:border-neutral-700/50 p-3 transform transition-all duration-300 ease-out ${
+                          pdfTemplateMenuVisible ? 'opacity-100 scale-100 translate-x-0' : 'opacity-0 scale-95 translate-x-2'
                         }`}>
                           {/* Arrow pointing to button */}
-                          <div className="absolute top-4 -right-1 w-2 h-2 bg-white dark:bg-neutral-800 border-r border-b border-gray-200 dark:border-neutral-700 transform rotate-45"></div>
+                          <div className="absolute top-4 -right-1 w-2 h-2 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-md border-r border-b border-white/20 dark:border-neutral-700/50 transform rotate-45"></div>
                           
                           <div className="flex flex-col gap-2 min-w-28">
                             <button
                               onClick={() => handlePdfTemplateSelect('default')}
-                              className={`px-3 py-1.5 text-sm rounded-md transition-all duration-150 text-left transform hover:scale-[1.02] active:scale-98 ${
+                              className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
                                 pdfTemplate === 'default' 
-                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20' 
+                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20 shadow-sm' 
                                   : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
                               }`}
                             >
@@ -329,9 +338,9 @@ export default function AICardStudioPage() {
                             </button>
                             <button
                               onClick={() => handlePdfTemplateSelect('resume')}
-                              className={`px-3 py-1.5 text-sm rounded-md transition-all duration-150 text-left transform hover:scale-[1.02] active:scale-98 ${
+                              className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
                                 pdfTemplate === 'resume' 
-                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20' 
+                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20 shadow-sm' 
                                   : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
                               }`}
                             >
@@ -346,28 +355,37 @@ export default function AICardStudioPage() {
                     <hr className="my-2 border-gray-200 dark:border-neutral-700" />
                     
                     {/* Theme Selection */}
-                    <div className="relative">
+                    <div 
+                      className="relative"
+                      onMouseEnter={() => {
+                        setShowThemeMenu(true)
+                        setTimeout(() => setThemeMenuVisible(true), 10)
+                      }}
+                      onMouseLeave={() => {
+                        setThemeMenuVisible(false)
+                        setTimeout(() => setShowThemeMenu(false), 200)
+                      }}
+                    >
                       <button
-                        onClick={handleThemeMenuToggle}
                         className="w-full px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20 rounded-md transition-all duration-150 text-left flex items-center"
                       >
-                        <span>主题</span>
+                        <span>Theme</span>
                       </button>
                       
                       {/* Theme Submenu */}
                       {showThemeMenu && (
-                        <div className={`absolute top-0 right-full mr-2 z-50 bg-white dark:bg-neutral-800 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-700 p-3 transform transition-all duration-200 ease-out ${
-                          themeMenuVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                        <div className={`absolute top-0 right-full mr-2 z-50 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 dark:border-neutral-700/50 p-3 transform transition-all duration-300 ease-out ${
+                          themeMenuVisible ? 'opacity-100 scale-100 translate-x-0' : 'opacity-0 scale-95 translate-x-2'
                         }`}>
                           {/* Arrow pointing to button */}
-                          <div className="absolute top-4 -right-1 w-2 h-2 bg-white dark:bg-neutral-800 border-r border-b border-gray-200 dark:border-neutral-700 transform rotate-45"></div>
+                          <div className="absolute top-4 -right-1 w-2 h-2 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-md border-r border-b border-white/20 dark:border-neutral-700/50 transform rotate-45"></div>
                           
                           <div className="flex flex-col gap-2 min-w-28">
                             <button
                               onClick={() => handleThemeSelect('light')}
-                              className={`px-3 py-1.5 text-sm rounded-md transition-all duration-150 text-left ${
+                              className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
                                 theme === 'light' 
-                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20' 
+                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20 shadow-sm' 
                                   : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
                               }`}
                             >
@@ -375,9 +393,9 @@ export default function AICardStudioPage() {
                             </button>
                             <button
                               onClick={() => handleThemeSelect('dark')}
-                              className={`px-3 py-1.5 text-sm rounded-md transition-all duration-150 text-left ${
+                              className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
                                 theme === 'dark' 
-                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20' 
+                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20 shadow-sm' 
                                   : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
                               }`}
                             >
@@ -385,9 +403,9 @@ export default function AICardStudioPage() {
                             </button>
                             <button
                               onClick={() => handleThemeSelect('lakers')}
-                              className={`px-3 py-1.5 text-sm rounded-md transition-all duration-150 text-left ${
+                              className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
                                 theme === 'lakers' 
-                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20' 
+                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20 shadow-sm' 
                                   : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
                               }`}
                             >
@@ -395,9 +413,9 @@ export default function AICardStudioPage() {
                             </button>
                             <button
                               onClick={() => handleThemeSelect('anno')}
-                              className={`px-3 py-1.5 text-sm rounded-md transition-all duration-150 text-left ${
+                              className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
                                 theme === 'anno' 
-                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20' 
+                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20 shadow-sm' 
                                   : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
                               }`}
                             >
@@ -405,9 +423,9 @@ export default function AICardStudioPage() {
                             </button>
                             <button
                               onClick={() => handleThemeSelect('cyberpunk')}
-                              className={`px-3 py-1.5 text-sm rounded-md transition-all duration-150 text-left ${
+                              className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
                                 theme === 'cyberpunk' 
-                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20' 
+                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20 shadow-sm' 
                                   : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
                               }`}
                             >

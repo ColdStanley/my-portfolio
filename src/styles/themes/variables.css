@@ -1,0 +1,38 @@
+/* Theme-specific CSS Variables */
+
+:root {
+  /* Lakers Theme Variables */
+  --lakers-primary: #FDB927;    /* Lakers Gold */
+  --lakers-secondary: #FFCC33;  /* Light Gold */
+  --lakers-accent: #E6A623;     /* Dark Gold */
+  --lakers-purple: #552583;     /* Lakers Purple */
+  --lakers-dark: #2A1B3D;       /* Dark Purple */
+  --lakers-light: #F8F6FF;      /* Light Background */
+  --lakers-text: #2d1b69;       /* Dark Purple Text */
+  --lakers-medium: #553c9a;     /* Medium Purple */
+  --lakers-header: #B8860B;     /* Dark Gold Headers */
+  --lakers-neutral: #B8A082;    /* Neutral Text */
+
+  /* Anno Theme Variables */
+  --anno-primary: #0284C7;      /* Sky Blue 600 */
+  --anno-secondary: #0EA5E9;    /* Sky Blue 500 */
+  --anno-accent: #0369A1;       /* Sky Blue 700 */
+  --anno-light: #38BDF8;        /* Sky Blue 400 */
+  --anno-text: #BAE6FD;         /* Sky Blue 200 */
+  --anno-medium: #7DD3FC;       /* Sky Blue 300 */
+  --anno-dark: #0C4A6E;         /* Sky Blue 900 */
+  --anno-card-dark: #1E293B;    /* Slate 800 */
+  --anno-card-light: #334155;   /* Slate 700 */
+  --anno-background: #075985;   /* Sky Blue 800 */
+
+  /* Cyberpunk Theme Variables */
+  --cyberpunk-cyan: #00FFFF;
+  --cyberpunk-pink: #FF0080;
+  --cyberpunk-pink-dark: #CC0066;
+  --cyberpunk-cyan-light: #80FFFF;
+  --cyberpunk-cyan-alpha: rgba(0, 255, 255, 0.1);
+  --cyberpunk-black: #0A0A0A;
+  --cyberpunk-dark: #1A1A1A;
+  --cyberpunk-disabled: #555555;
+  --cyberpunk-neon-green: #39FF14;
+}

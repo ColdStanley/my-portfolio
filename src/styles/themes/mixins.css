@@ -1,0 +1,36 @@
+/* Theme Mixins and Utilities for Easy Extension */
+
+/* Common theme patterns that can be reused */
+
+/* Base theme structure for new themes */
+/*
+Example of how to create a new theme:
+
+:root {
+  --new-theme-primary: #color;
+  --new-theme-secondary: #color;
+  --new-theme-accent: #color;
+}
+
+html.new-theme .bg-white {
+  background: var(--new-theme-background) !important;
+  border: 1px solid var(--new-theme-primary) !important;
+}
+
+html.new-theme .text-purple-600,
+html.new-theme .text-purple-400 {
+  color: var(--new-theme-primary) !important;
+}
+*/
+
+/* Utility classes for theme development */
+.theme-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Debug helper - uncomment to see theme boundaries */
+/*
+[class*="lakers:"] { outline: 1px solid gold !important; }
+[class*="anno:"] { outline: 1px solid cyan !important; }
+[class*="cyberpunk:"] { outline: 1px solid magenta !important; }
+*/

@@ -1,0 +1,120 @@
+/* Utility Classes and Components */
+
+/* Custom scrollbar hiding utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+@layer utilities {
+  .fade-in {
+    @apply opacity-0 translate-y-4 transition-all duration-700 ease-out;
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+
+  .card-hover-effect {
+    @apply transition-all duration-300 ease-in-out 
+    hover:shadow-[0_0_12px_2px_theme(colors.purple.300)]
+    dark:hover:shadow-[0_0_12px_2px_theme(colors.purple.600)]
+    hover:border-purple-400 
+    active:scale-[0.98] active:shadow-inner;
+  }
+
+  .hover-card {
+    @apply transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-xl;
+  }
+
+  .fade-image {
+    animation: fadeInImage 0.8s ease-out both;
+  }
+  
+  .page-with-navbar-padding {
+    padding-top: var(--navbar-height);
+  }
+}
+
+/* Prose image styling */
+.prose img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-width: 100%;
+  height: auto;
+}
+
+/* Notion-style components */
+.notion-toggle {
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  background-color: #f8f9fa;
+  margin: 1rem 0;
+}
+
+.notion-toggle summary {
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.dark .notion-toggle {
+  background-color: #1e293b;
+}
+
+.notion-table-wrapper {
+  overflow-x: auto;
+  margin: 2rem 0;
+}
+
+.notion-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.notion-table th,
+.notion-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: top;
+}
+
+.notion-table thead th {
+  background-color: #f9fafb;
+  font-weight: 600;
+}
+
+.notion-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.dark .notion-table {
+  border-color: #333;
+}
+
+.dark .notion-table thead th {
+  background-color: #2d3748;
+  color: #f9fafb;
+}
+
+.dark .notion-table td {
+  border-color: #444;
+}
+
+/* Details marker hiding */
+details summary::-webkit-details-marker {
+  display: none;
+}
+
+details summary::marker {
+  display: none;
+}

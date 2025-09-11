@@ -1,0 +1,4 @@
+/* Base styles index - for easy importing */
+
+@import './core.css';
+@import './variables.css';

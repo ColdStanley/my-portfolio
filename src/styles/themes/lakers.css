@@ -1,0 +1,91 @@
+/* Lakers Theme - Enhanced CSS Implementation */
+
+@layer utilities {
+  /* Background gradients */
+  html.lakers .min-h-screen.bg-white {
+    background: linear-gradient(135deg, #552583, #4c1d95) !important;
+  }
+  
+  /* Card backgrounds - gold accent (轻微层次感) */
+  html.lakers .bg-white,
+  html.lakers div.bg-white,
+  html.lakers .bg-gradient-to-br {
+    background: linear-gradient(135deg, #2A1B3D, #F8F6FF) !important;
+    border: 1px solid #FDB927 !important;
+    box-shadow: 0 4px 20px rgba(253, 185, 39, 0.1) !important;
+  }
+  
+  /* Text colors - high contrast */
+  html.lakers .text-gray-600,
+  html.lakers .text-gray-700,
+  html.lakers .text-gray-800,
+  html.lakers .text-gray-900 {
+    color: #2d1b69 !important; /* Dark purple for readability */
+  }
+  
+  html.lakers .text-neutral-400,
+  html.lakers .text-neutral-500,
+  html.lakers .text-neutral-600 {
+    color: #553c9a !important; /* Medium purple */
+  }
+  
+  /* Headers and important text - Lakers gold (excluding h1 with gradients, h2 and font-bold for InfoCard titles) */
+  html.lakers h3,
+  html.lakers .font-semibold {
+    color: #B8860B !important; /* Dark gold for headers */
+  }
+  
+  /* Borders and accents */
+  html.lakers .border-purple-600,
+  html.lakers .border-gray-200,
+  html.lakers .border-gray-300 {
+    border-color: #FDB927 !important;
+  }
+  
+  /* Buttons and interactive elements */
+  html.lakers .bg-purple-600,
+  html.lakers .bg-purple-500 {
+    background: linear-gradient(135deg, #FDB927, #FFCC33) !important;
+    color: #2d1b69 !important;
+  }
+  
+  html.lakers .hover\:bg-purple-700:hover {
+    background: linear-gradient(135deg, #E6A623, #FDB927) !important;
+  }
+  
+  /* Loading spinner */
+  html.lakers .animate-spin {
+    border-color: #FDB927 !important;
+    border-top-color: transparent !important;
+  }
+  
+  /* Lakers theme text overrides - force purple text to gold matching button gradient */
+  html.lakers .text-purple-600,
+  html.lakers .text-purple-400 {
+    color: #FDB927 !important; /* Match button gradient start color */
+  }
+  
+  /* Top card left border */
+  html.lakers .border-l-4,
+  html.lakers .border-l-2 {
+    border-left-color: #FDB927 !important;
+  }
+  
+  /* Marketplace left icon and add canvas plus icon */
+  html.lakers .text-gray-400.hover\:text-purple-600 svg,
+  html.lakers .border-dashed.text-gray-300 svg {
+    color: #FDB927 !important;
+  }
+  
+  /* User email button text */
+  html.lakers .text-gray-400.hover\:text-purple-600 {
+    color: #B8A082 !important; /* lakers-300 */
+  }
+  
+  /* Gradient text overrides for lakers */
+  html.lakers .bg-gradient-to-r.from-purple-600.to-indigo-600 {
+    background: linear-gradient(to right, #FDB927, #FFCC33) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+  }
+}

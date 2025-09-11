@@ -1,0 +1,9 @@
+/* Components index - centralized component styles */
+
+@import './utilities.css';
+@import './animations.css';
+
+/* Future component styles can be added here */
+/* @import './buttons.css'; */
+/* @import './cards.css'; */
+/* @import './forms.css'; */
