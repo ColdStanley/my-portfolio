@@ -447,13 +447,13 @@ function InfoCard({
   }
 
   return (
-    <div className="bg-gradient-to-br from-white/95 to-purple-50/30 dark:from-neutral-800/95 dark:to-purple-900/20 lakers:bg-gradient-to-tl lakers:from-lakers-300/20 lakers:to-lakers-700/30 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 dark:shadow-purple-400/10 lakers:shadow-lakers-300/30 border border-white/50 dark:border-neutral-700/50 lakers:border-lakers-300/50 p-4 relative transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/30 dark:hover:shadow-purple-400/20 lakers:hover:shadow-lakers-300/40 hover:-translate-y-1 group">
+    <div className="bg-gradient-to-br from-white/95 to-purple-50/30 dark:from-neutral-800/95 dark:to-purple-900/20 lakers:bg-gradient-to-br lakers:from-lakers-700/30 lakers:to-lakers-300/20 anno:bg-gradient-to-br anno:from-anno-800/30 anno:to-anno-300/20 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 dark:shadow-purple-400/10 lakers:shadow-lakers-300/30 anno:shadow-anno-300/30 border border-white/50 dark:border-neutral-700/50 lakers:border-lakers-300/50 anno:border-anno-300/50 p-4 relative transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/30 dark:hover:shadow-purple-400/20 lakers:hover:shadow-lakers-300/40 anno:hover:shadow-anno-300/40 hover:-translate-y-1 group">
       
       {/* Single Menu Button - Top Right */}
       <button
         ref={cardMenuButtonRef}
         onClick={handleCardMenuOpen}
-        className="absolute top-4 right-4 w-6 h-6 bg-white/80 dark:bg-neutral-700/80 lakers:bg-lakers-300/30 hover:bg-purple-50 dark:hover:bg-purple-900/50 lakers:hover:bg-lakers-300/50 rounded-full flex items-center justify-center text-gray-400 dark:text-neutral-400 lakers:text-lakers-200 hover:text-purple-600 dark:hover:text-purple-400 lakers:hover:text-lakers-300 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-400/20 lakers:hover:shadow-lakers-300/30 hover:scale-110 hover:-translate-y-0.5"
+        className="absolute top-4 right-4 w-6 h-6 bg-white/80 dark:bg-neutral-700/80 lakers:bg-lakers-300/30 anno:bg-anno-700/30 hover:bg-purple-50 dark:hover:bg-purple-900/50 lakers:hover:bg-lakers-300/50 anno:hover:bg-anno-300/50 rounded-full flex items-center justify-center text-gray-400 dark:text-neutral-400 lakers:text-lakers-200 anno:text-anno-200 hover:text-purple-600 dark:hover:text-purple-400 lakers:hover:text-lakers-300 anno:hover:text-anno-300 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-400/20 lakers:hover:shadow-lakers-300/30 anno:hover:shadow-anno-300/30 hover:scale-110 hover:-translate-y-0.5"
         title="Card actions"
         style={{ pointerEvents: 'auto' }}
       >
@@ -648,7 +648,7 @@ function InfoCard({
               )}
             </button>
           )}
-          <h2 className={`${isTopCard ? 'text-xl font-bold' : 'text-lg font-medium'} text-purple-600 dark:text-purple-400 lakers:text-lakers-300`}>
+          <h2 className={`${isTopCard ? 'text-xl font-bold' : 'text-lg font-medium'} text-purple-600 dark:text-purple-400 lakers:text-lakers-300 anno:text-anno-300`}>
             {title}
           </h2>
         </div>

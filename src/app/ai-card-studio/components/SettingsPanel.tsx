@@ -39,7 +39,7 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
     }
   }, [isOpen, onClose])
 
-  const handleThemeSelect = (selectedTheme: 'light' | 'dark' | 'lakers') => {
+  const handleThemeSelect = (selectedTheme: 'light' | 'dark' | 'lakers' | 'anno') => {
     actions.setTheme(selectedTheme)
   }
 
@@ -167,6 +167,37 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                     <div className="ml-auto">
                       <div className="w-5 h-5 bg-lakers-300 rounded-full flex items-center justify-center">
                         <svg className="w-3 h-3 text-lakers-700" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </button>
+
+              {/* Anno Theme Option */}
+              <button
+                onClick={() => handleThemeSelect('anno')}
+                className={`w-full p-4 rounded-lg border transition-all duration-200 text-left ${
+                  theme === 'anno'
+                    ? 'border-anno-600 bg-anno-50 dark:bg-anno-900/20 anno:bg-anno-700/30'
+                    : 'border-gray-200 dark:border-neutral-700 anno:border-anno-300/30 hover:border-anno-300 dark:hover:border-anno-600 anno:hover:border-anno-300 hover:bg-anno-50/50 dark:hover:bg-anno-900/10 anno:hover:bg-anno-700/20'
+                }`}
+              >
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-gradient-to-br from-anno-600 to-anno-800 rounded-lg flex items-center justify-center mr-3">
+                    <svg className="w-4 h-4 text-anno-100" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900 dark:text-neutral-100 anno:text-anno-300">Anno</div>
+                    <div className="text-sm text-gray-500 dark:text-neutral-400 anno:text-anno-300">MyGO style</div>
+                  </div>
+                  {theme === 'anno' && (
+                    <div className="ml-auto">
+                      <div className="w-5 h-5 bg-anno-600 rounded-full flex items-center justify-center">
+                        <svg className="w-3 h-3 text-anno-100" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                       </div>

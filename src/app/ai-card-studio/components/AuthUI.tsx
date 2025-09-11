@@ -241,7 +241,7 @@ export default function AuthUI() {
               <span>Don't have an account? </span>
               <button
                 onClick={() => setView('sign_up')}
-                className="font-medium bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent hover:from-purple-700 hover:to-indigo-700 transition-all duration-200"
+                className="font-medium bg-gradient-to-r from-purple-600 to-indigo-600 lakers:from-lakers-300 lakers:to-lakers-400 anno:from-anno-300 anno:to-anno-400 bg-clip-text text-transparent hover:from-purple-700 hover:to-indigo-700 lakers:hover:from-lakers-400 lakers:hover:to-lakers-500 anno:hover:from-anno-400 anno:hover:to-anno-500 transition-all duration-200"
               >
                 Sign up
               </button>
@@ -251,7 +251,7 @@ export default function AuthUI() {
               <span>Already have an account? </span>
               <button
                 onClick={() => setView('sign_in')}
-                className="font-medium bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent hover:from-purple-700 hover:to-indigo-700 transition-all duration-200"
+                className="font-medium bg-gradient-to-r from-purple-600 to-indigo-600 lakers:from-lakers-300 lakers:to-lakers-400 anno:from-anno-300 anno:to-anno-400 bg-clip-text text-transparent hover:from-purple-700 hover:to-indigo-700 lakers:hover:from-lakers-400 lakers:hover:to-lakers-500 anno:hover:from-anno-400 anno:hover:to-anno-500 transition-all duration-200"
               >
                 Sign in
               </button>
