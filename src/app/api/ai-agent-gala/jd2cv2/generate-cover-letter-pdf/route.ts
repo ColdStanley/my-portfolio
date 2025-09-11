@@ -1,5 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import puppeteer from "puppeteer-core"
+
+// Environment-aware Puppeteer configuration
+const getPuppeteer = async () => {
+  if (process.env.NODE_ENV === 'production') {
+    // Production: use @sparticuz/chromium
+    const puppeteer = await import('puppeteer-core')
+    const chromium = await import('@sparticuz/chromium')
+    return { puppeteer: puppeteer.default, chromium: chromium.default, isProduction: true }
+  } else {
+    // Development: use regular puppeteer
+    const puppeteer = await import('puppeteer')
+    return { puppeteer: puppeteer.default, chromium: null, isProduction: false }
+  }
+}
 
 interface PersonalInfo {
   fullName: string
@@ -269,14 +282,18 @@ export async function POST(request: NextRequest) {
       format
     )
 
-    // Generate PDF using Puppeteer
+    // Generate PDF using environment-aware Puppeteer
+    const { puppeteer, chromium, isProduction } = await getPuppeteer()
+    
     const browser = await puppeteer.launch({
       headless: true,
+      executablePath: isProduction ? await chromium.executablePath() : undefined,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--disable-gpu'
+        '--disable-gpu',
+        ...(isProduction ? chromium.args : [])
       ]
     })
 
