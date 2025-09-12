@@ -725,8 +725,9 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       );
     },
     updateCardGeneratedContent: (cardId: string, content: string) => {
-      get().actions.updateCanvases(canvases => 
-        canvases.map(canvas => ({
+      // AI回复不触发Save按钮，只更新状态和缓存
+      set((state) => ({
+        canvases: state.canvases.map(canvas => ({
           ...canvas,
           columns: canvas.columns.map(column => ({
             ...column,
@@ -737,7 +738,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
             )
           }))
         }))
-      );
+        // 不设置 hasUnsavedChanges: true
+      }));
+      
+      // 仍然需要缓存AI回复到localStorage
+      get().actions.syncToCache();
     },
     updateCardGeneratingState: (cardId: string, isGenerating: boolean) => {
       get().actions.updateCanvases(canvases => 

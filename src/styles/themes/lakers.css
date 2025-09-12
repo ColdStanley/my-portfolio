@@ -97,24 +97,6 @@
     color: #B8A082 !important; /* lakers-300 */
   }
   
-  /* Gradient text overrides for lakers */
-  html.lakers .bg-gradient-to-r.from-purple-600.to-indigo-600 {
-    background: linear-gradient(to right, #FDB927, #FFCC33) !important;
-    -webkit-background-clip: text !important;
-    background-clip: text !important;
-  }
-
-  /* Main title gradient - Eye-friendly softer gold */
-  html.lakers body h1,
-  html.lakers h1.text-4xl,
-  html.lakers .text-4xl {
-    background: linear-gradient(135deg, #E6B422, #FFD65C) !important;
-    -webkit-background-clip: text !important;
-    background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    color: transparent !important;
-  }
-
   /* Secondary menu dropdowns (PDF Template & Theme menus) - Eye-friendly */
   html.lakers .bg-white\/95 {
     background: rgba(255, 255, 255, 0.95) !important;
@@ -153,5 +135,12 @@
     background: rgba(255, 255, 255, 0.95) !important;
     border-color: rgba(230, 180, 34, 0.5) !important;
   }
+}
+
+/* Gradient text overrides for lakers - Outside @layer for proper specificity */
+html.lakers .bg-gradient-to-r.from-purple-600.to-indigo-600 {
+  background: linear-gradient(to right, #FDB927, #552583) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
 }
 

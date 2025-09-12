@@ -120,3 +120,27 @@ html.cyberpunk .text-purple-600.bg-purple-50 {
 html.cyberpunk .border-gray-200 {
   border-color: var(--cyberpunk-cyan) !important;
 }
+
+/* Eye-Friendly text fixes - Outside any @layer for highest priority */
+html.cyberpunk body textarea,
+html.cyberpunk body input[type="text"],
+html.cyberpunk textarea.text-gray-700,
+html.cyberpunk input.text-gray-700,
+html.cyberpunk .text-gray-700,
+html.cyberpunk .text-gray-800,
+html.cyberpunk .text-gray-900 {
+  color: #B0E0E6 !important; /* Eye-friendly pale cyan */
+}
+
+html.cyberpunk body input::placeholder,
+html.cyberpunk body textarea::placeholder {
+  color: #778899 !important; /* Muted blue-gray for placeholders */
+}
+
+html.cyberpunk .text-gray-600 {
+  color: #87CEEB !important; /* Sky blue for secondary text */
+}
+
+html.cyberpunk .text-gray-500 {
+  color: #ADD8E6 !important; /* Light blue for tertiary text */
+}

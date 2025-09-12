@@ -67,8 +67,16 @@ function AIToolCard({
   useEffect(() => {
     setLocalAiModel(aiModel)
   }, [aiModel])
+  
   const generatedContent = currentCard?.generatedContent || ''
   const isGenerating = currentCard?.isGenerating || false
+  
+  // Fix: Initialize markdown rendering for cached content after page refresh
+  useEffect(() => {
+    if (generatedContent && !isGenerating) {
+      setShowMarkdown(true)
+    }
+  }, [generatedContent, isGenerating])
   const isLocked = currentCard?.isLocked || false
   const passwordHash = currentCard?.passwordHash || ''
   
