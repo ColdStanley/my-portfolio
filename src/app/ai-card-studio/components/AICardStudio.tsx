@@ -440,17 +440,6 @@ export default function AICardStudio() {
             
             {/* Right side - All controls */}
             <div className="flex items-center gap-4">
-              {/* Marketplace Button */}
-              <a
-                href="/ai-card-studio/marketplace"
-                className="px-4 py-2 bg-white dark:bg-neutral-800 lakers:bg-lakers-300/20 anno:bg-anno-700/20 cyberpunk:bg-cyberpunk-700/20 border border-purple-200 dark:border-purple-700 lakers:border-lakers-300 anno:border-anno-300 cyberpunk:border-cyberpunk-300 text-purple-600 dark:text-purple-400 lakers:text-lakers-300 anno:text-anno-300 cyberpunk:text-cyberpunk-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 lakers:hover:bg-lakers-300/30 anno:hover:bg-anno-300/20 cyberpunk:hover:bg-cyberpunk-300/20 rounded-lg font-medium transition-all duration-200 flex items-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
-                Marketplace
-              </a>
-              
               {/* Save Status Indicator */}
               <div className="text-sm text-gray-500 dark:text-neutral-400 lakers:text-lakers-300 anno:text-anno-300 cyberpunk:text-cyberpunk-300">
                 {isSaving ? (
@@ -569,6 +558,17 @@ export default function AICardStudio() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
               </button>
+              
+              {/* Marketplace Button */}
+              <a
+                href="/ai-card-studio/marketplace"
+                className="px-4 py-2 bg-white dark:bg-neutral-800 lakers:bg-lakers-300/20 anno:bg-anno-700/20 cyberpunk:bg-cyberpunk-700/20 border border-purple-200 dark:border-purple-700 lakers:border-lakers-300 anno:border-anno-300 cyberpunk:border-cyberpunk-300 text-purple-600 dark:text-purple-400 lakers:text-lakers-300 anno:text-anno-300 cyberpunk:text-cyberpunk-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 lakers:hover:bg-lakers-300/30 anno:hover:bg-anno-300/20 cyberpunk:hover:bg-cyberpunk-300/20 rounded-lg font-medium transition-all duration-200 flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+                Marketplace
+              </a>
             </div>
           </div>
           

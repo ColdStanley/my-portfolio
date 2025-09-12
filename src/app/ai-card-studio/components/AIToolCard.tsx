@@ -476,11 +476,11 @@ function AIToolCard({
         setIsFormatting(true)
       }, 500)
       
-      // 延迟2秒后启用markdown显示，让用户充分感知过渡
+      // 延迟后启用markdown显示
       setTimeout(() => {
         setIsFormatting(false)
         setShowMarkdown(true)
-      }, 2500)
+      }, 100) // 缩短到100ms测试
       
       setShowOptionsTooltip(false)
     } catch (error) {
@@ -735,33 +735,8 @@ function AIToolCard({
       </button>
 
       {/* AI Response Area - Always visible with gray background */}
-      <div className={`relative p-4 bg-gradient-to-br from-gray-50/80 via-gray-100/40 to-gray-50/60 dark:from-neutral-700/80 dark:via-neutral-800/40 dark:to-neutral-700/60 backdrop-blur-sm rounded-lg transition-all duration-300 border border-gray-200/50 dark:border-neutral-600/50 shadow-inner ${
-        isResponseExpanded ? 'min-h-fit' : 'min-h-24'
-      } ${
-        !isResponseExpanded && generatedContent ? 'max-h-24 overflow-hidden' : ''
-      }`}>
-        {/* Gradient Mask for Collapsed State */}
-        {!isResponseExpanded && generatedContent && (
-          <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-gray-50 dark:from-neutral-700 to-transparent pointer-events-none z-5"></div>
-        )}
+      <div className="p-4 bg-gradient-to-br from-gray-50/80 via-gray-100/40 to-gray-50/60 dark:from-neutral-700/80 dark:via-neutral-800/40 dark:to-neutral-700/60 backdrop-blur-sm rounded-lg transition-all duration-300 border border-gray-200/50 dark:border-neutral-600/50 shadow-inner">
         
-        {/* Expand/Collapse Button - Minimal dropdown arrow */}
-        {generatedContent && (
-          <button
-            onClick={() => setIsResponseExpanded(!isResponseExpanded)}
-            className="absolute top-2 right-2 p-1 text-gray-600 dark:text-neutral-400 hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer transition-all duration-200 z-10"
-            title={isResponseExpanded ? 'Collapse response' : 'Expand response'}
-          >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={2} 
-                d={isResponseExpanded ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} 
-              />
-            </svg>
-          </button>
-        )}
         
         {/* 骨架屏 - 独立显示条件 */}
         {isGenerating && !isStreaming && (
@@ -979,20 +954,108 @@ function AIToolCard({
                 </button>
               </>
             ) : (
-              // Collapsed view - show truncated plain text with "more" button
-              <div>
-                <span className="text-gray-600 dark:text-neutral-400 leading-relaxed text-sm">
-                  {generatedContent.length > 200 ? `${generatedContent.substring(0, 200).replace(/\s+\S*$/, '')}...` : generatedContent}
-                </span>
-                {generatedContent.length > 200 && (
+              // Collapsed view - height-limited ReactMarkdown with "more" button
+              <>
+                <div className="max-h-24 overflow-hidden relative">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkBreaks, remarkGfm]}
+                    components={{
+                      h1: ({node, ...props}) => (
+                        <h1 className="text-xl font-bold text-gray-800 dark:text-neutral-200 mb-3 mt-4 first:mt-0 border-b border-gray-200 dark:border-neutral-600 pb-1" {...props} />
+                      ),
+                      h2: ({node, ...props}) => (
+                        <h2 className="text-lg font-semibold text-gray-800 dark:text-neutral-200 mb-2 mt-3 first:mt-0" {...props} />
+                      ),
+                      h3: ({node, ...props}) => (
+                        <h3 className="text-base font-medium text-gray-800 dark:text-neutral-200 mb-2 mt-2 first:mt-0" {...props} />
+                      ),
+                      h4: ({node, ...props}) => (
+                        <h4 className="text-sm font-medium text-gray-800 dark:text-neutral-200 mb-1 mt-2 first:mt-0" {...props} />
+                      ),
+                      p: ({node, ...props}) => (
+                        <p className="text-gray-600 dark:text-neutral-400 mb-3 leading-relaxed text-sm" {...props} />
+                      ),
+                      ul: ({node, ...props}) => (
+                        <ul className="list-disc list-inside mb-3 text-gray-600 dark:text-neutral-400 space-y-1" {...props} />
+                      ),
+                      ol: ({node, ...props}) => (
+                        <ol className="list-decimal list-inside mb-3 text-gray-600 dark:text-neutral-400 space-y-1" {...props} />
+                      ),
+                      li: ({node, ...props}) => (
+                        <li className="text-sm leading-relaxed mb-1" {...props} />
+                      ),
+                      code: ({node, inline, ...props}) => 
+                        inline ? (
+                          <code className="bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 px-1 py-0.5 rounded text-xs font-mono" {...props} />
+                        ) : (
+                          <code className="block bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre" {...props} />
+                        ),
+                      pre: ({node, ...props}) => (
+                        <pre className="bg-gray-100 dark:bg-neutral-700 rounded-lg p-3 overflow-x-auto border border-gray-200 dark:border-neutral-600 my-3" {...props} />
+                      ),
+                      blockquote: ({node, ...props}) => (
+                        <blockquote className="border-l-4 border-purple-300 dark:border-purple-500 pl-3 italic text-gray-600 dark:text-neutral-400 mb-2" {...props} />
+                      ),
+                      strong: ({node, ...props}) => (
+                        <strong className="font-semibold text-gray-800 dark:text-neutral-200" {...props} />
+                      ),
+                      em: ({node, ...props}) => (
+                        <em className="italic" {...props} />
+                      ),
+                      a: ({ href, children, ...props }) => (
+                        <a 
+                          href={href} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 underline transition-colors duration-200"
+                          {...props}
+                        >
+                          {children}
+                        </a>
+                      ),
+                      table: ({node, ...props}) => (
+                        <div className="overflow-x-auto my-3">
+                          <table className="min-w-full border border-gray-200 dark:border-neutral-600 rounded-lg" {...props} />
+                        </div>
+                      ),
+                      thead: ({node, ...props}) => (
+                        <thead className="bg-gray-50 dark:bg-neutral-700" {...props} />
+                      ),
+                      tbody: ({node, ...props}) => (
+                        <tbody {...props} />
+                      ),
+                      tr: ({node, ...props}) => (
+                        <tr className="border-b border-gray-200 dark:border-neutral-600" {...props} />
+                      ),
+                      td: ({node, ...props}) => (
+                        <td className="px-3 py-2 text-sm text-gray-600 dark:text-neutral-400" {...props} />
+                      ),
+                      th: ({node, ...props}) => (
+                        <th className="px-3 py-2 text-left text-sm font-medium text-gray-800 dark:text-neutral-200" {...props} />
+                      ),
+                      hr: ({node, ...props}) => (
+                        <hr className="my-4 border-gray-300 dark:border-neutral-600" {...props} />
+                      ),
+                      sup: ({node, ...props}) => (
+                        <sup className="text-xs" {...props} />
+                      ),
+                      sub: ({node, ...props}) => (
+                        <sub className="text-xs" {...props} />
+                      )
+                    }}
+                  >
+                    {generatedContent}
+                  </ReactMarkdown>
+                </div>
+                {generatedContent.length > 100 && (
                   <button
                     onClick={() => setIsResponseExpanded(true)}
-                    className="inline text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium text-sm ml-1 transition-colors duration-200"
+                    className="inline text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium text-sm ml-1 transition-colors duration-200 mt-1"
                   >
                     more
                   </button>
                 )}
-              </div>
+              </>
             )}
           </div>
         )}
