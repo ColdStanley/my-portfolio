@@ -217,9 +217,11 @@ export default function AICardStudioPage() {
   const handleCloseUserMenu = () => {
     setUserMenuVisible(false)
     setPdfTemplateMenuVisible(false)
+    setThemeMenuVisible(false)
     setTimeout(() => {
       setShowUserMenu(false)
       setShowPdfTemplateMenu(false)
+      setShowThemeMenu(false)
     }, 200)
   }
 
@@ -300,18 +302,9 @@ export default function AICardStudioPage() {
                     userMenuVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-2'
                   }`}>
                     {/* PDF Template Selection */}
-                    <div 
-                      className="relative"
-                      onMouseEnter={() => {
-                        setShowPdfTemplateMenu(true)
-                        setTimeout(() => setPdfTemplateMenuVisible(true), 10)
-                      }}
-                      onMouseLeave={() => {
-                        setPdfTemplateMenuVisible(false)
-                        setTimeout(() => setShowPdfTemplateMenu(false), 200)
-                      }}
-                    >
+                    <div className="relative">
                       <button
+                        onClick={handlePdfTemplateToggle}
                         className="w-full px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20 rounded-md transition-all duration-150 text-left flex items-center"
                       >
                         <span>PDF Template</span>
@@ -355,18 +348,9 @@ export default function AICardStudioPage() {
                     <hr className="my-2 border-gray-200 dark:border-neutral-700" />
                     
                     {/* Theme Selection */}
-                    <div 
-                      className="relative"
-                      onMouseEnter={() => {
-                        setShowThemeMenu(true)
-                        setTimeout(() => setThemeMenuVisible(true), 10)
-                      }}
-                      onMouseLeave={() => {
-                        setThemeMenuVisible(false)
-                        setTimeout(() => setShowThemeMenu(false), 200)
-                      }}
-                    >
+                    <div className="relative">
                       <button
+                        onClick={handleThemeMenuToggle}
                         className="w-full px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20 rounded-md transition-all duration-150 text-left flex items-center"
                       >
                         <span>Theme</span>
