@@ -122,6 +122,11 @@ function InfoCard({
       return
     }
     
+    // 强制同步最新的store数据到本地状态
+    setLocalTitle(title)
+    setLocalDescription(description)
+    setLocalUrls(urls)
+    
     setShowSettingsTooltip(true)
     setTimeout(() => setSettingsTooltipVisible(true), 10)
   }

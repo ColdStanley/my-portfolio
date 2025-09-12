@@ -321,6 +321,12 @@ function AIToolCard({
       return
     }
     
+    // 强制同步最新的store数据到本地状态
+    setLocalButtonName(buttonName)
+    setLocalPromptText(promptText)
+    setLocalOptions(options)
+    setLocalAiModel(aiModel)
+    
     setShowPromptTooltip(true)
     setTimeout(() => setPromptTooltipVisible(true), 10)
   }
