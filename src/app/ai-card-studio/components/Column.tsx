@@ -29,7 +29,7 @@ export default function ColumnComponent({
   // Check if column has AI tool cards
   const hasAIToolCards = column.cards.some(card => card.type === 'aitool')
   return (
-      <div className="flex-shrink-0 w-[480px] h-full relative">
+      <div className="flex-shrink-0 w-[480px] h-full relative z-0" style={{ scrollSnapAlign: 'start' }}>
       {/* Up Arrow - 悬浮在列外上方 */}
       <button
         onClick={() => {
@@ -94,7 +94,7 @@ export default function ColumnComponent({
       </button>
 
       {/* Scrollable Content */}
-      <div data-column-id={column.id} className="h-full overflow-y-auto scrollbar-hide pr-0 transform-gpu will-change-scroll">
+      <div data-column-id={column.id} className="h-full overflow-y-auto scrollbar-hide pr-0">
         <div className="space-y-3 pb-0 px-2">
         {/* Render cards */}
         {column.cards.map((card, cardIndex) => (

@@ -92,3 +92,31 @@ html.cyberpunk .bg-gradient-to-r.from-purple-600.to-indigo-600 {
   -webkit-background-clip: text !important;
   background-clip: text !important;
 }
+
+/* Secondary menu dropdowns (PDF Template & Theme menus) */
+html.cyberpunk .bg-white\/95 {
+  background: linear-gradient(135deg, rgba(26, 26, 26, 0.95), rgba(10, 10, 10, 0.95)) !important;
+  border: 1px solid var(--cyberpunk-cyan) !important;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3) !important;
+}
+
+/* Secondary menu text colors */
+html.cyberpunk .text-gray-600.hover\\:text-purple-600.hover\\:bg-purple-50 {
+  color: var(--cyberpunk-cyan-light) !important;
+}
+
+html.cyberpunk .text-gray-600.hover\\:text-purple-600.hover\\:bg-purple-50:hover {
+  color: var(--cyberpunk-cyan) !important;
+  background-color: var(--cyberpunk-cyan-alpha) !important;
+}
+
+/* Secondary menu item active states */
+html.cyberpunk .text-purple-600.bg-purple-50 {
+  color: var(--cyberpunk-cyan) !important;
+  background-color: rgba(0, 255, 255, 0.15) !important;
+}
+
+/* Secondary menu separators */
+html.cyberpunk .border-gray-200 {
+  border-color: var(--cyberpunk-cyan) !important;
+}

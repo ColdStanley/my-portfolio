@@ -637,7 +637,18 @@ export default function AICardStudio() {
             </button>
 
             {/* Scrollable Content */}
-            <div className="horizontal-scroll-container flex gap-3 items-start overflow-x-auto scrollbar-hide pb-0 h-[calc(100vh-125px)] px-12 transform-gpu will-change-scroll">
+            <div 
+              className="horizontal-scroll-container flex gap-3 items-start overflow-x-auto scrollbar-hide pb-0 h-[calc(100vh-125px)]" 
+              style={{ 
+                scrollSnapType: 'x mandatory' 
+              }}
+            >
+              <style jsx>{`
+                .horizontal-scroll-container > div {
+                  position: relative;
+                  z-index: 0;
+                }
+              `}</style>
               {/* Render all columns */}
               {columns.map((column) => (
                 <ColumnComponent

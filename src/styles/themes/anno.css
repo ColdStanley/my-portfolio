@@ -1,6 +1,6 @@
 /* Anno Theme - MyGO白金燐子风格 (冷静深蓝) */
 
-@layer utilities {
+/* Use higher specificity to override Tailwind utilities */
   /* Background gradients */
   html.anno .min-h-screen.bg-white {
     background: linear-gradient(135deg, #0C4A6E, #075985) !important;
@@ -48,6 +48,38 @@
     background: linear-gradient(135deg, #0284C7, #0EA5E9) !important;
     color: #F0F9FF !important;
   }
+
+  /* White background buttons with dark text for Anno theme */
+  html.anno .bg-white {
+    color: #0C4A6E !important; /* Dark blue text for white buttons */
+  }
+  
+  html.anno button.bg-white,
+  html.anno .bg-white button {
+    color: #0C4A6E !important; /* Dark blue text */
+  }
+
+  /* Input text areas and editable content - lighter text for Anno theme */
+  html.anno input[type="text"],
+  html.anno textarea,
+  html.anno .editable-content,
+  html.anno [contenteditable="true"] {
+    color: #BAE6FD !important; /* Light blue text for inputs */
+  }
+  
+  /* Specific textarea elements */
+  html.anno textarea.w-full,
+  html.anno textarea.min-h-32,
+  html.anno .text-gray-700,
+  html.anno .dark\\:text-neutral-200 {
+    color: #BAE6FD !important; /* Light blue for textarea content */
+  }
+  
+  /* Specific input placeholders */
+  html.anno input::placeholder,
+  html.anno textarea::placeholder {
+    color: #7DD3FC !important; /* Medium blue for placeholders */
+  }
   
   html.anno .hover\:bg-purple-700:hover {
     background: linear-gradient(135deg, #0369A1, #0284C7) !important;
@@ -88,4 +120,40 @@
     -webkit-background-clip: text !important;
     background-clip: text !important;
   }
+
+  /* Secondary menu dropdowns (PDF Template & Theme menus) */
+  html.anno .bg-white\/95 {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(51, 65, 85, 0.95)) !important;
+    border: 1px solid #0284C7 !important;
+    box-shadow: 0 4px 20px rgba(2, 132, 199, 0.2) !important;
+  }
+
+  /* Secondary menu text colors */
+  html.anno .text-gray-600.hover\\:text-purple-600.hover\\:bg-purple-50 {
+    color: #BAE6FD !important;
+  }
+  
+  html.anno .text-gray-600.hover\\:text-purple-600.hover\\:bg-purple-50:hover {
+    color: #0284C7 !important;
+    background-color: rgba(2, 132, 199, 0.1) !important;
+  }
+
+  /* Secondary menu item active states */
+  html.anno .text-purple-600.bg-purple-50 {
+    color: #0284C7 !important;
+    background-color: rgba(2, 132, 199, 0.15) !important;
+  }
+
+  /* Secondary menu separators */
+  html.anno .border-gray-200 {
+    border-color: #0284C7 !important;
+  }
+
+/* Force override for all text inputs and textareas - highest priority */
+html.anno body textarea,
+html.anno body input[type="text"], 
+html.anno textarea.text-gray-700,
+html.anno input.text-gray-700,
+html.anno .text-gray-700 {
+  color: #BAE6FD !important;
 }

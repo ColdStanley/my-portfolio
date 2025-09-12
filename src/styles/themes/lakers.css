@@ -6,13 +6,13 @@
     background: linear-gradient(135deg, #552583, #4c1d95) !important;
   }
   
-  /* Card backgrounds - gold accent (轻微层次感) */
+  /* Card backgrounds - refined gold accent */
   html.lakers .bg-white,
   html.lakers div.bg-white,
   html.lakers .bg-gradient-to-br {
     background: linear-gradient(135deg, #2A1B3D, #F8F6FF) !important;
-    border: 1px solid #FDB927 !important;
-    box-shadow: 0 4px 20px rgba(253, 185, 39, 0.1) !important;
+    border: 2px solid rgba(253, 185, 39, 0.4) !important;
+    box-shadow: 0 4px 20px rgba(253, 185, 39, 0.15) !important;
   }
   
   /* Text colors - high contrast */
@@ -88,4 +88,54 @@
     -webkit-background-clip: text !important;
     background-clip: text !important;
   }
+
+  /* Main title gradient - Lakers gold style with higher specificity */
+  html.lakers body h1,
+  html.lakers h1.text-4xl,
+  html.lakers .text-4xl {
+    background: linear-gradient(135deg, #FDB927, #FFCC33) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    color: transparent !important;
+  }
+
+  /* Secondary menu dropdowns (PDF Template & Theme menus) */
+  html.lakers .bg-white\/95 {
+    background: linear-gradient(135deg, rgba(42, 27, 61, 0.95), rgba(248, 246, 255, 0.95)) !important;
+    border: 1px solid #FDB927 !important;
+    box-shadow: 0 4px 20px rgba(253, 185, 39, 0.2) !important;
+  }
+
+  /* Secondary menu text colors */
+  html.lakers .text-gray-600.hover\\:text-purple-600.hover\\:bg-purple-50 {
+    color: #2d1b69 !important;
+  }
+  
+  html.lakers .text-gray-600.hover\\:text-purple-600.hover\\:bg-purple-50:hover {
+    color: #FDB927 !important;
+    background-color: rgba(253, 185, 39, 0.1) !important;
+  }
+
+  /* Secondary menu item active states */
+  html.lakers .text-purple-600.bg-purple-50 {
+    color: #FDB927 !important;
+    background-color: rgba(253, 185, 39, 0.15) !important;
+  }
+
+  /* Secondary menu separators */
+  html.lakers .border-gray-200 {
+    border-color: #FDB927 !important;
+  }
+
+  /* Secondary menu arrows */
+  html.lakers .bg-white\/95.backdrop-blur-md {
+    background: linear-gradient(135deg, rgba(42, 27, 61, 0.95), rgba(248, 246, 255, 0.95)) !important;
+  }
+  
+  html.lakers .bg-white\/95.backdrop-blur-md::before {
+    background: linear-gradient(135deg, rgba(42, 27, 61, 0.95), rgba(248, 246, 255, 0.95)) !important;
+    border-color: #FDB927 !important;
+  }
 }
+
