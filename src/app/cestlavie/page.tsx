@@ -6,6 +6,9 @@ import { useSimplifiedAuth } from '@/hooks/useSimplifiedAuth'
 import { TaskRecord } from './types/task'
 import Sidebar from './components/Sidebar'
 import TaskPanelOptimized from './components/Life/TaskPanelOptimized'
+import TaskFormPanel from './components/Life/TaskFormPanel'
+import StrategyFormPanel from './components/Life/StrategyFormPanel'
+import PlanFormPanel from './components/Life/PlanFormPanel'
 import NotionConfigModal from './components/NotionConfigModal'
 import NewNavbar from '@/components/NewNavbar'
 import FooterSection from '@/components/FooterSection'
@@ -18,6 +21,12 @@ export default function CestLaViePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showConfigModal, setShowConfigModal] = useState(false)
   const [tasks, setTasks] = useState<TaskRecord[]>([])
+  const [formPanelOpen, setFormPanelOpen] = useState(false)
+  const [strategyFormOpen, setStrategyFormOpen] = useState(false)
+  const [planFormOpen, setPlanFormOpen] = useState(false)
+  const [editingTask, setEditingTask] = useState<any>(null)
+  const [editingStrategy, setEditingStrategy] = useState<any>(null)
+  const [editingPlan, setEditingPlan] = useState<any>(null)
   const { user, loading, notionConfig } = useSimplifiedAuth()
   const router = useRouter()
 
@@ -152,6 +161,18 @@ export default function CestLaViePage() {
               onTasksUpdate={setTasks} 
               user={user}
               loading={loading}
+              onOpenTaskForm={(task) => {
+                setEditingTask(task)
+                setFormPanelOpen(true)
+              }}
+              onOpenStrategyForm={(strategy) => {
+                setEditingStrategy(strategy)
+                setStrategyFormOpen(true)
+              }}
+              onOpenPlanForm={(plan) => {
+                setEditingPlan(plan)
+                setPlanFormOpen(true)
+              }}
             />
           )}
           
@@ -178,13 +199,66 @@ export default function CestLaViePage() {
         </div>
       </div>
 
+      {/* 表单模态框 - 放在顶层以避免定位问题 */}
+      <TaskFormPanel
+        isOpen={formPanelOpen}
+        onClose={() => {
+          setFormPanelOpen(false)
+          setEditingTask(null)
+        }}
+        task={editingTask}
+        onSave={(formData) => {
+          console.log('Save task:', formData)
+          setFormPanelOpen(false)
+          setEditingTask(null)
+        }}
+        statusOptions={['Not Started', 'In Progress', 'Completed']}
+        planOptions={[]}
+        strategyOptions={[]}
+        allTasks={tasks}
+      />
+      
+      <StrategyFormPanel
+        isOpen={strategyFormOpen}
+        onClose={() => {
+          setStrategyFormOpen(false)
+          setEditingStrategy(null)
+        }}
+        strategy={editingStrategy}
+        onSave={(formData) => {
+          console.log('Save strategy:', formData)
+          setStrategyFormOpen(false)
+          setEditingStrategy(null)
+        }}
+        statusOptions={['Not Started', 'In Progress', 'Completed']}
+        categoryOptions={['Personal', 'Career', 'Health']}
+        allStrategies={[]}
+      />
+      
+      <PlanFormPanel
+        isOpen={planFormOpen}
+        onClose={() => {
+          setPlanFormOpen(false)
+          setEditingPlan(null)
+        }}
+        plan={editingPlan}
+        onSave={(formData) => {
+          console.log('Save plan:', formData)
+          setPlanFormOpen(false)
+          setEditingPlan(null)
+        }}
+        statusOptions={['Not Started', 'In Progress', 'Completed']}
+        strategyOptions={[]}
+        allPlans={[]}
+      />
+
       {/* Notion配置模态框 */}
       <NotionConfigModal
         isOpen={showConfigModal}
         onClose={() => setShowConfigModal(false)}
         onConfigSaved={handleConfigSaved}
       />
-      <FooterSection hasSidebar />
+      {/* <FooterSection hasSidebar /> */}
       </PageTransition>
     </>
   )

@@ -26,9 +26,19 @@ interface TaskPanelOptimizedProps {
   onTasksUpdate?: (tasks: TaskRecord[]) => void
   user?: User | null
   loading?: boolean
+  onOpenTaskForm?: (task: TaskRecord | null) => void
+  onOpenStrategyForm?: (strategy: StrategyRecord | null) => void
+  onOpenPlanForm?: (plan: PlanRecord | null) => void
 }
 
-export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authLoading }: TaskPanelOptimizedProps) {
+export default function TaskPanelOptimized({ 
+  onTasksUpdate, 
+  user, 
+  loading: authLoading,
+  onOpenTaskForm,
+  onOpenStrategyForm,
+  onOpenPlanForm
+}: TaskPanelOptimizedProps) {
   // State management - unified data management
   const [tasks, setTasks] = useState<TaskRecord[]>([])
   const [strategies, setStrategies] = useState<StrategyRecord[]>([])
@@ -63,9 +73,22 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
   const [drillDownMode, setDrillDownMode] = useState<'all' | 'strategy-plans' | 'plan-tasks'>('all')
   const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(null)
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
+  
+  // Auto-select largest strategy on load
+  useEffect(() => {
+    if (strategies.length > 0 && !selectedStrategyId) {
+      const largestStrategy = strategies.reduce((max, strategy) => 
+        (strategy.importance_percentage || 0) > (max.importance_percentage || 0) ? strategy : max
+      )
+      setSelectedStrategyId(largestStrategy.id)
+    }
+  }, [strategies, selectedStrategyId])
 
   // Toast notification
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  
+  // Action menu state
+  const [actionMenuOpen, setActionMenuOpen] = useState(false)
 
   // Auto-dismiss toast after 3 seconds
   useEffect(() => {
@@ -77,6 +100,197 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
     }
   }, [toast])
 
+  // Enhanced text display logic for treemap rectangles
+  const getTextDisplay = useCallback((name: string, value: number, width: number, height: number) => {
+    const area = width * height
+    
+    // Very small rectangles - only show percentage
+    if (area < 1800 || width < 40 || height < 30) {
+      return {
+        showName: false,
+        showPercentage: true,
+        fontSize: Math.max(Math.min(area / 600, 12), 8),
+        nameText: '',
+        lineHeight: '1.0'
+      }
+    }
+    
+    // Small rectangles - abbreviated name
+    if (area < 4000 || width < 70) {
+      const maxChars = Math.floor(width / 8)
+      const abbreviatedName = name.length > maxChars ? name.substring(0, maxChars - 1) + '…' : name
+      return {
+        showName: true,
+        showPercentage: true,
+        fontSize: Math.max(Math.min(area / 800, 12), 9),
+        nameText: abbreviatedName,
+        lineHeight: '1.1'
+      }
+    }
+    
+    // Medium rectangles - full name with possible wrapping
+    if (area < 8000) {
+      const maxCharsPerLine = Math.floor(width / 7)
+      const words = name.split(' ')
+      let lines = []
+      let currentLine = ''
+      
+      for (const word of words) {
+        if ((currentLine + ' ' + word).length <= maxCharsPerLine) {
+          currentLine = currentLine ? currentLine + ' ' + word : word
+        } else {
+          if (currentLine) lines.push(currentLine)
+          currentLine = word.length > maxCharsPerLine ? word.substring(0, maxCharsPerLine - 1) + '…' : word
+        }
+      }
+      if (currentLine) lines.push(currentLine)
+      
+      // Limit to 2 lines max for medium rectangles
+      const displayText = lines.slice(0, 2).join('\n')
+      
+      return {
+        showName: true,
+        showPercentage: true,
+        fontSize: Math.max(Math.min(area / 1000, 14), 10),
+        nameText: displayText,
+        lineHeight: '1.2'
+      }
+    }
+    
+    // Large rectangles - full name with smart wrapping
+    const maxCharsPerLine = Math.floor(width / 6)
+    const words = name.split(' ')
+    let lines = []
+    let currentLine = ''
+    
+    for (const word of words) {
+      if ((currentLine + ' ' + word).length <= maxCharsPerLine) {
+        currentLine = currentLine ? currentLine + ' ' + word : word
+      } else {
+        if (currentLine) lines.push(currentLine)
+        currentLine = word
+      }
+    }
+    if (currentLine) lines.push(currentLine)
+    
+    // Limit to 3 lines max for large rectangles
+    const displayText = lines.slice(0, 3).join('\n')
+    
+    return {
+      showName: true,
+      showPercentage: true,
+      fontSize: Math.max(Math.min(area / 1200, 16), 11),
+      nameText: displayText,
+      lineHeight: '1.3'
+    }
+  }, [])
+
+  // Treemap calculation that fills entire space
+  const calculateTreemap = useCallback((items: Array<{ id: string; value: number; name: string }>, width: number, height: number) => {
+    if (!items.length) return []
+    
+    const totalValue = items.reduce((sum, item) => sum + item.value, 0)
+    let allItems = [...items]
+    
+    // Add blank space if total < 100%
+    if (totalValue < 100) {
+      allItems.push({
+        id: 'blank',
+        name: '',
+        value: 100 - totalValue
+      })
+    }
+    
+    const finalTotal = allItems.reduce((sum, item) => sum + item.value, 0)
+    if (finalTotal === 0) return []
+    
+    // Sort by value descending
+    const sortedItems = allItems.sort((a, b) => b.value - a.value)
+    
+    const rectangles: Array<{
+      id: string
+      name: string
+      value: number
+      x: number
+      y: number
+      width: number
+      height: number
+      isBlank?: boolean
+    }> = []
+    
+    // Simple binary space partitioning for treemap
+    function partition(items: typeof sortedItems, x: number, y: number, w: number, h: number) {
+      if (items.length === 0) return
+      
+      if (items.length === 1) {
+        const item = items[0]
+        rectangles.push({
+          id: item.id,
+          name: item.name,
+          value: item.value,
+          x,
+          y,
+          width: w,
+          height: h,
+          isBlank: item.id === 'blank'
+        })
+        return
+      }
+      
+      // Split items into two groups
+      const mid = Math.floor(items.length / 2)
+      const leftItems = items.slice(0, mid)
+      const rightItems = items.slice(mid)
+      
+      const leftSum = leftItems.reduce((sum, item) => sum + item.value, 0)
+      const totalSum = items.reduce((sum, item) => sum + item.value, 0)
+      const leftRatio = leftSum / totalSum
+      
+      // Decide whether to split horizontally or vertically
+      if (w > h) {
+        // Split vertically
+        const leftWidth = w * leftRatio
+        partition(leftItems, x, y, leftWidth, h)
+        partition(rightItems, x + leftWidth, y, w - leftWidth, h)
+      } else {
+        // Split horizontally
+        const leftHeight = h * leftRatio
+        partition(leftItems, x, y, w, leftHeight)
+        partition(rightItems, x, y + leftHeight, w, h - leftHeight)
+      }
+    }
+    
+    partition(sortedItems, 0, 0, width, height)
+    return rectangles
+  }, [])
+
+  // Bubble chart calculation
+  const calculateBubbles = useCallback((items: Array<{ id: string; value: number; name: string; time: string }>, width: number, height: number) => {
+    if (!items.length) return []
+    
+    const maxValue = Math.max(...items.map(item => item.value))
+    const minRadius = 15
+    const maxRadius = 40
+    
+    return items.map((item, index) => {
+      const radius = minRadius + (item.value / maxValue) * (maxRadius - minRadius)
+      const angle = (index / items.length) * 2 * Math.PI
+      const centerX = width / 2
+      const centerY = height / 2
+      const maxDistance = Math.min(width, height) / 3
+      const distance = Math.random() * maxDistance
+      
+      return {
+        id: item.id,
+        name: item.name,
+        value: item.value,
+        time: item.time,
+        x: centerX + Math.cos(angle) * distance,
+        y: centerY + Math.sin(angle) * distance,
+        radius
+      }
+    })
+  }, [])
 
   // Filtered data based on drill-down mode
   const displayedStrategies = useMemo(() => {
@@ -101,6 +315,66 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
     }
     return tasks
   }, [tasks, drillDownMode, selectedPlanId])
+
+  // Calculate treemap data
+  const strategyRectangles = useMemo(() => {
+    const items = strategies.map(strategy => ({
+      id: strategy.id,
+      name: strategy.objective,
+      value: strategy.importance_percentage || 1
+    }))
+    return calculateTreemap(items, 300, 300)
+  }, [strategies, calculateTreemap])
+
+  const planRectangles = useMemo(() => {
+    // Show plans for selected strategy
+    const selectedStrategyPlans = plans.filter(plan => plan.strategy === selectedStrategyId)
+    const items = selectedStrategyPlans.map(plan => ({
+      id: plan.id,
+      name: plan.objective,
+      value: plan.importance_percentage || 1
+    }))
+    return calculateTreemap(items, 300, 300)
+  }, [plans, selectedStrategyId, calculateTreemap])
+
+  // Calculate task list for selected plan
+  const selectedPlanTasks = useMemo(() => {
+    if (!selectedPlanId) return []
+    return tasks
+      .filter(task => task.plan === selectedPlanId)
+      .sort((a, b) => {
+        // Sort by start_date, then by title
+        const aDate = a.start_date ? new Date(a.start_date).getTime() : 0
+        const bDate = b.start_date ? new Date(b.start_date).getTime() : 0
+        if (aDate !== bDate) return aDate - bDate
+        return a.title.localeCompare(b.title)
+      })
+  }, [tasks, selectedPlanId])
+
+  // Handle Strategy click
+  const handleStrategyClick = useCallback((strategyId: string) => {
+    if (strategyId === 'blank') return // Ignore blank areas
+    setSelectedStrategyId(strategyId)
+    setSelectedPlanId(null) // Reset plan selection
+  }, [])
+
+  // Handle Plan click  
+  const handlePlanClick = useCallback((planId: string) => {
+    if (planId === 'blank') return // Ignore blank areas
+    setSelectedPlanId(planId)
+  }, [])
+
+  // Auto-select largest plan when strategy changes
+  useEffect(() => {
+    if (selectedStrategyId && planRectangles.length > 0) {
+      const largestPlan = planRectangles
+        .filter(rect => !rect.isBlank)
+        .reduce((max, rect) => rect.value > max.value ? rect : max, planRectangles[0])
+      if (largestPlan && !largestPlan.isBlank) {
+        setSelectedPlanId(largestPlan.id)
+      }
+    }
+  }, [selectedStrategyId, planRectangles])
 
   // Load all data only after authentication is complete and user exists
   useEffect(() => {
@@ -530,189 +804,535 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
 
   return (
     <>
-      {/* Main Content Area - Responsive Layout */}
-        <div className="fixed top-16 left-4 right-4 bottom-4 md:top-32 md:left-[68px] overflow-y-auto">
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg">
-              {error}
-            </div>
-          )}
+      {/* Main Content Area - Absolute Positioning with Scroll */}
+      <div className="fixed top-20 left-4 right-4 md:left-20 bottom-4 overflow-y-auto">
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg">
+            {error}
+          </div>
+        )}
 
-          {/* Breadcrumb Navigation - Desktop Only */}
-          <div className="hidden md:block mb-4 p-3 bg-white/90 backdrop-blur-md rounded-lg shadow-sm">
-            <nav className="flex items-center gap-2 text-sm">
-              <button
-                onClick={handleBackToAll}
-                className={`transition-colors ${drillDownMode === 'all' ? 'text-gray-700 font-medium' : 'text-purple-600 hover:text-purple-800 hover:underline'}`}
-              >
-                All
-              </button>
-              
-              {selectedStrategyId && (
-                <>
-                  <span className="text-gray-400">></span>
-                  <button
-                    onClick={handleBackToStrategy}
-                    className={`transition-colors ${drillDownMode === 'strategy-plans' ? 'text-gray-700 font-medium' : 'text-purple-600 hover:text-purple-800 hover:underline'}`}
-                  >
-                    Strategy: {strategies.find(s => s.id === selectedStrategyId)?.objective || 'Unknown'}
-                  </button>
-                </>
-              )}
-              
-              {selectedPlanId && (
-                <>
-                  <span className="text-gray-400">></span>
-                  <span className="text-gray-700 font-medium">
-                    Plan: {plans.find(p => p.id === selectedPlanId)?.objective || 'Unknown'}
-                  </span>
-                </>
-              )}
-            </nav>
+        {/* First Row - 3 Columns Grid */}
+        <div className="grid grid-cols-3 gap-6 mb-6">
+          {/* Left Column - Calendar Card */}
+          <div className="aspect-square">
+            <TaskCalendarView
+              tasks={tasks}
+              currentMonth={currentMonth}
+              selectedDate={selectedDate}
+              onDateSelect={setSelectedDate}
+              onMonthChange={setCurrentMonth}
+              onTaskSelect={openFormPanel}
+            />
           </div>
 
-          {/* Responsive Layout: Mobile vertical stack, Desktop 3-column */}
-          <div className="flex flex-col space-y-6 md:flex-row md:space-y-0 md:gap-6">
-            
-            {/* Calendar Module - Mobile first, Desktop right column with Task */}
-            <div className="order-1 md:order-3 md:flex-1 md:min-w-0 md:space-y-6">
-              <TaskCalendarView
-                tasks={tasks}
-                currentMonth={currentMonth}
-                selectedDate={selectedDate}
-                onDateSelect={setSelectedDate}
-                onMonthChange={setCurrentMonth}
-                onTaskSelect={openFormPanel}
-              />
-
-              {/* Task Module - Mobile second, grouped with Calendar on desktop */}
-              <div className="order-2 bg-white/90 backdrop-blur-md rounded-xl shadow-xl">
-                {/* Task Module Header */}
-                <div className="p-4 border-b border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-semibold text-purple-900">Tasks</h3>
-                    <button
-                      onClick={() => openFormPanel()}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-all duration-200"
-                    >
-                      <span>Add Task</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Task Content */}
-                <div className="p-4">
-                  <TaskListView
-                    tasks={displayedTasks}
-                    onTaskSelect={openFormPanel}
-                    onTaskUpdate={async (taskId, updates) => {
-                      const task = tasks.find(t => t.id === taskId)
-                      if (task) {
-                        const updatedTask = { ...task, ...updates }
-                        setTasks(prev => prev.map(t => t.id === taskId ? updatedTask : t))
-                      }
-                    }}
-                    onTaskDelete={handleDeleteTask}
-                    statusOptions={statusOptions}
-                    selectedDate={selectedDate}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Plan Module - Mobile third, Desktop middle column */}
-            <div className="order-3 md:order-2 md:flex-1 md:min-w-0">
-              <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl">
-                <div className="p-3 border-b border-gray-200 flex items-center justify-between">
-                  <h3 className="text-base font-semibold text-purple-900">Plans</h3>
-                  <button 
-                    onClick={() => openPlanForm()}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-all duration-200"
-                  >
-                    <span>Add Plan</span>
-                  </button>
-                </div>
-                <PlanContent 
-                  plans={displayedPlans}
-                  loading={loading}
-                  error={error}
-                  onPlanUpdate={handlePlanUpdate}
-                  onPlanEdit={handlePlanEdit}
-                  onPlanDelete={handlePlanDelete}
-                  onPlanDrillDown={handlePlanDrillDown}
-                  onAddTaskFromPlan={(planId) => openFormPanel(undefined, planId)}
-                  enableDrillDown={typeof window !== 'undefined' && window.innerWidth >= 768}
-                  statusOptions={planStatusOptions}
-                />
-              </div>
-            </div>
-
-            {/* Strategy Module - Mobile fourth (last), Desktop left column */}
-            <div className="order-4 md:order-1 md:flex-1 md:min-w-0">
-              <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl">
-                <div className="p-3 border-b border-gray-200 flex items-center justify-between">
-                  <h3 className="text-base font-semibold text-purple-900">Strategy</h3>
-                  <button 
-                    onClick={() => openStrategyForm()}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-all duration-200"
-                  >
-                    <span>Add Strategy</span>
-                  </button>
-                </div>
-                <StrategyContent 
-                  strategies={displayedStrategies}
-                  loading={loading}
-                  error={error}
-                  onStrategyUpdate={handleStrategyUpdate}
-                  onStrategyEdit={handleStrategyEdit}
-                  onStrategyDelete={handleStrategyDelete}
-                  onStrategyDrillDown={handleStrategyDrillDown}
-                  onAddPlanFromStrategy={(strategyId) => openPlanForm(undefined, strategyId)}
-                  enableDrillDown={typeof window !== 'undefined' && window.innerWidth >= 768}
-                  statusOptions={strategyStatusOptions}
-                          categoryOptions={strategyCategoryOptions}
-                />
-              </div>
-            </div>
+          {/* Middle Column - Placeholder */}
+          <div className="aspect-square border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center">
+            <span className="text-gray-400 text-sm">Placeholder 2</span>
           </div>
-          
-          {/* 移动端底部留出安全距离，避免被底部聚合导航遮挡 */}
-          <div className="pb-20 md:pb-4"></div>
+
+          {/* Right Column - Placeholder */}
+          <div className="aspect-square border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center">
+            <span className="text-gray-400 text-sm">Placeholder 3</span>
+          </div>
         </div>
 
-        {/* Task Form Panel */}
-        <TaskFormPanel
-          isOpen={formPanelOpen}
-          onClose={closeFormPanel}
-          task={editingTask}
-          onSave={handleSaveTask}
-          statusOptions={statusOptions}
-          planOptions={planOptions}
-          strategyOptions={strategyOptions}
-          allTasks={tasks}
-        />
+        {/* Second Row - 3 Columns Grid (Same as first row) */}
+        <div className="grid grid-cols-3 gap-6">
+          {/* Left Column - Strategy */}
+          <div className="flex flex-col gap-2">
+            {/* Strategy Title Bar */}
+            <div className="flex items-center justify-between px-3 py-2 bg-white/70 backdrop-blur-sm rounded-lg shadow-sm">
+              <span className="text-sm font-medium text-gray-700">Strategy</span>
+              <button
+                onClick={() => openStrategyForm()}
+                className="w-6 h-6 flex items-center justify-center hover:bg-purple-50 rounded-full transition-colors"
+              >
+                <span className="text-gray-500 text-xs">⋮</span>
+              </button>
+            </div>
+            
+            {/* Strategy Treemap */}
+          {strategyRectangles.length > 0 ? (
+            <svg width="100%" height="100%" viewBox="0 0 300 300" className="rounded-lg overflow-hidden aspect-square">
+              {strategyRectangles.map((rect) => {
+                // Handle blank areas
+                if (rect.isBlank) {
+                  return (
+                    <rect
+                      key={rect.id}
+                      x={rect.x}
+                      y={rect.y}
+                      width={rect.width}
+                      height={rect.height}
+                      fill="hsl(260, 60%, 85%)"
+                      stroke="#ffffff"
+                      strokeWidth="1"
+                    />
+                  )
+                }
+                
+                // Strategy: Blue-purple gradient
+                const intensity = Math.min(rect.value / 100, 1)
+                const saturation = 60 + (intensity * 30) // 60-90%
+                const lightness = 80 - (intensity * 40) // 80-40%
+                const bgColor = `hsl(260, ${saturation}%, ${lightness}%)`
+                const textColor = intensity > 0.5 ? 'white' : '#4a5568'
+                const isSelected = selectedStrategyId === rect.id
+                
+                // Get smart text display
+                const textDisplay = getTextDisplay(rect.name, rect.value, rect.width, rect.height)
+                
+                return (
+                  <g key={rect.id}>
+                    <rect
+                      x={rect.x}
+                      y={rect.y}
+                      width={rect.width}
+                      height={rect.height}
+                      fill={bgColor}
+                      stroke="#ffffff"
+                      strokeWidth="1"
+                      className="transition-all duration-200 hover:brightness-110 hover:scale-[1.02] cursor-pointer shadow-sm hover:shadow-md"
+                      style={{ transformOrigin: `${rect.x + rect.width/2}px ${rect.y + rect.height/2}px` }}
+                      onClick={() => handleStrategyClick(rect.id)}
+                    />
+                    
+                    <foreignObject
+                      x={rect.x + 2}
+                      y={rect.y + 2}
+                      width={rect.width - 4}
+                      height={rect.height - 4}
+                      className="pointer-events-none"
+                    >
+                      <div className="flex flex-col justify-center h-full text-center px-1">
+                        {textDisplay.showName && textDisplay.nameText && (
+                          <div 
+                            className="font-medium"
+                            style={{ 
+                              color: textColor,
+                              fontSize: `${textDisplay.fontSize}px`,
+                              lineHeight: textDisplay.lineHeight,
+                              whiteSpace: 'pre-line'
+                            }}
+                          >
+                            {textDisplay.nameText}
+                          </div>
+                        )}
+                        {textDisplay.showPercentage && (
+                          <div 
+                            className={`font-semibold ${textDisplay.showName && textDisplay.nameText ? 'mt-1' : ''}`}
+                            style={{ 
+                              color: textColor,
+                              fontSize: `${textDisplay.fontSize * 0.8}px`,
+                              opacity: 0.9
+                            }}
+                          >
+                            {rect.value}%
+                          </div>
+                        )}
+                      </div>
+                    </foreignObject>
+                    
+                    {/* Strategy Control Dot - Top Right Corner */}
+                    <foreignObject
+                      x={rect.x + rect.width - 20}
+                      y={rect.y + 2}
+                      width="18"
+                      height="18"
+                      className="pointer-events-auto"
+                    >
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          // Find strategy and open edit form
+                          const strategy = strategies.find(s => s.id === rect.id)
+                          if (strategy) {
+                            setEditingStrategy(strategy)
+                            setStrategyFormOpen(true)
+                          }
+                        }}
+                        className="w-full h-full bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-150"
+                      >
+                        <span className="text-gray-600 text-xs leading-none">⋮</span>
+                      </button>
+                    </foreignObject>
+                  </g>
+                )
+              })}
+            </svg>
+          ) : (
+            <div className="aspect-square bg-gray-50 rounded-lg flex items-center justify-center">
+              <span className="text-gray-400 text-sm">No strategies</span>
+            </div>
+          )}
+          </div>
 
-        {/* Strategy Form Panel */}
-        <StrategyFormPanel
-          isOpen={strategyFormOpen}
-          onClose={closeStrategyForm}
-          strategy={editingStrategy}
-          onSave={handleSaveStrategy}
-          statusOptions={strategyStatusOptions}
-          categoryOptions={strategyCategoryOptions}
-          allStrategies={strategies}
-        />
+          {/* Middle Column - Plan */}
+          <div className="flex flex-col gap-2">
+            {/* Plan Title Bar */}
+            <div className="flex items-center justify-between px-3 py-2 bg-white/70 backdrop-blur-sm rounded-lg shadow-sm">
+              <span className="text-sm font-medium text-gray-700">Plan</span>
+              <button
+                onClick={() => openPlanForm()}
+                className="w-6 h-6 flex items-center justify-center hover:bg-purple-50 rounded-full transition-colors"
+              >
+                <span className="text-gray-500 text-xs">⋮</span>
+              </button>
+            </div>
+            
+            {/* Plan Treemap */}
+          {planRectangles.length > 0 ? (
+            <svg width="100%" height="100%" viewBox="0 0 300 300" className="rounded-lg overflow-hidden aspect-square">
+              {planRectangles.map((rect) => {
+                // Handle blank areas
+                if (rect.isBlank) {
+                  return (
+                    <rect
+                      key={rect.id}
+                      x={rect.x}
+                      y={rect.y}
+                      width={rect.width}
+                      height={rect.height}
+                      fill="hsl(280, 50%, 90%)"
+                      stroke="#ffffff"
+                      strokeWidth="1"
+                    />
+                  )
+                }
+                
+                // Plan: Pink-purple gradient
+                const intensity = Math.min(rect.value / 100, 1)
+                const saturation = 50 + (intensity * 30) // 50-80%
+                const lightness = 85 - (intensity * 25) // 85-60%
+                const bgColor = `hsl(280, ${saturation}%, ${lightness}%)`
+                const textColor = intensity > 0.5 ? 'white' : '#4a5568'
+                const isSelected = selectedPlanId === rect.id
+                
+                // Get smart text display
+                const textDisplay = getTextDisplay(rect.name, rect.value, rect.width, rect.height)
+                
+                return (
+                  <g key={rect.id}>
+                    <rect
+                      x={rect.x}
+                      y={rect.y}
+                      width={rect.width}
+                      height={rect.height}
+                      fill={bgColor}
+                      stroke="#ffffff"
+                      strokeWidth="1"
+                      className="transition-all duration-200 hover:brightness-110 hover:scale-[1.02] cursor-pointer shadow-sm hover:shadow-md"
+                      style={{ transformOrigin: `${rect.x + rect.width/2}px ${rect.y + rect.height/2}px` }}
+                      onClick={() => handlePlanClick(rect.id)}
+                    />
+                    
+                    <foreignObject
+                      x={rect.x + 2}
+                      y={rect.y + 2}
+                      width={rect.width - 4}
+                      height={rect.height - 4}
+                      className="pointer-events-none"
+                    >
+                      <div className="flex flex-col justify-center h-full text-center px-1">
+                        {textDisplay.showName && textDisplay.nameText && (
+                          <div 
+                            className="font-medium"
+                            style={{ 
+                              color: textColor,
+                              fontSize: `${textDisplay.fontSize}px`,
+                              lineHeight: textDisplay.lineHeight,
+                              whiteSpace: 'pre-line'
+                            }}
+                          >
+                            {textDisplay.nameText}
+                          </div>
+                        )}
+                        {textDisplay.showPercentage && (
+                          <div 
+                            className={`font-semibold ${textDisplay.showName && textDisplay.nameText ? 'mt-1' : ''}`}
+                            style={{ 
+                              color: textColor,
+                              fontSize: `${textDisplay.fontSize * 0.8}px`,
+                              opacity: 0.9
+                            }}
+                          >
+                            {rect.value}%
+                          </div>
+                        )}
+                      </div>
+                    </foreignObject>
+                    
+                    {/* Plan Control Dot - Top Right Corner */}
+                    <foreignObject
+                      x={rect.x + rect.width - 20}
+                      y={rect.y + 2}
+                      width="18"
+                      height="18"
+                      className="pointer-events-auto"
+                    >
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          // Find plan and open edit form
+                          const plan = plans.find(p => p.id === rect.id)
+                          if (plan) {
+                            setEditingPlan(plan)
+                            setPlanFormOpen(true)
+                          }
+                        }}
+                        className="w-full h-full bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-150"
+                      >
+                        <span className="text-gray-600 text-xs leading-none">⋮</span>
+                      </button>
+                    </foreignObject>
+                  </g>
+                )
+              })}
+            </svg>
+          ) : (
+            <div className="aspect-square bg-gray-50 rounded-lg flex items-center justify-center">
+              <span className="text-gray-400 text-sm">No plans</span>
+            </div>
+          )}
+          </div>
 
-        {/* Plan Form Panel */}
-        <PlanFormPanel
-          isOpen={planFormOpen}
-          onClose={closePlanForm}
-          plan={editingPlan}
-          onSave={handleSavePlan}
-          statusOptions={planStatusOptions}
-          strategyOptions={strategyOptions}
-          allPlans={plans}
+          {/* Right Column - Task */}
+          <div className="flex flex-col gap-2">
+            {/* Task Title Bar */}
+            <div className="flex items-center justify-between px-3 py-2 bg-white/70 backdrop-blur-sm rounded-lg shadow-sm">
+              <span className="text-sm font-medium text-gray-700">Task</span>
+              <button
+                onClick={() => openFormPanel()}
+                className="w-6 h-6 flex items-center justify-center hover:bg-purple-50 rounded-full transition-colors"
+              >
+                <span className="text-gray-500 text-xs">⋮</span>
+              </button>
+            </div>
+            
+            {/* Task List */}
+          <div className="aspect-square bg-white/90 backdrop-blur-md rounded-xl shadow-xl p-4 overflow-y-auto">
+            {selectedPlanTasks.length > 0 ? (
+              <div className="space-y-2">
+                {selectedPlanTasks.map((task) => {
+                  const dateTimeStr = task.start_date 
+                    ? new Date(task.start_date).toLocaleString('en-CA', {
+                        year: 'numeric',
+                        month: '2-digit', 
+                        day: '2-digit',
+                        hour: '2-digit', 
+                        minute: '2-digit',
+                        hour12: false 
+                      }).replace(',', '')
+                    : '????-??-?? ??:??'
+                  
+                  return (
+                    <div 
+                      key={task.id} 
+                      className="group flex items-center gap-3 p-2 rounded-lg hover:bg-purple-50 transition-colors cursor-pointer"
+                    >
+                      <div className="text-xs font-mono text-purple-600 min-w-[8rem]">
+                        {dateTimeStr}
+                      </div>
+                      <div className="flex-1 text-sm text-gray-700 leading-tight">
+                        {task.title}
+                      </div>
+                      {task.status === 'Completed' && (
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      )}
+                      
+                      {/* Task Control Dot - Right Side */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          // Open task edit form
+                          setEditingTask(task)
+                          setFormPanelOpen(true)
+                        }}
+                        className="w-6 h-6 flex items-center justify-center hover:bg-purple-100 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        <span className="text-gray-500 text-xs leading-none">⋮</span>
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full text-gray-400">
+                <div className="text-center">
+                  <div className="text-2xl mb-2">📋</div>
+                  <p className="text-sm">No tasks</p>
+                </div>
+              </div>
+            )}
+          </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Menu - Separate absolute positioning */}
+      <div className="fixed top-20 right-4 z-40">
+        <button
+          onClick={() => setActionMenuOpen(!actionMenuOpen)}
+          className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-purple-50 hover:shadow-md transition-all duration-200"
+        >
+          <span className="text-gray-600">⋮</span>
+        </button>
+        
+        {actionMenuOpen && (
+          <div className="absolute top-10 right-0 z-50 bg-white rounded-xl shadow-xl border border-gray-200 p-2 min-w-48">
+            <div className="group relative">
+              <div className="px-3 py-2 text-sm font-medium text-purple-600 hover:bg-purple-50 rounded-lg cursor-pointer">
+                Add
+              </div>
+              <div className="absolute right-full top-0 mr-1 hidden group-hover:block bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-24">
+                <button
+                  onClick={() => openStrategyForm()}
+                  className="block w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-purple-50 rounded text-left"
+                >
+                  Strategy
+                </button>
+                <button
+                  onClick={() => openPlanForm()}
+                  className="block w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-purple-50 rounded text-left"
+                >
+                  Plan
+                </button>
+                <button
+                  onClick={() => openFormPanel()}
+                  className="block w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-purple-50 rounded text-left"
+                >
+                  Task
+                </button>
+              </div>
+            </div>
+            
+            <div className="group relative">
+              <div className="px-3 py-2 text-sm font-medium text-purple-600 hover:bg-purple-50 rounded-lg cursor-pointer">
+                Edit
+              </div>
+              <div className="absolute right-full top-0 mr-1 hidden group-hover:block bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-24">
+                <button
+                  onClick={() => {
+                    if (selectedStrategyId) {
+                      const strategy = strategies.find(s => s.id === selectedStrategyId)
+                      if (strategy) openStrategyForm(strategy)
+                    }
+                  }}
+                  className="block w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-purple-50 rounded text-left disabled:opacity-50"
+                  disabled={!selectedStrategyId}
+                >
+                  Strategy
+                </button>
+                <button
+                  onClick={() => {
+                    if (selectedPlanId) {
+                      const plan = plans.find(p => p.id === selectedPlanId)
+                      if (plan) openPlanForm(plan)
+                    }
+                  }}
+                  className="block w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-purple-50 rounded text-left disabled:opacity-50"
+                  disabled={!selectedPlanId}
+                >
+                  Plan
+                </button>
+                <button
+                  onClick={() => openFormPanel()}
+                  className="block w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-purple-50 rounded text-left"
+                >
+                  Task
+                </button>
+              </div>
+            </div>
+            
+            <div className="group relative">
+              <div className="px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg cursor-pointer">
+                Delete
+              </div>
+              <div className="absolute right-full top-0 mr-1 hidden group-hover:block bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-24">
+                <button
+                  onClick={() => {
+                    if (selectedStrategyId) handleStrategyDelete(selectedStrategyId)
+                  }}
+                  className="block w-full px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded text-left disabled:opacity-50"
+                  disabled={!selectedStrategyId}
+                >
+                  Strategy
+                </button>
+                <button
+                  onClick={() => {
+                    if (selectedPlanId) handlePlanDelete(selectedPlanId)
+                  }}
+                  className="block w-full px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded text-left disabled:opacity-50"
+                  disabled={!selectedPlanId}
+                >
+                  Plan
+                </button>
+                <button
+                  onClick={() => openFormPanel()}
+                  className="block w-full px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded text-left"
+                >
+                  Task
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Click outside to close action menu */}
+      {actionMenuOpen && (
+        <div 
+          className="fixed inset-0 z-30" 
+          onClick={() => setActionMenuOpen(false)}
         />
+      )}
+
+      {/* Form Panel Backdrop */}
+      {(formPanelOpen || strategyFormOpen || planFormOpen) && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm transition-opacity duration-300"
+          onClick={() => {
+            if (formPanelOpen) setFormPanelOpen(false)
+            if (strategyFormOpen) setStrategyFormOpen(false)
+            if (planFormOpen) setPlanFormOpen(false)
+          }}
+        />
+      )}
+
+      {/* Task Form Panel */}
+      <TaskFormPanel
+        isOpen={formPanelOpen}
+        onClose={closeFormPanel}
+        task={editingTask}
+        onSave={handleSaveTask}
+        statusOptions={statusOptions}
+        planOptions={planOptions}
+        strategyOptions={strategyOptions}
+        allTasks={tasks}
+      />
+
+      {/* Strategy Form Panel */}
+      <StrategyFormPanel
+        isOpen={strategyFormOpen}
+        onClose={closeStrategyForm}
+        strategy={editingStrategy}
+        onSave={handleSaveStrategy}
+        statusOptions={strategyStatusOptions}
+        categoryOptions={strategyCategoryOptions}
+        allStrategies={strategies}
+      />
+
+      {/* Plan Form Panel */}
+      <PlanFormPanel
+        isOpen={planFormOpen}
+        onClose={closePlanForm}
+        plan={editingPlan}
+        onSave={handleSavePlan}
+        statusOptions={planStatusOptions}
+        strategyOptions={strategyOptions}
+        allPlans={plans}
+      />
 
       {/* Toast Notification */}
       {toast && (

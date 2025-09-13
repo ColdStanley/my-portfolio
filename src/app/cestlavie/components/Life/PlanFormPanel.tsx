@@ -107,20 +107,19 @@ export default function PlanFormPanel({
 
   return (
     <>
-      {/* Plan Form Panel - Sidebar Style Drawer */}
+      {/* Plan Form Panel - Modal Style */}
       <div 
-        className={`hidden md:block fixed top-32 right-2 w-80 h-[calc(100vh-12rem)] bg-white border border-gray-200 rounded-xl shadow-lg z-50 transform transition-all duration-400 flex flex-col ${
-          isOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full shadow-lg'
+        className={`hidden md:block fixed inset-0 flex items-center justify-center z-50 transition-all duration-300 ${
+          isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
         }`}
-        style={{
-          transitionTimingFunction: isOpen 
-            ? 'cubic-bezier(0.34, 1.56, 0.64, 1)' 
-            : 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-        }}
       >
+        <div 
+          className="w-96 max-h-[85vh] bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col transform transition-all duration-300"
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* Header with Close Button */}
-        <div className="flex justify-between items-center p-4 border-b border-gray-100 flex-shrink-0">
-          <h2 className="text-sm font-medium text-purple-800">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 flex-shrink-0">
+          <h2 className="text-lg font-semibold text-purple-800">
             {plan ? 'Edit Plan' : 'New Plan'}
           </h2>
           <button onClick={onClose} className="p-1 hover:bg-purple-700/100 rounded transition-colors">
@@ -131,7 +130,7 @@ export default function PlanFormPanel({
         </div>
         
         {/* Form Content */}
-        <form onSubmit={handleSubmit} className="p-3 overflow-y-auto min-h-0 flex-1 space-y-3">
+        <form id="plan-form" onSubmit={handleSubmit} className="px-6 py-4 overflow-y-auto min-h-0 flex-1 space-y-4">
           {/* Strategy Selection */}
           <div>
             <label className="block text-xs font-medium text-purple-600 mb-1">Strategy *</label>
@@ -288,30 +287,37 @@ export default function PlanFormPanel({
             </div>
           )}
 
-          {/* Submit Button */}
-          <div>
-            <button
-              type="submit"
-              disabled={!isValid && formData.strategy && formData.importance_percentage !== 0}
-              className={`w-full py-2 px-4 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500
-                        transition-colors duration-200 font-medium text-sm shadow-sm hover:shadow-md
-                        ${!isValid && formData.strategy && formData.importance_percentage !== 0
-                          ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                          : 'bg-purple-600 hover:bg-purple-700 text-white'
-                        }`}
-            >
-              {plan ? 'Update Plan' : 'Create Plan'}
-            </button>
-          </div>
         </form>
+        
+        {/* Footer with Submit Button */}
+        <div className="px-6 py-4 border-t border-gray-100 flex-shrink-0">
+          <button
+            type="submit"
+            form="plan-form"
+            disabled={!isValid && formData.strategy && formData.importance_percentage !== 0}
+            className={`w-full py-2.5 px-4 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500
+                      transition-colors duration-200 font-medium text-sm shadow-sm hover:shadow-md
+                      ${!isValid && formData.strategy && formData.importance_percentage !== 0
+                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                        : 'bg-purple-600 hover:bg-purple-700 text-white'
+                      }`}
+          >
+            {plan ? 'Update Plan' : 'Create Plan'}
+          </button>
+        </div>
+        </div>
       </div>
 
-      {/* Mobile Full Screen Modal */}
+      {/* Mobile Modal */}
       <div 
-        className={`md:hidden fixed inset-0 bg-white z-50 transform transition-transform duration-300 ease-out flex flex-col ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
+        className={`md:hidden fixed inset-4 flex items-center justify-center z-50 transition-all duration-300 ${
+          isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
         }`}
       >
+        <div 
+          className="w-full max-w-sm max-h-full bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col transform transition-all duration-300"
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* Mobile Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-100 flex-shrink-0">
           <h2 className="text-lg font-medium text-purple-800">
@@ -499,6 +505,7 @@ export default function PlanFormPanel({
             </button>
           </div>
         </form>
+      </div>
       </div>
     </>
   )
