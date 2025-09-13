@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { getDefaultPlanFormData } from '../../utils/planUtils'
 import { PlanRecord, PlanFormData, PlanFormPanelProps, StrategyOption } from '../../types/plan'
 
@@ -11,8 +11,8 @@ export default function PlanFormPanel({
   plan, 
   onSave, 
   statusOptions, 
-  priorityOptions, 
-  strategyOptions
+  strategyOptions,
+  allPlans = []
 }: PlanFormPanelProps) {
   const [formData, setFormData] = useState<PlanFormData>({
     objective: '',
@@ -20,9 +20,10 @@ export default function PlanFormPanel({
     start_date: '',
     due_date: '',
     status: '',
-    priority_quadrant: '',
-    strategy: ''
+    strategy: '',
+    importance_percentage: 0
   })
+  const [validationError, setValidationError] = useState<string | null>(null)
 
   // Initialize form data when plan changes
   useEffect(() => {
@@ -33,8 +34,8 @@ export default function PlanFormPanel({
         start_date: plan.start_date ? plan.start_date.split('T')[0] : '',
         due_date: plan.due_date ? plan.due_date.split('T')[0] : '',
         status: plan.status || '',
-        priority_quadrant: plan.priority_quadrant || '',
-        strategy: plan.strategy || ''
+        strategy: plan.strategy || '',
+        importance_percentage: plan.importance_percentage || 0
       })
     } else {
       // Check for default strategy ID from window
@@ -46,14 +47,46 @@ export default function PlanFormPanel({
         start_date: '',
         due_date: '',
         status: '',
-        priority_quadrant: '',
-        strategy: defaultStrategyId
+        strategy: defaultStrategyId,
+        importance_percentage: 0
       })
     }
   }, [plan, isOpen])
 
+  // Calculate current total percentage within the selected Strategy, excluding the edited plan
+  const currentTotal = useMemo(() => {
+    if (!formData.strategy) return 0
+    
+    const plansInSameStrategy = allPlans.filter(p => 
+      p.strategy === formData.strategy && p.id !== plan?.id
+    )
+    return plansInSameStrategy.reduce((sum, p) => sum + (p.importance_percentage || 0), 0)
+  }, [allPlans, formData.strategy, plan?.id])
+
+  // Calculate what the total would be with current form data
+  const projectedTotal = useMemo(() => {
+    return currentTotal + (formData.importance_percentage || 0)
+  }, [currentTotal, formData.importance_percentage])
+
+  // Validation check
+  const isValid = useMemo(() => {
+    if (!formData.strategy) return true // No validation if no strategy selected
+    if (!formData.importance_percentage || formData.importance_percentage === 0) {
+      return true // Allow 0 or empty percentage
+    }
+    return projectedTotal <= 100
+  }, [projectedTotal, formData.importance_percentage, formData.strategy])
+
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Check 100% constraint for Plans within Strategy
+    if (!isValid && formData.strategy) {
+      setValidationError(`Total percentage within this Strategy cannot exceed 100%. Current total: ${projectedTotal}%`)
+      return
+    }
+    
+    setValidationError(null)
     
     // Convert dates to UTC format
     const processedFormData = {
@@ -63,7 +96,7 @@ export default function PlanFormPanel({
     }
     
     onSave(processedFormData)
-  }, [formData, onSave])
+  }, [formData, onSave, isValid, projectedTotal])
 
   const handleStrategyChange = useCallback((strategyId: string) => {
     setFormData(prev => ({ 
@@ -137,45 +170,64 @@ export default function PlanFormPanel({
             />
           </div>
 
-          {/* Status & Priority - 2 Column Layout */}
-          <div className="grid grid-cols-2 gap-3">
-            {/* Status */}
-            <div>
-              <label className="block text-xs font-medium text-purple-600 mb-1">Status *</label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-md 
-                          focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                          bg-white text-purple-700 text-sm
-                          hover:border-gray-300 transition-all duration-200"
-                required
-              >
-                <option value="">Status</option>
-                {statusOptions.map(status => (
-                  <option key={status} value={status}>{status}</option>
-                ))}
-              </select>
-            </div>
+          {/* Status */}
+          <div>
+            <label className="block text-xs font-medium text-purple-600 mb-1">Status *</label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-200 rounded-md 
+                        focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
+                        bg-white text-purple-700 text-sm
+                        hover:border-gray-300 transition-all duration-200"
+              required
+            >
+              <option value="">Status</option>
+              {statusOptions.map(status => (
+                <option key={status} value={status}>{status}</option>
+              ))}
+            </select>
+          </div>
 
-            {/* Priority Quadrant */}
-            <div>
-              <label className="block text-xs font-medium text-purple-600 mb-1">Priority *</label>
-              <select
-                value={formData.priority_quadrant}
-                onChange={(e) => setFormData(prev => ({ ...prev, priority_quadrant: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-md 
-                          focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
-                          bg-white text-purple-700 text-sm
-                          hover:border-gray-300 transition-all duration-200"
-                required
-              >
-                <option value="">Priority</option>
-                {priorityOptions.map(priority => (
-                  <option key={priority} value={priority}>{priority}</option>
-                ))}
-              </select>
-            </div>
+          {/* Importance Percentage */}
+          <div>
+            <label className="block text-xs font-medium text-purple-600 mb-1">
+              重要性占比
+              <span className="text-xs text-purple-400 ml-1">(%)</span>
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="0.1"
+              value={formData.importance_percentage || ''}
+              onChange={(e) => {
+                const value = parseFloat(e.target.value) || 0
+                setFormData(prev => ({ 
+                  ...prev, 
+                  importance_percentage: value 
+                }))
+                // Clear validation error when user types
+                if (validationError) setValidationError(null)
+              }}
+              className={`w-full px-3 py-2 border rounded-md 
+                        focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
+                        bg-white text-purple-700 text-sm
+                        hover:border-gray-300 transition-all duration-200
+                        ${!isValid ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
+              placeholder="25"
+            />
+            {/* Percentage info for Strategy */}
+            {formData.strategy && (
+              <div className="mt-1 text-xs">
+                <span className={projectedTotal > 100 ? 'text-red-600' : 'text-purple-400'}>
+                  Strategy Total: {projectedTotal}% / 100%
+                </span>
+                {projectedTotal > 100 && (
+                  <span className="text-red-600 ml-2">⚠ Exceeds 100%</span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Date Range - 2 Row Layout */}
@@ -229,14 +281,24 @@ export default function PlanFormPanel({
             />
           </div>
 
+          {/* Validation Error */}
+          {validationError && (
+            <div className="p-2 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-xs text-red-600">{validationError}</p>
+            </div>
+          )}
+
           {/* Submit Button */}
           <div>
             <button
               type="submit"
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 
-                        rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500
-                        transition-colors duration-200 font-medium text-sm
-                        shadow-sm hover:shadow-md"
+              disabled={!isValid && formData.strategy && formData.importance_percentage !== 0}
+              className={`w-full py-2 px-4 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500
+                        transition-colors duration-200 font-medium text-sm shadow-sm hover:shadow-md
+                        ${!isValid && formData.strategy && formData.importance_percentage !== 0
+                          ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                          : 'bg-purple-600 hover:bg-purple-700 text-white'
+                        }`}
             >
               {plan ? 'Update Plan' : 'Create Plan'}
             </button>
@@ -321,23 +383,46 @@ export default function PlanFormPanel({
             </select>
           </div>
 
-          {/* Priority */}
+
+          {/* Importance Percentage - Mobile */}
           <div>
-            <label className="block text-sm font-medium text-purple-600 mb-2">Priority *</label>
-            <select
-              value={formData.priority_quadrant}
-              onChange={(e) => setFormData(prev => ({ ...prev, priority_quadrant: e.target.value }))}
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg 
+            <label className="block text-sm font-medium text-purple-600 mb-2">
+              重要性占比
+              <span className="text-xs text-purple-400 ml-2">(%)</span>
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="0.1"
+              value={formData.importance_percentage || ''}
+              onChange={(e) => {
+                const value = parseFloat(e.target.value) || 0
+                setFormData(prev => ({ 
+                  ...prev, 
+                  importance_percentage: value 
+                }))
+                // Clear validation error when user types
+                if (validationError) setValidationError(null)
+              }}
+              className={`w-full px-4 py-3 border rounded-lg 
                         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
                         bg-white text-purple-700
-                        hover:border-gray-300 transition-all duration-200"
-              required
-            >
-              <option value="">Priority</option>
-              {priorityOptions.map(priority => (
-                <option key={priority} value={priority}>{priority}</option>
-              ))}
-            </select>
+                        hover:border-gray-300 transition-all duration-200
+                        ${!isValid ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
+              placeholder="25"
+            />
+            {/* Percentage info for Strategy - Mobile */}
+            {formData.strategy && (
+              <div className="mt-2 text-sm">
+                <span className={projectedTotal > 100 ? 'text-red-600' : 'text-purple-400'}>
+                  Strategy Total: {projectedTotal}% / 100%
+                </span>
+                {projectedTotal > 100 && (
+                  <span className="text-red-600 ml-2">⚠ Exceeds 100%</span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Date Range */}
@@ -391,14 +476,24 @@ export default function PlanFormPanel({
             />
           </div>
 
+          {/* Validation Error - Mobile */}
+          {validationError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{validationError}</p>
+            </div>
+          )}
+
           {/* Submit Button */}
           <div className="pb-6">
             <button
               type="submit"
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 
-                        rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500
-                        transition-colors duration-200 font-medium
-                        shadow-md hover:shadow-lg"
+              disabled={!isValid && formData.strategy && formData.importance_percentage !== 0}
+              className={`w-full py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500
+                        transition-colors duration-200 font-medium shadow-md hover:shadow-lg
+                        ${!isValid && formData.strategy && formData.importance_percentage !== 0
+                          ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                          : 'bg-purple-600 hover:bg-purple-700 text-white'
+                        }`}
             >
               {plan ? 'Update Plan' : 'Create Plan'}
             </button>

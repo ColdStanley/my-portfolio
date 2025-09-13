@@ -15,7 +15,6 @@ interface TaskData {
   status: string
   start_date?: string
   end_date?: string
-  priority_quadrant?: string
   plan?: string[]
   note?: string
 }
@@ -67,15 +66,6 @@ class EmailService {
     return `${startTime} - ${endTime}`
   }
 
-  private getPriorityEmoji(priority?: string): string {
-    switch (priority) {
-      case 'Important & Urgent': return '🔴'
-      case 'Important & Not Urgent': return '🟡'
-      case 'Not Important & Urgent': return '🟠'
-      case 'Not Important & Not Urgent': return '🟢'
-      default: return '📋'
-    }
-  }
 
   private getStatusEmoji(status: string): string {
     switch (status) {
@@ -102,13 +92,11 @@ class EmailService {
     } else {
       todayTasks.forEach(task => {
         const timeRange = this.formatTimeRange(task.start_date, task.end_date)
-        const priorityEmoji = this.getPriorityEmoji(task.priority_quadrant)
         const statusEmoji = this.getStatusEmoji(task.status)
         
         html += `
           <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; background-color: #f9fafb;">
             <div style="display: flex; align-items: center; margin-bottom: 8px;">
-              <span style="font-size: 20px; margin-right: 8px;">${priorityEmoji}</span>
               <h3 style="margin: 0; color: #1f2937; font-size: 16px;">${task.title}</h3>
             </div>
             <div style="color: #6b7280; font-size: 14px; margin-bottom: 4px;">
@@ -290,7 +278,6 @@ class EmailService {
   // Generate mobile-optimized single task reminder email
   private generateSingleTaskEmail(task: TaskData): EmailContent {
     const timeRange = this.formatTimeRange(task.start_date, task.end_date)
-    const priorityEmoji = this.getPriorityEmoji(task.priority_quadrant)
     
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
@@ -326,18 +313,6 @@ class EmailService {
             </div>
           </div>
 
-          <!-- Priority -->
-          ${task.priority_quadrant ? `
-            <div style="display: flex; align-items: center; margin-bottom: 16px;">
-              <span style="font-size: 18px; margin-right: 8px;">${priorityEmoji}</span>
-              <span style="background: ${this.getPriorityBgColor(task.priority_quadrant)}; 
-                          color: ${this.getPriorityTextColor(task.priority_quadrant)}; 
-                          padding: 6px 12px; border-radius: 6px; 
-                          font-size: 14px; font-weight: 500;">
-                ${task.priority_quadrant}
-              </span>
-            </div>
-          ` : ''}
 
           <!-- Notes -->
           ${task.note ? `
@@ -377,26 +352,6 @@ class EmailService {
     }
   }
 
-  // Helper methods for priority styling
-  private getPriorityBgColor(priority: string): string {
-    switch (priority) {
-      case 'Important & Urgent': return '#fef2f2'
-      case 'Important & Not Urgent': return '#fef3c7' 
-      case 'Not Important & Urgent': return '#fed7c7'
-      case 'Not Important & Not Urgent': return '#f3f4f6'
-      default: return '#f8fafc'
-    }
-  }
-
-  private getPriorityTextColor(priority: string): string {
-    switch (priority) {
-      case 'Important & Urgent': return '#dc2626'
-      case 'Important & Not Urgent': return '#d97706'
-      case 'Not Important & Urgent': return '#ea580c'  
-      case 'Not Important & Not Urgent': return '#6b7280'
-      default: return '#7c3aed'
-    }
-  }
 
   // Send single task reminder
   async sendSingleTaskReminder(task: TaskData): Promise<void> {
@@ -533,12 +488,10 @@ class EmailService {
       html += '<h3 style="color: #7c3aed; margin-bottom: 16px;">🌞 Afternoon Tasks</h3>'
       afternoonTasks.forEach(task => {
         const timeRange = this.formatTimeRange(task.start_date, task.end_date)
-        const priorityEmoji = this.getPriorityEmoji(task.priority_quadrant)
         
         html += `
           <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; background-color: #f9fafb;">
             <div style="display: flex; align-items: center; margin-bottom: 8px;">
-              <span style="font-size: 20px; margin-right: 8px;">${priorityEmoji}</span>
               <h4 style="margin: 0; color: #1f2937; font-size: 16px;">${task.title}</h4>
             </div>
             <div style="color: #6b7280; font-size: 14px;">
@@ -590,16 +543,14 @@ class EmailService {
       
       tomorrowTasks.forEach(task => {
         const timeRange = this.formatTimeRange(task.start_date, task.end_date)
-        const priorityEmoji = this.getPriorityEmoji(task.priority_quadrant)
         
         html += `
           <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; background-color: #f9fafb;">
             <div style="display: flex; align-items: center; margin-bottom: 8px;">
-              <span style="font-size: 20px; margin-right: 8px;">${priorityEmoji}</span>
               <h4 style="margin: 0; color: #1f2937; font-size: 16px;">${task.title}</h4>
             </div>
             <div style="color: #6b7280; font-size: 14px;">
-              ${timeRange ? `⏰ ${timeRange}` : ''} ${task.priority_quadrant ? `• ${task.priority_quadrant}` : ''}
+              ${timeRange ? `⏰ ${timeRange}` : ''}
             </div>
             ${task.note ? `<div style="color: #6b7280; font-size: 12px; margin-top: 8px; padding: 8px; background-color: #f3f4f6; border-radius: 4px;">${task.note}</div>` : ''}
           </div>
@@ -628,7 +579,6 @@ class EmailService {
       status: 'Not Started', 
       start_date: '2025-07-24T09:00:00-04:00',
       end_date: '2025-07-24T10:00:00-04:00',
-      priority_quadrant: 'Important & Urgent',
       note: 'Focus on API documentation updates and prepare feedback for the team meeting'
     }
 

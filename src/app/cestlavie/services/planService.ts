@@ -86,7 +86,7 @@ export async function savePlan(planData: PlanFormData, planId?: string): Promise
  */
 export async function updatePlanField(
   plan: PlanRecord, 
-  field: 'status' | 'priority_quadrant', 
+  field: 'status', 
   value: string
 ): Promise<void> {
   const updatedPlan = { ...plan, [field]: value }

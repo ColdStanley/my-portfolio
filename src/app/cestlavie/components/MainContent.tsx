@@ -13,7 +13,6 @@ interface TaskRecord {
   end_date: string
   all_day: boolean
   plan: string[]
-  priority_quadrant: string
   note: string
   actual_start?: string
   actual_end?: string

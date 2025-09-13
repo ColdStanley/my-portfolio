@@ -8,13 +8,13 @@ export interface StrategyRecord {
   start_date: string
   due_date: string
   status: string
-  priority_quadrant: string
   category: string
   plan?: string[]
   task?: string[]
   progress: number
   total_plans: number
   order?: number
+  importance_percentage?: number
 }
 
 /**
@@ -26,8 +26,8 @@ export interface StrategyFormData {
   start_date: string
   due_date: string
   status: string
-  priority_quadrant: string
   category: string
+  importance_percentage?: number
 }
 
 /**
@@ -52,10 +52,9 @@ export interface MobileStrategyCardsProps {
   onStrategyClick?: (strategy: StrategyRecord) => void
   onStrategyEdit?: (strategy: StrategyRecord) => void
   onStrategyDelete?: (strategyId: string) => void
-  onStrategyUpdate?: (strategyId: string, field: 'status' | 'priority_quadrant', value: string) => void
+  onStrategyUpdate?: (strategyId: string, field: 'status', value: string) => void
   onStrategyRelations?: (strategy: StrategyRecord) => void
   statusOptions?: string[]
-  priorityOptions?: string[]
 }
 
 /**
@@ -67,6 +66,6 @@ export interface StrategyFormPanelProps {
   strategy?: StrategyRecord | null
   onSave: (strategy: StrategyFormData) => void
   statusOptions?: string[]
-  priorityOptions?: string[]
   categoryOptions?: string[]
+  allStrategies?: StrategyRecord[] // For 100% validation
 }

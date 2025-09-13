@@ -68,7 +68,6 @@ export function getDefaultPlanFormData(): {
   start_date: string
   due_date: string
   status: string
-  priority_quadrant: string
   parent_goal: string[]
 } {
   const defaultDate = getDefaultDate()
@@ -78,7 +77,6 @@ export function getDefaultPlanFormData(): {
     start_date: defaultDate,
     due_date: defaultDate,
     status: '',
-    priority_quadrant: '',
     parent_goal: []
   }
 }
@@ -92,7 +90,6 @@ export function getEmptyPlanFormData(): {
   start_date: string
   due_date: string
   status: string
-  priority_quadrant: string
   parent_goal: string[]
 } {
   return {
@@ -101,7 +98,6 @@ export function getEmptyPlanFormData(): {
     start_date: '',
     due_date: '',
     status: '',
-    priority_quadrant: '',
     parent_goal: []
   }
 }

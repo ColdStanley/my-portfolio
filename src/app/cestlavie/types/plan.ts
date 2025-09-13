@@ -5,12 +5,12 @@ export interface PlanRecord {
   start_date: string
   due_date: string
   status: string
-  priority_quadrant: string
   strategy?: string
   task?: string[]
   total_tasks: number
   completed_tasks: number
   display_order?: number
+  importance_percentage?: number
 }
 
 export interface PlanFormData {
@@ -19,8 +19,8 @@ export interface PlanFormData {
   start_date: string
   due_date: string
   status: string
-  priority_quadrant: string
   strategy?: string
+  importance_percentage?: number
 }
 
 export interface StrategyOption {
@@ -34,8 +34,8 @@ export interface PlanFormPanelProps {
   plan?: PlanRecord | null
   onSave: (plan: PlanFormData) => void
   statusOptions: string[]
-  priorityOptions: string[]
   strategyOptions: StrategyOption[]
+  allPlans?: PlanRecord[] // For 100% validation within Strategy scope
 }
 
 export interface MobilePlanCardsProps {
@@ -43,7 +43,7 @@ export interface MobilePlanCardsProps {
   onPlanClick?: (plan: PlanRecord) => void
   onPlanEdit?: (plan: PlanRecord) => void
   onPlanDelete?: (planId: string) => void
-  onPlanUpdate?: (planId: string, field: 'status' | 'priority_quadrant', value: string) => void
+  onPlanUpdate?: (planId: string, field: 'status', value: string) => void
   onPlanRelations?: (plan: PlanRecord) => void
   statusOptions?: string[]
   priorityOptions?: string[]

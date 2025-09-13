@@ -80,17 +80,6 @@ export const TASKS_TEMPLATE: DatabaseTemplate = {
         dual_property: {}
       }
     },
-    "priority_quadrant": {
-      type: "select",
-      select: {
-        options: [
-          { name: "Important & Urgent" },
-          { name: "Important & Not Urgent" },
-          { name: "Not Important & Urgent" },
-          { name: "Not Important & Not Urgent" }
-        ]
-      }
-    },
     "note": {
       type: "rich_text",
       rich_text: {}

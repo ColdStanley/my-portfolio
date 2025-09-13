@@ -17,8 +17,8 @@ export function getDefaultStrategyFormData(): {
   start_date: string
   due_date: string
   status: string
-  priority_quadrant: string
   category: string
+  importance_percentage: number
 } {
   const defaultDate = getDefaultDate()
   return {
@@ -27,8 +27,8 @@ export function getDefaultStrategyFormData(): {
     start_date: defaultDate,
     due_date: defaultDate,
     status: '',
-    priority_quadrant: '',
-    category: ''
+    category: '',
+    importance_percentage: 0
   }
 }
 

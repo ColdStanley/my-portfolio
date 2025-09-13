@@ -12,8 +12,7 @@ export default function TaskListView({
   onTaskSelect,
   onTaskDelete,
   onTaskUpdate,
-  statusOptions = ['Not Started', 'In Progress', 'Completed'],
-  priorityOptions = ['Important & Urgent', 'Important & Not Urgent', 'Not Important & Urgent', 'Not Important & Not Urgent']
+  statusOptions = ['Not Started', 'In Progress', 'Completed']
 }: TaskListViewProps) {
   // State for managing sync loading status
   const [syncingTasks, setSyncingTasks] = useState<Set<string>>(new Set())
@@ -81,7 +80,7 @@ export default function TaskListView({
     }
   }, [onTaskDelete])
 
-  const handleFieldUpdate = useCallback(async (taskId: string, field: 'status' | 'priority_quadrant', value: string) => {
+  const handleFieldUpdate = useCallback(async (taskId: string, field: 'status', value: string) => {
     if (!onTaskUpdate) return
     
     try {
@@ -193,19 +192,13 @@ export default function TaskListView({
                           ))}
                         </select>
                         
-                        <select
-                          value={task.priority_quadrant || ''}
-                          onChange={(e) => handleFieldUpdate(task.id, 'priority_quadrant', e.target.value)}
-                          className="px-2 py-0.5 bg-purple-600/10 text-purple-900 rounded border-0 text-xs cursor-pointer hover:bg-purple-600/15 transition-colors"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <option value="">No Priority</option>
-                          {priorityOptions.map(priority => (
-                            <option key={priority} value={priority}>
-                              {priority} {/* 显示完整选项文本 */}
-                            </option>
-                          ))}
-                        </select>
+
+                        {/* Importance Percentage */}
+                        {task.importance_percentage && task.importance_percentage > 0 && (
+                          <span className="px-2 py-0.5 bg-purple-600 text-white rounded text-xs font-medium">
+                            {task.importance_percentage}%
+                          </span>
+                        )}
                       </div>
                     </div>
 

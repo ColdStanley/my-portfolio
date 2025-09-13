@@ -9,14 +9,13 @@ interface PlanContentProps {
   loading?: boolean
   error?: string | null
   onAddPlan?: () => void
-  onPlanUpdate?: (planId: string, field: 'status' | 'priority_quadrant', value: string) => void
+  onPlanUpdate?: (planId: string, field: 'status', value: string) => void
   onPlanEdit?: (plan: PlanRecord) => void
   onPlanDelete?: (planId: string) => void
   onPlanDrillDown?: (planId: string) => void
   onAddTaskFromPlan?: (planId: string) => void
   enableDrillDown?: boolean
   statusOptions?: string[]
-  priorityOptions?: string[]
 }
 
 export default function PlanContent({ 
@@ -30,11 +29,10 @@ export default function PlanContent({
   onPlanDrillDown,
   onAddTaskFromPlan,
   enableDrillDown = true,
-  statusOptions = [],
-  priorityOptions = []
+  statusOptions = []
 }: PlanContentProps) {
 
-  const handlePlanUpdate = async (planId: string, field: 'status' | 'priority_quadrant', value: string) => {
+  const handlePlanUpdate = async (planId: string, field: 'status', value: string) => {
     if (onPlanUpdate) {
       onPlanUpdate(planId, field, value)
     } else {
@@ -143,7 +141,7 @@ export default function PlanContent({
                 {plan.objective || 'Untitled Plan'}
               </h4>
               
-              {/* Status & Priority */}
+              {/* Status & Priority & Importance */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs">
                   <select
@@ -157,18 +155,13 @@ export default function PlanContent({
                       <option key={status} value={status}>{status}</option>
                     ))}
                   </select>
-                  
-                  <select
-                    value={plan.priority_quadrant || ''}
-                    onChange={(e) => handlePlanUpdate(plan.id, 'priority_quadrant', e.target.value)}
-                    className="px-2 py-0.5 bg-purple-600/10 text-purple-900 rounded border-0 text-xs cursor-pointer hover:bg-purple-600/15 transition-colors"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <option value="">No Priority</option>
-                    {priorityOptions.map(priority => (
-                      <option key={priority} value={priority}>{priority}</option>
-                    ))}
-                  </select>
+
+                  {/* Importance Percentage */}
+                  {plan.importance_percentage && plan.importance_percentage > 0 && (
+                    <span className="px-2 py-0.5 bg-purple-600 text-white rounded text-xs font-medium">
+                      {plan.importance_percentage}%
+                    </span>
+                  )}
                 </div>
 
                 {/* Action Buttons */}

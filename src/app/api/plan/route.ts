@@ -24,6 +24,10 @@ function extractNumberValue(number: any): number {
   return number ?? 0
 }
 
+function extractImportancePercentage(number: any): number {
+  return number ?? 0  // 默认0，兼容现有数据
+}
+
 function extractRelationValue(relation: any[]): string {
   if (!relation || !Array.isArray(relation) || relation.length === 0) return ''
   return relation[0].id // 取第一个relation的id作为单个字符串
@@ -42,6 +46,7 @@ function calculateHours(startDate: string, endDate: string): number {
   const diffMs = end.getTime() - start.getTime()
   return Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100 // Round to 2 decimal places
 }
+
 
 export async function GET(request: NextRequest) {
   try {
@@ -71,12 +76,10 @@ export async function GET(request: NextRequest) {
 
       const properties = databaseInfo.properties as any
       const statusOptions = properties.status?.select?.options?.map((opt: any) => opt.name) || []
-      const priorityOptions = properties.priority_quadrant?.select?.options?.map((opt: any) => opt.name) || []
 
       return NextResponse.json({ 
         schema: {
-          statusOptions,
-          priorityOptions
+          statusOptions
         }
       })
     }
@@ -104,13 +107,13 @@ export async function GET(request: NextRequest) {
         start_date: extractDateValue(properties.start_date?.date),
         due_date: extractDateValue(properties.due_date?.date),
         status: extractSelectValue(properties.status?.select),
-        priority_quadrant: extractSelectValue(properties.priority_quadrant?.select),
         progress: 0, // 进度字段保留但设为0，避免前端错误
         task: extractRelationArrayValue(properties.task?.relation),
         estimate_resources: extractTextContent(properties.estimate_resources?.rich_text),
         budget_money: extractNumberValue(properties.budget_money?.number),
         budget_time: extractNumberValue(properties.budget_time?.number),
         display_order: extractNumberValue(properties.display_order?.number),
+        importance_percentage: extractImportancePercentage(properties.importance_percentage?.number),
         total_tasks: 0, // 进度相关字段保留但设为0
         completed_tasks: 0
       }
@@ -158,11 +161,11 @@ export async function POST(request: NextRequest) {
       start_date, 
       due_date, 
       status,
-      priority_quadrant,
       estimate_resources,
       budget_money,
       budget_time,
-      display_order
+      display_order,
+      importance_percentage
     } = body
 
     const properties: any = {
@@ -178,11 +181,11 @@ export async function POST(request: NextRequest) {
     if (start_date) properties.start_date = { date: { start: start_date } }
     if (due_date) properties.due_date = { date: { start: due_date } }
     if (status) properties.status = { select: { name: status } }
-    if (priority_quadrant) properties.priority_quadrant = { select: { name: priority_quadrant } }
     if (estimate_resources) properties.estimate_resources = { rich_text: [{ text: { content: estimate_resources } }] }
     if (typeof budget_money === 'number') properties.budget_money = { number: budget_money }
     if (typeof budget_time === 'number') properties.budget_time = { number: budget_time }
     if (typeof display_order === 'number') properties.display_order = { number: display_order }
+    if (typeof importance_percentage === 'number') properties.importance_percentage = { number: importance_percentage }
 
     let response
     
@@ -193,6 +196,7 @@ export async function POST(request: NextRequest) {
         properties
       })
       
+      
       return NextResponse.json({ success: true, id: response.id, updated: true })
     } else {
       // Create new plan
@@ -200,6 +204,7 @@ export async function POST(request: NextRequest) {
         parent: { database_id: planConfig.database_id },
         properties
       })
+      
       
       return NextResponse.json({ success: true, id: response.id, created: true })
     }
@@ -274,6 +279,7 @@ export async function DELETE(request: NextRequest) {
       page_id: planId,
       archived: true
     })
+
 
     return NextResponse.json({ 
       success: true,

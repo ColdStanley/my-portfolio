@@ -10,12 +10,12 @@ export interface TaskRecord {
   all_day: boolean
   remind_before?: number
   plan?: string
-  priority_quadrant: string
   note: string
   outlook_event_id?: string
   actual_start?: string
   actual_end?: string
   elapsed_time?: number
+  importance_percentage?: number
   // Additional fields found in components
   completion_photo?: string
   pomodoro_count?: number
@@ -32,8 +32,8 @@ export interface TaskFormData {
   all_day: boolean
   remind_before?: number
   plan?: string
-  priority_quadrant: string
   note: string
+  importance_percentage?: number
 }
 
 /**
@@ -64,7 +64,6 @@ export interface TaskFormPanelProps {
   task?: TaskRecord | null
   onSave: (task: TaskFormData) => void
   statusOptions?: string[]
-  priorityOptions?: string[]
   planOptions?: PlanOption[]
   strategyOptions?: StrategyOption[]
 }
@@ -91,10 +90,9 @@ export interface MobileTaskCardsProps {
   onTaskClick?: (task: TaskRecord) => void
   onTaskEdit?: (task: TaskRecord) => void
   onTaskDelete?: (taskId: string) => void
-  onTaskUpdate?: (taskId: string, field: 'status' | 'priority_quadrant', value: string) => void
+  onTaskUpdate?: (taskId: string, field: 'status', value: string) => void
   onTaskRelations?: (task: TaskRecord) => void
   statusOptions?: string[]
-  priorityOptions?: string[]
 }
 
 /**
@@ -106,7 +104,6 @@ export interface TaskListViewProps {
   onTaskUpdate: (taskId: string, updates: Partial<TaskRecord>) => void
   onTaskDelete: (taskId: string) => void
   statusOptions: string[]
-  priorityOptions: string[]
   selectedDate: string
 }
 

@@ -126,7 +126,6 @@ export function getDefaultTaskFormData(): {
   remind_before?: number
   plan?: string[]
   strategy?: string[]
-  priority_quadrant: string
   note: string
 } {
   const defaultStart = getDefaultDateTime()
@@ -142,7 +141,6 @@ export function getDefaultTaskFormData(): {
     remind_before: 15,
     plan: [],
     strategy: [],
-    priority_quadrant: '',
     note: ''
   }
 }

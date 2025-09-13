@@ -24,10 +24,15 @@ function extractNumberValue(number: any): number {
   return number ?? 0
 }
 
+function extractImportancePercentage(number: any): number {
+  return number ?? 0  // 默认0，兼容现有数据
+}
+
 function extractRelationValue(relation: any[]): string[] {
   if (!relation || !Array.isArray(relation)) return []
   return relation.map(item => item.id)
 }
+
 
 export async function GET(request: NextRequest) {
   try {
@@ -59,13 +64,11 @@ export async function GET(request: NextRequest) {
       const properties = databaseInfo.properties as any
       const statusOptions = properties.status?.select?.options?.map((opt: any) => opt.name) || []
       const categoryOptions = properties.category?.select?.options?.map((opt: any) => opt.name) || []
-      const priorityOptions = properties.priority_quadrant?.select?.options?.map((opt: any) => opt.name) || []
 
       return NextResponse.json({ 
         schema: {
           statusOptions,
-          categoryOptions,
-          priorityOptions
+          categoryOptions
         }
       })
     }
@@ -95,9 +98,9 @@ export async function GET(request: NextRequest) {
         due_date: extractDateValue(properties.due_date?.date),
         status: extractSelectValue(properties.status?.select),
         category: extractSelectValue(properties.category?.select),
-        priority_quadrant: extractSelectValue(properties.priority_quadrant?.select),
         estimate_cost: extractTextContent(properties.estimate_cost?.rich_text),
         order: extractNumberValue(properties.order?.number),
+        importance_percentage: extractImportancePercentage(properties.importance_percentage?.number),
         plan: extractRelationValue(properties.plan?.relation),
         task: extractRelationValue(properties.task?.relation),
         total_plans: 0, // 进度相关字段保留但设为0
@@ -152,9 +155,9 @@ export async function POST(request: NextRequest) {
       due_date, 
       status,
       category,
-      priority_quadrant,
       estimate_cost,
-      order
+      order,
+      importance_percentage
     } = body
 
     const properties: any = {}
@@ -173,10 +176,9 @@ export async function POST(request: NextRequest) {
     if (due_date !== undefined) properties.due_date = { date: { start: due_date } }
     if (status !== undefined && status !== '') properties.status = { select: { name: status } }
     if (category !== undefined && category !== '') properties.category = { select: { name: category } }
-    if (priority_quadrant !== undefined && priority_quadrant !== '') properties.priority_quadrant = { select: { name: priority_quadrant } }
     if (estimate_cost !== undefined) properties.estimate_cost = { rich_text: [{ text: { content: estimate_cost } }] }
     if (typeof order === 'number') properties.order = { number: order }
-
+    if (typeof importance_percentage === 'number') properties.importance_percentage = { number: importance_percentage }
 
     let response
     
@@ -196,6 +198,16 @@ export async function POST(request: NextRequest) {
           parent: { database_id: strategyConfig.database_id },
           properties
         })
+        
+        // If importance_percentage was set, adjust other strategies proportionally
+        if (typeof importance_percentage === 'number' && importance_percentage > 0) {
+          await adjustOtherStrategiesProportionally(
+            notion, 
+            strategyConfig.database_id, 
+            response.id, 
+            importance_percentage
+          )
+        }
         
         return NextResponse.json({ success: true, id: response.id, created: true })
       } catch (createError: any) {

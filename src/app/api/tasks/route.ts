@@ -34,6 +34,10 @@ function extractRelationValue(relation: any[]): string {
   return relation[0].id // 取第一个relation的id作为单个字符串
 }
 
+function extractImportancePercentage(number: any): number {
+  return number ?? 0  // 默认0，兼容现有数据
+}
+
 // Calculate hours between two dates
 function calculateHours(startDate: string, endDate: string): number {
   if (!startDate || !endDate) return 0
@@ -42,6 +46,7 @@ function calculateHours(startDate: string, endDate: string): number {
   const diffMs = end.getTime() - start.getTime()
   return Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100 // Round to 2 decimal places
 }
+
 
 export async function GET(request: NextRequest) {
   try {
@@ -73,15 +78,12 @@ export async function GET(request: NextRequest) {
 
         const properties = databaseInfo.properties as any
         const statusOptions = properties.status?.select?.options?.map((opt: any) => opt.name) || []
-        const priorityOptions = properties.priority_quadrant?.select?.options?.map((opt: any) => opt.name) || []
 
         console.log('Tasks API: Extracted statusOptions:', statusOptions)
-        console.log('Tasks API: Extracted priorityOptions:', priorityOptions)
 
         return NextResponse.json({ 
           schema: {
-            statusOptions,
-            priorityOptions
+            statusOptions
           }
         })
       } catch (schemaError) {
@@ -121,7 +123,6 @@ export async function GET(request: NextRequest) {
         remind_before: extractNumberValue(properties.remind_before?.number),
         plan: extractRelationValue(properties.plan?.relation),
         strategy: extractRelationValue(properties.strategy?.relation),
-        priority_quadrant: extractSelectValue(properties.priority_quadrant?.select),
         note: extractTextContent(properties.note?.rich_text),
         actual_start: extractDateValue(properties.actual_start?.date),
         actual_end: extractDateValue(properties.actual_end?.date),
@@ -132,6 +133,7 @@ export async function GET(request: NextRequest) {
         is_plan_critical: extractCheckboxValue(properties.is_plan_critical?.checkbox),
         timer_status: extractSelectValue(properties.timer_status?.select),
         outlook_event_id: extractTextContent(properties.outlook_event_id?.rich_text),
+        importance_percentage: extractImportancePercentage(properties.importance_percentage?.number),
       }
     })
 
@@ -240,7 +242,6 @@ export async function POST(request: NextRequest) {
       all_day,
       remind_before,
       plan,
-      priority_quadrant,
       note,
       actual_start,
       actual_end,
@@ -249,7 +250,8 @@ export async function POST(request: NextRequest) {
       quality_rating,
       next,
       is_plan_critical,
-      timer_status
+      timer_status,
+      importance_percentage
     } = body
 
     const properties: any = {
@@ -272,7 +274,6 @@ export async function POST(request: NextRequest) {
     if (plan) {
       properties.plan = { relation: [{ id: plan }] }
     }
-    if (priority_quadrant) properties.priority_quadrant = { select: { name: priority_quadrant } }
     if (note) properties.note = { rich_text: [{ text: { content: note } }] }
     if (actual_start) {
       // 保持原始日期时间，不进行UTC转换以避免日期偏移
@@ -319,6 +320,11 @@ export async function POST(request: NextRequest) {
       properties.timer_status = { select: { name: timer_status } }
     }
 
+    // Add importance_percentage if provided
+    if (typeof importance_percentage === 'number') {
+      properties.importance_percentage = { number: importance_percentage }
+    }
+
     let response
     let isNewTask = false
     
@@ -345,7 +351,6 @@ export async function POST(request: NextRequest) {
           end_date: existingProperties.end_date?.date?.start || '',
           note: existingProperties.note?.rich_text?.[0]?.plain_text || '',
           status: existingProperties.status?.select?.name || '',
-          priority_quadrant: existingProperties.priority_quadrant?.select?.name || '',
           all_day: existingProperties.all_day?.checkbox || false,
           remind_before: existingProperties.remind_before?.number || 15
         }
@@ -395,6 +400,7 @@ export async function POST(request: NextRequest) {
         properties
       })
       
+      
       // 异步同步到Outlook（更新），包含现有的event ID
       const taskData = { 
         id, 
@@ -416,6 +422,7 @@ export async function POST(request: NextRequest) {
       })
       
       isNewTask = true
+      
       
       // 异步同步到Outlook（创建）
       const taskData = { id: response.id, title, start_date, end_date, note, ...body }

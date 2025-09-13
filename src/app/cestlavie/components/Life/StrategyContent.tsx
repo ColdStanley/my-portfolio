@@ -10,14 +10,13 @@ interface StrategyContentProps {
   loading?: boolean
   error?: string | null
   onAddStrategy?: () => void
-  onStrategyUpdate?: (strategyId: string, field: 'status' | 'priority_quadrant', value: string) => void
+  onStrategyUpdate?: (strategyId: string, field: 'status', value: string) => void
   onStrategyEdit?: (strategy: StrategyRecord) => void
   onStrategyDelete?: (strategyId: string) => void
   onStrategyDrillDown?: (strategyId: string) => void
   onAddPlanFromStrategy?: (strategyId: string) => void
   enableDrillDown?: boolean
   statusOptions?: string[]
-  priorityOptions?: string[]
   categoryOptions?: string[]
 }
 
@@ -33,11 +32,10 @@ export default function StrategyContent({
   onAddPlanFromStrategy,
   enableDrillDown = true,
   statusOptions = [],
-  priorityOptions = [],
   categoryOptions = []
 }: StrategyContentProps) {
 
-  const handleStrategyUpdate = async (strategyId: string, field: 'status' | 'priority_quadrant', value: string) => {
+  const handleStrategyUpdate = async (strategyId: string, field: 'status', value: string) => {
     if (onStrategyUpdate) {
       onStrategyUpdate(strategyId, field, value)
     } else {
@@ -178,18 +176,13 @@ export default function StrategyContent({
                       <option key={status} value={status}>{status}</option>
                     ))}
                   </select>
-                  
-                  <select
-                    value={strategy.priority_quadrant || ''}
-                    onChange={(e) => handleStrategyUpdate(strategy.id, 'priority_quadrant', e.target.value)}
-                    className={`px-2 py-0.5 bg-purple-600/10 text-purple-900 rounded border-0 text-xs cursor-pointer hover:bg-purple-600/15 transition-colors`}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <option value="">No Priority</option>
-                    {priorityOptions.map(priority => (
-                      <option key={priority} value={priority}>{priority}</option>
-                    ))}
-                  </select>
+
+                  {/* Importance Percentage */}
+                  {strategy.importance_percentage && strategy.importance_percentage > 0 && (
+                    <span className="px-2 py-0.5 bg-purple-600 text-white rounded text-xs font-medium">
+                      {strategy.importance_percentage}%
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-1">

@@ -56,7 +56,7 @@ export async function deleteStrategy(strategyId: string): Promise<void> {
  */
 export async function updateStrategyField(
   strategy: StrategyRecord, 
-  field: 'status' | 'priority_quadrant', 
+  field: 'status', 
   value: string
 ): Promise<void> {
   const updatedStrategy = { ...strategy, [field]: value }

@@ -34,12 +34,10 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
   const [strategies, setStrategies] = useState<StrategyRecord[]>([])
   const [plans, setPlans] = useState<PlanRecord[]>([])
   const [statusOptions, setStatusOptions] = useState<string[]>([])
-  const [priorityOptions, setPriorityOptions] = useState<string[]>([])
   const [planOptions, setPlanOptions] = useState<PlanOption[]>([])
   const [strategyOptions, setStrategyOptions] = useState<StrategyOption[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [refreshing, setRefreshing] = useState(false)
   
   // Task Form state
   const [formPanelOpen, setFormPanelOpen] = useState(false)
@@ -55,12 +53,7 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
   const [planFormOpen, setPlanFormOpen] = useState(false)
   const [editingPlan, setEditingPlan] = useState<PlanRecord | null>(null)
   const [planStatusOptions, setPlanStatusOptions] = useState<string[]>([])
-  const [planPriorityOptions, setPlanPriorityOptions] = useState<string[]>([])
   
-  // Filter state
-  const [selectedStatus, setSelectedStatus] = useState('all')
-  const [selectedQuadrant, setSelectedQuadrant] = useState('all')
-  const [selectedPlanFilter, setSelectedPlanFilter] = useState('all')
   
   // Calendar state
   const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('en-CA'))
@@ -84,30 +77,6 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
     }
   }, [toast])
 
-  // Filtered tasks based on current filters
-  const filteredTasks = useMemo(() => {
-    let filtered = tasks
-
-    if (selectedStatus !== 'all') {
-      filtered = filtered.filter(task => task.status === selectedStatus)
-    }
-
-    if (selectedQuadrant !== 'all') {
-      filtered = filtered.filter(task => task.priority_quadrant === selectedQuadrant)
-    }
-
-    if (selectedPlanFilter !== 'all') {
-      filtered = filtered.filter(task => {
-        if (selectedPlanFilter === 'none') {
-          return !task.plan
-        } else {
-          return task.plan === selectedPlanFilter
-        }
-      })
-    }
-
-    return filtered
-  }, [tasks, selectedStatus, selectedQuadrant, selectedPlanFilter])
 
   // Filtered data based on drill-down mode
   const displayedStrategies = useMemo(() => {
@@ -128,10 +97,10 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
 
   const displayedTasks = useMemo(() => {
     if (drillDownMode === 'plan-tasks') {
-      return filteredTasks.filter(task => task.plan === selectedPlanId)
+      return tasks.filter(task => task.plan === selectedPlanId)
     }
-    return filteredTasks
-  }, [filteredTasks, drillDownMode, selectedPlanId])
+    return tasks
+  }, [tasks, drillDownMode, selectedPlanId])
 
   // Load all data only after authentication is complete and user exists
   useEffect(() => {
@@ -162,7 +131,6 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
           // Load from cache
           setTasks(cachedTasks.tasks)
           setStatusOptions(cachedTasks.schemaOptions.statusOptions)
-          setPriorityOptions(cachedTasks.schemaOptions.priorityOptions)
           
           setStrategies(cachedStrategies.strategies)
           const strategyOpts = cachedStrategies.strategies.map((strategy: any) => ({
@@ -188,15 +156,15 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
         fetch('/api/tasks').then(res => res.json()),
         fetch('/api/strategy').then(res => res.json()),
         fetch('/api/plan').then(res => res.json()),
-        fetch('/api/tasks?action=schema').then(res => res.json()).catch(() => ({ schema: { statusOptions: [], priorityOptions: [] } })),
-        fetch('/api/strategy?action=schema').then(res => res.json()).catch(() => ({ schema: { statusOptions: [], priorityOptions: [], categoryOptions: [] } })),
-        fetch('/api/plan?action=schema').then(res => res.json()).catch(() => ({ schema: { statusOptions: [], priorityOptions: [] } }))
+        fetch('/api/tasks?action=schema').then(res => res.json()).catch(() => ({ schema: { statusOptions: [] } })),
+        fetch('/api/strategy?action=schema').then(res => res.json()).catch(() => ({ schema: { statusOptions: [], categoryOptions: [] } })),
+        fetch('/api/plan?action=schema').then(res => res.json()).catch(() => ({ schema: { statusOptions: [] } }))
       ])
       
       // 处理响应数据
       const taskData = {
         tasks: tasksResponse.data || [],
-        schemaOptions: taskSchemaResponse.schema || { statusOptions: [], priorityOptions: [] }
+        schemaOptions: taskSchemaResponse.schema || { statusOptions: [] }
       }
       const strategyData = {
         strategies: strategiesResponse.data || []
@@ -211,7 +179,6 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
       // Set task data
       setTasks(taskData.tasks)
       setStatusOptions(taskData.schemaOptions.statusOptions)
-      setPriorityOptions(taskData.schemaOptions.priorityOptions)
       
       // Set strategy data
       setStrategies(strategyData.strategies)
@@ -235,7 +202,6 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
       
       // Set plan schema options
       setPlanStatusOptions(planSchemaResponse.schema?.statusOptions || [])
-      setPlanPriorityOptions(planSchemaResponse.schema?.priorityOptions || [])
       
     } catch (err) {
       console.error('Failed to load data:', err)
@@ -258,11 +224,6 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
     }
   }
 
-  const handleRefresh = useCallback(async () => {
-    setRefreshing(true)
-    await loadAllData(true) // Force refresh on manual refresh
-    setRefreshing(false)
-  }, [])
 
   const handleSaveTask = useCallback(async (taskData: TaskFormData) => {
     try {
@@ -328,7 +289,7 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
   }, [])
 
   // Strategy update handler
-  const handleStrategyUpdate = useCallback(async (strategyId: string, field: 'status' | 'priority_quadrant', value: string) => {
+  const handleStrategyUpdate = useCallback(async (strategyId: string, field: 'status', value: string) => {
     const strategy = strategies.find(s => s.id === strategyId)
     if (!strategy) return
 
@@ -344,7 +305,7 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
   }, [strategies])
 
   // Plan update handler
-  const handlePlanUpdate = useCallback(async (planId: string, field: 'status' | 'priority_quadrant', value: string) => {
+  const handlePlanUpdate = useCallback(async (planId: string, field: 'status', value: string) => {
     const plan = plans.find(p => p.id === planId)
     if (!plan) return
 
@@ -558,7 +519,7 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
         <h3 className="font-semibold mb-2">Error Loading Data</h3>
         <p className="mb-4">{error}</p>
         <button 
-          onClick={handleRefresh}
+          onClick={() => window.location.reload()}
           className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
         >
           Retry
@@ -616,7 +577,7 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
             {/* Calendar Module - Mobile first, Desktop right column with Task */}
             <div className="order-1 md:order-3 md:flex-1 md:min-w-0 md:space-y-6">
               <TaskCalendarView
-                tasks={filteredTasks}
+                tasks={tasks}
                 currentMonth={currentMonth}
                 selectedDate={selectedDate}
                 onDateSelect={setSelectedDate}
@@ -637,60 +598,6 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
                       <span>Add Task</span>
                     </button>
                   </div>
-                  
-                  {/* Task Filters - Desktop Only */}
-                  <div className="hidden md:block mt-3 space-y-2">
-                    {/* First row */}
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={selectedStatus}
-                        onChange={(e) => setSelectedStatus(e.target.value)}
-                        className="flex-1 px-2 py-1 bg-white border border-purple-200 rounded text-xs text-purple-700 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                      >
-                        <option value="all">All Status</option>
-                        {statusOptions.map(status => (
-                          <option key={status} value={status}>{status}</option>
-                        ))}
-                      </select>
-
-                      <select
-                        value={selectedQuadrant}
-                        onChange={(e) => setSelectedQuadrant(e.target.value)}
-                        className="flex-1 px-2 py-1 bg-white border border-purple-200 rounded text-xs text-purple-700 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                      >
-                        <option value="all">All Quadrants</option>
-                        {priorityOptions.map(priority => (
-                          <option key={priority} value={priority}>{priority}</option>
-                        ))}
-                      </select>
-                    </div>
-                    
-                    {/* Second row */}
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={selectedPlanFilter}
-                        onChange={(e) => setSelectedPlanFilter(e.target.value)}
-                        className="flex-1 px-2 py-1 bg-white border border-purple-200 rounded text-xs text-purple-700 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                      >
-                        <option value="all">All Plans</option>
-                        <option value="none">No Plan</option>
-                        {planOptions.map(plan => (
-                          <option key={plan.id} value={plan.id}>{plan.objective}</option>
-                        ))}
-                      </select>
-
-                      <button
-                        onClick={handleRefresh}
-                        disabled={refreshing}
-                        className="flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded hover:bg-gray-200 transition-colors disabled:opacity-50"
-                      >
-                        <div className={`${refreshing ? 'animate-spin' : ''}`}>
-                          {refreshing ? '⟳' : '↻'}
-                        </div>
-                        <span>Refresh</span>
-                      </button>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Task Content */}
@@ -707,7 +614,6 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
                     }}
                     onTaskDelete={handleDeleteTask}
                     statusOptions={statusOptions}
-                    priorityOptions={priorityOptions}
                     selectedDate={selectedDate}
                   />
                 </div>
@@ -737,7 +643,6 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
                   onAddTaskFromPlan={(planId) => openFormPanel(undefined, planId)}
                   enableDrillDown={typeof window !== 'undefined' && window.innerWidth >= 768}
                   statusOptions={planStatusOptions}
-                  priorityOptions={planPriorityOptions}
                 />
               </div>
             </div>
@@ -765,8 +670,7 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
                   onAddPlanFromStrategy={(strategyId) => openPlanForm(undefined, strategyId)}
                   enableDrillDown={typeof window !== 'undefined' && window.innerWidth >= 768}
                   statusOptions={strategyStatusOptions}
-                  priorityOptions={priorityOptions}
-                  categoryOptions={strategyCategoryOptions}
+                          categoryOptions={strategyCategoryOptions}
                 />
               </div>
             </div>
@@ -783,7 +687,6 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
           task={editingTask}
           onSave={handleSaveTask}
           statusOptions={statusOptions}
-          priorityOptions={priorityOptions}
           planOptions={planOptions}
           strategyOptions={strategyOptions}
           allTasks={tasks}
@@ -796,8 +699,8 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
           strategy={editingStrategy}
           onSave={handleSaveStrategy}
           statusOptions={strategyStatusOptions}
-          priorityOptions={priorityOptions}
           categoryOptions={strategyCategoryOptions}
+          allStrategies={strategies}
         />
 
         {/* Plan Form Panel */}
@@ -807,8 +710,8 @@ export default function TaskPanelOptimized({ onTasksUpdate, user, loading: authL
           plan={editingPlan}
           onSave={handleSavePlan}
           statusOptions={planStatusOptions}
-          priorityOptions={planPriorityOptions}
           strategyOptions={strategyOptions}
+          allPlans={plans}
         />
 
       {/* Toast Notification */}
