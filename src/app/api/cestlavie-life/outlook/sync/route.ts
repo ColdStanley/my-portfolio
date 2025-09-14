@@ -14,15 +14,36 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Get environment variables
-    const accessToken = process.env.MICROSOFT_ACCESS_TOKEN
-    const calendarId = process.env.MICROSOFT_CALENDAR_ID
+    // Get stored access token (like n8n uses)
+    let accessToken = process.env.MICROSOFT_ACCESS_TOKEN
+    const tokenExpires = process.env.MICROSOFT_TOKEN_EXPIRES
 
-    if (!accessToken || !calendarId) {
+    if (!accessToken) {
       return NextResponse.json({
         success: false,
-        error: 'Microsoft Graph API not configured'
-      }, { status: 500 })
+        error: 'No Outlook authorization found. Please authorize first.',
+        needsAuth: true
+      }, { status: 401 })
+    }
+
+    // Check if token is expired and refresh if needed (like n8n does automatically)
+    if (tokenExpires && Date.now() > parseInt(tokenExpires)) {
+      console.log('Access token expired, refreshing...')
+
+      const refreshResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/outlook/refresh`, {
+        method: 'POST'
+      })
+
+      if (refreshResponse.ok) {
+        const refreshData = await refreshResponse.json()
+        accessToken = refreshData.access_token
+      } else {
+        return NextResponse.json({
+          success: false,
+          error: 'Token expired and refresh failed. Please re-authorize.',
+          needsAuth: true
+        }, { status: 401 })
+      }
     }
 
     const headers = {
@@ -61,21 +82,39 @@ export async function POST(request: NextRequest) {
 }
 
 async function createOutlookEvent(taskData: any, headers: any, calendarId: string) {
+  // Ensure dates are in proper ISO format with timezone
+  const startDate = new Date(taskData.start_date).toISOString()
+  const endDate = new Date(taskData.end_date).toISOString()
+
   const eventData = {
     subject: taskData.title,
-    start: { dateTime: taskData.start_date },
-    end: { dateTime: taskData.end_date },
-    body: { content: taskData.note || '' }
+    start: {
+      dateTime: startDate,
+      timeZone: 'UTC'
+    },
+    end: {
+      dateTime: endDate,
+      timeZone: 'UTC'
+    },
+    body: {
+      content: taskData.note || '',
+      contentType: 'text'
+    }
   }
 
-  const response = await fetch(`${OUTLOOK_API_BASE}/me/calendars/${calendarId}/events`, {
+  console.log('Creating Outlook event:', JSON.stringify(eventData, null, 2))
+
+  // Use /me endpoint with user token (exactly like n8n)
+  const response = await fetch(`${OUTLOOK_API_BASE}/me/events`, {
     method: 'POST',
     headers,
     body: JSON.stringify(eventData)
   })
 
   if (!response.ok) {
-    throw new Error(`Failed to create Outlook event: ${response.statusText}`)
+    const errorDetails = await response.text()
+    console.error('Outlook API Error Details:', errorDetails)
+    throw new Error(`Failed to create Outlook event: ${response.statusText} - ${errorDetails}`)
   }
 
   const event = await response.json()
@@ -95,21 +134,37 @@ async function updateOutlookEvent(taskData: any, headers: any, calendarId: strin
     throw new Error('Task does not have an outlook_event_id')
   }
 
+  // Ensure dates are in proper ISO format with timezone
+  const startDate = new Date(taskData.start_date).toISOString()
+  const endDate = new Date(taskData.end_date).toISOString()
+
   const eventData = {
     subject: taskData.title,
-    start: { dateTime: taskData.start_date },
-    end: { dateTime: taskData.end_date },
-    body: { content: taskData.note || '' }
+    start: {
+      dateTime: startDate,
+      timeZone: 'UTC'
+    },
+    end: {
+      dateTime: endDate,
+      timeZone: 'UTC'
+    },
+    body: {
+      content: taskData.note || '',
+      contentType: 'text'
+    }
   }
 
-  const response = await fetch(`${OUTLOOK_API_BASE}/me/calendars/${calendarId}/events/${taskData.outlook_event_id}`, {
+  // Use /me endpoint with user token (exactly like n8n)
+  const response = await fetch(`${OUTLOOK_API_BASE}/me/events/${taskData.outlook_event_id}`, {
     method: 'PATCH',
     headers,
     body: JSON.stringify(eventData)
   })
 
   if (!response.ok) {
-    throw new Error(`Failed to update Outlook event: ${response.statusText}`)
+    const errorDetails = await response.text()
+    console.error('Outlook API Update Error Details:', errorDetails)
+    throw new Error(`Failed to update Outlook event: ${response.statusText} - ${errorDetails}`)
   }
 
   return {
@@ -123,13 +178,16 @@ async function deleteOutlookEvent(taskData: any, headers: any, calendarId: strin
     throw new Error('Task does not have an outlook_event_id')
   }
 
-  const response = await fetch(`${OUTLOOK_API_BASE}/me/calendars/${calendarId}/events/${taskData.outlook_event_id}`, {
+  // Use /me endpoint with user token (exactly like n8n)
+  const response = await fetch(`${OUTLOOK_API_BASE}/me/events/${taskData.outlook_event_id}`, {
     method: 'DELETE',
     headers
   })
 
   if (!response.ok) {
-    throw new Error(`Failed to delete Outlook event: ${response.statusText}`)
+    const errorDetails = await response.text()
+    console.error('Outlook API Delete Error Details:', errorDetails)
+    throw new Error(`Failed to delete Outlook event: ${response.statusText} - ${errorDetails}`)
   }
 
   return {

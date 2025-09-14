@@ -179,6 +179,11 @@ export default function TaskFormPanel({
 
       if (result.success) {
         alert(`Outlook sync successful: ${result.message}`)
+      } else if (result.needsAuth) {
+        // Need OAuth authorization - open authorization window
+        if (confirm('Outlook authorization required. Authorize now?')) {
+          window.open('/api/auth/outlook/login', '_blank', 'width=600,height=700')
+        }
       } else {
         alert(`Outlook sync failed: ${result.error}`)
       }
