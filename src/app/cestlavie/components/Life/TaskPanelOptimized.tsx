@@ -22,6 +22,7 @@ import { savePlan } from '../../services/planService'
 import { StrategyRecord, StrategyFormData } from '../../types/strategy'
 import { PlanRecord, PlanFormData } from '../../types/plan'
 import type { User } from '@supabase/supabase-js'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/DropdownMenu'
 
 interface TaskPanelOptimizedProps {
   onTasksUpdate?: (tasks: TaskRecord[]) => void
@@ -1030,56 +1031,67 @@ export default function TaskPanelOptimized({
                             )}
                           </div>
                           {task.status === 'Completed' && (
-                            <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0 mt-1.5"></div>
+                            <div className="flex-shrink-0 mt-1">
+                              <svg className="w-3 h-3 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            </div>
                           )}
 
                           {/* Daily Task Control Dot - Right Side */}
-                          <div className="relative flex-shrink-0">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setTaskItemMenuOpen(taskItemMenuOpen === task.id ? null : task.id)
-                              }}
-                              className="w-6 h-6 flex items-center justify-center hover:bg-purple-100 rounded-full transition-colors opacity-0 group-hover:opacity-100"
-                            >
-                              <span className="text-gray-500 text-xs leading-none">⋮</span>
-                            </button>
-
-                            {taskItemMenuOpen === task.id && (
-                              <>
-                                <div
-                                  className="fixed inset-0 z-40"
-                                  onClick={() => setTaskItemMenuOpen(null)}
-                                />
-                                <div className="absolute top-full mt-1 right-0 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-20">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      setEditingTask(task)
-                                      setFormPanelOpen(true)
-                                      setTaskItemMenuOpen(null)
-                                    }}
-                                    className="w-full px-2 py-1 text-xs text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      setDeleteConfirmModal({
-                                        isOpen: true,
-                                        type: 'task',
-                                        item: task
-                                      })
-                                      setTaskItemMenuOpen(null)
-                                    }}
-                                    className="w-full px-2 py-1 text-xs text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-all duration-150 text-left"
-                                  >
-                                    Delete
-                                  </button>
-                                </div>
-                              </>
-                            )}
+                          <div className="flex-shrink-0">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger>
+                                <button className="w-6 h-6 flex items-center justify-center hover:bg-purple-100 rounded-full transition-colors opacity-0 group-hover:opacity-100">
+                                  <span className="text-gray-500 text-xs leading-none">⋮</span>
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent className="bg-white/95 backdrop-blur-sm rounded-lg shadow-xl border border-purple-100 p-1 min-w-20">
+                                <DropdownMenuItem
+                                  className="w-full px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left cursor-pointer"
+                                  onClick={() => {
+                                    setEditingTask(task)
+                                    setFormPanelOpen(true)
+                                  }}
+                                >
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="w-full px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left cursor-pointer"
+                                  onClick={async () => {
+                                    try {
+                                      await saveTask({
+                                        title: task.title,
+                                        status: 'Completed',
+                                        start_date: task.start_date,
+                                        end_date: task.end_date,
+                                        all_day: task.all_day,
+                                        plan: task.plan,
+                                        note: task.note,
+                                        importance_percentage: task.importance_percentage
+                                      }, task.id)
+                                      await loadAllData(true)
+                                    } catch (error) {
+                                      console.error('Failed to complete task:', error)
+                                    }
+                                  }}
+                                >
+                                  Complete
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="w-full px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left cursor-pointer"
+                                  onClick={() => {
+                                    setDeleteConfirmModal({
+                                      isOpen: true,
+                                      type: 'task',
+                                      item: task
+                                    })
+                                  }}
+                                >
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </div>
                       )
@@ -1212,34 +1224,21 @@ export default function TaskPanelOptimized({
             {/* Strategy Title Bar */}
             <div className="flex items-center justify-between px-3 py-2 bg-white/70 backdrop-blur-sm rounded-lg shadow-sm relative">
               <span className="text-sm font-medium text-gray-700">Strategy</span>
-              <div className="relative">
-                <button
-                  onClick={() => setStrategyMenuOpen(!strategyMenuOpen)}
-                  className="w-6 h-6 flex items-center justify-center hover:bg-purple-50 rounded-full transition-colors"
-                >
-                  <span className="text-gray-500 text-xs">⋮</span>
-                </button>
-
-                {strategyMenuOpen && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setStrategyMenuOpen(false)}
-                    />
-                    <div className="absolute top-full mt-2 right-0 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-32">
-                      <button
-                        onClick={() => {
-                          openStrategyForm()
-                          setStrategyMenuOpen(false)
-                        }}
-                        className="w-full px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
-                      >
-                        Add Strategy
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger>
+                  <button className="w-6 h-6 flex items-center justify-center hover:bg-purple-50 rounded-full transition-colors">
+                    <span className="text-gray-500 text-xs">⋮</span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-white/95 backdrop-blur-sm rounded-lg shadow-xl border border-purple-100 p-1 min-w-32">
+                  <DropdownMenuItem
+                    className="w-full px-3 py-1.5 text-sm text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left cursor-pointer"
+                    onClick={() => openStrategyForm()}
+                  >
+                    Add Strategy
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             
             {/* Strategy Treemap */}
@@ -1381,34 +1380,21 @@ export default function TaskPanelOptimized({
             {/* Plan Title Bar */}
             <div className="flex items-center justify-between px-3 py-2 bg-white/70 backdrop-blur-sm rounded-lg shadow-sm relative">
               <span className="text-sm font-medium text-gray-700">Plan</span>
-              <div className="relative">
-                <button
-                  onClick={() => setPlanMenuOpen(!planMenuOpen)}
-                  className="w-6 h-6 flex items-center justify-center hover:bg-purple-50 rounded-full transition-colors"
-                >
-                  <span className="text-gray-500 text-xs">⋮</span>
-                </button>
-
-                {planMenuOpen && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setPlanMenuOpen(false)}
-                    />
-                    <div className="absolute top-full mt-2 right-0 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-32">
-                      <button
-                        onClick={() => {
-                          openPlanForm()
-                          setPlanMenuOpen(false)
-                        }}
-                        className="w-full px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
-                      >
-                        Add Plan
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger>
+                  <button className="w-6 h-6 flex items-center justify-center hover:bg-purple-50 rounded-full transition-colors">
+                    <span className="text-gray-500 text-xs">⋮</span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-white/95 backdrop-blur-sm rounded-lg shadow-xl border border-purple-100 p-1 min-w-32">
+                  <DropdownMenuItem
+                    className="w-full px-3 py-1.5 text-sm text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left cursor-pointer"
+                    onClick={() => openPlanForm()}
+                  >
+                    Add Plan
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             
             {/* Plan Treemap */}
@@ -1550,34 +1536,21 @@ export default function TaskPanelOptimized({
             {/* Task Title Bar */}
             <div className="flex items-center justify-between px-3 py-2 bg-white/70 backdrop-blur-sm rounded-lg shadow-sm relative">
               <span className="text-sm font-medium text-gray-700">Task</span>
-              <div className="relative">
-                <button
-                  onClick={() => setTaskMenuOpen(!taskMenuOpen)}
-                  className="w-6 h-6 flex items-center justify-center hover:bg-purple-50 rounded-full transition-colors"
-                >
-                  <span className="text-gray-500 text-xs">⋮</span>
-                </button>
-
-                {taskMenuOpen && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setTaskMenuOpen(false)}
-                    />
-                    <div className="absolute top-full mt-2 right-0 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-32">
-                      <button
-                        onClick={() => {
-                          openFormPanel()
-                          setTaskMenuOpen(false)
-                        }}
-                        className="w-full px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
-                      >
-                        Add Task
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger>
+                  <button className="w-6 h-6 flex items-center justify-center hover:bg-purple-50 rounded-full transition-colors">
+                    <span className="text-gray-500 text-xs">⋮</span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-white/95 backdrop-blur-sm rounded-lg shadow-xl border border-purple-100 p-1 min-w-32">
+                  <DropdownMenuItem
+                    className="w-full px-3 py-1.5 text-sm text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left cursor-pointer"
+                    onClick={() => openFormPanel()}
+                  >
+                    Add Task
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             
             {/* Task List */}
@@ -1617,52 +1590,37 @@ export default function TaskPanelOptimized({
                       )}
                       
                       {/* Task Control Dot - Right Side */}
-                      <div className="relative">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setTaskItemMenuOpen(taskItemMenuOpen === task.id ? null : task.id)
-                          }}
-                          className="w-6 h-6 flex items-center justify-center hover:bg-purple-100 rounded-full transition-colors opacity-0 group-hover:opacity-100"
-                        >
-                          <span className="text-gray-500 text-xs leading-none">⋮</span>
-                        </button>
-
-                        {taskItemMenuOpen === task.id && (
-                          <>
-                            <div
-                              className="fixed inset-0 z-40"
-                              onClick={() => setTaskItemMenuOpen(null)}
-                            />
-                            <div className="absolute top-full mt-1 right-0 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-20">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setEditingTask(task)
-                                  setFormPanelOpen(true)
-                                  setTaskItemMenuOpen(null)
-                                }}
-                                className="w-full px-2 py-1 text-xs text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setDeleteConfirmModal({
-                                    isOpen: true,
-                                    type: 'task',
-                                    item: task
-                                  })
-                                  setTaskItemMenuOpen(null)
-                                }}
-                                className="w-full px-2 py-1 text-xs text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-all duration-150 text-left"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </>
-                        )}
+                      <div className="flex-shrink-0">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger>
+                            <button className="w-6 h-6 flex items-center justify-center hover:bg-purple-100 rounded-full transition-colors opacity-0 group-hover:opacity-100">
+                              <span className="text-gray-500 text-xs leading-none">⋮</span>
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="bg-white/95 backdrop-blur-sm rounded-lg shadow-xl border border-purple-100 p-1 min-w-20">
+                            <DropdownMenuItem
+                              className="w-full px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left cursor-pointer"
+                              onClick={() => {
+                                setEditingTask(task)
+                                setFormPanelOpen(true)
+                              }}
+                            >
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="w-full px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left cursor-pointer"
+                              onClick={() => {
+                                setDeleteConfirmModal({
+                                  isOpen: true,
+                                  type: 'task',
+                                  item: task
+                                })
+                              }}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                   )
@@ -1761,15 +1719,15 @@ export default function TaskPanelOptimized({
                     if (itemType === 'strategy') {
                       await deleteStrategy(itemId)
                       setStrategies(prev => prev.filter(s => s.id !== itemId))
-                      dataCache.invalidate(CACHE_KEYS.STRATEGIES)
+                      dataCache.delete(CACHE_KEYS.STRATEGIES)
                     } else if (itemType === 'plan') {
                       await deletePlan(itemId)
                       setPlans(prev => prev.filter(p => p.id !== itemId))
-                      dataCache.invalidate(CACHE_KEYS.PLANS)
+                      dataCache.delete(CACHE_KEYS.PLANS)
                     } else if (itemType === 'task') {
                       await deleteTask(itemId)
                       setTasks(prev => prev.filter(t => t.id !== itemId))
-                      dataCache.invalidate(CACHE_KEYS.TASKS)
+                      dataCache.delete(CACHE_KEYS.TASKS)
                     }
 
                     setDeleteConfirmModal({ isOpen: false, type: 'strategy', item: null })
@@ -1823,7 +1781,7 @@ export default function TaskPanelOptimized({
             }}
           />
           <div
-            className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-20"
+            className="fixed z-50 bg-white/95 backdrop-blur-sm rounded-lg shadow-xl border border-purple-100 p-1 min-w-20"
             style={{
               top: `${strategyDropdownPosition.top}px`,
               left: `${strategyDropdownPosition.left}px`
@@ -1840,7 +1798,7 @@ export default function TaskPanelOptimized({
                 setStrategyItemMenuOpen(null)
                 setStrategyDropdownPosition(null)
               }}
-              className="w-full px-2 py-1 text-xs text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
+              className="w-full px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
             >
               Edit
             </button>
@@ -1858,7 +1816,7 @@ export default function TaskPanelOptimized({
                 setStrategyItemMenuOpen(null)
                 setStrategyDropdownPosition(null)
               }}
-              className="w-full px-2 py-1 text-xs text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-all duration-150 text-left"
+              className="w-full px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
             >
               Delete
             </button>
@@ -1878,7 +1836,7 @@ export default function TaskPanelOptimized({
             }}
           />
           <div
-            className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-20"
+            className="fixed z-50 bg-white/95 backdrop-blur-sm rounded-lg shadow-xl border border-purple-100 p-1 min-w-20"
             style={{
               top: `${planDropdownPosition.top}px`,
               left: `${planDropdownPosition.left}px`
@@ -1895,7 +1853,7 @@ export default function TaskPanelOptimized({
                 setPlanItemMenuOpen(null)
                 setPlanDropdownPosition(null)
               }}
-              className="w-full px-2 py-1 text-xs text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
+              className="w-full px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
             >
               Edit
             </button>
@@ -1913,7 +1871,7 @@ export default function TaskPanelOptimized({
                 setPlanItemMenuOpen(null)
                 setPlanDropdownPosition(null)
               }}
-              className="w-full px-2 py-1 text-xs text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-all duration-150 text-left"
+              className="w-full px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
             >
               Delete
             </button>
