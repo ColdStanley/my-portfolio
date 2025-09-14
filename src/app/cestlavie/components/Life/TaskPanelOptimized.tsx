@@ -532,6 +532,23 @@ export default function TaskPanelOptimized({
     }
   }
 
+  // n8n sync helper function
+  const syncTaskToN8n = useCallback(async (action: 'create' | 'update' | 'delete', taskData: any) => {
+    try {
+      await fetch('http://localhost:5678/webhook/Sync Task', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action,
+          data: taskData
+        })
+      })
+    } catch (error) {
+      console.error(`n8n ${action} sync error:`, error)
+    }
+  }, [])
 
   const handleSaveTask = useCallback(async (taskData: TaskFormData) => {
     try {
@@ -547,6 +564,19 @@ export default function TaskPanelOptimized({
       if (isEditing) {
         const updatedTask = { ...editingTask!, ...taskData }
         setTasks(prev => prev.map(task => task.id === updatedTask.id ? updatedTask : task))
+
+        // Auto-sync update to n8n if task has outlook_event_id
+        if (editingTask?.outlook_event_id) {
+          await syncTaskToN8n('update', {
+            id: updatedTask.id,
+            outlook_event_id: editingTask.outlook_event_id,
+            title: updatedTask.title,
+            start_date: updatedTask.start_date,
+            end_date: updatedTask.end_date,
+            all_day: updatedTask.all_day,
+            note: updatedTask.note
+          })
+        }
       } else {
         // For new tasks, we need to reload to get the generated ID
         await loadAllData(true)
@@ -560,7 +590,7 @@ export default function TaskPanelOptimized({
       console.error('Failed to save task:', err)
       setToast({ message: 'Failed to save task', type: 'error' })
     }
-  }, [editingTask])
+  }, [editingTask, syncTaskToN8n])
 
   const handleDeleteTask = useCallback(async (taskId: string) => {
     if (!confirm('Are you sure you want to delete this task?')) return
@@ -575,39 +605,19 @@ export default function TaskPanelOptimized({
       setTasks(prev => prev.filter(task => task.id !== taskId))
       setToast({ message: 'Task deleted successfully', type: 'success' })
 
-      // Auto-sync deletion to Outlook if task has outlook_event_id
+      // Auto-sync deletion to n8n if task has outlook_event_id
       if (taskToDelete?.outlook_event_id) {
-        try {
-          const response = await fetch('/api/cestlavie-life/outlook/sync', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              action: 'delete',
-              taskData: {
-                id: taskToDelete.id,
-                outlook_event_id: taskToDelete.outlook_event_id
-              }
-            })
-          })
-
-          const result = await response.json()
-
-          if (result.success) {
-            console.log(`Outlook auto-delete successful: ${result.message}`)
-          } else {
-            console.warn(`Outlook auto-delete failed: ${result.error}`)
-          }
-        } catch (error: any) {
-          console.error(`Outlook auto-delete error: ${error.message}`)
-        }
+        await syncTaskToN8n('delete', {
+          id: taskToDelete.id,
+          outlook_event_id: taskToDelete.outlook_event_id
+        })
       }
+
     } catch (err) {
       console.error('Failed to delete task:', err)
       setToast({ message: 'Failed to delete task', type: 'error' })
     }
-  }, [tasks])
+  }, [tasks, syncTaskToN8n])
 
   const openFormPanel = useCallback((task?: TaskRecord, defaultPlanId?: string) => {
     setEditingTask(task || null)

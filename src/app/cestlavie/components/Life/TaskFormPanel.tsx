@@ -155,40 +155,34 @@ export default function TaskFormPanel({
     if (!task) return
 
     setSyncingToOutlook(true)
-
     try {
-      const response = await fetch('/api/cestlavie-life/outlook/sync', {
+      const response = await fetch('http://localhost:5678/webhook/Sync Task', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: task.outlook_event_id ? 'update' : 'create',
-          taskData: {
+          action: 'create',
+          data: {
             id: task.id,
             title: task.title,
             start_date: task.start_date,
             end_date: task.end_date,
-            note: task.note,
-            outlook_event_id: task.outlook_event_id
+            note: task.note
           }
         })
       })
 
-      const result = await response.json()
-
-      if (result.success) {
-        alert(`Outlook sync successful: ${result.message}`)
-      } else if (result.needsAuth) {
-        // Need OAuth authorization - open authorization window
-        if (confirm('Outlook authorization required. Authorize now?')) {
-          window.open('/api/auth/outlook/login', '_blank', 'width=600,height=700')
-        }
+      if (response.ok) {
+        const result = await response.json()
+        console.log('n8n sync successful:', result)
+        // n8n should handle writing outlook_event_id back to Notion
+        // Optionally refresh the task data here if needed
       } else {
-        alert(`Outlook sync failed: ${result.error}`)
+        console.error('n8n sync failed:', response.statusText)
       }
-    } catch (error: any) {
-      alert(`Outlook sync error: ${error.message}`)
+    } catch (error) {
+      console.error('n8n sync error:', error)
     } finally {
       setSyncingToOutlook(false)
     }
@@ -417,13 +411,13 @@ export default function TaskFormPanel({
               <button
                 type="button"
                 onClick={handleOutlookSync}
-                disabled={syncingToOutlook}
+                disabled={syncingToOutlook || !!task.outlook_event_id}
                 className={`p-2.5 rounded-md transition-colors duration-200 shadow-sm hover:shadow-md flex-shrink-0 ${
-                  syncingToOutlook
-                    ? 'bg-blue-200 text-blue-500 cursor-not-allowed'
+                  syncingToOutlook || task.outlook_event_id
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     : 'bg-blue-100 hover:bg-blue-200 text-blue-600 hover:text-blue-700'
                 }`}
-                title={task.outlook_event_id ? 'Update in Outlook' : 'Sync to Outlook'}
+                title={task.outlook_event_id ? 'Already synced to Outlook' : 'Sync to Outlook'}
               >
                 {syncingToOutlook ? (
                   <div className="w-4 h-4 animate-spin border-2 border-blue-600 border-t-transparent rounded-full"></div>
@@ -670,13 +664,13 @@ export default function TaskFormPanel({
                 <button
                   type="button"
                   onClick={handleOutlookSync}
-                  disabled={syncingToOutlook}
+                  disabled={syncingToOutlook || !!task.outlook_event_id}
                   className={`p-3 rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg flex-shrink-0 ${
-                    syncingToOutlook
-                      ? 'bg-blue-200 text-blue-500 cursor-not-allowed'
+                    syncingToOutlook || task.outlook_event_id
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                       : 'bg-blue-100 hover:bg-blue-200 text-blue-600 hover:text-blue-700'
                   }`}
-                  title={task.outlook_event_id ? 'Update in Outlook' : 'Sync to Outlook'}
+                  title={task.outlook_event_id ? 'Already synced to Outlook' : 'Sync to Outlook'}
                 >
                   {syncingToOutlook ? (
                     <div className="w-5 h-5 animate-spin border-2 border-blue-600 border-t-transparent rounded-full"></div>
