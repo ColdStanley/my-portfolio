@@ -63,6 +63,11 @@ export default function TaskPanelOptimized({
   const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('en-CA'))
   const [currentMonth, setCurrentMonth] = useState(new Date())
 
+  // Dropdown menu states
+  const [strategyMenuOpen, setStrategyMenuOpen] = useState(false)
+  const [planMenuOpen, setPlanMenuOpen] = useState(false)
+  const [taskMenuOpen, setTaskMenuOpen] = useState(false)
+
   // Drill-down state
   const [drillDownMode, setDrillDownMode] = useState<'all' | 'strategy-plans' | 'plan-tasks'>('all')
   const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(null)
@@ -839,7 +844,13 @@ export default function TaskPanelOptimized({
                   {selectedDate === new Date().toLocaleDateString('en-CA') ? `${selectedDate} (Today)` : selectedDate}
                 </span>
                 <div className="w-5 h-5 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-xs font-medium">
-                  {tasks.filter(task => task.start_date && task.start_date.startsWith(selectedDate)).length}
+                  {tasks.filter(task => {
+                    if (!task.start_date && !task.end_date) return false
+                    const taskDate = task.start_date || task.end_date
+                    if (!taskDate) return false
+                    const taskDateString = new Date(taskDate).toLocaleDateString('en-CA')
+                    return taskDateString === selectedDate
+                  }).length}
                 </div>
               </div>
               <button className="w-6 h-6 flex items-center justify-center hover:bg-purple-50 rounded-full transition-colors">
@@ -851,7 +862,16 @@ export default function TaskPanelOptimized({
             <div className="aspect-square bg-white/90 backdrop-blur-md rounded-xl shadow-xl p-4 overflow-y-auto">
               {(() => {
                 const dailyTasks = tasks
-                  .filter(task => task.start_date && task.start_date.startsWith(selectedDate))
+                  .filter(task => {
+                    if (!task.start_date && !task.end_date) return false
+
+                    const taskDate = task.start_date || task.end_date
+                    if (!taskDate) return false
+
+                    // Use same date conversion logic as calendar
+                    const taskDateString = new Date(taskDate).toLocaleDateString('en-CA')
+                    return taskDateString === selectedDate
+                  })
                   .sort((a, b) => {
                     const aTime = a.start_date ? new Date(a.start_date).getTime() : 0
                     const bTime = b.start_date ? new Date(b.start_date).getTime() : 0
@@ -938,14 +958,36 @@ export default function TaskPanelOptimized({
           {/* Left Column - Strategy */}
           <div className="flex flex-col gap-2">
             {/* Strategy Title Bar */}
-            <div className="flex items-center justify-between px-3 py-2 bg-white/70 backdrop-blur-sm rounded-lg shadow-sm">
+            <div className="flex items-center justify-between px-3 py-2 bg-white/70 backdrop-blur-sm rounded-lg shadow-sm relative">
               <span className="text-sm font-medium text-gray-700">Strategy</span>
-              <button
-                onClick={() => openStrategyForm()}
-                className="w-6 h-6 flex items-center justify-center hover:bg-purple-50 rounded-full transition-colors"
-              >
-                <span className="text-gray-500 text-xs">⋮</span>
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setStrategyMenuOpen(!strategyMenuOpen)}
+                  className="w-6 h-6 flex items-center justify-center hover:bg-purple-50 rounded-full transition-colors"
+                >
+                  <span className="text-gray-500 text-xs">⋮</span>
+                </button>
+
+                {strategyMenuOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setStrategyMenuOpen(false)}
+                    />
+                    <div className="absolute top-full mt-2 right-0 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-32">
+                      <button
+                        onClick={() => {
+                          openStrategyForm()
+                          setStrategyMenuOpen(false)
+                        }}
+                        className="w-full px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
+                      >
+                        Add Strategy
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
             
             {/* Strategy Treemap */}
@@ -1067,14 +1109,36 @@ export default function TaskPanelOptimized({
           {/* Middle Column - Plan */}
           <div className="flex flex-col gap-2">
             {/* Plan Title Bar */}
-            <div className="flex items-center justify-between px-3 py-2 bg-white/70 backdrop-blur-sm rounded-lg shadow-sm">
+            <div className="flex items-center justify-between px-3 py-2 bg-white/70 backdrop-blur-sm rounded-lg shadow-sm relative">
               <span className="text-sm font-medium text-gray-700">Plan</span>
-              <button
-                onClick={() => openPlanForm()}
-                className="w-6 h-6 flex items-center justify-center hover:bg-purple-50 rounded-full transition-colors"
-              >
-                <span className="text-gray-500 text-xs">⋮</span>
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setPlanMenuOpen(!planMenuOpen)}
+                  className="w-6 h-6 flex items-center justify-center hover:bg-purple-50 rounded-full transition-colors"
+                >
+                  <span className="text-gray-500 text-xs">⋮</span>
+                </button>
+
+                {planMenuOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setPlanMenuOpen(false)}
+                    />
+                    <div className="absolute top-full mt-2 right-0 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-32">
+                      <button
+                        onClick={() => {
+                          openPlanForm()
+                          setPlanMenuOpen(false)
+                        }}
+                        className="w-full px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
+                      >
+                        Add Plan
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
             
             {/* Plan Treemap */}
@@ -1196,18 +1260,40 @@ export default function TaskPanelOptimized({
           {/* Right Column - Task */}
           <div className="flex flex-col gap-2">
             {/* Task Title Bar */}
-            <div className="flex items-center justify-between px-3 py-2 bg-white/70 backdrop-blur-sm rounded-lg shadow-sm">
+            <div className="flex items-center justify-between px-3 py-2 bg-white/70 backdrop-blur-sm rounded-lg shadow-sm relative">
               <span className="text-sm font-medium text-gray-700">Task</span>
-              <button
-                onClick={() => openFormPanel()}
-                className="w-6 h-6 flex items-center justify-center hover:bg-purple-50 rounded-full transition-colors"
-              >
-                <span className="text-gray-500 text-xs">⋮</span>
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setTaskMenuOpen(!taskMenuOpen)}
+                  className="w-6 h-6 flex items-center justify-center hover:bg-purple-50 rounded-full transition-colors"
+                >
+                  <span className="text-gray-500 text-xs">⋮</span>
+                </button>
+
+                {taskMenuOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setTaskMenuOpen(false)}
+                    />
+                    <div className="absolute top-full mt-2 right-0 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-32">
+                      <button
+                        onClick={() => {
+                          openFormPanel()
+                          setTaskMenuOpen(false)
+                        }}
+                        className="w-full px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
+                      >
+                        Add Task
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
             
             {/* Task List */}
-          <div className="aspect-square bg-white/90 backdrop-blur-md rounded-xl shadow-xl p-4 overflow-y-auto">
+          <div className="aspect-square bg-white/90 rounded-xl shadow-xl p-4">
             {selectedPlanTasks.length > 0 ? (
               <div className="space-y-2">
                 {selectedPlanTasks.map((task) => {
@@ -1270,7 +1356,6 @@ export default function TaskPanelOptimized({
           </div>
         </div>
       </div>
-
 
 
       {/* Task Form Panel */}

@@ -91,6 +91,8 @@ export default function HomePage() {
 
 function HeroSection() {
   const [scrollY, setScrollY] = useState(0)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const playCountRef = useRef(0)
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY)
@@ -98,10 +100,51 @@ function HeroSection() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  useEffect(() => {
+    const video = videoRef.current
+    if (video) {
+      const handleLoadedData = () => {
+        video.playbackRate = 0.3
+      }
+
+      const handleEnded = () => {
+        playCountRef.current += 1
+        if (playCountRef.current < 2) {
+          // 播放第2次
+          video.currentTime = 0
+          video.play()
+        }
+        // 播放2次后自动停止，定格在最后一帧
+      }
+
+      video.addEventListener('loadeddata', handleLoadedData)
+      video.addEventListener('ended', handleEnded)
+
+      return () => {
+        video.removeEventListener('loadeddata', handleLoadedData)
+        video.removeEventListener('ended', handleEnded)
+      }
+    }
+  }, [])
+
   return (
-    <section className="min-h-screen flex items-center justify-center px-6 pt-16 relative">
-      <motion.div 
-        className="max-w-4xl mx-auto text-center"
+    <section className="min-h-screen flex items-center justify-center px-6 pt-16 relative overflow-hidden">
+      {/* Background Video */}
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover opacity-40 z-0"
+      >
+        <source src="/AI in Purple Background.mp4" type="video/mp4" />
+      </video>
+
+      {/* Video Overlay for better text readability */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900/10 to-purple-900/20 z-10" />
+
+      <motion.div
+        className="max-w-4xl mx-auto text-center relative z-20"
         style={{ y: scrollY * 0.3 }}
       >
         <motion.div
