@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { TaskRecord, TaskFormData, TaskFormPanelProps, PlanOption, StrategyOption } from '../../types/task'
 import { toDatetimeLocal, toUTC, getDefaultStartTime, getDefaultEndTime } from '@/utils/dateUtils'
+import { openNotionPage } from '../../utils/planUtils'
 
 export default function TaskFormPanel({ 
   isOpen, 
@@ -314,12 +315,27 @@ export default function TaskFormPanel({
           </form>
           
           {/* Footer with Submit Button */}
-          <div className="px-6 py-4 border-t border-gray-100 flex-shrink-0">
+          <div className="px-6 py-4 border-t border-gray-100 flex-shrink-0 flex gap-3">
+            {task && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault()
+                  openNotionPage(task.id)
+                }}
+                className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-700 rounded-md transition-colors duration-200 shadow-sm hover:shadow-md flex-shrink-0"
+                title="Open in Notion"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.968c-.42-.326-.981-.7-2.055-.607L3.01 2.295c-.466.046-.56.28-.374.466l1.823 1.447zm.793 3.08v13.904c0 .747.373 1.027 1.214.98l14.523-.84c.841-.046.935-.56.935-1.167V6.354c0-.606-.233-.933-.748-.887l-15.177.887c-.56.047-.747.327-.747.934zm14.337.745c.093.42 0 .84-.42.888l-.7.14v10.264c-.608.327-1.168.514-1.635.514-.748 0-.935-.234-1.495-.933l-4.577-7.186v6.952L12.21 19s0 .84-1.168.84l-3.222.186c-.093-.186 0-.653.327-.746l.84-.233V9.854L7.822 9.76c-.094-.42.14-1.026.793-1.073l3.456-.233 4.764 7.279v-6.44l-1.215-.139c-.093-.514.28-.887.747-.933l3.222-.14z"/>
+                </svg>
+              </button>
+            )}
             <button
               type="submit"
               form="task-form"
               disabled={!isValid && formData.plan && formData.importance_percentage !== 0}
-              className={`w-full py-2.5 px-4 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500
+              className={`flex-1 py-2.5 px-4 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500
                         transition-colors duration-200 font-medium text-sm shadow-sm hover:shadow-md
                         ${!isValid && formData.plan && formData.importance_percentage !== 0
                           ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
@@ -531,11 +547,26 @@ export default function TaskFormPanel({
             )}
 
             {/* Submit Button */}
-            <div className="pb-6">
+            <div className="pb-6 flex gap-3">
+              {task && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    openNotionPage(task.id)
+                  }}
+                  className="p-3 bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-700 rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg flex-shrink-0"
+                  title="Open in Notion"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.968c-.42-.326-.981-.7-2.055-.607L3.01 2.295c-.466.046-.56.28-.374.466l1.823 1.447zm.793 3.08v13.904c0 .747.373 1.027 1.214.98l14.523-.84c.841-.046.935-.56.935-1.167V6.354c0-.606-.233-.933-.748-.887l-15.177.887c-.56.047-.747.327-.747.934zm14.337.745c.093.42 0 .84-.42.888l-.7.14v10.264c-.608.327-1.168.514-1.635.514-.748 0-.935-.234-1.495-.933l-4.577-7.186v6.952L12.21 19s0 .84-1.168.84l-3.222.186c-.093-.186 0-.653.327-.746l.84-.233V9.854L7.822 9.76c-.094-.42.14-1.026.793-1.073l3.456-.233 4.764 7.279v-6.44l-1.215-.139c-.093-.514.28-.887.747-.933l3.222-.14z"/>
+                  </svg>
+                </button>
+              )}
               <button
                 type="submit"
                 disabled={!isValid && formData.plan && formData.importance_percentage !== 0}
-                className={`w-full py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500
+                className={`flex-1 py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500
                           transition-colors duration-200 font-medium shadow-md hover:shadow-lg
                           ${!isValid && formData.plan && formData.importance_percentage !== 0
                             ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
