@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { TaskRecord, TaskFormData, PlanOption, StrategyOption } from '../../types/task'
 import { StrategyRecord } from '../../types/strategy'
 import { PlanRecord } from '../../types/plan'
@@ -67,11 +68,34 @@ export default function TaskPanelOptimized({
   const [strategyMenuOpen, setStrategyMenuOpen] = useState(false)
   const [planMenuOpen, setPlanMenuOpen] = useState(false)
   const [taskMenuOpen, setTaskMenuOpen] = useState(false)
+  const [dailyTaskMenuOpen, setDailyTaskMenuOpen] = useState(false)
 
   // Individual item dropdown states
   const [strategyItemMenuOpen, setStrategyItemMenuOpen] = useState<string | null>(null)
   const [planItemMenuOpen, setPlanItemMenuOpen] = useState<string | null>(null)
   const [taskItemMenuOpen, setTaskItemMenuOpen] = useState<string | null>(null)
+
+  // Portal dropdown position states
+  const [strategyDropdownPosition, setStrategyDropdownPosition] = useState<{ top: number; left: number } | null>(null)
+  const [planDropdownPosition, setPlanDropdownPosition] = useState<{ top: number; left: number } | null>(null)
+  const [dailyTaskDropdownPosition, setDailyTaskDropdownPosition] = useState<{ top: number; left: number } | null>(null)
+
+  // Close dropdowns on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (strategyItemMenuOpen || planItemMenuOpen || dailyTaskMenuOpen) {
+        setStrategyItemMenuOpen(null)
+        setStrategyDropdownPosition(null)
+        setPlanItemMenuOpen(null)
+        setPlanDropdownPosition(null)
+        setDailyTaskMenuOpen(false)
+        setDailyTaskDropdownPosition(null)
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll, true) // Use capture phase
+    return () => window.removeEventListener('scroll', handleScroll, true)
+  }, [strategyItemMenuOpen, planItemMenuOpen, dailyTaskMenuOpen])
 
   // Delete confirmation modal states
   const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
@@ -850,7 +874,7 @@ export default function TaskPanelOptimized({
           {/* Middle Column - Daily Tasks */}
           <div className="flex flex-col gap-2">
             {/* Daily Tasks Title Bar */}
-            <div className="flex items-center justify-between px-3 py-2 bg-white/70 backdrop-blur-sm rounded-lg shadow-sm">
+            <div className="flex items-center justify-between px-3 py-2 bg-white/70 backdrop-blur-sm rounded-lg shadow-sm relative">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-gray-700">
                   {selectedDate === new Date().toLocaleDateString('en-CA') ? `${selectedDate} (Today)` : selectedDate}
@@ -865,9 +889,37 @@ export default function TaskPanelOptimized({
                   }).length}
                 </div>
               </div>
-              <button className="w-6 h-6 flex items-center justify-center hover:bg-purple-50 rounded-full transition-colors">
-                <span className="text-gray-500 text-xs">⋮</span>
-              </button>
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+
+                    if (dailyTaskMenuOpen) {
+                      // Close dropdown
+                      setDailyTaskMenuOpen(false)
+                      setDailyTaskDropdownPosition(null)
+                    } else {
+                      // Calculate position and open dropdown
+                      const buttonRect = e.currentTarget.getBoundingClientRect()
+                      const dropdownPosition = {
+                        top: buttonRect.bottom + 10,
+                        left: buttonRect.left + buttonRect.width - 115, // Fine tune position
+                      }
+
+                      // Boundary check for viewport
+                      const viewport = { width: window.innerWidth, height: window.innerHeight }
+                      if (dropdownPosition.left < 4) dropdownPosition.left = 4
+                      if (dropdownPosition.left + 80 > viewport.width) dropdownPosition.left = viewport.width - 84
+
+                      setDailyTaskDropdownPosition(dropdownPosition)
+                      setDailyTaskMenuOpen(true)
+                    }
+                  }}
+                  className="w-6 h-6 flex items-center justify-center hover:bg-purple-50 rounded-full transition-colors"
+                >
+                  <span className="text-gray-500 text-xs">⋮</span>
+                </button>
+              </div>
             </div>
 
             {/* Daily Tasks Content */}
@@ -921,12 +973,11 @@ export default function TaskPanelOptimized({
                         <div
                           key={task.id}
                           className="group flex gap-3 p-2 rounded-lg hover:bg-purple-50 transition-colors cursor-pointer"
-                          onClick={() => openFormPanel(task)}
                         >
                           <div className="text-xs font-mono text-purple-600 min-w-[4rem] flex-shrink-0 text-right">
                             {startTime} - {endTime}
                           </div>
-                          <div className="flex-1">
+                          <div className="flex-1" onClick={() => openFormPanel(task)}>
                             <div className="text-sm text-gray-700 leading-tight font-medium">
                               {task.title}
                             </div>
@@ -939,6 +990,55 @@ export default function TaskPanelOptimized({
                           {task.status === 'Completed' && (
                             <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0 mt-1.5"></div>
                           )}
+
+                          {/* Daily Task Control Dot - Right Side */}
+                          <div className="relative flex-shrink-0">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setTaskItemMenuOpen(taskItemMenuOpen === task.id ? null : task.id)
+                              }}
+                              className="w-6 h-6 flex items-center justify-center hover:bg-purple-100 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                            >
+                              <span className="text-gray-500 text-xs leading-none">⋮</span>
+                            </button>
+
+                            {taskItemMenuOpen === task.id && (
+                              <>
+                                <div
+                                  className="fixed inset-0 z-40"
+                                  onClick={() => setTaskItemMenuOpen(null)}
+                                />
+                                <div className="absolute top-full mt-1 right-0 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-20">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setEditingTask(task)
+                                      setFormPanelOpen(true)
+                                      setTaskItemMenuOpen(null)
+                                    }}
+                                    className="w-full px-2 py-1 text-xs text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setDeleteConfirmModal({
+                                        isOpen: true,
+                                        type: 'task',
+                                        item: task
+                                      })
+                                      setTaskItemMenuOpen(null)
+                                    }}
+                                    className="w-full px-2 py-1 text-xs text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-all duration-150 text-left"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
                       )
                     })}
@@ -1194,54 +1294,33 @@ export default function TaskPanelOptimized({
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            setStrategyItemMenuOpen(strategyItemMenuOpen === rect.id ? null : rect.id)
+
+                            if (strategyItemMenuOpen === rect.id) {
+                              // Close dropdown
+                              setStrategyItemMenuOpen(null)
+                              setStrategyDropdownPosition(null)
+                            } else {
+                              // Calculate position and open dropdown
+                              const buttonRect = e.currentTarget.getBoundingClientRect()
+                              const dropdownPosition = {
+                                top: buttonRect.bottom + 2,
+                                left: buttonRect.left + buttonRect.width - 100, // Move left more
+                              }
+
+                              // Boundary check for viewport
+                              const viewport = { width: window.innerWidth, height: window.innerHeight }
+                              if (dropdownPosition.left < 4) dropdownPosition.left = 4
+                              if (dropdownPosition.left + 80 > viewport.width) dropdownPosition.left = viewport.width - 84
+
+                              setStrategyDropdownPosition(dropdownPosition)
+                              setStrategyItemMenuOpen(rect.id)
+                            }
                           }}
                           className="w-full h-full bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-150"
                         >
                           <span className="text-gray-600 text-xs leading-none">⋮</span>
                         </button>
 
-                        {strategyItemMenuOpen === rect.id && (
-                          <>
-                            <div
-                              className="fixed inset-0 z-40"
-                              onClick={() => setStrategyItemMenuOpen(null)}
-                            />
-                            <div className="absolute top-full mt-1 right-0 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-20">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  const strategy = strategies.find(s => s.id === rect.id)
-                                  if (strategy) {
-                                    setEditingStrategy(strategy)
-                                    setStrategyFormOpen(true)
-                                  }
-                                  setStrategyItemMenuOpen(null)
-                                }}
-                                className="w-full px-2 py-1 text-xs text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  const strategy = strategies.find(s => s.id === rect.id)
-                                  if (strategy) {
-                                    setDeleteConfirmModal({
-                                      isOpen: true,
-                                      type: 'strategy',
-                                      item: strategy
-                                    })
-                                  }
-                                  setStrategyItemMenuOpen(null)
-                                }}
-                                className="w-full px-2 py-1 text-xs text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-all duration-150 text-left"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </>
-                        )}
                       </div>
                     </foreignObject>
                   </g>
@@ -1384,54 +1463,33 @@ export default function TaskPanelOptimized({
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            setPlanItemMenuOpen(planItemMenuOpen === rect.id ? null : rect.id)
+
+                            if (planItemMenuOpen === rect.id) {
+                              // Close dropdown
+                              setPlanItemMenuOpen(null)
+                              setPlanDropdownPosition(null)
+                            } else {
+                              // Calculate position and open dropdown
+                              const buttonRect = e.currentTarget.getBoundingClientRect()
+                              const dropdownPosition = {
+                                top: buttonRect.bottom + 2,
+                                left: buttonRect.left + buttonRect.width - 100, // Move left more
+                              }
+
+                              // Boundary check for viewport
+                              const viewport = { width: window.innerWidth, height: window.innerHeight }
+                              if (dropdownPosition.left < 4) dropdownPosition.left = 4
+                              if (dropdownPosition.left + 80 > viewport.width) dropdownPosition.left = viewport.width - 84
+
+                              setPlanDropdownPosition(dropdownPosition)
+                              setPlanItemMenuOpen(rect.id)
+                            }
                           }}
                           className="w-full h-full bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-150"
                         >
                           <span className="text-gray-600 text-xs leading-none">⋮</span>
                         </button>
 
-                        {planItemMenuOpen === rect.id && (
-                          <>
-                            <div
-                              className="fixed inset-0 z-40"
-                              onClick={() => setPlanItemMenuOpen(null)}
-                            />
-                            <div className="absolute top-full mt-1 right-0 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-20">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  const plan = plans.find(p => p.id === rect.id)
-                                  if (plan) {
-                                    setEditingPlan(plan)
-                                    setPlanFormOpen(true)
-                                  }
-                                  setPlanItemMenuOpen(null)
-                                }}
-                                className="w-full px-2 py-1 text-xs text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  const plan = plans.find(p => p.id === rect.id)
-                                  if (plan) {
-                                    setDeleteConfirmModal({
-                                      isOpen: true,
-                                      type: 'plan',
-                                      item: plan
-                                    })
-                                  }
-                                  setPlanItemMenuOpen(null)
-                                }}
-                                className="w-full px-2 py-1 text-xs text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-all duration-150 text-left"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </>
-                        )}
                       </div>
                     </foreignObject>
                   </g>
@@ -1710,6 +1768,149 @@ export default function TaskPanelOptimized({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Strategy Dropdown Portal */}
+      {strategyItemMenuOpen && strategyDropdownPosition && typeof window !== 'undefined' && createPortal(
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => {
+              setStrategyItemMenuOpen(null)
+              setStrategyDropdownPosition(null)
+            }}
+          />
+          <div
+            className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-20"
+            style={{
+              top: `${strategyDropdownPosition.top}px`,
+              left: `${strategyDropdownPosition.left}px`
+            }}
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                const strategy = strategies.find(s => s.id === strategyItemMenuOpen)
+                if (strategy) {
+                  setEditingStrategy(strategy)
+                  setStrategyFormOpen(true)
+                }
+                setStrategyItemMenuOpen(null)
+                setStrategyDropdownPosition(null)
+              }}
+              className="w-full px-2 py-1 text-xs text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
+            >
+              Edit
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                const strategy = strategies.find(s => s.id === strategyItemMenuOpen)
+                if (strategy) {
+                  setDeleteConfirmModal({
+                    isOpen: true,
+                    type: 'strategy',
+                    item: strategy
+                  })
+                }
+                setStrategyItemMenuOpen(null)
+                setStrategyDropdownPosition(null)
+              }}
+              className="w-full px-2 py-1 text-xs text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-all duration-150 text-left"
+            >
+              Delete
+            </button>
+          </div>
+        </>,
+        document.body
+      )}
+
+      {/* Plan Dropdown Portal */}
+      {planItemMenuOpen && planDropdownPosition && typeof window !== 'undefined' && createPortal(
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => {
+              setPlanItemMenuOpen(null)
+              setPlanDropdownPosition(null)
+            }}
+          />
+          <div
+            className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-20"
+            style={{
+              top: `${planDropdownPosition.top}px`,
+              left: `${planDropdownPosition.left}px`
+            }}
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                const plan = plans.find(p => p.id === planItemMenuOpen)
+                if (plan) {
+                  setEditingPlan(plan)
+                  setPlanFormOpen(true)
+                }
+                setPlanItemMenuOpen(null)
+                setPlanDropdownPosition(null)
+              }}
+              className="w-full px-2 py-1 text-xs text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
+            >
+              Edit
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                const plan = plans.find(p => p.id === planItemMenuOpen)
+                if (plan) {
+                  setDeleteConfirmModal({
+                    isOpen: true,
+                    type: 'plan',
+                    item: plan
+                  })
+                }
+                setPlanItemMenuOpen(null)
+                setPlanDropdownPosition(null)
+              }}
+              className="w-full px-2 py-1 text-xs text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-all duration-150 text-left"
+            >
+              Delete
+            </button>
+          </div>
+        </>,
+        document.body
+      )}
+
+      {/* Daily Tasks Dropdown Portal */}
+      {dailyTaskMenuOpen && dailyTaskDropdownPosition && typeof window !== 'undefined' && createPortal(
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => {
+              setDailyTaskMenuOpen(false)
+              setDailyTaskDropdownPosition(null)
+            }}
+          />
+          <div
+            className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-32"
+            style={{
+              top: `${dailyTaskDropdownPosition.top}px`,
+              left: `${dailyTaskDropdownPosition.left}px`
+            }}
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                openFormPanel()
+                setDailyTaskMenuOpen(false)
+                setDailyTaskDropdownPosition(null)
+              }}
+              className="w-full px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
+            >
+              Add Task
+            </button>
+          </div>
+        </>,
+        document.body
       )}
     </>
   )
