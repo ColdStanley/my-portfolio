@@ -23,7 +23,7 @@ export function formatDateTime(dateTimeString: string): string {
       day: 'numeric', 
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
+      hour12: false
     })
   } catch (error) {
     return 'Invalid date'
@@ -44,7 +44,7 @@ export function formatDateTimeWithWeekday(dateTimeString: string): string {
       day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
+      hour12: false
     })
   } catch (error) {
     return 'Invalid date'
@@ -82,7 +82,7 @@ export function formatDateAndTime(startDate: string, endDate?: string): string {
       day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
+      hour12: false
     })
     
     if (!endDate) return startStr
@@ -91,7 +91,7 @@ export function formatDateAndTime(startDate: string, endDate?: string): string {
     const endStr = end.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit', 
-      hour12: true
+      hour12: false
     })
     
     // Same day - show date once
@@ -105,7 +105,7 @@ export function formatDateAndTime(startDate: string, endDate?: string): string {
       day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true  
+      hour12: false  
     })
     
     return `${startStr} - ${fullEndStr}`
