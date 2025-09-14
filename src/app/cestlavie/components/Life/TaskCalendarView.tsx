@@ -131,7 +131,7 @@ export default function TaskCalendarView({
 
 
   return (
-    <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl p-4">
+    <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl p-4 h-full flex flex-col">
       {/* Calendar Header */}
       <div className="flex items-center justify-between mb-4">
         <button
@@ -165,7 +165,7 @@ export default function TaskCalendarView({
       </div>
       
       {/* Calendar Days */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-1 flex-1">
         {calendarDays.map(({ date, isCurrentMonth, dateString }) => {
           const dayTasks = getTasksForDate(dateString)
           const isSelected = selectedDate === dateString
@@ -175,7 +175,7 @@ export default function TaskCalendarView({
             <div
               key={dateString}
               className={`
-                relative h-8 cursor-pointer transition-colors duration-200 rounded
+                relative h-full cursor-pointer transition-colors duration-200 rounded
                 ${isSelected 
                   ? 'bg-purple-600 text-white' 
                   : isCurrentDay 

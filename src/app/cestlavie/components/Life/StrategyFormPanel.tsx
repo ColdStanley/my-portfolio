@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { StrategyRecord, StrategyFormData, StrategyFormPanelProps } from '../../types/strategy'
 import { getDefaultStrategyFormData } from '../../utils/strategyUtils'
 
@@ -73,16 +74,17 @@ export default function StrategyFormPanel({
     onSave(processedFormData)
   }, [formData, onSave, isValid, projectedTotal])
 
-  return (
+  if (!isOpen) return null
+
+  const modalContent = (
     <>
       {/* Strategy Form Panel - Modal Style */}
-      <div 
-        className={`hidden md:block fixed inset-0 flex items-center justify-center z-50 transition-all duration-300 ${
-          isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
-        }`}
+      <div
+        className="hidden md:block fixed inset-0 z-50"
+        onClick={onClose}
       >
-        <div 
-          className="w-96 max-h-[85vh] bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col transform transition-all duration-300"
+        <div
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] max-h-[90vh] bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header with Close Button */}
@@ -463,4 +465,6 @@ export default function StrategyFormPanel({
       </div>
     </>
   )
+
+  return createPortal(modalContent, document.body)
 }

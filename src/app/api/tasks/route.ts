@@ -79,7 +79,6 @@ export async function GET(request: NextRequest) {
         const properties = databaseInfo.properties as any
         const statusOptions = properties.status?.select?.options?.map((opt: any) => opt.name) || []
 
-        console.log('Tasks API: Extracted statusOptions:', statusOptions)
 
         return NextResponse.json({ 
           schema: {

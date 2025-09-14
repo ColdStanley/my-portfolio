@@ -11,11 +11,13 @@
 /* HTML base styles */
 html {
   scroll-behavior: smooth;
+  height: 100%;
 }
 
 /* Base layer styles */
 @layer base {
   body {
     @apply bg-background text-foreground;
+    height: 100%;
   }
 }

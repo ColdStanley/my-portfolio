@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { TaskRecord, TaskFormData, TaskFormPanelProps, PlanOption, StrategyOption } from '../../types/task'
 import { toDatetimeLocal, toUTC, getDefaultStartTime, getDefaultEndTime } from '@/utils/dateUtils'
 
@@ -110,16 +111,17 @@ export default function TaskFormPanel({
     onSave(processedFormData)
   }, [formData, onSave, isValid, projectedTotal])
 
-  return (
+  if (!isOpen) return null
+
+  const modalContent = (
     <>
       {/* Task Form Panel - Modal Style */}
-      <div 
-        className={`hidden md:block fixed inset-0 flex items-center justify-center z-50 transition-all duration-300 ${
-          isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
-        }`}
+      <div
+        className="hidden md:block fixed inset-0 z-50"
+        onClick={onClose}
       >
-        <div 
-          className="w-96 max-h-[85vh] bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col transform transition-all duration-300"
+        <div
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] max-h-[90vh] bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header with Close Button */}
@@ -142,15 +144,17 @@ export default function TaskFormPanel({
               <select
                 value={formData.plan || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, plan: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-md 
+                className="w-full px-3 py-2 border border-gray-200 rounded-md
                           focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500
                           bg-white text-purple-700 text-sm
                           hover:border-gray-300 transition-all duration-200"
               >
                 <option value="">No Plan</option>
-                {planOptions.map(plan => (
+                {planOptions
+                  .sort((a, b) => (b.importance_percentage || 0) - (a.importance_percentage || 0))
+                  .map(plan => (
                   <option key={plan.id} value={plan.id}>
-                    {plan.objective || 'Untitled Plan'}
+                    {plan.objective || 'Untitled Plan'} - {plan.importance_percentage || 0}%
                   </option>
                 ))}
               </select>
@@ -364,9 +368,11 @@ export default function TaskFormPanel({
                           hover:border-gray-300 transition-all duration-200"
               >
                 <option value="">No Plan</option>
-                {planOptions.map(plan => (
+                {planOptions
+                  .sort((a, b) => (b.importance_percentage || 0) - (a.importance_percentage || 0))
+                  .map(plan => (
                   <option key={plan.id} value={plan.id}>
-                    {plan.objective || 'Untitled Plan'}
+                    {plan.objective || 'Untitled Plan'} - {plan.importance_percentage || 0}%
                   </option>
                 ))}
               </select>
@@ -544,4 +550,6 @@ export default function TaskFormPanel({
       </div>
     </>
   )
+
+  return createPortal(modalContent, document.body)
 }

@@ -45,6 +45,7 @@ export interface PlanOption {
   strategy?: string
   task?: string[]
   title?: string // For backward compatibility
+  importance_percentage?: number
 }
 
 /**

@@ -26,18 +26,12 @@ interface TaskPanelOptimizedProps {
   onTasksUpdate?: (tasks: TaskRecord[]) => void
   user?: User | null
   loading?: boolean
-  onOpenTaskForm?: (task: TaskRecord | null) => void
-  onOpenStrategyForm?: (strategy: StrategyRecord | null) => void
-  onOpenPlanForm?: (plan: PlanRecord | null) => void
 }
 
-export default function TaskPanelOptimized({ 
-  onTasksUpdate, 
-  user, 
-  loading: authLoading,
-  onOpenTaskForm,
-  onOpenStrategyForm,
-  onOpenPlanForm
+export default function TaskPanelOptimized({
+  onTasksUpdate,
+  user,
+  loading: authLoading
 }: TaskPanelOptimizedProps) {
   // State management - unified data management
   const [tasks, setTasks] = useState<TaskRecord[]>([])
@@ -86,9 +80,6 @@ export default function TaskPanelOptimized({
 
   // Toast notification
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
-  
-  // Action menu state
-  const [actionMenuOpen, setActionMenuOpen] = useState(false)
 
   // Auto-dismiss toast after 3 seconds
   useEffect(() => {
@@ -416,7 +407,8 @@ export default function TaskPanelOptimized({
           setPlans(cachedPlans)
           const planOpts = cachedPlans.map((plan: any) => ({
             id: plan.id,
-            objective: plan.objective || 'Untitled Plan'
+            objective: plan.objective || 'Untitled Plan',
+            importance_percentage: plan.importance_percentage || 0
           }))
           setPlanOptions(planOpts)
           
@@ -470,7 +462,8 @@ export default function TaskPanelOptimized({
       setPlans(planData)
       const planOpts = planData.map((plan: any) => ({
         id: plan.id,
-        objective: plan.objective || 'Untitled Plan'
+        objective: plan.objective || 'Untitled Plan',
+        importance_percentage: plan.importance_percentage || 0
       }))
       setPlanOptions(planOpts)
       
@@ -792,8 +785,8 @@ export default function TaskPanelOptimized({
       <div className="p-6 bg-red-50 text-red-700 rounded-lg">
         <h3 className="font-semibold mb-2">Error Loading Data</h3>
         <p className="mb-4">{error}</p>
-        <button 
-          onClick={() => window.location.reload()}
+        <button
+          onClick={() => loadAllData(true)}
           className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
         >
           Retry
@@ -804,8 +797,8 @@ export default function TaskPanelOptimized({
 
   return (
     <>
-      {/* Main Content Area - Absolute Positioning with Scroll */}
-      <div className="fixed top-20 left-4 right-4 md:left-20 bottom-4 overflow-y-auto">
+      {/* Main Content Area - Standard Layout */}
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 p-6 pb-60">
         {error && (
           <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg">
             {error}
@@ -815,25 +808,128 @@ export default function TaskPanelOptimized({
         {/* First Row - 3 Columns Grid */}
         <div className="grid grid-cols-3 gap-6 mb-6">
           {/* Left Column - Calendar Card */}
-          <div className="aspect-square">
-            <TaskCalendarView
-              tasks={tasks}
-              currentMonth={currentMonth}
-              selectedDate={selectedDate}
-              onDateSelect={setSelectedDate}
-              onMonthChange={setCurrentMonth}
-              onTaskSelect={openFormPanel}
-            />
+          <div className="flex flex-col gap-2">
+            {/* Calendar Title Bar */}
+            <div className="flex items-center justify-between px-3 py-2 bg-white/70 backdrop-blur-sm rounded-lg shadow-sm">
+              <span className="text-sm font-medium text-gray-700">Calendar</span>
+              <button className="w-6 h-6 flex items-center justify-center hover:bg-purple-50 rounded-full transition-colors">
+                <span className="text-gray-500 text-xs">⋮</span>
+              </button>
+            </div>
+
+            {/* Calendar Content */}
+            <div className="aspect-square">
+              <TaskCalendarView
+                tasks={tasks}
+                currentMonth={currentMonth}
+                selectedDate={selectedDate}
+                onDateSelect={setSelectedDate}
+                onMonthChange={setCurrentMonth}
+                onTaskSelect={openFormPanel}
+              />
+            </div>
           </div>
 
-          {/* Middle Column - Placeholder */}
-          <div className="aspect-square border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center">
-            <span className="text-gray-400 text-sm">Placeholder 2</span>
+          {/* Middle Column - Daily Tasks */}
+          <div className="flex flex-col gap-2">
+            {/* Daily Tasks Title Bar */}
+            <div className="flex items-center justify-between px-3 py-2 bg-white/70 backdrop-blur-sm rounded-lg shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">
+                  {selectedDate === new Date().toLocaleDateString('en-CA') ? `${selectedDate} (Today)` : selectedDate}
+                </span>
+                <div className="w-5 h-5 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-xs font-medium">
+                  {tasks.filter(task => task.start_date && task.start_date.startsWith(selectedDate)).length}
+                </div>
+              </div>
+              <button className="w-6 h-6 flex items-center justify-center hover:bg-purple-50 rounded-full transition-colors">
+                <span className="text-gray-500 text-xs">⋮</span>
+              </button>
+            </div>
+
+            {/* Daily Tasks Content */}
+            <div className="aspect-square bg-white/90 backdrop-blur-md rounded-xl shadow-xl p-4 overflow-y-auto">
+              {(() => {
+                const dailyTasks = tasks
+                  .filter(task => task.start_date && task.start_date.startsWith(selectedDate))
+                  .sort((a, b) => {
+                    const aTime = a.start_date ? new Date(a.start_date).getTime() : 0
+                    const bTime = b.start_date ? new Date(b.start_date).getTime() : 0
+                    return aTime - bTime
+                  })
+
+                if (dailyTasks.length === 0) {
+                  return (
+                    <div className="flex items-center justify-center h-full text-gray-400">
+                      <div className="text-center">
+                        <div className="text-2xl mb-2">📅</div>
+                        <p className="text-sm">No tasks for this date</p>
+                      </div>
+                    </div>
+                  )
+                }
+
+                return (
+                  <div className="space-y-3">
+                    {dailyTasks.map((task) => {
+                      const startDate = task.start_date ? new Date(task.start_date) : null
+                      const endDate = task.end_date ? new Date(task.end_date) : null
+
+                      const startTime = startDate
+                        ? startDate.toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', hour12: false })
+                        : '??:??'
+
+                      const endTime = endDate
+                        ? endDate.toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', hour12: false })
+                        : '??:??'
+
+                      const planInfo = planOptions.find(p => p.id === task.plan)
+
+                      return (
+                        <div
+                          key={task.id}
+                          className="group flex gap-3 p-2 rounded-lg hover:bg-purple-50 transition-colors cursor-pointer"
+                          onClick={() => openFormPanel(task)}
+                        >
+                          <div className="text-xs font-mono text-purple-600 min-w-[4rem] flex-shrink-0 text-right">
+                            {startTime} - {endTime}
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm text-gray-700 leading-tight font-medium">
+                              {task.title}
+                            </div>
+                            {planInfo && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                [{planInfo.objective} - {planInfo.importance_percentage || 0}%]
+                              </div>
+                            )}
+                          </div>
+                          {task.status === 'Completed' && (
+                            <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0 mt-1.5"></div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })()}
+            </div>
           </div>
 
           {/* Right Column - Placeholder */}
-          <div className="aspect-square border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center">
-            <span className="text-gray-400 text-sm">Placeholder 3</span>
+          <div className="flex flex-col gap-2">
+            {/* Placeholder Title Bar */}
+            <div className="flex items-center justify-between px-3 py-2 bg-white/70 backdrop-blur-sm rounded-lg shadow-sm">
+              <span className="text-sm font-medium text-gray-700">Placeholder 3</span>
+              <button className="w-6 h-6 flex items-center justify-center hover:bg-purple-50 rounded-full transition-colors">
+                <span className="text-gray-500 text-xs">⋮</span>
+              </button>
+            </div>
+
+            {/* Placeholder Content */}
+            <div className="aspect-square border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center">
+              <span className="text-gray-400 text-sm">Placeholder 3</span>
+            </div>
           </div>
         </div>
 
@@ -1115,24 +1211,29 @@ export default function TaskPanelOptimized({
             {selectedPlanTasks.length > 0 ? (
               <div className="space-y-2">
                 {selectedPlanTasks.map((task) => {
-                  const dateTimeStr = task.start_date 
-                    ? new Date(task.start_date).toLocaleString('en-CA', {
-                        year: 'numeric',
-                        month: '2-digit', 
-                        day: '2-digit',
-                        hour: '2-digit', 
-                        minute: '2-digit',
-                        hour12: false 
-                      }).replace(',', '')
-                    : '????-??-?? ??:??'
-                  
+                  const startDate = task.start_date ? new Date(task.start_date) : null
+                  const endDate = task.end_date ? new Date(task.end_date) : null
+
+                  const dateStr = startDate
+                    ? startDate.toLocaleDateString('en-CA')
+                    : '????-??-??'
+
+                  const startTime = startDate
+                    ? startDate.toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', hour12: false })
+                    : '??:??'
+
+                  const endTime = endDate
+                    ? endDate.toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', hour12: false })
+                    : '??:??'
+
                   return (
-                    <div 
-                      key={task.id} 
-                      className="group flex items-center gap-3 p-2 rounded-lg hover:bg-purple-50 transition-colors cursor-pointer"
+                    <div
+                      key={task.id}
+                      className="group flex items-start gap-3 p-2 rounded-lg hover:bg-purple-50 transition-colors cursor-pointer"
                     >
-                      <div className="text-xs font-mono text-purple-600 min-w-[8rem]">
-                        {dateTimeStr}
+                      <div className="text-xs font-mono text-purple-600 min-w-[8rem] flex-shrink-0">
+                        <div>{dateStr}</div>
+                        <div>{startTime} - {endTime}</div>
                       </div>
                       <div className="flex-1 text-sm text-gray-700 leading-tight">
                         {task.title}
@@ -1170,135 +1271,7 @@ export default function TaskPanelOptimized({
         </div>
       </div>
 
-      {/* Action Menu - Separate absolute positioning */}
-      <div className="fixed top-20 right-4 z-40">
-        <button
-          onClick={() => setActionMenuOpen(!actionMenuOpen)}
-          className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-purple-50 hover:shadow-md transition-all duration-200"
-        >
-          <span className="text-gray-600">⋮</span>
-        </button>
-        
-        {actionMenuOpen && (
-          <div className="absolute top-10 right-0 z-50 bg-white rounded-xl shadow-xl border border-gray-200 p-2 min-w-48">
-            <div className="group relative">
-              <div className="px-3 py-2 text-sm font-medium text-purple-600 hover:bg-purple-50 rounded-lg cursor-pointer">
-                Add
-              </div>
-              <div className="absolute right-full top-0 mr-1 hidden group-hover:block bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-24">
-                <button
-                  onClick={() => openStrategyForm()}
-                  className="block w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-purple-50 rounded text-left"
-                >
-                  Strategy
-                </button>
-                <button
-                  onClick={() => openPlanForm()}
-                  className="block w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-purple-50 rounded text-left"
-                >
-                  Plan
-                </button>
-                <button
-                  onClick={() => openFormPanel()}
-                  className="block w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-purple-50 rounded text-left"
-                >
-                  Task
-                </button>
-              </div>
-            </div>
-            
-            <div className="group relative">
-              <div className="px-3 py-2 text-sm font-medium text-purple-600 hover:bg-purple-50 rounded-lg cursor-pointer">
-                Edit
-              </div>
-              <div className="absolute right-full top-0 mr-1 hidden group-hover:block bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-24">
-                <button
-                  onClick={() => {
-                    if (selectedStrategyId) {
-                      const strategy = strategies.find(s => s.id === selectedStrategyId)
-                      if (strategy) openStrategyForm(strategy)
-                    }
-                  }}
-                  className="block w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-purple-50 rounded text-left disabled:opacity-50"
-                  disabled={!selectedStrategyId}
-                >
-                  Strategy
-                </button>
-                <button
-                  onClick={() => {
-                    if (selectedPlanId) {
-                      const plan = plans.find(p => p.id === selectedPlanId)
-                      if (plan) openPlanForm(plan)
-                    }
-                  }}
-                  className="block w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-purple-50 rounded text-left disabled:opacity-50"
-                  disabled={!selectedPlanId}
-                >
-                  Plan
-                </button>
-                <button
-                  onClick={() => openFormPanel()}
-                  className="block w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-purple-50 rounded text-left"
-                >
-                  Task
-                </button>
-              </div>
-            </div>
-            
-            <div className="group relative">
-              <div className="px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg cursor-pointer">
-                Delete
-              </div>
-              <div className="absolute right-full top-0 mr-1 hidden group-hover:block bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-24">
-                <button
-                  onClick={() => {
-                    if (selectedStrategyId) handleStrategyDelete(selectedStrategyId)
-                  }}
-                  className="block w-full px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded text-left disabled:opacity-50"
-                  disabled={!selectedStrategyId}
-                >
-                  Strategy
-                </button>
-                <button
-                  onClick={() => {
-                    if (selectedPlanId) handlePlanDelete(selectedPlanId)
-                  }}
-                  className="block w-full px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded text-left disabled:opacity-50"
-                  disabled={!selectedPlanId}
-                >
-                  Plan
-                </button>
-                <button
-                  onClick={() => openFormPanel()}
-                  className="block w-full px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded text-left"
-                >
-                  Task
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
 
-      {/* Click outside to close action menu */}
-      {actionMenuOpen && (
-        <div 
-          className="fixed inset-0 z-30" 
-          onClick={() => setActionMenuOpen(false)}
-        />
-      )}
-
-      {/* Form Panel Backdrop */}
-      {(formPanelOpen || strategyFormOpen || planFormOpen) && (
-        <div 
-          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm transition-opacity duration-300"
-          onClick={() => {
-            if (formPanelOpen) setFormPanelOpen(false)
-            if (strategyFormOpen) setStrategyFormOpen(false)
-            if (planFormOpen) setPlanFormOpen(false)
-          }}
-        />
-      )}
 
       {/* Task Form Panel */}
       <TaskFormPanel
@@ -1336,7 +1309,7 @@ export default function TaskPanelOptimized({
 
       {/* Toast Notification */}
       {toast && (
-        <div className={`fixed top-6 right-6 z-50 px-3 py-2 rounded-lg shadow-xl backdrop-blur-md transition-all duration-300 text-sm ${
+        <div className={`fixed top-6 right-6 z-60 px-3 py-2 rounded-lg shadow-xl backdrop-blur-md transition-all duration-300 text-sm ${
           toast.type === 'success' 
             ? 'bg-purple-600/90 text-white border border-purple-500/20' 
             : 'bg-purple-900/90 text-white border border-purple-800/20'
