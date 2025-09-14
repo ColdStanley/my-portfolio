@@ -5,8 +5,8 @@ import { TaskRecord, TaskFormData, PlanOption, StrategyOption } from '../../type
 import { StrategyRecord } from '../../types/strategy'
 import { PlanRecord } from '../../types/plan'
 import { saveTask, deleteTask } from '../../services/taskService'
-import { updateStrategyField } from '../../services/strategyService'
-import { updatePlanField } from '../../services/planService'
+import { updateStrategyField, deleteStrategy } from '../../services/strategyService'
+import { updatePlanField, deletePlan } from '../../services/planService'
 import { dataCache, CACHE_KEYS } from '../../utils/dataCache'
 import { getDefaultTaskFormData } from '../../utils/taskUtils'
 import TaskFormPanel from './TaskFormPanel'
@@ -67,6 +67,18 @@ export default function TaskPanelOptimized({
   const [strategyMenuOpen, setStrategyMenuOpen] = useState(false)
   const [planMenuOpen, setPlanMenuOpen] = useState(false)
   const [taskMenuOpen, setTaskMenuOpen] = useState(false)
+
+  // Individual item dropdown states
+  const [strategyItemMenuOpen, setStrategyItemMenuOpen] = useState<string | null>(null)
+  const [planItemMenuOpen, setPlanItemMenuOpen] = useState<string | null>(null)
+  const [taskItemMenuOpen, setTaskItemMenuOpen] = useState<string | null>(null)
+
+  // Delete confirmation modal states
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
+    isOpen: boolean
+    type: 'strategy' | 'plan' | 'task'
+    item: any
+  }>({ isOpen: false, type: 'strategy', item: null })
 
   // Drill-down state
   const [drillDownMode, setDrillDownMode] = useState<'all' | 'strategy-plans' | 'plan-tasks'>('all')
@@ -1178,20 +1190,59 @@ export default function TaskPanelOptimized({
                       height="18"
                       className="pointer-events-auto"
                     >
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          // Find strategy and open edit form
-                          const strategy = strategies.find(s => s.id === rect.id)
-                          if (strategy) {
-                            setEditingStrategy(strategy)
-                            setStrategyFormOpen(true)
-                          }
-                        }}
-                        className="w-full h-full bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-150"
-                      >
-                        <span className="text-gray-600 text-xs leading-none">⋮</span>
-                      </button>
+                      <div className="relative">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setStrategyItemMenuOpen(strategyItemMenuOpen === rect.id ? null : rect.id)
+                          }}
+                          className="w-full h-full bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-150"
+                        >
+                          <span className="text-gray-600 text-xs leading-none">⋮</span>
+                        </button>
+
+                        {strategyItemMenuOpen === rect.id && (
+                          <>
+                            <div
+                              className="fixed inset-0 z-40"
+                              onClick={() => setStrategyItemMenuOpen(null)}
+                            />
+                            <div className="absolute top-full mt-1 right-0 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-20">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const strategy = strategies.find(s => s.id === rect.id)
+                                  if (strategy) {
+                                    setEditingStrategy(strategy)
+                                    setStrategyFormOpen(true)
+                                  }
+                                  setStrategyItemMenuOpen(null)
+                                }}
+                                className="w-full px-2 py-1 text-xs text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const strategy = strategies.find(s => s.id === rect.id)
+                                  if (strategy) {
+                                    setDeleteConfirmModal({
+                                      isOpen: true,
+                                      type: 'strategy',
+                                      item: strategy
+                                    })
+                                  }
+                                  setStrategyItemMenuOpen(null)
+                                }}
+                                className="w-full px-2 py-1 text-xs text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-all duration-150 text-left"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </foreignObject>
                   </g>
                 )
@@ -1329,20 +1380,59 @@ export default function TaskPanelOptimized({
                       height="18"
                       className="pointer-events-auto"
                     >
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          // Find plan and open edit form
-                          const plan = plans.find(p => p.id === rect.id)
-                          if (plan) {
-                            setEditingPlan(plan)
-                            setPlanFormOpen(true)
-                          }
-                        }}
-                        className="w-full h-full bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-150"
-                      >
-                        <span className="text-gray-600 text-xs leading-none">⋮</span>
-                      </button>
+                      <div className="relative">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setPlanItemMenuOpen(planItemMenuOpen === rect.id ? null : rect.id)
+                          }}
+                          className="w-full h-full bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-150"
+                        >
+                          <span className="text-gray-600 text-xs leading-none">⋮</span>
+                        </button>
+
+                        {planItemMenuOpen === rect.id && (
+                          <>
+                            <div
+                              className="fixed inset-0 z-40"
+                              onClick={() => setPlanItemMenuOpen(null)}
+                            />
+                            <div className="absolute top-full mt-1 right-0 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-20">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const plan = plans.find(p => p.id === rect.id)
+                                  if (plan) {
+                                    setEditingPlan(plan)
+                                    setPlanFormOpen(true)
+                                  }
+                                  setPlanItemMenuOpen(null)
+                                }}
+                                className="w-full px-2 py-1 text-xs text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const plan = plans.find(p => p.id === rect.id)
+                                  if (plan) {
+                                    setDeleteConfirmModal({
+                                      isOpen: true,
+                                      type: 'plan',
+                                      item: plan
+                                    })
+                                  }
+                                  setPlanItemMenuOpen(null)
+                                }}
+                                className="w-full px-2 py-1 text-xs text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-all duration-150 text-left"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </foreignObject>
                   </g>
                 )
@@ -1427,17 +1517,53 @@ export default function TaskPanelOptimized({
                       )}
                       
                       {/* Task Control Dot - Right Side */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          // Open task edit form
-                          setEditingTask(task)
-                          setFormPanelOpen(true)
-                        }}
-                        className="w-6 h-6 flex items-center justify-center hover:bg-purple-100 rounded-full transition-colors opacity-0 group-hover:opacity-100"
-                      >
-                        <span className="text-gray-500 text-xs leading-none">⋮</span>
-                      </button>
+                      <div className="relative">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setTaskItemMenuOpen(taskItemMenuOpen === task.id ? null : task.id)
+                          }}
+                          className="w-6 h-6 flex items-center justify-center hover:bg-purple-100 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <span className="text-gray-500 text-xs leading-none">⋮</span>
+                        </button>
+
+                        {taskItemMenuOpen === task.id && (
+                          <>
+                            <div
+                              className="fixed inset-0 z-40"
+                              onClick={() => setTaskItemMenuOpen(null)}
+                            />
+                            <div className="absolute top-full mt-1 right-0 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-1 min-w-20">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setEditingTask(task)
+                                  setFormPanelOpen(true)
+                                  setTaskItemMenuOpen(null)
+                                }}
+                                className="w-full px-2 py-1 text-xs text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-150 text-left"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setDeleteConfirmModal({
+                                    isOpen: true,
+                                    type: 'task',
+                                    item: task
+                                  })
+                                  setTaskItemMenuOpen(null)
+                                }}
+                                className="w-full px-2 py-1 text-xs text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-all duration-150 text-left"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   )
                 })}
@@ -1489,6 +1615,78 @@ export default function TaskPanelOptimized({
         strategyOptions={strategyOptions}
         allPlans={plans}
       />
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmModal.isOpen && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-60 flex items-center justify-center">
+          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Delete {deleteConfirmModal.type.charAt(0).toUpperCase() + deleteConfirmModal.type.slice(1)}
+                </h3>
+                <p className="text-sm text-gray-500">This action cannot be undone</p>
+              </div>
+            </div>
+
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to delete "<span className="font-medium">
+                {deleteConfirmModal.type === 'strategy' ? deleteConfirmModal.item?.objective :
+                 deleteConfirmModal.type === 'plan' ? deleteConfirmModal.item?.objective :
+                 deleteConfirmModal.item?.title}
+              </span>"?
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setDeleteConfirmModal({ isOpen: false, type: 'strategy', item: null })}
+                className="px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const itemId = deleteConfirmModal.item?.id
+                    const itemType = deleteConfirmModal.type
+
+                    if (!itemId) return
+
+                    // Call appropriate delete service
+                    if (itemType === 'strategy') {
+                      await deleteStrategy(itemId)
+                      setStrategies(prev => prev.filter(s => s.id !== itemId))
+                      dataCache.invalidate(CACHE_KEYS.STRATEGIES)
+                    } else if (itemType === 'plan') {
+                      await deletePlan(itemId)
+                      setPlans(prev => prev.filter(p => p.id !== itemId))
+                      dataCache.invalidate(CACHE_KEYS.PLANS)
+                    } else if (itemType === 'task') {
+                      await deleteTask(itemId)
+                      setTasks(prev => prev.filter(t => t.id !== itemId))
+                      dataCache.invalidate(CACHE_KEYS.TASKS)
+                    }
+
+                    setDeleteConfirmModal({ isOpen: false, type: 'strategy', item: null })
+                    setToast({ message: `${itemType.charAt(0).toUpperCase() + itemType.slice(1)} deleted successfully`, type: 'success' })
+                  } catch (error) {
+                    console.error('Delete failed:', error)
+                    setToast({ message: `Failed to delete ${deleteConfirmModal.type}`, type: 'error' })
+                  }
+                }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Notification */}
       {toast && (
