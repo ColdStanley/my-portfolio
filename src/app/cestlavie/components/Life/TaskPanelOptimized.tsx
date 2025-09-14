@@ -566,16 +566,48 @@ export default function TaskPanelOptimized({
     if (!confirm('Are you sure you want to delete this task?')) return
 
     try {
+      // Find the task to get outlook_event_id before deletion
+      const taskToDelete = tasks.find(task => task.id === taskId)
+
       await deleteTask(taskId)
       // Invalidate cache since task data changed
       dataCache.delete(CACHE_KEYS.TASKS)
       setTasks(prev => prev.filter(task => task.id !== taskId))
       setToast({ message: 'Task deleted successfully', type: 'success' })
+
+      // Auto-sync deletion to Outlook if task has outlook_event_id
+      if (taskToDelete?.outlook_event_id) {
+        try {
+          const response = await fetch('/api/cestlavie-life/outlook/sync', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              action: 'delete',
+              taskData: {
+                id: taskToDelete.id,
+                outlook_event_id: taskToDelete.outlook_event_id
+              }
+            })
+          })
+
+          const result = await response.json()
+
+          if (result.success) {
+            console.log(`Outlook auto-delete successful: ${result.message}`)
+          } else {
+            console.warn(`Outlook auto-delete failed: ${result.error}`)
+          }
+        } catch (error: any) {
+          console.error(`Outlook auto-delete error: ${error.message}`)
+        }
+      }
     } catch (err) {
       console.error('Failed to delete task:', err)
       setToast({ message: 'Failed to delete task', type: 'error' })
     }
-  }, [])
+  }, [tasks])
 
   const openFormPanel = useCallback((task?: TaskRecord, defaultPlanId?: string) => {
     setEditingTask(task || null)
