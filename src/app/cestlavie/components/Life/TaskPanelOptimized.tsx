@@ -936,19 +936,117 @@ export default function TaskPanelOptimized({
             </div>
           </div>
 
-          {/* Right Column - Placeholder */}
+          {/* Right Column - Strategy Countdown */}
           <div className="flex flex-col gap-2">
-            {/* Placeholder Title Bar */}
+            {/* Strategy Countdown Title Bar */}
             <div className="flex items-center justify-between px-3 py-2 bg-white/70 backdrop-blur-sm rounded-lg shadow-sm">
-              <span className="text-sm font-medium text-gray-700">Placeholder 3</span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">Strategy Timeline</span>
+                <div className="w-5 h-5 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-xs font-medium">
+                  {strategies.length}
+                </div>
+              </div>
               <button className="w-6 h-6 flex items-center justify-center hover:bg-purple-50 rounded-full transition-colors">
                 <span className="text-gray-500 text-xs">⋮</span>
               </button>
             </div>
 
-            {/* Placeholder Content */}
-            <div className="aspect-square border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center">
-              <span className="text-gray-400 text-sm">Placeholder 3</span>
+            {/* Strategy Countdown Content */}
+            <div className="aspect-square bg-white/90 backdrop-blur-md rounded-xl p-4 shadow-xl">
+              <div className="h-full overflow-y-auto">
+                <div className="grid grid-cols-2 gap-3 h-full">
+                  {strategies
+                    .sort((a, b) => (b.importance_percentage || 0) - (a.importance_percentage || 0))
+                    .slice(0, 8).map((strategy, index) => {
+                    const daysLeft = strategy.due_date
+                      ? Math.ceil((new Date(strategy.due_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                      : null;
+
+                    const getStatusColor = (days: number | null) => {
+                      if (days === null) return 'gray';
+                      if (days < 0) return 'red';
+                      if (days <= 3) return 'red';
+                      if (days <= 7) return 'yellow';
+                      return 'purple';
+                    };
+
+                    const getStatusBg = (days: number | null) => {
+                      if (days === null) return 'from-gray-50 to-gray-100';
+                      if (days < 0) return 'from-red-50 to-red-100';
+                      if (days <= 3) return 'from-red-50 to-red-100';
+                      if (days <= 7) return 'from-yellow-50 to-yellow-100';
+                      return 'from-purple-50 to-purple-100';
+                    };
+
+                    const getProgressWidth = (days: number | null, strategy: StrategyRecord) => {
+                      if (!days || !strategy.due_date || !strategy.start_date) return '0%';
+                      const totalDays = Math.ceil((new Date(strategy.due_date).getTime() - new Date(strategy.start_date).getTime()) / (1000 * 60 * 60 * 24));
+                      const passedDays = totalDays - days;
+                      const progress = Math.max(0, Math.min(100, (passedDays / totalDays) * 100));
+                      return `${progress}%`;
+                    };
+
+                    const color = getStatusColor(daysLeft);
+                    const bgGradient = getStatusBg(daysLeft);
+
+                    return (
+                      <div key={strategy.id} className="flex flex-col">
+                        {/* 倒计时卡片 */}
+                        <div className={`bg-gradient-to-br ${bgGradient} rounded-lg p-3 border border-white/50 flex flex-col h-20 relative`}>
+                          {/* 状态点 */}
+                          <div className="absolute top-2 right-2">
+                            <div className={`w-2 h-2 rounded-full ${
+                              color === 'purple' ? 'bg-purple-500' :
+                              color === 'yellow' ? 'bg-yellow-500' :
+                              color === 'red' ? 'bg-red-500' : 'bg-gray-400'
+                            }`}></div>
+                          </div>
+
+                          {/* 倒计时数字 - 居中显示 */}
+                          <div className="flex-1 flex flex-col justify-center text-center">
+                            <div className={`text-lg font-bold ${
+                              color === 'purple' ? 'text-purple-600' :
+                              color === 'yellow' ? 'text-yellow-600' :
+                              color === 'red' ? 'text-red-600' : 'text-gray-600'
+                            }`}>
+                              {daysLeft === null ? '--' : daysLeft < 0 ? Math.abs(daysLeft) : daysLeft}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {daysLeft === null ? '未设定' : daysLeft < 0 ? '超期' : '天'}
+                            </div>
+                          </div>
+
+                          {/* 底部进度条 */}
+                          <div className="w-full bg-gray-200/50 rounded-full h-1">
+                            <div
+                              className={`h-1 rounded-full transition-all duration-300 ${
+                                color === 'purple' ? 'bg-purple-500' :
+                                color === 'yellow' ? 'bg-yellow-500' :
+                                color === 'red' ? 'bg-red-500' : 'bg-gray-400'
+                              }`}
+                              style={{ width: getProgressWidth(daysLeft, strategy) }}
+                            ></div>
+                          </div>
+                        </div>
+
+                        {/* 策略名称 - 显示在卡片下方居中 */}
+                        <div className="mt-2 text-center">
+                          <span className="text-xs font-medium text-gray-700 block truncate" title={strategy.objective}>
+                            {strategy.objective}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* 如果策略少于4个，显示空白占位 */}
+                  {Array.from({ length: Math.max(0, 4 - strategies.length) }).map((_, index) => (
+                    <div key={`empty-${index}`} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-3 border border-gray-200 border-dashed flex items-center justify-center">
+                      <span className="text-xs text-gray-400">暂无策略</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
