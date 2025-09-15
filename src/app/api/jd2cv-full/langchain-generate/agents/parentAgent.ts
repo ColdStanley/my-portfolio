@@ -30,7 +30,7 @@ Examples:
     super(systemPrompt, 0.1, 1000)
   }
 
-  async process(jd: { title: string; full_job_description: string }): Promise<string> {
+  async process(jd: { title: string; full_job_description: string }): Promise<{ classification: string; tokens: { prompt: number; completion: number; total: number } }> {
     const input = `
 Job Title: ${jd.title}
 Job Description: ${jd.full_job_description}
@@ -39,7 +39,7 @@ Classify this job into one of the 8 categories.
 `
 
     try {
-      const classification = await this.execute(input)
+      const result = await this.execute(input)
 
       // Validate the response
       const validRoles = [
@@ -48,24 +48,24 @@ Classify this job into one of the 8 categories.
         'Key/Named Account Manager', 'Customer/Client Success'
       ]
 
-      const cleanedClassification = classification.trim()
+      const cleanedClassification = result.content.trim()
       if (validRoles.includes(cleanedClassification)) {
-        return cleanedClassification
+        return { classification: cleanedClassification, tokens: result.tokens }
       }
 
       // Try partial matching
       for (const role of validRoles) {
         if (cleanedClassification.toLowerCase().includes(role.toLowerCase())) {
-          return role
+          return { classification: role, tokens: result.tokens }
         }
       }
 
       console.warn('Parent Agent: Invalid classification response:', cleanedClassification)
-      return this.fallbackClassification(jd)
+      return { classification: this.fallbackClassification(jd), tokens: result.tokens }
 
     } catch (error) {
       console.error('Parent Agent LangChain execution error:', error)
-      return this.fallbackClassification(jd)
+      return { classification: this.fallbackClassification(jd), tokens: { prompt: 0, completion: 0, total: 0 } }
     }
   }
 
@@ -94,7 +94,7 @@ Classify this job into one of the 8 categories.
 }
 
 // Export function interface for compatibility
-export async function parentAgent(jd: { title: string; full_job_description: string }): Promise<string> {
+export async function parentAgent(jd: { title: string; full_job_description: string }): Promise<{ classification: string; tokens: { prompt: number; completion: number; total: number } }> {
   const agent = new ParentAgent()
   return await agent.process(jd)
 }

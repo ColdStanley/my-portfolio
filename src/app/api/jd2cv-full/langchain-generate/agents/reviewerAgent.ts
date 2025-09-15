@@ -6,7 +6,7 @@ export async function reviewerAgent(input: {
   personalInfo: any;
   originalPersonalInfo: any;
   jd: { title: string; full_job_description: string };
-}): Promise<{ personalInfo: any; workExperience: string }> {
+}): Promise<{ personalInfo: any; workExperience: string; tokens: { prompt: number; completion: number; total: number } }> {
 
   const { workExperience, personalInfo, originalPersonalInfo, jd } = input
 
@@ -46,11 +46,11 @@ Output only valid JSON, no explanations or extra text.
 
   try {
     // Use DeepSeek LLM for final review and unification
-    const reviewResponse = await invokeDeepSeek(reviewPrompt, 0.2, 5000)
+    const result = await invokeDeepSeek(reviewPrompt, 0.2, 5000)
 
     try {
       // Try to parse the LLM response as JSON
-      const reviewResult = JSON.parse(reviewResponse.trim())
+      const reviewResult = JSON.parse(result.content.trim())
 
       if (reviewResult.personalInfo && reviewResult.workExperience) {
         // Validate and ensure critical fields are preserved
@@ -64,21 +64,25 @@ Output only valid JSON, no explanations or extra text.
 
         return {
           personalInfo: finalPersonalInfo,
-          workExperience: reviewResult.workExperience
+          workExperience: reviewResult.workExperience,
+          tokens: result.tokens
         }
       } else {
         console.warn('Reviewer Agent: Invalid response structure')
-        return performBasicReview(personalInfo, workExperience, originalPersonalInfo)
+        const fallbackResult = performBasicReview(personalInfo, workExperience, originalPersonalInfo)
+        return { ...fallbackResult, tokens: result.tokens }
       }
 
     } catch (parseError) {
       console.warn('Reviewer Agent: Failed to parse LLM response as JSON')
-      return performBasicReview(personalInfo, workExperience, originalPersonalInfo)
+      const fallbackResult = performBasicReview(personalInfo, workExperience, originalPersonalInfo)
+      return { ...fallbackResult, tokens: result.tokens }
     }
 
   } catch (error) {
     console.error('Reviewer Agent error:', error)
-    return performBasicReview(personalInfo, workExperience, originalPersonalInfo)
+    const fallbackResult = performBasicReview(personalInfo, workExperience, originalPersonalInfo)
+    return { ...fallbackResult, tokens: { prompt: 0, completion: 0, total: 0 } }
   }
 }
 

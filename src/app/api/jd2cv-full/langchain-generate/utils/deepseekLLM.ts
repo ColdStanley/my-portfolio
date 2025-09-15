@@ -13,16 +13,27 @@ export function createDeepSeekLLM(temperature: number = 0.1, maxTokens: number =
   })
 }
 
-// Helper function to invoke LLM with error handling
+// Helper function to invoke LLM with error handling and token tracking
 export async function invokeDeepSeek(
   prompt: string,
   temperature: number = 0.1,
   maxTokens: number = 4000
-): Promise<string> {
+): Promise<{ content: string; tokens: { prompt: number; completion: number; total: number } }> {
   try {
     const llm = createDeepSeekLLM(temperature, maxTokens)
     const response = await llm.invoke(prompt)
-    return response.content as string
+
+    // Extract token usage from response if available
+    const tokens = {
+      prompt: (response as any).response_metadata?.tokenUsage?.promptTokens || 0,
+      completion: (response as any).response_metadata?.tokenUsage?.completionTokens || 0,
+      total: (response as any).response_metadata?.tokenUsage?.totalTokens || 0
+    }
+
+    return {
+      content: response.content as string,
+      tokens
+    }
   } catch (error) {
     console.error('DeepSeek LLM error:', error)
 
@@ -37,7 +48,7 @@ async function fallbackDeepSeekCall(
   prompt: string,
   temperature: number,
   maxTokens: number
-): Promise<string> {
+): Promise<{ content: string; tokens: { prompt: number; completion: number; total: number } }> {
   try {
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
@@ -60,7 +71,17 @@ async function fallbackDeepSeekCall(
     const data = await response.json()
 
     if (data.choices && data.choices[0] && data.choices[0].message) {
-      return data.choices[0].message.content
+      // Extract token usage from response
+      const tokens = {
+        prompt: data.usage?.prompt_tokens || 0,
+        completion: data.usage?.completion_tokens || 0,
+        total: data.usage?.total_tokens || 0
+      }
+
+      return {
+        content: data.choices[0].message.content,
+        tokens
+      }
     } else {
       throw new Error('Invalid response format from DeepSeek API')
     }

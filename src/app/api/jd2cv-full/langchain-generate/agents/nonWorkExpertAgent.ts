@@ -4,7 +4,7 @@ import { invokeDeepSeek } from '../utils/deepseekLLM'
 export async function nonWorkExpertAgent(
   jd: { title: string; full_job_description: string },
   personalInfo: any
-): Promise<any> {
+): Promise<{ content: any; tokens: { prompt: number; completion: number; total: number } }> {
 
   const customizationPrompt = `
 You are a professional resume expert specializing in customizing Profile, Skills, Education, and Projects sections to align with specific job requirements.
@@ -35,31 +35,31 @@ Return the customized personal information in the exact same JSON structure as p
 
   try {
     // Use DeepSeek LLM for personal info customization
-    const customizedResponse = await invokeDeepSeek(customizationPrompt, 0.3, 4000)
+    const result = await invokeDeepSeek(customizationPrompt, 0.3, 4000)
 
     try {
       // Try to parse the LLM response as JSON
-      const customizedInfo = JSON.parse(customizedResponse.trim())
+      const customizedInfo = JSON.parse(result.content.trim())
 
       // Validate required fields exist
       const requiredFields = ['fullName', 'email', 'phone', 'location', 'linkedin', 'website', 'summary', 'technicalSkills', 'languages', 'education', 'certificates', 'customModules', 'format']
       const hasAllFields = requiredFields.every(field => field in customizedInfo)
 
       if (hasAllFields) {
-        return customizedInfo
+        return { content: customizedInfo, tokens: result.tokens }
       } else {
         console.warn('Non-Work Expert: Response missing required fields')
-        return performBasicCustomization(personalInfo, jd)
+        return { content: performBasicCustomization(personalInfo, jd), tokens: result.tokens }
       }
 
     } catch (parseError) {
       console.warn('Non-Work Expert: Failed to parse LLM response as JSON')
-      return performBasicCustomization(personalInfo, jd)
+      return { content: performBasicCustomization(personalInfo, jd), tokens: result.tokens }
     }
 
   } catch (error) {
     console.error('Non-Work Expert Agent error:', error)
-    return performBasicCustomization(personalInfo, jd)
+    return { content: performBasicCustomization(personalInfo, jd), tokens: { prompt: 0, completion: 0, total: 0 } }
   }
 }
 

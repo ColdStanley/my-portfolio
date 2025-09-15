@@ -5,7 +5,7 @@ export async function roleExpertAgent(
   jd: { title: string; full_job_description: string },
   personalInfo: any,
   roleClassification: string
-): Promise<string> {
+): Promise<{ content: string; tokens: { prompt: number; completion: number; total: number } }> {
 
   // Get the work experience template based on role classification
   const workExperienceTemplate = getWorkExperienceByRole(roleClassification)
@@ -47,13 +47,13 @@ Do not include any explanations, introductions, or extra text.
 
   try {
     // Use DeepSeek LLM for work experience customization
-    const customizedExperience = await invokeDeepSeek(customizationPrompt, 0.3, 6000)
-    return customizedExperience.trim()
+    const result = await invokeDeepSeek(customizationPrompt, 0.3, 6000)
+    return { content: result.content.trim(), tokens: result.tokens }
 
   } catch (error) {
     console.error('Role Expert Agent error:', error)
     // Return template with basic customization as fallback
-    return workExperienceTemplate
+    return { content: workExperienceTemplate, tokens: { prompt: 0, completion: 0, total: 0 } }
   }
 }
 

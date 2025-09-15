@@ -27,12 +27,23 @@ export abstract class BaseAgent {
     return prompt.pipe(this.llm)
   }
 
-  // Execute the agent with input
-  async execute(input: string): Promise<string> {
+  // Execute the agent with input and return token usage
+  async execute(input: string): Promise<{ content: string; tokens: { prompt: number; completion: number; total: number } }> {
     try {
       const chain = this.createChain()
       const response = await chain.invoke({ input })
-      return response.content as string
+
+      // Extract token usage from response if available
+      const tokens = {
+        prompt: (response as any).response_metadata?.tokenUsage?.promptTokens || 0,
+        completion: (response as any).response_metadata?.tokenUsage?.completionTokens || 0,
+        total: (response as any).response_metadata?.tokenUsage?.totalTokens || 0
+      }
+
+      return {
+        content: response.content as string,
+        tokens
+      }
     } catch (error) {
       console.error(`${this.constructor.name} execution error:`, error)
       throw new Error(`Agent execution failed: ${error.message}`)
