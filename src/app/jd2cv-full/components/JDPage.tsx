@@ -15,6 +15,7 @@ import CommentInlineEdit from './CommentInlineEdit'
 import EnhancedBatchProgressModal from './EnhancedBatchProgressModal'
 import AppliedStatsFloatingButton from './AppliedStatsFloatingButton'
 import LightningButtonV2 from './LightningButtonV2'
+import LangChainButtonV2 from './LangChainButtonV2'
 import PersonalInfoTooltipV2 from './PersonalInfoTooltipV2'
 import CoverLetterButtonV2 from './CoverLetterButtonV2'
 import { extractBullets, generateModuleTitle } from '@/shared/utils'
@@ -1731,6 +1732,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                         
                         {/* Second Actions Row - V2 buttons */}
                         <div className="flex items-center justify-end gap-1 h-9">
+                          <LangChainButtonV2 jd={jd} onPDFUploaded={() => loadJDs()} />
                           <LightningButtonV2 jd={jd} onPDFUploaded={() => loadJDs()} />
                           <CoverLetterButtonV2 jd={jd} />
                         </div>
