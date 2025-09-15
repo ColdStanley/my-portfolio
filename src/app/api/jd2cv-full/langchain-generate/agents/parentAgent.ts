@@ -4,7 +4,7 @@ import { BaseAgent } from './baseAgent'
 class ParentAgent extends BaseAgent {
   constructor() {
     const systemPrompt = `
-You are an expert job role classifier. Your task is to analyze job descriptions and classify them into ONE of these 8 specific role categories:
+You are an expert job role classifier. Your task is to analyze job descriptions and classify them into ONE of these 9 specific role categories:
 
 1. Sales
 2. Business Development
@@ -14,6 +14,7 @@ You are an expert job role classifier. Your task is to analyze job descriptions 
 6. Project Manager
 7. Key/Named Account Manager
 8. Customer/Client Success
+9. Solution - General
 
 Guidelines:
 - Focus on the primary responsibilities, required skills, and key focus areas
@@ -25,7 +26,8 @@ Examples:
 - "Account Executive" → "Sales"
 - "Partnership Manager" → "Partnerships Alliance Manager"
 - "Customer Success Manager" → "Customer/Client Success"
-- "Solution Architect" → "Technical Account Manager"
+- "Solution Architect" → "Solution - General"
+- "Solutions Engineer" → "Solution - General"
 `
     super(systemPrompt, 0.1, 1000)
   }
@@ -45,7 +47,7 @@ Classify this job into one of the 8 categories.
       const validRoles = [
         'Sales', 'Business Development', 'Technical Account Manager',
         'AI Solution', 'Partnerships Alliance Manager', 'Project Manager',
-        'Key/Named Account Manager', 'Customer/Client Success'
+        'Key/Named Account Manager', 'Customer/Client Success', 'Solution - General'
       ]
 
       const cleanedClassification = result.content.trim()
@@ -87,6 +89,8 @@ Classify this job into one of the 8 categories.
       return 'Key/Named Account Manager'
     } else if (text.includes('customer success') || text.includes('client success') || text.includes('customer experience')) {
       return 'Customer/Client Success'
+    } else if (text.includes('solution') || text.includes('architect') || text.includes('engineer') || text.includes('consultant')) {
+      return 'Solution - General'
     } else {
       return 'Sales' // Default fallback
     }

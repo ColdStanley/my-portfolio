@@ -21,9 +21,31 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
   const [isGenerating, setIsGenerating] = useState(false)
   const [showProgressModal, setShowProgressModal] = useState(false)
   const [requestId, setRequestId] = useState<string>('')
+  const [countdown, setCountdown] = useState(180)
 
   // Check if button has been clicked before
   const hasBeenClicked = localStorage.getItem(`langchain-clicked-${jd.id}`) === 'true'
+
+  // Countdown timer effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null
+
+    if (isGenerating) {
+      setCountdown(180) // Reset to 180 seconds
+      interval = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            return 1 // Don't go below 1
+          }
+          return prev - 1
+        })
+      }, 1000)
+    }
+
+    return () => {
+      if (interval) clearInterval(interval)
+    }
+  }, [isGenerating])
 
   const handleGenerate = async () => {
     // Check if personal info exists
@@ -140,6 +162,38 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
         console.warn('Auto-upload error:', uploadError)
       }
 
+      // Auto-save work experience to database (new functionality)
+      try {
+        console.log('Starting auto-save work experience to database...')
+
+        const experienceResponse = await fetch('/api/jd2cv-full/langchain-experience', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            jd: {
+              id: jd.id,
+              user_id: jd.user_id,
+              title: jd.title,
+              company: jd.company
+            },
+            workExperience: customizedResume.workExperience,
+            roleClassification: customizedResume.roleClassification
+          })
+        })
+
+        if (experienceResponse.ok) {
+          const result = await experienceResponse.json()
+          console.log('Auto-save work experience successful:', result)
+        } else {
+          const errorText = await experienceResponse.text()
+          console.warn('Auto-save work experience failed:', experienceResponse.status, errorText)
+        }
+      } catch (experienceError) {
+        console.warn('Auto-save work experience error:', experienceError)
+      }
+
     } catch (error) {
       console.error('Error generating CV with LangChain:', error)
       alert(`Failed to generate CV: ${error.message || 'Unknown error'}`)
@@ -171,13 +225,13 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
       <button
         onClick={handleGenerate}
         disabled={isGenerating}
-        className={`p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors disabled:cursor-not-allowed border border-gray-200 hover:border-purple-300 ${
-          hasBeenClicked ? 'ring-2 ring-purple-300/30 ring-inset' : ''
-        }`}
+        className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors disabled:cursor-not-allowed border border-gray-200 hover:border-purple-300"
         title="Generate Complete Resume with LangChain AI"
       >
         {isGenerating ? (
-          <div className="w-4 h-4 border-2 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+          <div className="w-4 h-4 flex items-center justify-center text-xs font-mono text-purple-600">
+            {countdown}
+          </div>
         ) : (
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clipRule="evenodd" />
