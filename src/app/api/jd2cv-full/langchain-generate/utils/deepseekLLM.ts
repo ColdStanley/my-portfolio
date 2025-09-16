@@ -38,7 +38,6 @@ export async function invokeDeepSeek(
     console.error('DeepSeek LLM error:', error)
 
     // Fallback to direct fetch if LangChain fails
-    console.log('Falling back to direct API call...')
     return await fallbackDeepSeekCall(prompt, temperature, maxTokens)
   }
 }

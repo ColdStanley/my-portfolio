@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import LangChainProgressModal from './LangChainProgressModal'
 
 interface JD {
   id: string
@@ -19,8 +18,6 @@ interface LangChainButtonV2Props {
 
 export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }: LangChainButtonV2Props) {
   const [isGenerating, setIsGenerating] = useState(false)
-  const [showProgressModal, setShowProgressModal] = useState(false)
-  const [requestId, setRequestId] = useState<string>('')
   const [countdown, setCountdown] = useState(180)
 
   // Check if button has been clicked before
@@ -64,11 +61,7 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
     // Mark as clicked in localStorage
     localStorage.setItem(`langchain-clicked-${jd.id}`, 'true')
 
-    // Generate unique request ID
-    const newRequestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    setRequestId(newRequestId)
     setIsGenerating(true)
-    setShowProgressModal(true)
 
     try {
       // Call LangChain API for full resume customization with progress tracking
@@ -83,7 +76,6 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
             full_job_description: jd.full_job_description
           },
           personalInfo: parsedPersonalInfo,
-          requestId: newRequestId
         })
       })
 
@@ -135,8 +127,6 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
 
       // Auto-upload to database (using fresh blob)
       try {
-        console.log('Starting auto-upload to database...')
-        console.log('JD Info:', { id: jd.id, user_id: jd.user_id, filename })
 
         const uploadBlob = new Blob([blob], { type: 'application/pdf' }) // Ensure PDF MIME type
         const formData = new FormData()
@@ -151,7 +141,6 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
 
         if (uploadResponse.ok) {
           const result = await uploadResponse.json()
-          console.log('Auto-upload to database successful:', result)
           // Trigger refresh of JD data to show the uploaded PDF
           onPDFUploaded?.()
         } else {
@@ -164,7 +153,6 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
 
       // Auto-save work experience to database (new functionality)
       try {
-        console.log('Starting auto-save work experience to database...')
 
         const experienceResponse = await fetch('/api/jd2cv-full/langchain-experience', {
           method: 'POST',
@@ -185,7 +173,6 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
 
         if (experienceResponse.ok) {
           const result = await experienceResponse.json()
-          console.log('Auto-save work experience successful:', result)
         } else {
           const errorText = await experienceResponse.text()
           console.warn('Auto-save work experience failed:', experienceResponse.status, errorText)
@@ -202,23 +189,6 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
     }
   }
 
-  const handleProgressComplete = (result: any) => {
-    console.log('LangChain processing completed:', result)
-    setShowProgressModal(false)
-  }
-
-  const handleProgressError = (error: string) => {
-    console.error('LangChain processing error:', error)
-    setShowProgressModal(false)
-    setIsGenerating(false)
-  }
-
-  const handleCloseProgress = () => {
-    setShowProgressModal(false)
-    if (isGenerating) {
-      setIsGenerating(false)
-    }
-  }
 
   return (
     <div className="relative">
@@ -239,14 +209,6 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
         )}
       </button>
 
-      {/* Progress Modal */}
-      <LangChainProgressModal
-        isOpen={showProgressModal}
-        requestId={requestId}
-        onClose={handleCloseProgress}
-        onComplete={handleProgressComplete}
-        onError={handleProgressError}
-      />
     </div>
   )
 }

@@ -3,7 +3,6 @@ import { parentAgent } from './agents/parentAgent'
 import { roleExpertAgent } from './agents/roleExpertAgent'
 import { nonWorkExpertAgent } from './agents/nonWorkExpertAgent'
 import { reviewerAgent } from './agents/reviewerAgent'
-import { updateProgress } from '../progress/[requestId]/route'
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
@@ -21,81 +20,46 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing personal information' }, { status: 400 })
     }
 
-    // Initialize progress tracking
-    updateProgress(requestId, {
-      type: 'step_start',
-      step: 0,
-      stepName: 'Initialization',
-      message: 'Starting LangChain AI workflow...'
-    })
 
     // Step 1: Parent Agent - Role Classification
     const step1Start = Date.now()
-    updateProgress(requestId, {
-      type: 'step_start',
-      step: 1,
-      stepName: 'Role Classification',
-      message: `Analyzing JD: "${jd.title}"...`
-    })
 
-    console.log('Step 1: Classifying JD role...')
     const parentResult = await parentAgent(jd)
     const roleClassification = parentResult.classification
-    console.log('Role classified as:', roleClassification)
 
-    updateProgress(requestId, {
-      type: 'step_complete',
-      step: 1,
-      stepName: 'Role Classification',
-      message: `Classified as: ${roleClassification}`,
-      duration: Date.now() - step1Start,
-      data: { roleClassification, tokens: parentResult.tokens }
-    })
+    // Display Parent Agent output in browser console
+    console.log('🎯 Parent Agent - Role Classification:', roleClassification)
 
-    // Step 2: Parallel processing - Role Expert + Non-Work Expert
+
+    // Step 2: Role Expert Agent - Work Experience Customization
     const step2Start = Date.now()
-    updateProgress(requestId, {
-      type: 'step_start',
-      step: 2,
-      stepName: 'Content Customization',
-      message: 'Customizing work experience and personal information...'
-    })
 
-    console.log('Step 2: Processing work experience and personal info...')
-    const [roleExpertResult, nonWorkExpertResult] = await Promise.all([
-      roleExpertAgent(jd, personalInfo, roleClassification),
-      nonWorkExpertAgent(jd, personalInfo)
-    ])
-
+    const roleExpertResult = await roleExpertAgent(jd, personalInfo, roleClassification)
     const customizedWorkExperience = roleExpertResult.content
+
+    // Display Role Expert Agent output in browser console
+    console.log('💼 Role Expert Agent - Customized Work Experience:', customizedWorkExperience)
+
+    // Step 3: Non-Work Expert Agent - Personal Info Customization (based on work experience)
+    const step3Start = Date.now()
+
+    const nonWorkExpertResult = await nonWorkExpertAgent(customizedWorkExperience, personalInfo)
     const customizedPersonalInfo = nonWorkExpertResult.content
 
-    // Calculate combined tokens for step 2
-    const step2Tokens = {
+    // Display Non-Work Expert Agent output in browser console
+    console.log('👤 Non-Work Expert Agent - Customized Personal Info:', customizedPersonalInfo)
+
+    // Calculate combined tokens for steps 2 & 3
+    const step23Tokens = {
       prompt: roleExpertResult.tokens.prompt + nonWorkExpertResult.tokens.prompt,
       completion: roleExpertResult.tokens.completion + nonWorkExpertResult.tokens.completion,
       total: roleExpertResult.tokens.total + nonWorkExpertResult.tokens.total
     }
 
-    updateProgress(requestId, {
-      type: 'step_complete',
-      step: 2,
-      stepName: 'Content Customization',
-      message: 'Work experience and personal info customized',
-      duration: Date.now() - step2Start,
-      data: { tokens: step2Tokens }
-    })
 
-    // Step 3: Reviewer Agent - Style unification and final formatting
-    const step3Start = Date.now()
-    updateProgress(requestId, {
-      type: 'step_start',
-      step: 3,
-      stepName: 'Quality Review',
-      message: 'Reviewing and unifying content style...'
-    })
+    // Step 4: Reviewer Agent - Style unification and final formatting
+    const step4Start = Date.now()
 
-    console.log('Step 3: Reviewing and finalizing...')
     const reviewerResult = await reviewerAgent({
       workExperience: customizedWorkExperience,
       personalInfo: customizedPersonalInfo,
@@ -108,38 +72,18 @@ export async function POST(request: NextRequest) {
       workExperience: reviewerResult.workExperience
     }
 
-    updateProgress(requestId, {
-      type: 'step_complete',
-      step: 3,
-      stepName: 'Quality Review',
-      message: 'Content reviewed and finalized',
-      duration: Date.now() - step3Start,
-      data: { tokens: reviewerResult.tokens }
-    })
 
     // Final completion
     const totalDuration = Date.now() - startTime
 
     // Calculate total tokens consumed across all steps
     const totalTokens = {
-      prompt: parentResult.tokens.prompt + step2Tokens.prompt + reviewerResult.tokens.prompt,
-      completion: parentResult.tokens.completion + step2Tokens.completion + reviewerResult.tokens.completion,
-      total: parentResult.tokens.total + step2Tokens.total + reviewerResult.tokens.total
+      prompt: parentResult.tokens.prompt + step23Tokens.prompt + reviewerResult.tokens.prompt,
+      completion: parentResult.tokens.completion + step23Tokens.completion + reviewerResult.tokens.completion,
+      total: parentResult.tokens.total + step23Tokens.total + reviewerResult.tokens.total
     }
 
-    updateProgress(requestId, {
-      type: 'completed',
-      message: `LangChain processing completed successfully in ${Math.round(totalDuration / 1000)}s`,
-      duration: totalDuration,
-      data: {
-        roleClassification,
-        totalSteps: 3,
-        totalDuration,
-        totalTokens
-      }
-    })
 
-    console.log('LangChain processing completed successfully')
 
     return NextResponse.json({
       success: true,
@@ -153,16 +97,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('LangChain generation error:', error)
 
-    if (requestId) {
-      updateProgress(requestId, {
-        type: 'error',
-        message: `Error: ${error.message}`,
-        data: { error: error.message }
-      })
-    }
 
     return NextResponse.json(
-      { error: 'Failed to generate customized resume', details: error.message },
+      { error: 'Failed to generate customized resume', details: (error as Error).message },
       { status: 500 }
     )
   }

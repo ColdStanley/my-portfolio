@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { getSupabaseClient } from '@/lib/supabase'
 import { JDRecord, CreateJDRequest, APPLICATION_STAGES } from '@/shared/types'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import { useJDFilterStore } from '@/store/useJDFilterStore'
@@ -70,69 +69,9 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
     getSelectedCount 
   } = useBatchSelectionStore()
 
-  // Load JDs on mount and setup optimized refresh mechanism
+  // Load JDs on mount (manual refresh only)
   useEffect(() => {
     loadJDs()
-
-    let refreshTimeout: NodeJS.Timeout | null = null
-
-    // 防抖刷新函数 - 针对 Realtime 使用立即刷新
-    const debouncedRefresh = (immediate = false) => {
-      if (refreshTimeout) {
-        clearTimeout(refreshTimeout)
-      }
-      
-      if (immediate) {
-        loadJDs()
-      } else {
-        refreshTimeout = setTimeout(() => {
-          loadJDs()
-        }, 1200) // 1.2秒防抖，确保用户操作完成
-      }
-    }
-
-    // Setup Supabase Realtime subscription for automatic refresh
-    const supabase = getSupabaseClient()
-
-    // Realtime 事件回调 - 立即刷新数据
-    const handleRealtimeEvent = (payload) => {
-      // Realtime 事件使用立即刷新，无延迟
-      debouncedRefresh(true)
-    }
-
-    // Setup Realtime subscription
-    const channel = supabase.channel('jd_records_changes')
-
-    // Subscribe to changes in jd_records table for this user
-    const subscription = channel
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
-          schema: 'public',
-          table: 'jd_records',
-          filter: `user_id=eq.${user.id}`
-        },
-        handleRealtimeEvent
-      )
-      .subscribe((status, err) => {
-        if (status === 'SUBSCRIBED') {
-          // Connection successful
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-          // Only log actual errors, ignore undefined errors
-          if (err && err.message) {
-            console.error('Realtime connection error:', err.message)
-          }
-        }
-      })
-
-    // Cleanup subscription on unmount
-    return () => {
-      if (refreshTimeout) {
-        clearTimeout(refreshTimeout)
-      }
-      subscription.unsubscribe()
-    }
   }, [user.id])
 
   const loadJDs = async () => {
@@ -1732,8 +1671,8 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                         
                         {/* Second Actions Row - V2 buttons */}
                         <div className="flex items-center justify-end gap-1 h-9">
-                          <LangChainButtonV2 jd={jd} onPDFUploaded={() => loadJDs()} />
-                          <LightningButtonV2 jd={jd} onPDFUploaded={() => loadJDs()} />
+                          <LangChainButtonV2 jd={jd} />
+                          <LightningButtonV2 jd={jd} />
                           <CoverLetterButtonV2 jd={jd} />
                         </div>
                         

@@ -2,32 +2,32 @@ import { invokeDeepSeek } from '../utils/deepseekLLM'
 
 // Non-Work Expert Agent - Profile, Skills, Education, Projects Customization
 export async function nonWorkExpertAgent(
-  jd: { title: string; full_job_description: string },
+  customizedWorkExperience: string,
   personalInfo: any
 ): Promise<{ content: any; tokens: { prompt: number; completion: number; total: number } }> {
 
   const customizationPrompt = `
-You are a professional resume expert specializing in customizing Profile, Skills, Education, and Projects sections to align with specific job requirements.
+You are a professional resume expert specializing in customizing Profile, Skills, Education, and Projects sections to align with the work experience style and terminology.
 
-JD Title: ${jd.title}
-JD Description: ${jd.full_job_description}
+Customized Work Experience Content:
+${customizedWorkExperience}
 
 Current Personal Information:
 ${JSON.stringify(personalInfo, null, 2)}
 
 Your tasks:
-1. **Profile/Summary**: Rewrite summary bullets to align with JD language and requirements
-2. **Technical Skills**: Filter, prioritize, and reorder skills based on JD relevance
-3. **Languages**: Keep relevant languages, prioritize those mentioned in JD
-4. **Education**: Highlight most relevant education/courses for this role
-5. **Certificates**: Prioritize certificates relevant to the JD
-6. **Custom Modules**: Adapt any custom sections to be more relevant
+1. **Profile/Summary**: Adjust summary bullets to match the language style and terminology used in the work experience above
+2. **Technical Skills**: Prioritize and reorder skills that are mentioned or implied in the work experience content
+3. **Languages**: Keep relevant languages, prioritize those that align with the work experience context
+4. **Education**: Highlight education/courses that complement the work experience narrative
+5. **Certificates**: Prioritize certificates that support the work experience claims
+6. **Custom Modules**: Adapt any custom sections to maintain consistency with work experience tone
 
-Guidelines:
-- Maintain authenticity - don't add skills/experience not originally present
-- Use JD keywords naturally in summary/descriptions
-- Prioritize most relevant items first
-- Keep the same JSON structure
+STRICT Guidelines:
+- NEVER add skills, languages, education, or certificates not originally present in the personal information
+- Only reorder, rephrase, or prioritize existing content
+- Match the professional tone and terminology style from the work experience
+- Keep the exact same JSON structure
 - Ensure all output fits the existing localStorage format
 
 Return the customized personal information in the exact same JSON structure as provided above. Output only valid JSON, no explanations or extra text.
@@ -49,49 +49,46 @@ Return the customized personal information in the exact same JSON structure as p
         return { content: customizedInfo, tokens: result.tokens }
       } else {
         console.warn('Non-Work Expert: Response missing required fields')
-        return { content: performBasicCustomization(personalInfo, jd), tokens: result.tokens }
+        return { content: performBasicCustomization(personalInfo, customizedWorkExperience), tokens: result.tokens }
       }
 
     } catch (parseError) {
       console.warn('Non-Work Expert: Failed to parse LLM response as JSON')
-      return { content: performBasicCustomization(personalInfo, jd), tokens: result.tokens }
+      return { content: performBasicCustomization(personalInfo, customizedWorkExperience), tokens: result.tokens }
     }
 
   } catch (error) {
     console.error('Non-Work Expert Agent error:', error)
-    return { content: performBasicCustomization(personalInfo, jd), tokens: { prompt: 0, completion: 0, total: 0 } }
+    return { content: performBasicCustomization(personalInfo, customizedWorkExperience), tokens: { prompt: 0, completion: 0, total: 0 } }
   }
 }
 
-// Fallback function for basic customization
-function performBasicCustomization(personalInfo: any, jd: { title: string; full_job_description: string }) {
+// Fallback function for basic customization based on work experience
+function performBasicCustomization(personalInfo: any, customizedWorkExperience: string) {
   const customizedInfo = { ...personalInfo }
-  const jdText = (jd.title + ' ' + jd.full_job_description).toLowerCase()
+  const workExpText = customizedWorkExperience.toLowerCase()
 
-  // Customize summary if it exists
+  // Customize summary if it exists - match work experience terminology
   if (customizedInfo.summary && customizedInfo.summary.length > 0) {
     customizedInfo.summary = customizedInfo.summary.map((item: string) => {
-      if (jdText.includes('ai') || jdText.includes('artificial intelligence')) {
+      if (workExpText.includes('ai') || workExpText.includes('artificial intelligence')) {
         return item.replace(/technology/gi, 'AI technology').replace(/solutions/gi, 'AI-driven solutions')
       }
-      if (jdText.includes('sales')) {
-        return item.replace(/delivered/gi, 'sold').replace(/built/gi, 'developed and sold')
+      if (workExpText.includes('client') || workExpText.includes('customer')) {
+        return item.replace(/user/gi, 'client').replace(/customer/gi, 'client')
       }
       return item
     })
   }
 
-  // Prioritize technical skills based on JD
+  // Prioritize technical skills based on work experience mentions
   if (customizedInfo.technicalSkills && customizedInfo.technicalSkills.length > 0) {
     const prioritizedSkills = [...customizedInfo.technicalSkills]
 
-    // Move relevant skills to front
+    // Move skills mentioned in work experience to front
     const relevantSkills = prioritizedSkills.filter(skill => {
       const skillLower = skill.toLowerCase()
-      return jdText.includes(skillLower) ||
-             (jdText.includes('python') && skillLower.includes('python')) ||
-             (jdText.includes('javascript') && skillLower.includes('javascript')) ||
-             (jdText.includes('ai') && (skillLower.includes('ai') || skillLower.includes('machine learning')))
+      return workExpText.includes(skillLower)
     })
 
     const otherSkills = prioritizedSkills.filter(skill => !relevantSkills.includes(skill))
