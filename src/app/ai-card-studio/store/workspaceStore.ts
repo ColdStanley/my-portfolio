@@ -267,9 +267,10 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         
         let dbData = null
         if (!error && data?.data) {
+          const payload = data.data as any
           dbData = {
-            canvases: normalizeCanvases(data.data.canvases as Canvas[]),
-            activeCanvasId: data.data.activeCanvasId
+            canvases: normalizeCanvases((payload.canvases || []) as Canvas[]),
+            activeCanvasId: payload.active_canvas_id || payload.activeCanvasId || payload.canvases?.[0]?.id || ''
           }
         } else {
         }
@@ -309,10 +310,13 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           const mergedCanvases = get().actions.mergeDbWithCache(dbData, cacheData)
           finalData = {
             canvases: mergedCanvases,
-            activeCanvasId: dbData.activeCanvasId // 活跃画布以DB为准
+            activeCanvasId: dbData.activeCanvasId || mergedCanvases[0]?.id || '' // 活跃画布以DB为准，若缺失则退回第一个
           }
         } else if (dbData) {
-          finalData = dbData
+          finalData = {
+            canvases: dbData.canvases,
+            activeCanvasId: dbData.activeCanvasId || (dbData.canvases[0]?.id ?? '')
+          }
         } else if (cacheData) {
           finalData = {
             canvases: cacheData.canvases,

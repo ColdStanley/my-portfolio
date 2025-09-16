@@ -1,4 +1,5 @@
 import { invokeDeepSeek } from '../utils/deepseekLLM'
+import type { ParentInsights } from './roleExpertAgent'
 
 // Reviewer Agent - Style Unification and Final Formatting
 export async function reviewerAgent(input: {
@@ -6,14 +7,28 @@ export async function reviewerAgent(input: {
   personalInfo: any;
   originalPersonalInfo: any;
   jd: { title: string; full_job_description: string };
+  parentInsights: ParentInsights;
 }): Promise<{ personalInfo: any; workExperience: string; tokens: { prompt: number; completion: number; total: number } }> {
 
-  const { workExperience, personalInfo, originalPersonalInfo, jd } = input
+  const { workExperience, personalInfo, originalPersonalInfo, jd, parentInsights } = input
+
+  const focusSummary = parentInsights.focusPoints.length
+    ? parentInsights.focusPoints.map((point, idx) => `${idx + 1}. ${point}`).join('\n')
+    : 'No additional focus points provided.'
+
+  const keywordList = parentInsights.keywords.length
+    ? parentInsights.keywords.join(', ')
+    : 'N/A'
 
   const reviewPrompt = `
 You are a senior resume reviewer and quality assurance expert. Your task is to ensure the customized resume maintains consistency, removes redundancy, and follows ATS-friendly formatting.
 
 Job Description: ${jd.title} - ${jd.full_job_description}
+
+Role classification: ${parentInsights.classification}
+Role focus points:
+${focusSummary}
+Priority keywords to emphasise: ${keywordList}
 
 Customized Work Experience:
 ${workExperience}

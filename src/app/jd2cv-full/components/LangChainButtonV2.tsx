@@ -60,6 +60,9 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
         completeStage('parent', {
           content: data.roleClassification,
           roleClassification: data.roleClassification,
+          focusPoints: data.focusPoints || data.focus_points || [],
+          keywords: data.keywords || [],
+          keySentences: data.keySentences || data.key_sentences || [],
           tokens: data.tokens,
           duration: data.duration
         })
@@ -90,20 +93,20 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
       })
       setActiveStage('reviewer')
       break
-    case 'done':
-      if (data?.steps?.reviewer) {
-        updateStage('reviewer', {
-          status: 'completed',
-          content: data.workExperience,
-          json: data.personalInfo,
-          tokens: data.steps.reviewer.tokens,
-          duration: data.steps.reviewer.duration
-        })
-      }
-      if (data?.steps) {
-        applyStepSummaries(data.steps)
-      }
-      break
+      case 'done':
+        if (data?.steps?.reviewer) {
+          updateStage('reviewer', {
+            status: 'completed',
+            content: data.workExperience,
+            json: data.personalInfo,
+            tokens: data.steps.reviewer.tokens,
+            duration: data.steps.reviewer.duration
+          })
+        }
+        if (data?.steps) {
+          applyStepSummaries(data.steps)
+        }
+        break
     case 'error':
       markError(data?.message)
       setShowPanel(true)
@@ -129,6 +132,9 @@ const applyStepSummaries = (steps?: Record<StageKey, any>) => {
           status: 'completed',
           content: step.roleClassification,
           roleClassification: step.roleClassification,
+          focusPoints: step.focusPoints || step.focus_points || [],
+          keywords: step.keywords || [],
+          keySentences: step.keySentences || step.key_sentences || [],
           tokens: step.tokens,
           duration: step.duration
         }
@@ -188,7 +194,8 @@ const generateViaRest = async ({ jd, personalInfo }: { jd: JD; personalInfo: any
   return result
 }
 
-const runPostGenerationSteps = async (customizedResume: any) => {
+const runPostGenerationSteps = async (customizedResume: any, context: { jd: JD; onPDFUploaded?: () => void }) => {
+  const { jd, onPDFUploaded } = context
   const generatedPersonalInfo = customizedResume.personalInfo
   const workExperience = customizedResume.workExperience
 
@@ -330,7 +337,7 @@ const runPostGenerationSteps = async (customizedResume: any) => {
         requestId: `${Date.now()}`
       }, handleStreamEvent)
       workflowFinished = true
-      await runPostGenerationSteps(streamResult)
+      await runPostGenerationSteps(streamResult, { jd, onPDFUploaded })
 
     } catch (error) {
       console.error('Error generating CV with LangChain:', error)
@@ -340,7 +347,7 @@ const runPostGenerationSteps = async (customizedResume: any) => {
           const fallbackResult = await generateViaRest({ jd, personalInfo: parsedPersonalInfo })
           applyStepSummaries(fallbackResult.steps)
           workflowFinished = true
-          await runPostGenerationSteps(fallbackResult)
+          await runPostGenerationSteps(fallbackResult, { jd, onPDFUploaded })
         } catch (fallbackError) {
           console.error('Fallback generation error:', fallbackError)
           alert(`Failed to generate CV: ${error.message || fallbackError.message || 'Unknown error'}`)
@@ -386,14 +393,14 @@ const runPostGenerationSteps = async (customizedResume: any) => {
           {(!showPanel && (hasAnyStageOutput || isGenerating)) && (
             <button
               onClick={() => setShowPanel(true)}
-              className="fixed top-6 left-6 z-[90] rounded-full bg-white/90 px-4 py-2 text-xs font-medium text-purple-600 shadow-lg border border-purple-100 hover:bg-purple-50"
+              className="fixed top-[4.5rem] left-6 z-[90] rounded-full bg-white/90 px-4 py-2 text-xs font-medium text-purple-600 shadow-lg border border-purple-100 hover:bg-purple-50"
             >
               LangChain Progress
             </button>
           )}
 
           {showPanel && (
-            <div className="fixed top-6 left-6 z-[90] w-[420px] rounded-2xl border border-purple-100 bg-white/95 shadow-2xl backdrop-blur">
+            <div className="fixed top-[5.8rem] left-6 z-[90] w-[520px] rounded-2xl border border-purple-100 bg-white/95 shadow-2xl backdrop-blur origin-top animate-panelFadeIn">
               <div className="flex items-center justify-between px-4 py-3 border-b border-purple-100/60">
                 <div>
                   <div className="text-sm font-semibold text-purple-700">LangChain Progress</div>
@@ -410,28 +417,28 @@ const runPostGenerationSteps = async (customizedResume: any) => {
                 </div>
               </div>
 
-              <div className="flex border-b border-purple-100/60">
-                {STAGE_CONFIG.map(stage => {
-                  const data = stageOutputs[stage.key]
-                  const isActive = activeStage === stage.key
-                  const statusClass = data.status === 'completed'
-                    ? 'bg-purple-600 text-white'
-                    : data.status === 'in_progress'
-                      ? 'bg-purple-100 text-purple-700'
-                      : data.status === 'error'
-                        ? 'bg-rose-100 text-rose-600'
-                        : 'bg-slate-50 text-slate-500'
+          <div className="flex gap-2 border-b border-purple-100/60 px-2 pt-2">
+            {STAGE_CONFIG.map(stage => {
+              const data = stageOutputs[stage.key]
+              const isActive = activeStage === stage.key
+              const statusClass = data.status === 'completed'
+                ? 'bg-purple-600 text-white'
+                : data.status === 'in_progress'
+                  ? 'bg-purple-100 text-purple-700'
+                  : data.status === 'error'
+                    ? 'bg-rose-100 text-rose-600'
+                    : 'bg-slate-50 text-slate-500'
 
-                  return (
-                    <button
-                      key={stage.key}
-                      onClick={() => setActiveStage(stage.key)}
-                      className={`flex-1 px-3 py-2 text-xs font-semibold transition-colors ${isActive ? 'border-b-2 border-purple-600' : 'border-b-2 border-transparent'}`}
-                    >
-                      <div className={`mx-auto w-max rounded-full px-3 py-1 ${statusClass}`}>
-                        {stage.icon} {stage.label}
-                      </div>
-                    </button>
+              return (
+                <button
+                  key={stage.key}
+                  onClick={() => setActiveStage(stage.key)}
+                  className={`flex-1 rounded-t-lg border border-transparent px-3 py-2 text-xs font-semibold transition-colors ${isActive ? 'bg-white text-purple-700 shadow-sm border-purple-200 border-b-white' : 'text-slate-500 hover:bg-slate-50'}`}
+                >
+                  <div className={`mx-auto w-max rounded-full px-3 py-1 ${statusClass}`}>
+                    {stage.icon} {stage.label}
+                  </div>
+                </button>
                   )
                 })}
               </div>
@@ -480,6 +487,9 @@ interface StageData {
   tokens?: TokensUsage
   duration?: number
   roleClassification?: string
+  focusPoints?: string[]
+  keywords?: string[]
+  keySentences?: string[]
 }
 
 interface TokensUsage {
@@ -567,6 +577,49 @@ function renderStageContent(stage: StageData) {
   }
   if (stage.status === 'error') {
     return <div className="text-rose-500">Step failed. Please retry.</div>
+  }
+  const hasParentInsights = Boolean(
+    (stage.focusPoints && stage.focusPoints.length) ||
+    (stage.keywords && stage.keywords.length) ||
+    (stage.keySentences && stage.keySentences.length)
+  )
+  if (hasParentInsights) {
+    return (
+      <div className="space-y-3 text-[11px] text-slate-600">
+        {stage.roleClassification && (
+          <div>
+            <div className="text-xs font-semibold text-purple-700">Role Classification</div>
+            <div>{stage.roleClassification}</div>
+          </div>
+        )}
+        {stage.focusPoints && stage.focusPoints.length > 0 && (
+          <div>
+            <div className="text-xs font-semibold text-purple-700">Focus Points</div>
+            <ul className="list-disc pl-4 space-y-1">
+              {stage.focusPoints.map((fp, idx) => (
+                <li key={idx}>{fp}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {stage.keywords && stage.keywords.length > 0 && (
+          <div>
+            <div className="text-xs font-semibold text-purple-700">Priority Keywords</div>
+            <div>{stage.keywords.join(', ')}</div>
+          </div>
+        )}
+        {stage.keySentences && stage.keySentences.length > 0 && (
+          <div>
+            <div className="text-xs font-semibold text-purple-700">Key Sentences</div>
+            <ul className="list-disc pl-4 space-y-1">
+              {stage.keySentences.map((sentence, idx) => (
+                <li key={idx}>{sentence}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    )
   }
   if (stage.json) {
     return (

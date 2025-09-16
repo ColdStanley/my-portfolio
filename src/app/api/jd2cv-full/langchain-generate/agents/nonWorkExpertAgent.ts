@@ -1,16 +1,35 @@
 import { invokeDeepSeek } from '../utils/deepseekLLM'
+import type { ParentInsights } from './roleExpertAgent'
 
 // Non-Work Expert Agent - Profile, Skills, Education, Projects Customization
 export async function nonWorkExpertAgent(
   customizedWorkExperience: string,
-  personalInfo: any
+  personalInfo: any,
+  parentInsights: ParentInsights
 ): Promise<{ content: any; tokens: { prompt: number; completion: number; total: number } }> {
+
+  const { classification, focusPoints, keywords } = parentInsights
+
+  const focusSection = focusPoints.length
+    ? focusPoints.map(point => `- ${point}`).join('\n')
+    : '- Follow the tone established in work experience.'
+
+  const keywordSection = keywords.length
+    ? keywords.map(k => `- ${k}`).join('\n')
+    : '- Maintain the most relevant skills already present.'
 
   const customizationPrompt = `
 You are a professional resume expert specializing in customizing Profile, Skills, Education, and Projects sections to align with the work experience style and terminology.
 
 Customized Work Experience Content:
 ${customizedWorkExperience}
+
+Role Classification: ${classification}
+Role Focus Points:
+${focusSection}
+
+Priority Keywords:
+${keywordSection}
 
 Current Personal Information:
 ${JSON.stringify(personalInfo, null, 2)}
@@ -35,7 +54,7 @@ Return the customized personal information in the exact same JSON structure as p
 
   try {
     // Use DeepSeek LLM for personal info customization
-    const result = await invokeDeepSeek(customizationPrompt, 0.3, 4000)
+    const result = await invokeDeepSeek(customizationPrompt, 0.25, 3500)
 
     try {
       // Try to parse the LLM response as JSON

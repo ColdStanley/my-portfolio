@@ -1,58 +1,74 @@
 import { invokeDeepSeek } from '../utils/deepseekLLM'
 
+export interface ParentInsights {
+  classification: string
+  focusPoints: string[]
+  keywords: string[]
+  keySentences: string[]
+}
+
 // Role Expert Agent - Work Experience Customization
 export async function roleExpertAgent(
-  jd: { title: string; full_job_description: string },
-  personalInfo: any,
-  roleClassification: string
+  jdTitle: string,
+  parentInsights: ParentInsights
 ): Promise<{ content: string; tokens: { prompt: number; completion: number; total: number } }> {
 
+  const { classification, focusPoints, keywords, keySentences } = parentInsights
+
   // Get the work experience template based on role classification
-  const workExperienceTemplate = getWorkExperienceByRole(roleClassification)
+  const workExperienceTemplate = getWorkExperienceByRole(classification)
+
+  const focusSection = focusPoints.length
+    ? focusPoints.map(point => `- ${point}`).join('\n')
+    : '- align experience with the responsibilities implied by the role'
+
+  const keywordSection = keywords.length
+    ? keywords.map(k => `- ${k}`).join('\n')
+    : '- emphasise the most relevant skills naturally'
+
+  const sentenceSection = keySentences.length
+    ? keySentences.map(s => `- "${s}"`).join('\n')
+    : '- Use professional judgement to highlight accomplishments that match the role.'
 
   const customizationPrompt = `
-You are a senior resume experience writing expert specializing in ${roleClassification} roles.
-Your task is to customize the existing work experiences so they align with the target Job Description.
+You are a senior resume experience writer for ${classification} roles.
+Rewrite the work experience template so it emphasises the following signals gathered from the job description.
 
-JD Title: ${jd.title}
-JD Description: ${jd.full_job_description}
+Role Title: ${jdTitle}
 
-Current work experiences:
+Primary focus points:
+${focusSection}
+
+Priority keywords and themes:
+${keywordSection}
+
+Signature expectations from the JD:
+${sentenceSection}
+
+Existing work experience template:
 ${workExperienceTemplate}
 
 Strict Instructions:
-1. **Preserve authenticity**: Do not invent or exaggerate facts, numbers, or industries not present in the working experience. Only rephrase or highlight existing details.
-
-2. **Keep structure stable**: Keep all original Company, Title, and Time period. Keep the same number of bullet points per experience. Rewrite each bullet, but do not merge or split.
-
-3. **Customization rule**: Use JD keywords only as a **lens to rephrase** bullets. If a bullet naturally connects with a keyword, emphasize it with JD-style language. If no natural connection, keep the bullet with only minimal polish. Do not add keywords that don't logically fit.
-
-4. **Language style**: Concise, professional, measurable impact. Strong action verbs. No personality traits unless already in the text.
-
-5. **Output format**:
+1. Preserve authenticity: do not invent or exaggerate facts, numbers, clients, or industries beyond the template.
+2. Keep structure stable: retain Company | Title | Time lines and the same number of bullet points per experience.
+3. Use the focus points and keywords ONLY to steer tone and emphasis. If a bullet naturally connects to a keyword, highlight it; otherwise, keep improvements minimal.
+4. Language style: concise, professional, measurable impact. Prioritise what was achieved, how it was done, and the outcome.
+5. Maintain measurable or factual elements already in the template. You may add metrics ONLY if implied or obvious from the template.
+6. Output format must stay as plain text:
    Company | Title | Time
    - Bullet 1
    - Bullet 2
-   (and so on)
+   ...
 
-6. **Quality enhancement rules**:
-   - Each bullet should begin with a strong action verb and focus on **what I did + how I did it + impact/result**.
-   - Whenever possible, emphasize **measurable outcomes** (%, $, growth, efficiency, scale, adoption, satisfaction, or other concrete indicators).
-   - Prioritize achievements that demonstrate **positive impact** in areas such as business outcomes, client/stakeholder value, process or efficiency improvements, solution delivery, innovation, or collaboration.
-   - Keep wording precise and avoid vague adjectives like "great", "successful", "effective".
-   - Ensure every bullet communicates **tangible value delivered to the organization, clients, team, or market**, not just tasks performed.
-
-Do not include any explanations, introductions, or extra text.
+Return only the rewritten experience content.
 `
 
   try {
-    // Use DeepSeek LLM for work experience customization
-    const result = await invokeDeepSeek(customizationPrompt, 0.3, 6000)
+    const result = await invokeDeepSeek(customizationPrompt, 0.25, 5000)
     return { content: result.content.trim(), tokens: result.tokens }
 
   } catch (error) {
     console.error('Role Expert Agent error:', error)
-    // Return template with basic customization as fallback
     return { content: workExperienceTemplate, tokens: { prompt: 0, completion: 0, total: 0 } }
   }
 }

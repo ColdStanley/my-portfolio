@@ -1,5 +1,5 @@
 import { parentAgent } from '../agents/parentAgent'
-import { roleExpertAgent } from '../agents/roleExpertAgent'
+import { roleExpertAgent, ParentInsights } from '../agents/roleExpertAgent'
 import { nonWorkExpertAgent } from '../agents/nonWorkExpertAgent'
 import { reviewerAgent } from '../agents/reviewerAgent'
 
@@ -20,6 +20,9 @@ export interface StepUpdateBase {
 export interface ParentStepUpdate extends StepUpdateBase {
   stage: 'parent'
   roleClassification: string
+  focusPoints: string[]
+  keywords: string[]
+  keySentences: string[]
 }
 
 export interface RoleExpertStepUpdate extends StepUpdateBase {
@@ -76,9 +79,19 @@ export async function runLangchainWorkflow({ jd, personalInfo, onStep }: Workflo
   const parentResult = await parentAgent(jd)
   const parentDuration = Date.now() - parentStart
 
+  const parentContext: ParentInsights = {
+    classification: parentResult.classification,
+    focusPoints: parentResult.focusPoints,
+    keywords: parentResult.keywords,
+    keySentences: parentResult.keySentences
+  }
+
   const parentUpdate: ParentStepUpdate = {
     stage: 'parent',
     roleClassification: parentResult.classification,
+    focusPoints: parentContext.focusPoints,
+    keywords: parentContext.keywords,
+    keySentences: parentContext.keySentences,
     tokens: parentResult.tokens,
     duration: parentDuration
   }
@@ -88,7 +101,7 @@ export async function runLangchainWorkflow({ jd, personalInfo, onStep }: Workflo
 
   // Step 2 - Role Expert
   const roleStart = Date.now()
-  const roleExpertResult = await roleExpertAgent(jd, personalInfo, parentResult.classification)
+  const roleExpertResult = await roleExpertAgent(jd.title, parentContext)
   const customizedWorkExperience = roleExpertResult.content
   const roleDuration = Date.now() - roleStart
 
@@ -104,7 +117,7 @@ export async function runLangchainWorkflow({ jd, personalInfo, onStep }: Workflo
 
   // Step 3 - Non-work Expert
   const nonWorkStart = Date.now()
-  const nonWorkExpertResult = await nonWorkExpertAgent(customizedWorkExperience, personalInfo)
+  const nonWorkExpertResult = await nonWorkExpertAgent(customizedWorkExperience, personalInfo, parentContext)
   const customizedPersonalInfo = nonWorkExpertResult.content
   const nonWorkDuration = Date.now() - nonWorkStart
 
@@ -124,7 +137,8 @@ export async function runLangchainWorkflow({ jd, personalInfo, onStep }: Workflo
     workExperience: customizedWorkExperience,
     personalInfo: customizedPersonalInfo,
     originalPersonalInfo: personalInfo,
-    jd
+    jd,
+    parentInsights: parentContext
   })
   const reviewerDuration = Date.now() - reviewerStart
 

@@ -68,3 +68,19 @@
 .sentence-bounce {
   animation: sentence-bounce 0.5s ease-in-out;
 }
+
+/* Panel fade-in animation */
+@keyframes panelFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-panelFadeIn {
+  animation: panelFadeIn 0.2s ease-out forwards;
+}
