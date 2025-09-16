@@ -9,7 +9,8 @@ export default function TaskCalendarView({
   selectedDate, 
   onDateSelect, 
   onMonthChange,
-  onTaskSelect
+  onTaskSelect,
+  tasksByDate
 }: TaskCalendarViewProps) {
 
   // Calendar helper functions
@@ -63,6 +64,10 @@ export default function TaskCalendarView({
   }, [])
 
   const getTasksForDate = useCallback((dateString: string) => {
+    if (tasksByDate) {
+      return tasksByDate[dateString] || []
+    }
+
     const dateTasks = tasks.filter(task => {
       if (!task.start_date && !task.end_date) return false
       
@@ -88,7 +93,7 @@ export default function TaskCalendarView({
     })
     
     return dateTasks
-  }, [tasks])
+  }, [tasks, tasksByDate])
 
   const getTaskCountForDate = useCallback((dateString: string) => {
     return getTasksForDate(dateString).length

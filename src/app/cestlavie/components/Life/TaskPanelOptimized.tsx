@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { TaskRecord, TaskFormData, PlanOption, StrategyOption } from '../../types/task'
 import { StrategyRecord } from '../../types/strategy'
@@ -9,10 +9,8 @@ import { saveTask, deleteTask } from '../../services/taskService'
 import { updateStrategyField, deleteStrategy } from '../../services/strategyService'
 import { updatePlanField, deletePlan } from '../../services/planService'
 import { dataCache, CACHE_KEYS } from '../../utils/dataCache'
-import { getDefaultTaskFormData } from '../../utils/taskUtils'
 import TaskFormPanel from './TaskFormPanel'
 import TaskCalendarView from './TaskCalendarView'
-import TaskListView from './TaskListView'
 import StrategyContent from './StrategyContent'
 import PlanContent from './PlanContent'
 import StrategyFormPanel from './StrategyFormPanel'
@@ -23,6 +21,11 @@ import { StrategyRecord, StrategyFormData } from '../../types/strategy'
 import { PlanRecord, PlanFormData } from '../../types/plan'
 import type { User } from '@supabase/supabase-js'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/DropdownMenu'
+
+const DEFAULT_TASK_STATUS_OPTIONS = ['Not Started', 'In Progress', 'Completed', 'On Hold']
+const DEFAULT_STRATEGY_STATUS_OPTIONS: string[] = []
+const DEFAULT_STRATEGY_CATEGORY_OPTIONS: string[] = []
+const DEFAULT_PLAN_STATUS_OPTIONS: string[] = []
 
 interface TaskPanelOptimizedProps {
   onTasksUpdate?: (tasks: TaskRecord[]) => void
@@ -60,6 +63,13 @@ export default function TaskPanelOptimized({
   const [editingPlan, setEditingPlan] = useState<PlanRecord | null>(null)
   const [planStatusOptions, setPlanStatusOptions] = useState<string[]>([])
   
+
+  // Refs to avoid fetch callbacks depending on state setters
+  const statusOptionsRef = useRef<string[]>(DEFAULT_TASK_STATUS_OPTIONS)
+  const strategyStatusOptionsRef = useRef<string[]>(DEFAULT_STRATEGY_STATUS_OPTIONS)
+  const strategyCategoryOptionsRef = useRef<string[]>(DEFAULT_STRATEGY_CATEGORY_OPTIONS)
+  const planStatusOptionsRef = useRef<string[]>(DEFAULT_PLAN_STATUS_OPTIONS)
+
   
   // Calendar state
   const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('en-CA'))
@@ -132,6 +142,22 @@ export default function TaskPanelOptimized({
       return () => clearTimeout(timer)
     }
   }, [toast])
+
+  useEffect(() => {
+    statusOptionsRef.current = statusOptions.length ? statusOptions : DEFAULT_TASK_STATUS_OPTIONS
+  }, [statusOptions])
+
+  useEffect(() => {
+    strategyStatusOptionsRef.current = strategyStatusOptions.length ? strategyStatusOptions : DEFAULT_STRATEGY_STATUS_OPTIONS
+  }, [strategyStatusOptions])
+
+  useEffect(() => {
+    strategyCategoryOptionsRef.current = strategyCategoryOptions.length ? strategyCategoryOptions : DEFAULT_STRATEGY_CATEGORY_OPTIONS
+  }, [strategyCategoryOptions])
+
+  useEffect(() => {
+    planStatusOptionsRef.current = planStatusOptions.length ? planStatusOptions : DEFAULT_PLAN_STATUS_OPTIONS
+  }, [planStatusOptions])
 
   // Enhanced text display logic for treemap rectangles
   const getTextDisplay = useCallback((name: string, value: number, width: number, height: number) => {
@@ -384,6 +410,110 @@ export default function TaskPanelOptimized({
       })
   }, [tasks, selectedPlanId])
 
+  const strategyTimelineThemes = {
+    purple: {
+      badge: 'text-purple-700 bg-white/70',
+      accent: 'text-purple-700',
+      progress: 'from-purple-500 via-purple-400 to-purple-600',
+      ring: 'shadow-[0_0_25px_-10px_rgba(129,140,248,0.8)]'
+    },
+    yellow: {
+      badge: 'text-amber-700 bg-white/70',
+      accent: 'text-amber-700',
+      progress: 'from-amber-400 via-amber-300 to-amber-500',
+      ring: 'shadow-[0_0_25px_-10px_rgba(251,191,36,0.9)]'
+    },
+    red: {
+      badge: 'text-rose-700 bg-white/70',
+      accent: 'text-rose-700',
+      progress: 'from-rose-500 via-rose-400 to-rose-600',
+      ring: 'shadow-[0_0_25px_-10px_rgba(244,63,94,0.8)]'
+    },
+    gray: {
+      badge: 'text-slate-600 bg-white/70',
+      accent: 'text-slate-600',
+      progress: 'from-slate-400 via-slate-300 to-slate-500',
+      ring: 'shadow-[0_0_25px_-12px_rgba(148,163,184,0.7)]'
+    }
+  } as const
+
+  type TreemapTheme = {
+    gradient: string
+    border: string
+    ring: string
+    text: string
+    mutedText: string
+  }
+
+  const baseTreemapPalette = {
+    high: {
+      gradient: 'linear-gradient(135deg, rgba(109,76,255,0.95), rgba(147,90,255,0.95))',
+      border: 'rgba(167,139,250,0.55)',
+      ring: 'drop-shadow(0 12px 22px rgba(126,103,255,0.32))',
+      text: 'text-white',
+      mutedText: 'text-white/80'
+    },
+    medium: {
+      gradient: 'linear-gradient(135deg, rgba(129,102,255,0.88), rgba(167,139,250,0.88))',
+      border: 'rgba(196,181,253,0.55)',
+      ring: 'drop-shadow(0 10px 20px rgba(167,139,250,0.28))',
+      text: 'text-white',
+      mutedText: 'text-white/75'
+    },
+    low: {
+      gradient: 'linear-gradient(135deg, rgba(209,196,255,0.92), rgba(224,214,255,0.92))',
+      border: 'rgba(229,223,255,0.7)',
+      ring: 'drop-shadow(0 8px 16px rgba(209,196,255,0.28))',
+      text: 'text-slate-700',
+      mutedText: 'text-slate-600'
+    }
+  } satisfies Record<'high' | 'medium' | 'low', TreemapTheme>
+
+  const treemapThemes: Record<'strategy' | 'plan', typeof baseTreemapPalette> = {
+    strategy: baseTreemapPalette,
+    plan: baseTreemapPalette
+  }
+
+  const getTreemapTheme = (type: 'strategy' | 'plan', value: number): TreemapTheme => {
+    const palette = treemapThemes[type]
+    const importance = Math.max(0, Math.min(100, value || 0))
+    if (importance >= 60) return palette.high
+    if (importance >= 25) return palette.medium
+    return palette.low
+  }
+
+  const tasksByDate = useMemo(() => {
+    const grouped: Record<string, TaskRecord[]> = {}
+
+    for (const task of tasks) {
+      const taskDate = task.start_date || task.end_date
+      if (!taskDate) continue
+
+      const dateKey = new Date(taskDate).toLocaleDateString('en-CA')
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = []
+      }
+      grouped[dateKey].push(task)
+    }
+
+    for (const dateKey of Object.keys(grouped)) {
+      grouped[dateKey].sort((a, b) => {
+        const aCompleted = a.status === 'Completed'
+        const bCompleted = b.status === 'Completed'
+
+        if (aCompleted && !bCompleted) return 1
+        if (!aCompleted && bCompleted) return -1
+
+        const aTime = a.start_date || a.end_date
+        const bTime = b.start_date || b.end_date
+        if (!aTime || !bTime) return 0
+        return aTime.localeCompare(bTime)
+      })
+    }
+
+    return grouped
+  }, [tasks])
+
   // Handle Strategy click
   const handleStrategyClick = useCallback((strategyId: string) => {
     if (strategyId === 'blank') return // Ignore blank areas
@@ -409,13 +539,6 @@ export default function TaskPanelOptimized({
     }
   }, [selectedStrategyId, planRectangles])
 
-  // Load all data only after authentication is complete and user exists
-  useEffect(() => {
-    if (!authLoading && user) {
-      loadAllData()
-    }
-  }, [authLoading, user])
-
   // Call onTasksUpdate when tasks change
   useEffect(() => {
     if (onTasksUpdate && tasks.length > 0) {
@@ -423,115 +546,223 @@ export default function TaskPanelOptimized({
     }
   }, [tasks, onTasksUpdate])
 
-  const loadAllData = async (forceRefresh = false) => {
+  const fetchTasksData = useCallback(async (
+    { force = false, includeSchema = false }: { force?: boolean; includeSchema?: boolean } = {}
+  ) => {
+    if (!force) {
+      const cached = dataCache.get<{
+        tasks: TaskRecord[]
+        schemaOptions: { statusOptions: string[] }
+      }>(CACHE_KEYS.TASKS)
+
+      if (cached) {
+        const cachedStatus = cached.schemaOptions?.statusOptions?.length
+          ? cached.schemaOptions.statusOptions
+          : DEFAULT_TASK_STATUS_OPTIONS
+
+        setTasks(cached.tasks)
+        setStatusOptions(cachedStatus)
+
+        if (!includeSchema || cached.schemaOptions?.statusOptions?.length) {
+          return cached.tasks
+        }
+      }
+    }
+
+    const [tasksRes, schemaRes] = await Promise.all([
+      fetch('/api/tasks'),
+      includeSchema ? fetch('/api/tasks?action=schema').catch(() => null) : Promise.resolve(null)
+    ])
+
+    if (!tasksRes.ok) {
+      throw new Error(`HTTP ${tasksRes.status}: failed to load tasks`)
+    }
+
+    const tasksJson = await tasksRes.json()
+    const tasksData: TaskRecord[] = tasksJson.data || []
+
+    let statusOpts = statusOptionsRef.current
+
+    if (includeSchema) {
+      if (schemaRes && schemaRes.ok) {
+        const schemaJson = await schemaRes.json()
+        statusOpts = schemaJson.schema?.statusOptions?.length
+          ? schemaJson.schema.statusOptions
+          : DEFAULT_TASK_STATUS_OPTIONS
+      } else if (schemaRes) {
+        statusOpts = DEFAULT_TASK_STATUS_OPTIONS
+      }
+    }
+
+    setTasks(tasksData)
+    setStatusOptions(statusOpts)
+    dataCache.set(CACHE_KEYS.TASKS, {
+      tasks: tasksData,
+      schemaOptions: { statusOptions: statusOpts }
+    })
+
+    return tasksData
+  }, [])
+
+  const fetchStrategiesData = useCallback(async (
+    { force = false, includeSchema = false }: { force?: boolean; includeSchema?: boolean } = {}
+  ) => {
+    if (!force) {
+      const cached = dataCache.get<{ strategies: StrategyRecord[] }>(CACHE_KEYS.STRATEGIES)
+      if (cached) {
+        setStrategies(cached.strategies)
+        const cachedOptions = cached.strategies.map(strategy => ({
+          id: strategy.id,
+          objective: strategy.objective || 'Untitled Strategy'
+        }))
+        setStrategyOptions(cachedOptions)
+
+        if (!includeSchema) {
+          return cached.strategies
+        }
+      }
+    }
+
+    const [strategyRes, schemaRes] = await Promise.all([
+      fetch('/api/strategy'),
+      includeSchema ? fetch('/api/strategy?action=schema').catch(() => null) : Promise.resolve(null)
+    ])
+
+    if (!strategyRes.ok) {
+      throw new Error(`HTTP ${strategyRes.status}: failed to load strategies`)
+    }
+
+    const strategyJson = await strategyRes.json()
+    const strategyData: StrategyRecord[] = strategyJson.data || []
+
+    setStrategies(strategyData)
+    const strategyOpts = strategyData.map(strategy => ({
+      id: strategy.id,
+      objective: strategy.objective || 'Untitled Strategy'
+    }))
+    setStrategyOptions(strategyOpts)
+
+    if (includeSchema) {
+      let statusOpts = strategyStatusOptionsRef.current
+      let categoryOpts = strategyCategoryOptionsRef.current
+
+      if (schemaRes && schemaRes.ok) {
+        const schemaJson = await schemaRes.json()
+        statusOpts = schemaJson.schema?.statusOptions || DEFAULT_STRATEGY_STATUS_OPTIONS
+        categoryOpts = schemaJson.schema?.categoryOptions || DEFAULT_STRATEGY_CATEGORY_OPTIONS
+      } else if (schemaRes) {
+        statusOpts = DEFAULT_STRATEGY_STATUS_OPTIONS
+        categoryOpts = DEFAULT_STRATEGY_CATEGORY_OPTIONS
+      }
+
+      setStrategyStatusOptions(statusOpts)
+      setStrategyCategoryOptions(categoryOpts)
+    }
+
+    dataCache.set(CACHE_KEYS.STRATEGIES, { strategies: strategyData })
+
+    return strategyData
+  }, [])
+
+  const fetchPlansData = useCallback(async (
+    { force = false, includeSchema = false }: { force?: boolean; includeSchema?: boolean } = {}
+  ) => {
+    if (!force) {
+      const cached = dataCache.get<PlanRecord[]>(CACHE_KEYS.PLANS)
+      if (cached) {
+        setPlans(cached)
+        const cachedOptions = cached.map(plan => ({
+          id: plan.id,
+          objective: plan.objective || 'Untitled Plan',
+          importance_percentage: plan.importance_percentage || 0
+        }))
+        setPlanOptions(cachedOptions)
+
+        if (!includeSchema) {
+          return cached
+        }
+      }
+    }
+
+    const [planRes, schemaRes] = await Promise.all([
+      fetch('/api/plan'),
+      includeSchema ? fetch('/api/plan?action=schema').catch(() => null) : Promise.resolve(null)
+    ])
+
+    if (!planRes.ok) {
+      throw new Error(`HTTP ${planRes.status}: failed to load plans`)
+    }
+
+    const planJson = await planRes.json()
+    const planData: PlanRecord[] = planJson.data || []
+
+    setPlans(planData)
+    const planOpts = planData.map(plan => ({
+      id: plan.id,
+      objective: plan.objective || 'Untitled Plan',
+      importance_percentage: plan.importance_percentage || 0
+    }))
+    setPlanOptions(planOpts)
+
+    if (includeSchema) {
+      let statusOpts = planStatusOptionsRef.current
+
+      if (schemaRes && schemaRes.ok) {
+        const schemaJson = await schemaRes.json()
+        statusOpts = schemaJson.schema?.statusOptions || DEFAULT_PLAN_STATUS_OPTIONS
+      } else if (schemaRes) {
+        statusOpts = DEFAULT_PLAN_STATUS_OPTIONS
+      }
+
+      setPlanStatusOptions(statusOpts)
+    }
+
+    dataCache.set(CACHE_KEYS.PLANS, planData)
+
+    return planData
+  }, [])
+
+  const loadAllData = useCallback(async (forceRefresh = false) => {
     try {
       setLoading(true)
       setError(null)
-      
-      // Check cache first (skip if force refresh)
-      if (!forceRefresh) {
-        const cachedTasks = dataCache.get(CACHE_KEYS.TASKS)
-        const cachedStrategies = dataCache.get(CACHE_KEYS.STRATEGIES)
-        const cachedPlans = dataCache.get(CACHE_KEYS.PLANS)
-        
-        if (cachedTasks && cachedStrategies && cachedPlans) {
-          // Load from cache
-          setTasks(cachedTasks.tasks)
-          setStatusOptions(cachedTasks.schemaOptions.statusOptions)
-          
-          setStrategies(cachedStrategies.strategies)
-          const strategyOpts = cachedStrategies.strategies.map((strategy: any) => ({
-            id: strategy.id,
-            objective: strategy.objective || 'Untitled Strategy'
-          }))
-          setStrategyOptions(strategyOpts)
-          
-          setPlans(cachedPlans)
-          const planOpts = cachedPlans.map((plan: any) => ({
-            id: plan.id,
-            objective: plan.objective || 'Untitled Plan',
-            importance_percentage: plan.importance_percentage || 0
-          }))
-          setPlanOptions(planOpts)
-          
-          setLoading(false)
-          return
-        }
-      }
-      
-      // 优化：直接并行调用API，避免重复请求
-      const [tasksResponse, strategiesResponse, plansResponse, taskSchemaResponse, strategySchemaResponse, planSchemaResponse] = await Promise.all([
-        fetch('/api/tasks').then(res => res.json()),
-        fetch('/api/strategy').then(res => res.json()),
-        fetch('/api/plan').then(res => res.json()),
-        fetch('/api/tasks?action=schema').then(res => res.json()).catch(() => ({ schema: { statusOptions: [] } })),
-        fetch('/api/strategy?action=schema').then(res => res.json()).catch(() => ({ schema: { statusOptions: [], categoryOptions: [] } })),
-        fetch('/api/plan?action=schema').then(res => res.json()).catch(() => ({ schema: { statusOptions: [] } }))
+
+      await Promise.all([
+        fetchTasksData({ force: forceRefresh, includeSchema: true }),
+        fetchStrategiesData({ force: forceRefresh, includeSchema: true }),
+        fetchPlansData({ force: forceRefresh, includeSchema: true })
       ])
-      
-      // 处理响应数据
-      const taskData = {
-        tasks: tasksResponse.data || [],
-        schemaOptions: taskSchemaResponse.schema || { statusOptions: [] }
-      }
-      const strategyData = {
-        strategies: strategiesResponse.data || []
-      }
-      const planData = plansResponse.data || []
-      
-      // Cache the data
-      dataCache.set(CACHE_KEYS.TASKS, taskData)
-      dataCache.set(CACHE_KEYS.STRATEGIES, strategyData)
-      dataCache.set(CACHE_KEYS.PLANS, planData)
-      
-      // Set task data
-      setTasks(taskData.tasks)
-      setStatusOptions(taskData.schemaOptions.statusOptions)
-      
-      // Set strategy data
-      setStrategies(strategyData.strategies)
-      const strategyOpts = strategyData.strategies.map((strategy: any) => ({
-        id: strategy.id,
-        objective: strategy.objective || 'Untitled Strategy'
-      }))
-      setStrategyOptions(strategyOpts)
-      
-      // Set strategy schema options
-      setStrategyStatusOptions(strategySchemaResponse.schema?.statusOptions || [])
-      setStrategyCategoryOptions(strategySchemaResponse.schema?.categoryOptions || [])
-      
-      // Set plan data
-      setPlans(planData)
-      const planOpts = planData.map((plan: any) => ({
-        id: plan.id,
-        objective: plan.objective || 'Untitled Plan',
-        importance_percentage: plan.importance_percentage || 0
-      }))
-      setPlanOptions(planOpts)
-      
-      // Set plan schema options
-      setPlanStatusOptions(planSchemaResponse.schema?.statusOptions || [])
-      
     } catch (err) {
       console.error('Failed to load data:', err)
       setError(err instanceof Error ? err.message : 'Failed to load data')
-      
-      // Set default values on error
-      setStatusOptions(['Not Started', 'In Progress', 'Completed', 'On Hold'])
-      setPriorityOptions(['Important & Urgent', 'Important & Not Urgent', 'Not Important & Urgent', 'Not Important & Not Urgent'])
-      setTasks([])
-      setStrategies([])
-      setPlans([])
-      setPlanOptions([])
-      setStrategyOptions([])
-      setStrategyStatusOptions([])
-      setStrategyCategoryOptions([])
-      setPlanStatusOptions([])
-      setPlanPriorityOptions([])
+
+      setStatusOptions(prev => (prev.length ? prev : DEFAULT_TASK_STATUS_OPTIONS))
+      setStrategyStatusOptions(prev => (prev.length ? prev : DEFAULT_STRATEGY_STATUS_OPTIONS))
+      setStrategyCategoryOptions(prev => (prev.length ? prev : DEFAULT_STRATEGY_CATEGORY_OPTIONS))
+      setPlanStatusOptions(prev => (prev.length ? prev : DEFAULT_PLAN_STATUS_OPTIONS))
+
+      if (forceRefresh) {
+        setTasks([])
+        setStrategies([])
+        setPlans([])
+        setPlanOptions([])
+        setStrategyOptions([])
+        setStatusOptions(DEFAULT_TASK_STATUS_OPTIONS)
+        setStrategyStatusOptions(DEFAULT_STRATEGY_STATUS_OPTIONS)
+        setStrategyCategoryOptions(DEFAULT_STRATEGY_CATEGORY_OPTIONS)
+        setPlanStatusOptions(DEFAULT_PLAN_STATUS_OPTIONS)
+      }
     } finally {
       setLoading(false)
     }
-  }
+  }, [fetchPlansData, fetchStrategiesData, fetchTasksData])
+
+  // Load all data only after authentication is complete and user exists
+  useEffect(() => {
+    if (!authLoading && user) {
+      loadAllData()
+    }
+  }, [authLoading, user, loadAllData])
 
   // n8n sync helper function
   const syncTaskToN8n = useCallback(async (action: 'create' | 'update' | 'delete', taskData: any) => {
@@ -579,8 +810,8 @@ export default function TaskPanelOptimized({
           })
         }
       } else {
-        // For new tasks, we need to reload to get the generated ID
-        await loadAllData(true)
+        // Refresh only task data for new entries
+        await fetchTasksData({ force: true })
       }
 
       setFormPanelOpen(false)
@@ -591,7 +822,7 @@ export default function TaskPanelOptimized({
       console.error('Failed to save task:', err)
       setToast({ message: 'Failed to save task', type: 'error' })
     }
-  }, [editingTask, syncTaskToN8n])
+  }, [editingTask, fetchTasksData, syncTaskToN8n])
 
   const handleDeleteTask = useCallback(async (taskId: string) => {
     if (!confirm('Are you sure you want to delete this task?')) return
@@ -721,9 +952,17 @@ export default function TaskPanelOptimized({
       
       // Remove strategy from local state
       setStrategies(prev => prev.filter(s => s.id !== strategyId))
-      
-      // Force reload all data to get accurate counts after cascade delete
-      await loadAllData(true)
+      if (selectedStrategyId === strategyId) {
+        setSelectedStrategyId(null)
+      }
+      setSelectedPlanId(null)
+
+      // Refresh related collections without full reload
+      await Promise.all([
+        fetchStrategiesData({ force: true }),
+        fetchPlansData({ force: true }),
+        fetchTasksData({ force: true })
+      ])
       
       const { cascadeDeleted } = result
       const message = `Strategy deleted (${cascadeDeleted.plans} plans, ${cascadeDeleted.tasks} tasks also deleted)`
@@ -732,7 +971,7 @@ export default function TaskPanelOptimized({
       console.error('Failed to delete strategy:', error)
       setToast({ message: 'Failed to delete strategy', type: 'error' })
     }
-  }, [])
+  }, [fetchPlansData, fetchStrategiesData, fetchTasksData, selectedStrategyId])
 
   // Plan edit/delete handlers
   const handlePlanEdit = useCallback((plan: PlanRecord) => {
@@ -758,9 +997,15 @@ export default function TaskPanelOptimized({
       
       // Remove plan from local state
       setPlans(prev => prev.filter(p => p.id !== planId))
-      
-      // Force reload all data to get accurate counts after cascade delete
-      await loadAllData(true)
+      if (selectedPlanId === planId) {
+        setSelectedPlanId(null)
+      }
+
+      // Refresh plans and tasks without full reload
+      await Promise.all([
+        fetchPlansData({ force: true }),
+        fetchTasksData({ force: true })
+      ])
       
       const { cascadeDeleted } = result
       const message = `Plan deleted (${cascadeDeleted.tasks} tasks also deleted)`
@@ -769,7 +1014,7 @@ export default function TaskPanelOptimized({
       console.error('Failed to delete plan:', error)
       setToast({ message: 'Failed to delete plan', type: 'error' })
     }
-  }, [])
+  }, [fetchPlansData, fetchTasksData, selectedPlanId])
 
   // Strategy form handlers
   const openStrategyForm = useCallback((strategy?: StrategyRecord) => {
@@ -791,10 +1036,9 @@ export default function TaskPanelOptimized({
       
       // Invalidate cache since strategy data changed
       dataCache.delete(CACHE_KEYS.STRATEGIES)
-      dataCache.delete(CACHE_KEYS.PLANS)
       
-      // Reload all data to get updated relationships
-      await loadAllData(true)
+      // Refresh strategies to get updated relationships
+      await fetchStrategiesData({ force: true })
       
       setStrategyFormOpen(false)
       setEditingStrategy(null)
@@ -804,7 +1048,7 @@ export default function TaskPanelOptimized({
       console.error('Failed to save strategy:', err)
       setToast({ message: 'Failed to save strategy', type: 'error' })
     }
-  }, [editingStrategy])
+  }, [editingStrategy, fetchStrategiesData])
 
   // Plan form handlers
   const openPlanForm = useCallback((plan?: PlanRecord, defaultStrategyId?: string) => {
@@ -835,10 +1079,9 @@ export default function TaskPanelOptimized({
       
       // Invalidate cache since plan data changed
       dataCache.delete(CACHE_KEYS.PLANS)
-      dataCache.delete(CACHE_KEYS.TASKS)
       
-      // Reload all data to get updated relationships
-      await loadAllData(true)
+      // Refresh plans to reflect changes
+      await fetchPlansData({ force: true })
       
       setPlanFormOpen(false)
       setEditingPlan(null)
@@ -848,7 +1091,7 @@ export default function TaskPanelOptimized({
       console.error('Failed to save plan:', err)
       setToast({ message: 'Failed to save plan', type: 'error' })
     }
-  }, [editingPlan])
+  }, [editingPlan, fetchPlansData])
 
   // Show loading spinner during auth loading or data loading
   if (authLoading || loading) {
@@ -905,6 +1148,7 @@ export default function TaskPanelOptimized({
             <div className="aspect-square">
               <TaskCalendarView
                 tasks={tasks}
+                tasksByDate={tasksByDate}
                 currentMonth={currentMonth}
                 selectedDate={selectedDate}
                 onDateSelect={setSelectedDate}
@@ -1070,7 +1314,8 @@ export default function TaskPanelOptimized({
                                         note: task.note,
                                         importance_percentage: task.importance_percentage
                                       }, task.id)
-                                      await loadAllData(true)
+                                      dataCache.delete(CACHE_KEYS.TASKS)
+                                      await fetchTasksData({ force: true })
                                     } catch (error) {
                                       console.error('Failed to complete task:', error)
                                     }
@@ -1137,11 +1382,11 @@ export default function TaskPanelOptimized({
                     };
 
                     const getStatusBg = (days: number | null) => {
-                      if (days === null) return 'from-gray-50 to-gray-100';
-                      if (days < 0) return 'from-red-50 to-red-100';
-                      if (days <= 3) return 'from-red-50 to-red-100';
-                      if (days <= 7) return 'from-yellow-50 to-yellow-100';
-                      return 'from-purple-50 to-purple-100';
+                      if (days === null) return 'from-slate-100/90 via-white/60 to-slate-50/70'
+                      if (days < 0) return 'from-rose-100/90 via-rose-200/70 to-white/60'
+                      if (days <= 3) return 'from-rose-100/90 via-rose-200/70 to-white/60'
+                      if (days <= 7) return 'from-amber-100/90 via-amber-200/60 to-white/70'
+                      return 'from-indigo-100/90 via-indigo-200/60 to-white/70'
                     };
 
                     const getProgressWidth = (days: number | null, strategy: StrategyRecord) => {
@@ -1154,51 +1399,54 @@ export default function TaskPanelOptimized({
 
                     const color = getStatusColor(daysLeft);
                     const bgGradient = getStatusBg(daysLeft);
+                    const theme = strategyTimelineThemes[color as keyof typeof strategyTimelineThemes] || strategyTimelineThemes.gray
+                    const progressWidth = getProgressWidth(daysLeft, strategy)
 
                     return (
                       <div key={strategy.id} className="flex flex-col">
                         {/* 倒计时卡片 */}
-                        <div className={`bg-gradient-to-br ${bgGradient} rounded-lg p-3 border border-white/50 flex flex-col h-20 relative`}>
-                          {/* 状态点 */}
-                          <div className="absolute top-2 right-2">
-                            <div className={`w-2 h-2 rounded-full ${
-                              color === 'purple' ? 'bg-purple-500' :
-                              color === 'yellow' ? 'bg-yellow-500' :
-                              color === 'red' ? 'bg-red-500' : 'bg-gray-400'
-                            }`}></div>
-                          </div>
-
-                          {/* 倒计时数字 - 居中显示 */}
-                          <div className="flex-1 flex flex-col justify-center text-center">
-                            <div className={`text-lg font-bold ${
-                              color === 'purple' ? 'text-purple-600' :
-                              color === 'yellow' ? 'text-yellow-600' :
-                              color === 'red' ? 'text-red-600' : 'text-gray-600'
-                            }`}>
-                              {daysLeft === null ? '--' : daysLeft < 0 ? Math.abs(daysLeft) : daysLeft}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {daysLeft === null ? '未设定' : daysLeft < 0 ? '超期' : '天'}
+                        <div
+                          className={`relative flex h-28 flex-col rounded-2xl border border-white/60 bg-gradient-to-br ${bgGradient} p-4 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${theme.ring}`}
+                        >
+                          <div className="pointer-events-none absolute inset-0 rounded-2xl bg-white/20 backdrop-blur-[2px]"></div>
+                          <div className="relative flex items-start justify-between">
+                            <span className={`px-2 py-0.5 text-[10px] font-semibold tracking-[0.18em] uppercase rounded-full ${theme.badge}`}>
+                              {daysLeft === null ? 'Unset' : daysLeft < 0 ? 'Overdue' : 'D-Day'}
+                            </span>
+                            <div className={`flex h-6 w-6 items-center justify-center rounded-full bg-white/70 text-[10px] font-semibold ${theme.accent}`}>
+                              {strategy.importance_percentage ? `${strategy.importance_percentage}%` : '—'}
                             </div>
                           </div>
 
-                          {/* 底部进度条 */}
-                          <div className="w-full bg-gray-200/50 rounded-full h-1">
+                          <div className="relative mt-4 flex flex-1 items-end justify-between">
+                            <div>
+                              <div className={`text-2xl font-bold leading-none ${theme.accent}`}>
+                                {daysLeft === null ? '--' : Math.abs(daysLeft)}
+                              </div>
+                              <div className="mt-1 text-[11px] font-medium uppercase tracking-wide text-slate-600">
+                                {daysLeft === null ? '未设定' : daysLeft < 0 ? '逾期天数' : '剩余天数'}
+                              </div>
+                            </div>
+                            {strategy.due_date && (
+                              <div className="text-right text-[10px] font-medium text-slate-500">
+                                <div>Due</div>
+                                <div>{new Date(strategy.due_date).toLocaleDateString('zh-CN')}</div>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="relative mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/40">
                             <div
-                              className={`h-1 rounded-full transition-all duration-300 ${
-                                color === 'purple' ? 'bg-purple-500' :
-                                color === 'yellow' ? 'bg-yellow-500' :
-                                color === 'red' ? 'bg-red-500' : 'bg-gray-400'
-                              }`}
-                              style={{ width: getProgressWidth(daysLeft, strategy) }}
+                              className={`h-full rounded-full bg-gradient-to-r transition-all duration-500 ${theme.progress}`}
+                              style={{ width: progressWidth }}
                             ></div>
                           </div>
                         </div>
 
                         {/* 策略名称 - 显示在卡片下方居中 */}
                         <div className="mt-2 text-center">
-                          <span className="text-xs font-medium text-gray-700 block truncate" title={strategy.objective}>
-                            {strategy.objective}
+                          <span className="line-clamp-2 text-xs font-semibold text-slate-700" title={strategy.objective}>
+                            {strategy.objective || '未命名策略'}
                           </span>
                         </div>
                       </div>
@@ -1254,72 +1502,53 @@ export default function TaskPanelOptimized({
                       y={rect.y}
                       width={rect.width}
                       height={rect.height}
-                      fill="hsl(260, 60%, 85%)"
-                      stroke="#ffffff"
-                      strokeWidth="1"
+                      fill="rgba(237,233,254,0.6)"
                     />
                   )
                 }
                 
                 // Strategy: Blue-purple gradient
-                const intensity = Math.min(rect.value / 100, 1)
-                const saturation = 60 + (intensity * 30) // 60-90%
-                const lightness = 80 - (intensity * 40) // 80-40%
-                const bgColor = `hsl(260, ${saturation}%, ${lightness}%)`
-                const textColor = intensity > 0.5 ? 'white' : '#4a5568'
+                const theme = getTreemapTheme('strategy', rect.value)
                 const isSelected = selectedStrategyId === rect.id
-                
+
                 // Get smart text display
                 const textDisplay = getTextDisplay(rect.name, rect.value, rect.width, rect.height)
                 
                 return (
-                  <g key={rect.id}>
-                    <rect
-                      x={rect.x}
-                      y={rect.y}
-                      width={rect.width}
-                      height={rect.height}
-                      fill={bgColor}
-                      stroke="#ffffff"
-                      strokeWidth="1"
-                      className="transition-all duration-200 hover:brightness-110 hover:scale-[1.02] cursor-pointer shadow-sm hover:shadow-md"
-                      style={{ transformOrigin: `${rect.x + rect.width/2}px ${rect.y + rect.height/2}px` }}
-                      onClick={() => handleStrategyClick(rect.id)}
-                    />
-                    
+                  <g key={rect.id} className="transition-all duration-200">
                     <foreignObject
-                      x={rect.x + 2}
-                      y={rect.y + 2}
-                      width={rect.width - 4}
-                      height={rect.height - 4}
+                      x={rect.x + 1.5}
+                      y={rect.y + 1.5}
+                      width={rect.width - 3}
+                      height={rect.height - 3}
                       className="pointer-events-none"
                     >
-                      <div className="flex flex-col justify-center h-full text-center px-1">
-                        {textDisplay.showName && textDisplay.nameText && (
-                          <div 
-                            className="font-medium"
-                            style={{ 
-                              color: textColor,
-                              fontSize: `${textDisplay.fontSize}px`,
-                              lineHeight: textDisplay.lineHeight,
-                              whiteSpace: 'pre-line'
-                            }}
-                          >
-                            {textDisplay.nameText}
+                      <div
+                        className="h-full w-full overflow-hidden rounded-xl"
+                        style={{ background: theme.gradient }}
+                      onClick={() => handleStrategyClick(rect.id)}
+                      >
+                        <div className="flex h-full flex-col justify-between p-3">
+                          <div className="flex justify-end">
+                            {rect.value ? (
+                              <span className={`text-xs font-semibold ${theme.mutedText}`}>
+                                {rect.value}%
+                              </span>
+                            ) : null}
                           </div>
-                        )}
-                        {textDisplay.showPercentage && (
-                          <div 
-                            className={`font-semibold ${textDisplay.showName && textDisplay.nameText ? 'mt-1' : ''}`}
-                            style={{ 
-                              color: textColor,
-                              fontSize: `${textDisplay.fontSize * 0.8}px`,
-                              opacity: 0.9
-                            }}
-                          >
-                            {rect.value}%
-                          </div>
-                        )}
+                          {textDisplay.showName && textDisplay.nameText && (
+                            <div
+                              className={`font-semibold ${theme.text}`}
+                              style={{
+                                fontSize: `${Math.max(12, textDisplay.fontSize)}px`,
+                                lineHeight: textDisplay.lineHeight,
+                                whiteSpace: 'pre-line'
+                              }}
+                            >
+                              {textDisplay.nameText}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </foreignObject>
                     
@@ -1410,72 +1639,53 @@ export default function TaskPanelOptimized({
                       y={rect.y}
                       width={rect.width}
                       height={rect.height}
-                      fill="hsl(280, 50%, 90%)"
-                      stroke="#ffffff"
-                      strokeWidth="1"
+                      fill="rgba(243,232,255,0.6)"
                     />
                   )
                 }
                 
                 // Plan: Pink-purple gradient
-                const intensity = Math.min(rect.value / 100, 1)
-                const saturation = 50 + (intensity * 30) // 50-80%
-                const lightness = 85 - (intensity * 25) // 85-60%
-                const bgColor = `hsl(280, ${saturation}%, ${lightness}%)`
-                const textColor = intensity > 0.5 ? 'white' : '#4a5568'
+                const theme = getTreemapTheme('plan', rect.value)
                 const isSelected = selectedPlanId === rect.id
                 
                 // Get smart text display
                 const textDisplay = getTextDisplay(rect.name, rect.value, rect.width, rect.height)
                 
                 return (
-                  <g key={rect.id}>
-                    <rect
-                      x={rect.x}
-                      y={rect.y}
-                      width={rect.width}
-                      height={rect.height}
-                      fill={bgColor}
-                      stroke="#ffffff"
-                      strokeWidth="1"
-                      className="transition-all duration-200 hover:brightness-110 hover:scale-[1.02] cursor-pointer shadow-sm hover:shadow-md"
-                      style={{ transformOrigin: `${rect.x + rect.width/2}px ${rect.y + rect.height/2}px` }}
-                      onClick={() => handlePlanClick(rect.id)}
-                    />
-                    
+                  <g key={rect.id} className="transition-all duration-200">
                     <foreignObject
-                      x={rect.x + 2}
-                      y={rect.y + 2}
-                      width={rect.width - 4}
-                      height={rect.height - 4}
+                      x={rect.x + 1.5}
+                      y={rect.y + 1.5}
+                      width={rect.width - 3}
+                      height={rect.height - 3}
                       className="pointer-events-none"
                     >
-                      <div className="flex flex-col justify-center h-full text-center px-1">
-                        {textDisplay.showName && textDisplay.nameText && (
-                          <div 
-                            className="font-medium"
-                            style={{ 
-                              color: textColor,
-                              fontSize: `${textDisplay.fontSize}px`,
-                              lineHeight: textDisplay.lineHeight,
-                              whiteSpace: 'pre-line'
-                            }}
-                          >
-                            {textDisplay.nameText}
+                      <div
+                        className="h-full w-full overflow-hidden rounded-xl"
+                        style={{ background: theme.gradient }}
+                      onClick={() => handlePlanClick(rect.id)}
+                      >
+                        <div className="flex h-full flex-col justify-between p-3">
+                          <div className="flex justify-end">
+                            {rect.value ? (
+                              <span className={`text-xs font-semibold ${theme.mutedText}`}>
+                                {rect.value}%
+                              </span>
+                            ) : null}
                           </div>
-                        )}
-                        {textDisplay.showPercentage && (
-                          <div 
-                            className={`font-semibold ${textDisplay.showName && textDisplay.nameText ? 'mt-1' : ''}`}
-                            style={{ 
-                              color: textColor,
-                              fontSize: `${textDisplay.fontSize * 0.8}px`,
-                              opacity: 0.9
-                            }}
-                          >
-                            {rect.value}%
-                          </div>
-                        )}
+                          {textDisplay.showName && textDisplay.nameText && (
+                            <div
+                              className={`font-semibold ${theme.text}`}
+                              style={{
+                                fontSize: `${Math.max(12, textDisplay.fontSize)}px`,
+                                lineHeight: textDisplay.lineHeight,
+                                whiteSpace: 'pre-line'
+                              }}
+                            >
+                              {textDisplay.nameText}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </foreignObject>
                     
@@ -1715,19 +1925,41 @@ export default function TaskPanelOptimized({
 
                     if (!itemId) return
 
+                    const refreshers: Promise<unknown>[] = []
+
                     // Call appropriate delete service
                     if (itemType === 'strategy') {
                       await deleteStrategy(itemId)
                       setStrategies(prev => prev.filter(s => s.id !== itemId))
+                      setSelectedStrategyId(prev => (prev === itemId ? null : prev))
+                      setSelectedPlanId(null)
                       dataCache.delete(CACHE_KEYS.STRATEGIES)
+                      dataCache.delete(CACHE_KEYS.PLANS)
+                      dataCache.delete(CACHE_KEYS.TASKS)
+                      refreshers.push(
+                        fetchStrategiesData({ force: true }),
+                        fetchPlansData({ force: true }),
+                        fetchTasksData({ force: true })
+                      )
                     } else if (itemType === 'plan') {
                       await deletePlan(itemId)
                       setPlans(prev => prev.filter(p => p.id !== itemId))
+                      setSelectedPlanId(prev => (prev === itemId ? null : prev))
                       dataCache.delete(CACHE_KEYS.PLANS)
+                      dataCache.delete(CACHE_KEYS.TASKS)
+                      refreshers.push(
+                        fetchPlansData({ force: true }),
+                        fetchTasksData({ force: true })
+                      )
                     } else if (itemType === 'task') {
                       await deleteTask(itemId)
                       setTasks(prev => prev.filter(t => t.id !== itemId))
                       dataCache.delete(CACHE_KEYS.TASKS)
+                      refreshers.push(fetchTasksData({ force: true }))
+                    }
+
+                    if (refreshers.length > 0) {
+                      await Promise.all(refreshers)
                     }
 
                     setDeleteConfirmModal({ isOpen: false, type: 'strategy', item: null })
