@@ -56,15 +56,15 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
       />
       
       {/* Panel */}
-      <div className={`fixed top-0 right-0 h-full w-96 z-50 bg-white dark:bg-neutral-900 lakers:bg-gradient-to-br lakers:from-lakers-800 lakers:to-lakers-700 shadow-2xl transform transition-all duration-300 ease-out ${
+      <div className={`fixed top-0 right-0 h-full w-96 z-50 bg-white dark:bg-neutral-900 lakers:bg-gradient-to-br lakers:from-lakers-800 lakers:to-lakers-700 lightpink:bg-gradient-to-br lightpink:from-lightpink-200 lightpink:to-lightpink-100 hellokitty:bg-gradient-to-br hellokitty:from-hellokitty-200 hellokitty:to-white shadow-2xl transform transition-all duration-300 ease-out ${
         isVisible ? 'translate-x-0' : 'translate-x-full'
       }`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-neutral-700 lakers:border-lakers-300/30">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-neutral-100 lakers:text-lakers-300">Settings</h2>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-neutral-700 lakers:border-lakers-300/30 lightpink:border-lightpink-200 hellokitty:border-hellokitty-200">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-neutral-100 lakers:text-lakers-300 lightpink:text-lightpink-700 hellokitty:text-hellokitty-600">Settings</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-neutral-800 lakers:hover:bg-lakers-300/20 rounded-lg transition-all duration-200 text-gray-500 hover:text-gray-700 dark:text-neutral-400 dark:hover:text-neutral-200 lakers:text-lakers-300 lakers:hover:text-lakers-300"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-neutral-800 lakers:hover:bg-lakers-300/20 lightpink:hover:bg-lightpink-100/50 hellokitty:hover:bg-hellokitty-100/60 rounded-lg transition-all duration-200 text-gray-500 hover:text-gray-700 dark:text-neutral-400 dark:hover:text-neutral-200 lakers:text-lakers-300 lakers:hover:text-lakers-300 lightpink:text-lightpink-500 hellokitty:text-hellokitty-500"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -76,8 +76,8 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
         <div className="p-6">
           {/* Theme Selection */}
           <div className="mb-8">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-100 lakers:text-lakers-300 mb-4">Theme</h3>
-            <p className="text-sm text-gray-600 dark:text-neutral-400 lakers:text-lakers-300 mb-4">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-100 lakers:text-lakers-300 lightpink:text-lightpink-700 hellokitty:text-hellokitty-600 mb-4">Theme</h3>
+            <p className="text-sm text-gray-600 dark:text-neutral-400 lakers:text-lakers-300 lightpink:text-lightpink-500 hellokitty:text-hellokitty-500 mb-4">
               Choose your preferred theme for the AI Card Studio interface.
             </p>
             
@@ -198,6 +198,68 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                     <div className="ml-auto">
                       <div className="w-5 h-5 bg-anno-600 rounded-full flex items-center justify-center">
                         <svg className="w-3 h-3 text-anno-100" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </button>
+
+              {/* Lightpink Theme Option */}
+              <button
+                onClick={() => handleThemeSelect('lightpink')}
+                className={`w-full p-4 rounded-lg border transition-all duration-200 text-left ${
+                  theme === 'lightpink'
+                    ? 'border-lightpink-400 bg-lightpink-50 dark:bg-lightpink-200/20 lightpink:bg-lightpink-200/30'
+                    : 'border-gray-200 dark:border-neutral-700 lightpink:border-lightpink-300/30 hover:border-lightpink-300 dark:hover:border-lightpink-600 lightpink:hover:border-lightpink-400 hover:bg-lightpink-50/60 dark:hover:bg-lightpink-900/10 lightpink:hover:bg-lightpink-200/20'
+                }`}
+              >
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-gradient-to-br from-lightpink-400 to-lightpink-500 rounded-lg flex items-center justify-center mr-3">
+                    <svg className="w-4 h-4 text-lightpink-100" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900 dark:text-neutral-100 lightpink:text-lightpink-600">Anon Lightpink</div>
+                    <div className="text-sm text-gray-500 dark:text-neutral-400 lightpink:text-lightpink-500">Soft MyGO-inspired palette</div>
+                  </div>
+                  {theme === 'lightpink' && (
+                    <div className="ml-auto">
+                      <div className="w-5 h-5 bg-lightpink-400 rounded-full flex items-center justify-center">
+                        <svg className="w-3 h-3 text-lightpink-900" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </button>
+
+              {/* Hello Kitty Theme Option */}
+              <button
+                onClick={() => handleThemeSelect('hellokitty')}
+                className={`w-full p-4 rounded-lg border transition-all duration-200 text-left ${
+                  theme === 'hellokitty'
+                    ? 'border-hellokitty-400 bg-hellokitty-50 dark:bg-hellokitty-200/20 hellokitty:bg-hellokitty-200/30'
+                    : 'border-gray-200 dark:border-neutral-700 hellokitty:border-hellokitty-300/30 hover:border-hellokitty-300 dark:hover:border-hellokitty-600 hellokitty:hover:border-hellokitty-400 hover:bg-hellokitty-50/60 dark:hover:bg-hellokitty-900/10 hellokitty:hover:bg-hellokitty-200/20'
+                }`}
+              >
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-gradient-to-br from-hellokitty-300 via-hellokitty-400 to-hellokitty-500 rounded-lg flex items-center justify-center mr-3">
+                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 4c-3.86 0-7 2.91-7 6.5 0 3.41 2.94 6.2 6.75 6.47v2.53h1.5v-2.53c3.81-.27 6.75-3.06 6.75-6.47C19 6.91 15.86 4 12 4zm0 11.5c-2.9 0-5.25-1.79-5.25-4s2.35-4 5.25-4 5.25 1.79 5.25 4-2.35 4-5.25 4z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900 dark:text-neutral-100 hellokitty:text-hellokitty-600">Kid Hello Kitty</div>
+                    <div className="text-sm text-gray-500 dark:text-neutral-400 hellokitty:text-hellokitty-500">Playful pastel comfort</div>
+                  </div>
+                  {theme === 'hellokitty' && (
+                    <div className="ml-auto">
+                      <div className="w-5 h-5 bg-hellokitty-400 rounded-full flex items-center justify-center">
+                        <svg className="w-3 h-3 text-hellokitty-900" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                       </div>

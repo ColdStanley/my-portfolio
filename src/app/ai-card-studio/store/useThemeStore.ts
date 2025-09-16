@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-type Theme = 'light' | 'dark' | 'lakers' | 'anno' | 'cyberpunk'
+type Theme = 'light' | 'dark' | 'lakers' | 'anno' | 'cyberpunk' | 'lightpink' | 'hellokitty'
 
 interface ThemeState {
   theme: Theme
@@ -26,7 +26,7 @@ const applyTheme = (theme: Theme) => {
   const root = document.documentElement
   
   // Clear all theme classes
-  root.classList.remove('dark', 'lakers', 'anno', 'cyberpunk')
+  root.classList.remove('dark', 'lakers', 'anno', 'cyberpunk', 'lightpink', 'hellokitty')
   
   // Apply selected theme class
   if (theme === 'dark') {
@@ -37,6 +37,10 @@ const applyTheme = (theme: Theme) => {
     root.classList.add('anno')
   } else if (theme === 'cyberpunk') {
     root.classList.add('cyberpunk')
+  } else if (theme === 'lightpink') {
+    root.classList.add('lightpink')
+  } else if (theme === 'hellokitty') {
+    root.classList.add('hellokitty')
   }
   // light theme doesn't need a class
 }
@@ -58,7 +62,7 @@ const loadTheme = (): Theme | null => {
   
   try {
     const saved = localStorage.getItem('ai-card-studio-theme') as Theme | null
-    return saved && ['light', 'dark', 'lakers', 'anno', 'cyberpunk'].includes(saved) ? saved : null
+    return saved && ['light', 'dark', 'lakers', 'anno', 'cyberpunk', 'lightpink', 'hellokitty'].includes(saved) ? saved : null
   } catch (error) {
     console.warn('Failed to load theme from localStorage:', error)
     return null

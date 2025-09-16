@@ -25,6 +25,32 @@
   --anno-card-light: #334155;   /* Slate 700 */
   --anno-background: #075985;   /* Sky Blue 800 */
 
+  /* Lightpink Theme Variables */
+  --lightpink-primary: #f472b6;
+  --lightpink-secondary: #f9a8d4;
+  --lightpink-accent: #ec4899;
+  --lightpink-light: #fce7f3;
+  --lightpink-lighter: #fdf2f8;
+  --lightpink-text: #831843;
+  --lightpink-muted: #9d174d;
+  --lightpink-border: #f9a8d4;
+  --lightpink-card-dark: #f8b4d9;
+  --lightpink-card-light: #fde2f1;
+  --lightpink-highlight: #fb7185;
+
+  /* Hello Kitty Theme Variables */
+  --hellokitty-primary: #fda4af;
+  --hellokitty-secondary: #fbcfe8;
+  --hellokitty-accent: #f87171;
+  --hellokitty-light: #ffe4e6;
+  --hellokitty-lighter: #fff5f7;
+  --hellokitty-text: #be123c;
+  --hellokitty-muted: #f973ab;
+  --hellokitty-border: #fecdd3;
+  --hellokitty-card-dark: #ffd5df;
+  --hellokitty-card-light: #ffebf1;
+  --hellokitty-highlight: #60a5fa;
+
   /* Cyberpunk Theme Variables */
   --cyberpunk-cyan: #00FFFF;
   --cyberpunk-pink: #FF0080;

@@ -95,6 +95,7 @@ function AIToolCard({
   const [optionsManageTooltipVisible, setOptionsManageTooltipVisible] = useState(false)
   const generateButtonRef = useRef<HTMLButtonElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const overlayRef = useRef<HTMLDivElement>(null)
   const [isResponseExpanded, setIsResponseExpanded] = useState(true)
   
   // PDF generation state
@@ -186,6 +187,75 @@ function AIToolCard({
     setLocalPromptText(newValue)
   }
 
+  const handlePromptScroll = () => {
+    if (textareaRef.current && overlayRef.current) {
+      overlayRef.current.scrollTop = textareaRef.current.scrollTop
+      overlayRef.current.scrollLeft = textareaRef.current.scrollLeft
+    }
+  }
+
+  const handlePromptKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!textareaRef.current) return
+    const textarea = textareaRef.current
+    const { selectionStart, selectionEnd, value } = textarea
+    const ranges = getReferenceRanges(value)
+
+    const intersecting = ranges.find(range =>
+      (selectionStart > range.start && selectionStart < range.end) ||
+      (selectionEnd > range.start && selectionEnd < range.end)
+    )
+
+    if (!intersecting) return
+
+    const selectionCoversWholeToken = selectionStart <= intersecting.start && selectionEnd >= intersecting.end
+
+    const handledKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight']
+
+    if (event.key === 'ArrowLeft') {
+      if (selectionStart > intersecting.start && selectionStart <= intersecting.end) {
+        event.preventDefault()
+        const newPos = selectionStart <= intersecting.start + 1 ? intersecting.start : intersecting.start
+        textarea.setSelectionRange(newPos, newPos)
+      }
+      return
+    }
+
+    if (event.key === 'ArrowRight') {
+      if (selectionStart >= intersecting.start && selectionStart < intersecting.end) {
+        event.preventDefault()
+        textarea.setSelectionRange(intersecting.end, intersecting.end)
+      }
+      return
+    }
+
+    if (event.key === 'Backspace') {
+      if (!selectionCoversWholeToken) {
+        event.preventDefault()
+        textarea.setSelectionRange(intersecting.start, intersecting.end)
+        setLocalPromptText(prev => prev.slice(0, intersecting.start) + prev.slice(intersecting.end))
+        setTimeout(() => textarea.setSelectionRange(intersecting.start, intersecting.start), 0)
+      }
+      return
+    }
+
+    if (event.key === 'Delete') {
+      if (!selectionCoversWholeToken) {
+        event.preventDefault()
+        textarea.setSelectionRange(intersecting.start, intersecting.end)
+        setLocalPromptText(prev => prev.slice(0, intersecting.start) + prev.slice(intersecting.end))
+        setTimeout(() => textarea.setSelectionRange(intersecting.start, intersecting.start), 0)
+      }
+      return
+    }
+
+    if (event.key.length === 1 || (!handledKeys.includes(event.key) && !event.metaKey && !event.ctrlKey)) {
+      if (!selectionCoversWholeToken) {
+        event.preventDefault()
+        textarea.setSelectionRange(intersecting.start, intersecting.end)
+      }
+    }
+  }
+
   // Insert reference at cursor position
   const insertReference = (selectedButtonName: string) => {
     if (textareaRef.current) {
@@ -194,10 +264,8 @@ function AIToolCard({
       const textBefore = localPromptText.substring(0, cursorPosition)
       const textAfter = localPromptText.substring(textarea.selectionEnd)
       const referenceText = `[REF: ${selectedButtonName}]`
-      
       const newText = textBefore + referenceText + textAfter
       setLocalPromptText(newText)
-      
       setTimeout(() => {
         const newCursorPosition = cursorPosition + referenceText.length
         textarea.setSelectionRange(newCursorPosition, newCursorPosition)
@@ -214,10 +282,8 @@ function AIToolCard({
       const textBefore = localPromptText.substring(0, cursorPosition)
       const textAfter = localPromptText.substring(textarea.selectionEnd)
       const referenceText = `[INFO: ${selectedTitle}]`
-      
       const newText = textBefore + referenceText + textAfter
       setLocalPromptText(newText)
-      
       setTimeout(() => {
         const newCursorPosition = cursorPosition + referenceText.length
         textarea.setSelectionRange(newCursorPosition, newCursorPosition)
@@ -1181,19 +1247,32 @@ function AIToolCard({
                 <option value="openai">OpenAI</option>
               </select>
             </div>
-            <div className="relative">
+            <div className="relative rounded-lg border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-transparent">
               <textarea
                 ref={textareaRef}
                 value={localPromptText}
                 onChange={handlePromptChange}
+                onScroll={handlePromptScroll}
+                onKeyDown={handlePromptKeyDown}
                 placeholder="Enter your AI prompt here..."
-                className="w-full min-h-32 p-3 border border-gray-200 dark:border-neutral-700 rounded-lg text-sm text-gray-700 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-500 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                className="relative z-10 w-full min-h-32 p-3 text-sm text-transparent caret-purple-600 placeholder-gray-400 dark:placeholder-neutral-500 bg-transparent focus:outline-none resize-none"
                 style={{
                   minHeight: '128px',
                   maxHeight: '256px',
                   lineHeight: '1.5'
                 }}
               />
+              <div
+                ref={overlayRef}
+                className="pointer-events-none absolute inset-0 overflow-hidden rounded-lg p-3 text-sm text-gray-700 dark:text-neutral-200 whitespace-pre-wrap break-words"
+                style={{
+                  minHeight: '128px',
+                  maxHeight: '256px',
+                  lineHeight: '1.5'
+                }}
+              >
+                {renderPromptOverlay(localPromptText)}
+              </div>
             </div>
           </div>
 
@@ -1374,3 +1453,71 @@ function AIToolCard({
 }
 
 export default memo(AIToolCard)
+
+interface ReferenceRange {
+  start: number
+  end: number
+  label: string
+  type: 'ref' | 'info'
+}
+
+function getReferenceRanges(text: string): ReferenceRange[] {
+  const pattern = /\[(REF|INFO):\s*([^\]]+)\]/g
+  const ranges: ReferenceRange[] = []
+  let match: RegExpExecArray | null
+  while ((match = pattern.exec(text)) !== null) {
+    const type = match[1].toLowerCase() === 'ref' ? 'ref' : 'info'
+    const label = match[2]?.trim() ?? ''
+    ranges.push({
+      start: match.index,
+      end: match.index + match[0].length,
+      label,
+      type
+    })
+  }
+  return ranges
+}
+
+function renderPromptOverlay(text: string) {
+  const segments: { type: 'text' | 'ref' | 'info'; value: string }[] = []
+  const pattern = /\[(REF|INFO):\s*([^\]]+)\]/g
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({ type: 'text', value: text.slice(lastIndex, match.index) })
+    }
+    const value = match[2]?.trim() ?? ''
+    segments.push({ type: match[1].toLowerCase() === 'ref' ? 'ref' : 'info', value })
+    lastIndex = match.index + match[0].length
+  }
+
+  if (lastIndex < text.length) {
+    segments.push({ type: 'text', value: text.slice(lastIndex) })
+  }
+
+  if (segments.length === 0) {
+    return <span>{text}</span>
+  }
+
+  return segments.map((segment, idx) => {
+    if (segment.type === 'text') {
+      return <span key={idx}>{segment.value}</span>
+    }
+
+    const baseClasses =
+      'inline-flex items-center px-2 py-0.5 mr-1 mb-1 rounded-full text-[11px] font-semibold border'
+    const refClasses = 'bg-purple-100 border-purple-200 text-purple-700'
+    const infoClasses = 'bg-blue-100 border-blue-200 text-blue-700'
+
+    return (
+      <span
+        key={idx}
+        className={`${baseClasses} ${segment.type === 'ref' ? refClasses : infoClasses}`}
+      >
+        {segment.type === 'ref' ? 'REF' : 'INFO'}: {segment.value}
+      </span>
+    )
+  })
+}

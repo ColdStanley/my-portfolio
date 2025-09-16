@@ -22,11 +22,23 @@ module.exports = {
     { pattern: /^anno:.*/, variants: ['hover', 'focus', 'active'] },
     // Cyberpunk theme classes
     'cyberpunk',
+    'lightpink',
+    'hellokitty',
     // Force include Cyberpunk colors
     'bg-cyberpunk-400', 'bg-cyberpunk-500', 'bg-cyberpunk-600', 'bg-cyberpunk-700',
     'text-cyberpunk-200', 'text-cyberpunk-300', 'text-cyberpunk-400',
     'border-cyberpunk-400', 'from-cyberpunk-600', 'to-cyberpunk-700',
     { pattern: /^cyberpunk:.*/, variants: ['hover', 'focus', 'active'] },
+    // Lightpink theme classes
+    'bg-lightpink-400', 'bg-lightpink-500', 'bg-lightpink-600', 'bg-lightpink-700',
+    'text-lightpink-200', 'text-lightpink-300', 'text-lightpink-400',
+    'border-lightpink-400', 'from-lightpink-500', 'to-lightpink-600',
+    { pattern: /^lightpink:.*/, variants: ['hover', 'focus', 'active'] },
+    // Hello Kitty theme classes
+    'bg-hellokitty-400', 'bg-hellokitty-500', 'bg-hellokitty-600', 'bg-hellokitty-700',
+    'text-hellokitty-200', 'text-hellokitty-300', 'text-hellokitty-400',
+    'border-hellokitty-400', 'from-hellokitty-400', 'to-hellokitty-500',
+    { pattern: /^hellokitty:.*/, variants: ['hover', 'focus', 'active'] },
   ],
   theme: {
     extend: {
@@ -76,6 +88,30 @@ module.exports = {
           800: '#111111',  // 更深灰
           900: '#0A0A0A',  // 深黑（强调背景）
         },
+        lightpink: {
+          50: '#fdf2f8',
+          100: '#fce7f3',
+          200: '#fbcfe8',
+          300: '#f9a8d4',
+          400: '#f472b6',
+          500: '#ec4899',
+          600: '#db2777',
+          700: '#be185d',
+          800: '#9d174d',
+          900: '#831843',
+        },
+        hellokitty: {
+          50: '#fff5f7',
+          100: '#ffe4e6',
+          200: '#fecdd3',
+          300: '#fda4af',
+          400: '#fb7085',
+          500: '#f472b6',
+          600: '#f06292',
+          700: '#e11d48',
+          800: '#be123c',
+          900: '#991b1b',
+        },
       },
     },
   },
@@ -119,6 +155,22 @@ module.exports = {
       addUtilities({
         '.cyberpunk .text-purple-600': { color: '#00FFFF' },
         '.cyberpunk .text-purple-400': { color: '#00FFFF' }
+      })
+    },
+    // Lightpink theme plugin
+    function({ addVariant, addUtilities }) {
+      addVariant('lightpink', '.lightpink &')
+      addUtilities({
+        '.lightpink .text-purple-600': { color: '#f472b6' },
+        '.lightpink .text-purple-400': { color: '#f472b6' }
+      })
+    },
+    // Hello Kitty theme plugin
+    function({ addVariant, addUtilities }) {
+      addVariant('hellokitty', '.hellokitty &')
+      addUtilities({
+        '.hellokitty .text-purple-600': { color: '#fda4af' },
+        '.hellokitty .text-purple-400': { color: '#fda4af' }
       })
     }
   ],

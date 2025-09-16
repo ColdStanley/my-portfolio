@@ -15,12 +15,11 @@ export default function AICardStudioPage() {
   const [authState, setAuthState] = useState<AuthState>('loading')
   const [user, setUser] = useState<User | null>(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
-  const [userMenuVisible, setUserMenuVisible] = useState(false)
+  const [showCardWidthMenu, setShowCardWidthMenu] = useState(false)
   const [showPdfTemplateMenu, setShowPdfTemplateMenu] = useState(false)
-  const [pdfTemplateMenuVisible, setPdfTemplateMenuVisible] = useState(false)
   const [showThemeMenu, setShowThemeMenu] = useState(false)
-  const [themeMenuVisible, setThemeMenuVisible] = useState(false)
   const [pdfTemplate, setPdfTemplate] = useState<'default' | 'resume'>('default')
+  const [cardWidth, setCardWidth] = useState<'narrow' | 'normal' | 'wide'>('narrow')
   const userMenuRef = useRef<HTMLDivElement>(null)
   const { isLoading: workspaceLoading, canvases, saveError, actions } = useWorkspaceStore()
   const { theme, actions: themeActions } = useThemeStore()
@@ -28,7 +27,7 @@ export default function AICardStudioPage() {
   const visibilityRef = useRef(true) // Track page visibility
 
 
-  // Set page title and initialize PDF template from localStorage
+  // Set page title and initialize preferences from localStorage
   useEffect(() => {
     document.title = "AI Card Studio | Stanley Hi"
     
@@ -40,6 +39,18 @@ export default function AICardStudioPage() {
       const savedTemplate = localStorage.getItem('pdfTemplate') as 'default' | 'resume'
       if (savedTemplate) {
         setPdfTemplate(savedTemplate)
+      }
+      const savedWidthRaw = localStorage.getItem('cardWidthPreference')
+      const widthMapping: Record<string, 'narrow' | 'normal' | 'wide'> = {
+        small: 'narrow',
+        medium: 'normal',
+        large: 'wide'
+      }
+      if (savedWidthRaw) {
+        const mappedWidth = (widthMapping[savedWidthRaw] || savedWidthRaw) as 'narrow' | 'normal' | 'wide'
+        if (['narrow', 'normal', 'wide'].includes(mappedWidth)) {
+          setCardWidth(mappedWidth)
+        }
       }
     }
     
@@ -206,33 +217,31 @@ export default function AICardStudioPage() {
   }
 
   const handleUserMenuToggle = () => {
-    if (showUserMenu) {
-      handleCloseUserMenu()
-    } else {
-      setShowUserMenu(true)
-      setTimeout(() => setUserMenuVisible(true), 10)
+    const next = !showUserMenu
+    setShowUserMenu(next)
+    if (!next) {
+      setShowCardWidthMenu(false)
+      setShowPdfTemplateMenu(false)
+      setShowThemeMenu(false)
     }
   }
 
   const handleCloseUserMenu = () => {
-    setUserMenuVisible(false)
-    setPdfTemplateMenuVisible(false)
-    setThemeMenuVisible(false)
-    setTimeout(() => {
-      setShowUserMenu(false)
-      setShowPdfTemplateMenu(false)
-      setShowThemeMenu(false)
-    }, 200)
+    setShowUserMenu(false)
+    setShowCardWidthMenu(false)
+    setShowPdfTemplateMenu(false)
+    setShowThemeMenu(false)
   }
 
   const handlePdfTemplateToggle = () => {
-    if (showPdfTemplateMenu) {
-      setPdfTemplateMenuVisible(false)
-      setTimeout(() => setShowPdfTemplateMenu(false), 200)
-    } else {
-      setShowPdfTemplateMenu(true)
-      setTimeout(() => setPdfTemplateMenuVisible(true), 10)
-    }
+    setShowPdfTemplateMenu(prev => {
+      const next = !prev
+      if (next) {
+        setShowCardWidthMenu(false)
+        setShowThemeMenu(false)
+      }
+      return next
+    })
   }
 
   const handlePdfTemplateSelect = (template: 'default' | 'resume') => {
@@ -240,24 +249,42 @@ export default function AICardStudioPage() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('pdfTemplate', template)
     }
-    setPdfTemplateMenuVisible(false)
-    setTimeout(() => setShowPdfTemplateMenu(false), 200)
+    setShowPdfTemplateMenu(false)
   }
 
   const handleThemeMenuToggle = () => {
-    if (showThemeMenu) {
-      setThemeMenuVisible(false)
-      setTimeout(() => setShowThemeMenu(false), 200)
-    } else {
-      setShowThemeMenu(true)
-      setTimeout(() => setThemeMenuVisible(true), 10)
-    }
+    setShowThemeMenu(prev => {
+      const next = !prev
+      if (next) {
+        setShowCardWidthMenu(false)
+        setShowPdfTemplateMenu(false)
+      }
+      return next
+    })
   }
 
-  const handleThemeSelect = (selectedTheme: 'light' | 'dark' | 'lakers' | 'anno' | 'cyberpunk') => {
+  const handleThemeSelect = (selectedTheme: 'light' | 'dark' | 'lakers' | 'anno' | 'cyberpunk' | 'lightpink' | 'hellokitty') => {
     themeActions.setTheme(selectedTheme)
-    setThemeMenuVisible(false)
-    setTimeout(() => setShowThemeMenu(false), 200)
+    setShowThemeMenu(false)
+  }
+
+  const handleCardWidthToggle = () => {
+    setShowCardWidthMenu(prev => {
+      const next = !prev
+      if (next) {
+        setShowPdfTemplateMenu(false)
+        setShowThemeMenu(false)
+      }
+      return next
+    })
+  }
+
+  const handleCardWidthSelect = (width: 'narrow' | 'normal' | 'wide') => {
+    setCardWidth(width)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cardWidthPreference', width)
+    }
+    setShowCardWidthMenu(false)
   }
 
   // 🎯 统一渲染逻辑 - 基于单一authState状态
@@ -298,9 +325,55 @@ export default function AICardStudioPage() {
 
                 {/* Dropdown menu */}
                 {showUserMenu && (
-                  <div className={`absolute top-full right-0 mt-2 w-48 bg-white dark:bg-neutral-800 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-700 p-2 transform transition-all duration-200 ease-out ${
-                    userMenuVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-2'
-                  }`}>
+                  <div className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-neutral-800 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-700 p-3 space-y-2 animate-dropdown">
+                    {/* Card Width Selection */}
+                    <div className="relative">
+                      <button
+                        onClick={handleCardWidthToggle}
+                        className="w-full px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20 rounded-md transition-all duration-150 text-left flex items-center"
+                      >
+                        <span>Card Width</span>
+                      </button>
+
+                      {showCardWidthMenu && (
+                        <div className="absolute top-0 right-full mr-2 z-50 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 dark:border-neutral-700/50 p-3 min-w-28 animate-dropdown" style={{ transformOrigin: 'top right' }}>
+                          <div className="absolute top-4 -right-1 w-2 h-2 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-md border-r border-b border-white/20 dark:border-neutral-700/50 transform rotate-45"></div>
+                          <div className="flex flex-col gap-2 min-w-28">
+                            <button
+                              onClick={() => handleCardWidthSelect('narrow')}
+                              className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
+                                cardWidth === 'narrow'
+                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20 shadow-sm'
+                                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
+                              }`}
+                            >
+                              Narrow
+                            </button>
+                            <button
+                              onClick={() => handleCardWidthSelect('normal')}
+                              className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
+                                cardWidth === 'normal'
+                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20 shadow-sm'
+                                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
+                              }`}
+                            >
+                              Normal
+                            </button>
+                            <button
+                              onClick={() => handleCardWidthSelect('wide')}
+                              className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
+                                cardWidth === 'wide'
+                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20 shadow-sm'
+                                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
+                              }`}
+                            >
+                              Wide
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
                     {/* PDF Template Selection */}
                     <div className="relative">
                       <button
@@ -312,9 +385,7 @@ export default function AICardStudioPage() {
                       
                       {/* PDF Template Submenu */}
                       {showPdfTemplateMenu && (
-                        <div className={`absolute top-0 right-full mr-2 z-50 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 dark:border-neutral-700/50 p-3 transform transition-all duration-300 ease-out ${
-                          pdfTemplateMenuVisible ? 'opacity-100 scale-100 translate-x-0' : 'opacity-0 scale-95 translate-x-2'
-                        }`}>
+                        <div className="absolute top-0 right-full mr-2 z-50 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 dark:border-neutral-700/50 p-3 animate-dropdown" style={{ transformOrigin: 'top right' }}>
                           {/* Arrow pointing to button */}
                           <div className="absolute top-4 -right-1 w-2 h-2 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-md border-r border-b border-white/20 dark:border-neutral-700/50 transform rotate-45"></div>
                           
@@ -344,9 +415,6 @@ export default function AICardStudioPage() {
                       )}
                     </div>
                     
-                    {/* Separator */}
-                    <hr className="my-2 border-gray-200 dark:border-neutral-700" />
-                    
                     {/* Theme Selection */}
                     <div className="relative">
                       <button
@@ -358,9 +426,7 @@ export default function AICardStudioPage() {
                       
                       {/* Theme Submenu */}
                       {showThemeMenu && (
-                        <div className={`absolute top-0 right-full mr-2 z-50 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 dark:border-neutral-700/50 p-3 transform transition-all duration-300 ease-out ${
-                          themeMenuVisible ? 'opacity-100 scale-100 translate-x-0' : 'opacity-0 scale-95 translate-x-2'
-                        }`}>
+                        <div className="absolute top-0 right-full mr-2 z-50 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 dark:border-neutral-700/50 p-3 animate-dropdown" style={{ transformOrigin: 'top right' }}>
                           {/* Arrow pointing to button */}
                           <div className="absolute top-4 -right-1 w-2 h-2 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-md border-r border-b border-white/20 dark:border-neutral-700/50 transform rotate-45"></div>
                           
@@ -406,6 +472,26 @@ export default function AICardStudioPage() {
                               Anno
                             </button>
                             <button
+                              onClick={() => handleThemeSelect('lightpink')}
+                              className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
+                                theme === 'lightpink'
+                                  ? 'text-lightpink-600 bg-lightpink-50 shadow-sm'
+                                  : 'text-gray-600 hover:text-lightpink-600 hover:bg-lightpink-50'
+                              }`}
+                            >
+                              Anon Lightpink
+                            </button>
+                            <button
+                              onClick={() => handleThemeSelect('hellokitty')}
+                              className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
+                                theme === 'hellokitty'
+                                  ? 'text-hellokitty-600 bg-hellokitty-50 shadow-sm'
+                                  : 'text-gray-600 hover:text-hellokitty-600 hover:bg-hellokitty-50'
+                              }`}
+                            >
+                              Kid Hello Kitty
+                            </button>
+                            <button
                               onClick={() => handleThemeSelect('cyberpunk')}
                               className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
                                 theme === 'cyberpunk' 
@@ -436,7 +522,7 @@ export default function AICardStudioPage() {
                 )}
               </div>
             )}
-            <AICardStudio />
+            <AICardStudio cardWidth={cardWidth} />
           </div>
         )
       default:

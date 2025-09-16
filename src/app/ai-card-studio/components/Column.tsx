@@ -9,6 +9,7 @@ interface ColumnProps {
   onInsertCard: (columnId: string, afterCardId?: string) => void
   onRunColumnWorkflow?: (columnId: string) => void
   isColumnExecuting?: boolean
+  cardWidth?: 'narrow' | 'normal' | 'wide'
 }
 
 export default function ColumnComponent({ 
@@ -16,7 +17,8 @@ export default function ColumnComponent({
   onAddCard, 
   onInsertCard,
   onRunColumnWorkflow,
-  isColumnExecuting = false
+  isColumnExecuting = false,
+  cardWidth = 'narrow'
 }: ColumnProps) {
 
 
@@ -29,7 +31,7 @@ export default function ColumnComponent({
   // Check if column has AI tool cards
   const hasAIToolCards = column.cards.some(card => card.type === 'aitool')
   return (
-      <div className="flex-shrink-0 w-[480px] h-full relative z-0" style={{ scrollSnapAlign: 'start' }}>
+      <div className="flex-shrink-0 w-full h-full relative z-0" style={{ scrollSnapAlign: 'start' }}>
       {/* Up Arrow - 悬浮在列外上方 */}
       <button
         onClick={() => {
