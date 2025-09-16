@@ -121,6 +121,7 @@ export interface TaskChartsProps {
  */
 export interface TaskCalendarViewProps {
   tasks: TaskRecord[]
+  tasksByDate?: Record<string, TaskRecord[]>
   onTaskSelect: (task: TaskRecord) => void
   onDateSelect: (date: string) => void
   selectedDate: string
