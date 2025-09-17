@@ -399,22 +399,38 @@ function AIToolCard({
 
   const handleGenerateClick = async (selectedOption?: string) => {
     if (!localPromptText.trim()) return
-    
+
     if ((localOptions || []).length > 0 && !selectedOption) {
       setShowOptionsTooltip(true)
       return
     }
-    
+
+    // Auto-save local changes before generating
+    const hasLocalChanges =
+      localButtonName !== buttonName ||
+      localPromptText !== promptText ||
+      JSON.stringify(localOptions) !== JSON.stringify(options) ||
+      localAiModel !== aiModel
+
+    if (hasLocalChanges) {
+      updateCardButtonName(cardId, localButtonName)
+      updateCardPromptText(cardId, localPromptText)
+      updateCardOptions(cardId, localOptions)
+      updateCardAiModel(cardId, localAiModel)
+      setHasUnsavedChanges(true)
+    }
+
     // Set generating state
     updateCardGeneratedContent(cardId, '') // Clear previous content
     updateCardGeneratingState(cardId, true)
     setIsStreaming(false) // Reset streaming state
     setShowMarkdown(false) // Reset markdown state
     setIsFormatting(false) // Reset formatting state
-    
+
     try {
+      // Use store data for consistent behavior
       let resolvedPrompt = resolveReferences(localPromptText, canvases, columnId)
-      
+
       // Replace option placeholder with selected value if both exist
       const hasOptions = (localOptions || []).length > 0
       if (hasOptions && selectedOption && typeof selectedOption === 'string') {
