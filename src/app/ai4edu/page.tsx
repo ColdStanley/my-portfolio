@@ -1,0 +1,307 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+
+interface NotionContent {
+  title: string
+  type: string
+  date: string
+  content: string
+  image?: string
+  link?: string
+  label?: string
+}
+
+// AI theme configuration
+const aiTheme = {
+  background: 'from-slate-50 via-blue-50 to-indigo-50',
+  nameGradient: 'from-blue-600 via-indigo-600 to-purple-600',
+  tabActive: 'from-blue-500 to-indigo-500',
+  tabHover: 'hover:text-blue-600 hover:bg-blue-50/50',
+  cardBg: 'bg-white/90',
+  linkColor: 'text-blue-500 hover:text-blue-600',
+  accent: 'from-blue-400 to-indigo-400'
+}
+
+export default function AI4EDUPage() {
+  const [notionData, setNotionData] = useState<NotionContent[]>([])
+  const [activeTab, setActiveTab] = useState('')
+  const [tabs, setTabs] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchNotionData()
+  }, [])
+
+  const fetchNotionData = async () => {
+    try {
+      const response = await fetch('/api/ai4edu/notion', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const data = await response.json()
+
+      if (data.results) {
+        const processedData = data.results.map((item: any) => ({
+          title: item.properties.Title?.title?.[0]?.plain_text || 'Untitled',
+          type: item.properties.Type?.select?.name || 'General',
+          date: item.properties.Date?.date?.start || '',
+          content: item.properties.Content?.rich_text?.[0]?.plain_text || '',
+          image: item.properties.Image?.files?.[0]?.file?.url || item.properties.Image?.files?.[0]?.external?.url || '',
+          link: item.properties.Link?.url || '',
+          label: item.properties.Label?.select?.name || ''
+        }))
+
+        setNotionData(processedData)
+
+        // Extract unique types for tabs
+        const uniqueTypes = [...new Set(processedData.map((item: NotionContent) => item.type))]
+        setTabs(uniqueTypes)
+        setActiveTab(uniqueTypes[0] || '')
+      }
+    } catch (error) {
+      console.error('Error fetching Notion data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const filteredContent = notionData.filter(item => item.type === activeTab)
+
+  if (loading) {
+    return (
+      <div className={`min-h-screen bg-gradient-to-br ${aiTheme.background} flex items-center justify-center`}>
+        <div className="text-center">
+          <div className={`w-12 h-12 bg-gradient-to-r ${aiTheme.accent} rounded-full animate-pulse mb-4 mx-auto`}></div>
+          <p className="text-gray-600">Loading AI for EDU showcase...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className={`min-h-screen bg-gradient-to-br ${aiTheme.background}`}>
+      {/* Header */}
+      <div className={`${aiTheme.cardBg} backdrop-blur-sm border-b border-gray-100/50 sticky top-0 z-50`}>
+        <div className="max-w-6xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className={`text-2xl font-bold bg-gradient-to-r ${aiTheme.nameGradient} bg-clip-text text-transparent capitalize tracking-wide hover:scale-105 transition-all duration-300 cursor-default font-serif animate-pulse`}>
+                AI for EDU
+              </h1>
+              <p className="text-sm text-gray-500">Canada</p>
+            </div>
+
+            {/* Tab Navigation */}
+            <nav className="flex items-center gap-1 bg-white/60 backdrop-blur-sm rounded-2xl p-1 border border-gray-100/50">
+              {tabs.map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-6 py-2 rounded-xl text-sm font-medium transition-all duration-300 transform ${
+                    activeTab === tab
+                      ? `bg-gradient-to-r ${aiTheme.tabActive} text-white shadow-lg scale-105`
+                      : `text-gray-600 ${aiTheme.tabHover}`
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </div>
+      </div>
+
+      {/* Content Area */}
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="masonry-container">
+          {filteredContent.map((item, index) => (
+            <div
+              key={index}
+              className={`masonry-item ${aiTheme.cardBg} backdrop-blur-sm rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] border border-gray-100/50`}
+              style={{
+                animationDelay: `${index * 100}ms`
+              }}
+            >
+              <div className="space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="text-lg font-medium text-gray-800 flex-1">{item.title}</h3>
+                  {item.label && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                      {item.label}
+                    </span>
+                  )}
+                </div>
+
+                {item.date && (
+                  <p className="text-xs text-gray-400 uppercase tracking-wider">{item.date}</p>
+                )}
+
+                {item.image && (
+                  <div className="overflow-hidden rounded-xl">
+                    <img
+                      src={item.image}
+                      alt={item.title}
+                      className="w-full h-48 object-cover transform hover:scale-110 transition-transform duration-700"
+                    />
+                  </div>
+                )}
+
+                {item.content && (
+                  <div className="text-gray-600 leading-relaxed whitespace-pre-line">
+                    {item.content}
+                  </div>
+                )}
+
+                {item.link && (
+                  <div>
+                    {(() => {
+                      const url = item.link
+
+                      // YouTube video
+                      if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) {
+                        const videoId = url.includes('youtu.be/')
+                          ? url.split('youtu.be/')[1].split('?')[0]
+                          : url.split('v=')[1]?.split('&')[0]
+
+                        if (videoId) {
+                          return (
+                            <div className="aspect-video w-full rounded-xl overflow-hidden">
+                              <iframe
+                                src={`https://www.youtube.com/embed/${videoId}`}
+                                title="YouTube video"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                                className="w-full h-full"
+                              />
+                            </div>
+                          )
+                        }
+                      }
+
+                      // Vimeo video
+                      if (url.includes('vimeo.com/')) {
+                        const videoId = url.split('vimeo.com/')[1].split('?')[0]
+                        if (videoId) {
+                          return (
+                            <div className="aspect-video w-full rounded-xl overflow-hidden">
+                              <iframe
+                                src={`https://player.vimeo.com/video/${videoId}`}
+                                title="Vimeo video"
+                                allow="autoplay; fullscreen; picture-in-picture"
+                                allowFullScreen
+                                className="w-full h-full"
+                              />
+                            </div>
+                          )
+                        }
+                      }
+
+                      // Direct video files
+                      if (url.match(/\.(mp4|webm|ogg|mov|avi)(\?.*)?$/i)) {
+                        return (
+                          <div className="w-full rounded-xl overflow-hidden">
+                            <video
+                              controls
+                              className="w-full h-auto"
+                              preload="metadata"
+                            >
+                              <source src={url} type="video/mp4" />
+                              Your browser does not support the video tag.
+                            </video>
+                          </div>
+                        )
+                      }
+
+                      // Bilibili video
+                      if (url.includes('bilibili.com/video/')) {
+                        const bvMatch = url.match(/\/video\/(BV\w+)/)
+                        if (bvMatch) {
+                          const bvid = bvMatch[1]
+                          return (
+                            <div className="aspect-video w-full rounded-xl overflow-hidden">
+                              <iframe
+                                src={`https://player.bilibili.com/player.html?bvid=${bvid}&autoplay=0`}
+                                title="Bilibili video"
+                                allowFullScreen
+                                className="w-full h-full border-0"
+                              />
+                            </div>
+                          )
+                        }
+                      }
+
+                      // Default link
+                      return (
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`inline-flex items-center gap-2 ${aiTheme.linkColor} text-sm font-medium transition-colors duration-200`}
+                        >
+                          View Project
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </a>
+                      )
+                    })()}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {filteredContent.length === 0 && (
+          <div className="text-center py-16">
+            <div className={`w-24 h-24 bg-gradient-to-r ${aiTheme.accent} opacity-20 rounded-full flex items-center justify-center mx-auto mb-4`}>
+              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+            </div>
+            <p className="text-gray-500">No AI projects available for {activeTab}</p>
+          </div>
+        )}
+      </div>
+
+      <style jsx>{`
+        .masonry-container {
+          columns: 3;
+          column-gap: 1.5rem;
+          column-fill: balance;
+        }
+
+        .masonry-item {
+          break-inside: avoid;
+          margin-bottom: 1.5rem;
+          animation: fadeInUp 0.6s ease-out forwards;
+          opacity: 0;
+          transform: translateY(20px);
+        }
+
+        @keyframes fadeInUp {
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @media (max-width: 1024px) {
+          .masonry-container {
+            columns: 2;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .masonry-container {
+            columns: 1;
+          }
+        }
+      `}</style>
+    </div>
+  )
+}
