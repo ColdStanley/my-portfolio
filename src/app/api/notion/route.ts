@@ -1,4 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Client } from '@notionhq/client'
+
+const notion = new Client({
+  auth: process.env.NOTION_API_KEY,
+})
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const pageId = searchParams.get('pageId')
+
+    if (!pageId) {
+      return NextResponse.json({ error: 'Missing pageId' }, { status: 400 })
+    }
+
+    let databaseId = ''
+
+    // Map pageId to database ID
+    switch (pageId) {
+      case 'cards':
+        databaseId = process.env.NOTION_DATABASE_ID || ''
+        break
+      case 'home-latest':
+        databaseId = process.env.NOTION_DATABASE_ID || ''
+        break
+      default:
+        return NextResponse.json({ error: 'Invalid pageId' }, { status: 400 })
+    }
+
+    if (!databaseId) {
+      return NextResponse.json({ error: 'Database ID not configured' }, { status: 500 })
+    }
+
+    const response = await notion.databases.query({
+      database_id: databaseId,
+    })
+
+    return NextResponse.json({
+      data: response.results,
+      status: 'success'
+    })
+
+  } catch (error: any) {
+    console.error('Error fetching Notion data:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch data', details: error.message },
+      { status: 500 }
+    )
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
