@@ -223,7 +223,7 @@ const runPostGenerationSteps = async (customizedResume: any, context: { jd: JD; 
   }
 
   const blob = await pdfResponse.blob()
-  const filename = `${generatedPersonalInfo.fullName.replace(/[^a-z0-9]/gi, '_')}_${jd.company.replace(/[^a-z0-9]/gi, '_')}_${jd.title.replace(/[^a-z0-9]/gi, '_')}_Resume_LangChain.pdf`
+  const filename = `${generatedPersonalInfo.fullName.replace(/[^a-z0-9]/gi, '_')}_${jd.company.replace(/[^a-z0-9]/gi, '_')}_${jd.title.replace(/[^a-z0-9]/gi, '_')}_Resume.pdf`
 
   const url = window.URL.createObjectURL(blob)
   const a = document.createElement('a')
