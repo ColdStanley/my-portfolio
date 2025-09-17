@@ -1,173 +1,28 @@
-import { NextResponse } from 'next/server'
-import { Client } from '@notionhq/client'
-import {
-  PageObjectResponse,
-  QueryDatabaseResponse,
-} from '@notionhq/client/build/src/api-endpoints'
+import { NextRequest, NextResponse } from 'next/server'
 
-const notion = new Client({ auth: process.env.NOTION_API_KEY })
-
-// ✅ 页面映射表：统一管理 pageId 与实际 Notion DB ID 的映射
-const pageMap: Record<string, string> = {
-  'home-latest': process.env.NOTION_DATABASE_ID!,
-  'ielts-reading': process.env.NOTION_IELTS_READING_DB_ID!,
-}
-
-// ✅ 通用 CMS 卡片读取（HomeCardsSection）
-async function fetchCardItems(): Promise<any[]> {
-  const databaseId = process.env.NOTION_DATABASE_ID
-  if (!databaseId) throw new Error('Missing NOTION_DATABASE_ID')
-
-  const res: QueryDatabaseResponse = await notion.databases.query({
-    database_id: databaseId,
-    filter: {
-      property: 'Status',
-      select: {
-        equals: 'Published',
-      },
-    },
-    sorts: [{ property: 'Order', direction: 'ascending' }],
-  })
-
-  return res.results.map((page) => {
-    const props = (page as PageObjectResponse).properties
-    return {
-      pageId: page.id,
-      id: page.id,
-      title:
-        props.Title?.type === 'title'
-          ? props.Title.title?.[0]?.plain_text || ''
-          : '',
-      content:
-        props.Description?.type === 'rich_text'
-          ? props.Description.rich_text?.[0]?.plain_text || ''
-          : '',
-      subtext:
-        props.Subtext?.type === 'rich_text'
-          ? props.Subtext.rich_text?.[0]?.plain_text || ''
-          : '',
-      link: props.Link?.type === 'url' ? props.Link.url || '' : '',
-      imageUrl:
-        props.Image?.type === 'files'
-          ? props.Image.files?.[0]?.file?.url ||
-            props.Image.files?.[0]?.external?.url ||
-            ''
-          : '',
-      section:
-        props.Section?.type === 'select'
-          ? props.Section.select?.name || ''
-          : '',
-      category:
-        props.Category?.type === 'select'
-          ? props.Category.select?.name?.toLowerCase() || ''
-          : '',
-      slug:
-        props.Slug?.type === 'url'
-          ? props.Slug.url || ''
-          : props.Slug?.type === 'rich_text'
-          ? props.Slug.rich_text?.[0]?.plain_text || ''
-          : '',
-      body:
-        props.Body?.type === 'rich_text'
-          ? props.Body.rich_text?.[0]?.plain_text || ''
-          : '',
-      tech:
-        props.Tag?.type === 'multi_select'
-          ? props.Tag.multi_select.map((tag) => tag.name)
-          : [],
-      status:
-        props.Status?.type === 'select'
-          ? props.Status.select?.name || ''
-          : '',
-      order:
-        props.Order?.type === 'number' ? props.Order.number ?? 0 : 0,
-
-      // ✅ 新增字段：visibleOnSite
-      visibleOnSite:
-        props.VisibleOnSite?.type === 'checkbox'
-          ? props.VisibleOnSite.checkbox
-          : false,
-    }
-  })
-}
-
-// ✅ LatestHighlightCard 精简字段
-async function fetchLatestHighlightItems(): Promise<any[]> {
-  const all = await fetchCardItems()
-  return all
-    .filter(
-      (item) =>
-        item.section === 'LatestHighlightCard' &&
-        item.status === 'Published' &&
-        item.visibleOnSite === true
-    )
-    .map((item) => ({
-      title: item.title || 'Untitled',
-      description: item.content || '',
-      slug: item.slug || '',
-      category: item.category || '',
-      tag: item.tag || item.tech || [],
-      status: item.status || '',
-      order: item.order ?? 0,
-      visibleOnSite: item.visibleOnSite ?? false,
-    }))
-}
-
-// ✅ IELTS Reading 专用逻辑
-async function fetchReadingQuestions(): Promise<any[]> {
-  const databaseId = process.env.NOTION_IELTS_READING_DB_ID
-  if (!databaseId) throw new Error('Missing NOTION_IELTS_READING_DB_ID')
-
-  const res: QueryDatabaseResponse = await notion.databases.query({
-    database_id: databaseId,
-    sorts: [{ property: '题号', direction: 'ascending' }],
-  })
-
-  return res.results.map((page) => {
-    const props = (page as PageObjectResponse).properties
-
-    const getText = (p: any, key: string) =>
-      p[key]?.type === 'rich_text'
-        ? p[key].rich_text?.[0]?.plain_text || ''
-        : ''
-
-    const getSelect = (p: any, key: string) =>
-      p[key]?.type === 'select' ? p[key].select?.name || '' : ''
-
-    return {
-      题号: getText(props, '题号'),
-      题目: getText(props, '题目'),
-      答案: getText(props, '答案'),
-      答案句: getText(props, '答案句'),
-      单词: getText(props, '单词'),
-      词组: getText(props, '词组'),
-      Passage: getSelect(props, 'Passage'),
-      题型: getSelect(props, '题型'),
-      剑雅: getSelect(props, '剑雅'),
-    }
-  })
-}
-
-// ✅ 主 GET 路由
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const pageId = searchParams.get('pageId')
-
+export async function POST(request: NextRequest) {
   try {
-    if (pageId === 'home-latest') {
-      const data = await fetchLatestHighlightItems()
-      return NextResponse.json({ data })
+    const { apiKey, databaseId } = await request.json()
+
+    const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Notion-Version': '2022-06-28',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({})
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      return NextResponse.json({ error: data.message || 'Failed to fetch from Notion' }, { status: response.status })
     }
 
-    if (pageId === 'ielts-reading') {
-      const data = await fetchReadingQuestions()
-      return NextResponse.json({ data })
-    }
-
-    const data = await fetchCardItems()
-    return NextResponse.json({ data })
+    return NextResponse.json(data)
   } catch (error) {
-    console.error('Error fetching Notion content:', error)
-    return NextResponse.json({ error: 'Failed to fetch Notion content' }, { status: 500 })
+    console.error('Notion API error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
