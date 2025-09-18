@@ -11,11 +11,30 @@ export default function WebsitePage() {
   const [databaseUrl, setDatabaseUrl] = useState('')
   const [selectedTheme, setSelectedTheme] = useState('pink')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [shareUrl, setShareUrl] = useState('')
+  const [showShareUrl, setShowShareUrl] = useState(false)
   const router = useRouter()
 
   const extractDatabaseId = (url: string) => {
     const match = url.match(/([a-f0-9]{32})|([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i)
     return match ? match[0].replace(/-/g, '') : ''
+  }
+
+  const copyShareUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      alert('Share URL copied to clipboard!')
+    } catch (err) {
+      console.error('Failed to copy: ', err)
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea')
+      textArea.value = shareUrl
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      alert('Share URL copied to clipboard!')
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,9 +58,14 @@ export default function WebsitePage() {
       theme: selectedTheme
     }))
 
-    // Navigate to user page
+    // Generate share URL
     const citySlug = city.toLowerCase().replace(/\s+/g, '')
     const nameSlug = name.toLowerCase().replace(/\s+/g, '')
+    const baseUrl = window.location.origin
+    const shareLink = `${baseUrl}/website/${citySlug}/${nameSlug}?apiKey=${encodeURIComponent(notionApiKey)}&dbId=${databaseId}&theme=${selectedTheme}`
+
+    setShareUrl(shareLink)
+    setShowShareUrl(true)
 
     setTimeout(() => {
       router.push(`/website/${citySlug}/${nameSlug}`)
@@ -153,6 +177,33 @@ export default function WebsitePage() {
               )}
             </button>
           </form>
+
+          {showShareUrl && (
+            <div className="mt-6 p-4 bg-green-50/80 backdrop-blur-sm rounded-2xl border border-green-200/50">
+              <div className="text-center mb-3">
+                <h3 className="text-lg font-medium text-green-800 mb-1">Website Created Successfully!</h3>
+                <p className="text-sm text-green-600">Share this link with others to view your website directly</p>
+              </div>
+
+              <div className="flex items-center gap-2 p-3 bg-white/60 rounded-xl border border-green-200/50">
+                <input
+                  type="text"
+                  value={shareUrl}
+                  readOnly
+                  className="flex-1 bg-transparent text-sm text-gray-700 border-none outline-none"
+                />
+                <button
+                  onClick={copyShareUrl}
+                  className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded-lg transition-colors duration-200 flex items-center gap-1"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  Copy
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

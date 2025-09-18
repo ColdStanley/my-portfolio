@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { themes, getThemeClasses } from '@/lib/themes'
+import ImageModal from '@/components/ImageModal'
+import VideoModal from '@/components/VideoModal'
 
 interface NotionContent {
   title: string
@@ -20,12 +22,50 @@ export default function UserWebsitePage() {
   const [tabs, setTabs] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [userConfig, setUserConfig] = useState<any>(null)
+  const [imageModal, setImageModal] = useState<{ isOpen: boolean; src: string; alt: string }>({
+    isOpen: false,
+    src: '',
+    alt: ''
+  })
+  const [videoModal, setVideoModal] = useState<{ isOpen: boolean; url: string; title: string }>({
+    isOpen: false,
+    url: '',
+    title: ''
+  })
 
   useEffect(() => {
-    // Get user config from localStorage
     const userKey = `${params.city}-${params.name}`
-    const config = localStorage.getItem(`notion-${userKey}`)
 
+    // First try to get config from URL parameters
+    const urlParams = new URLSearchParams(window.location.search)
+    const apiKey = urlParams.get('apiKey')
+    const dbId = urlParams.get('dbId')
+    const theme = urlParams.get('theme')
+
+    if (apiKey && dbId) {
+      // Use URL parameters
+      const configFromUrl = {
+        apiKey,
+        databaseId: dbId,
+        city: params.city as string,
+        name: params.name as string,
+        theme: theme || 'pink'
+      }
+
+      // Save to localStorage for future use
+      localStorage.setItem(`notion-${userKey}`, JSON.stringify(configFromUrl))
+
+      // Clean URL parameters for security
+      const cleanUrl = window.location.pathname
+      window.history.replaceState({}, document.title, cleanUrl)
+
+      setUserConfig(configFromUrl)
+      fetchNotionData(configFromUrl)
+      return
+    }
+
+    // Fallback to localStorage
+    const config = localStorage.getItem(`notion-${userKey}`)
     if (!config) {
       window.location.href = '/website'
       return
@@ -77,6 +117,30 @@ export default function UserWebsitePage() {
 
   const filteredContent = notionData.filter(item => item.type === activeTab)
   const currentTheme = userConfig?.theme || 'pink'
+
+  const openImageModal = (src: string, alt: string) => {
+    setImageModal({ isOpen: true, src, alt })
+  }
+
+  const closeImageModal = () => {
+    setImageModal({ isOpen: false, src: '', alt: '' })
+  }
+
+  const openVideoModal = (url: string, title: string) => {
+    setVideoModal({ isOpen: true, url, title })
+  }
+
+  const closeVideoModal = () => {
+    setVideoModal({ isOpen: false, url: '', title: '' })
+  }
+
+  const isVideoUrl = (url: string) => {
+    return url.includes('youtube.com/watch') ||
+           url.includes('youtu.be/') ||
+           url.includes('vimeo.com/') ||
+           url.includes('bilibili.com/video/') ||
+           url.match(/\.(mp4|webm|ogg|mov|avi)(\?.*)?$/i)
+  }
 
   if (loading) {
     return (
@@ -139,12 +203,20 @@ export default function UserWebsitePage() {
                 )}
 
                 {item.image && (
-                  <div className="overflow-hidden rounded-xl">
+                  <div
+                    className="relative overflow-hidden rounded-xl cursor-pointer group"
+                    onClick={() => openImageModal(item.image!, item.title)}
+                  >
                     <img
                       src={item.image}
                       alt={item.title}
                       className="w-full h-48 object-cover transform hover:scale-110 transition-transform duration-700"
                     />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                      </svg>
+                    </div>
                   </div>
                 )}
 
@@ -159,76 +231,111 @@ export default function UserWebsitePage() {
                     {(() => {
                       const url = item.link
 
-                      // YouTube video
-                      if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) {
-                        const videoId = url.includes('youtu.be/')
-                          ? url.split('youtu.be/')[1].split('?')[0]
-                          : url.split('v=')[1]?.split('&')[0]
+                      // Check if it's a video URL
+                      if (isVideoUrl(url)) {
+                        // YouTube video
+                        if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) {
+                          const videoId = url.includes('youtu.be/')
+                            ? url.split('youtu.be/')[1].split('?')[0]
+                            : url.split('v=')[1]?.split('&')[0]
 
-                        if (videoId) {
-                          return (
-                            <div className="aspect-video w-full rounded-xl overflow-hidden">
-                              <iframe
-                                src={`https://www.youtube.com/embed/${videoId}`}
-                                title="YouTube video"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                                className="w-full h-full"
-                              />
-                            </div>
-                          )
+                          if (videoId) {
+                            return (
+                              <div
+                                className="relative aspect-video w-full rounded-xl overflow-hidden cursor-pointer group"
+                                onClick={() => openVideoModal(url, item.title)}
+                              >
+                                <iframe
+                                  src={`https://www.youtube.com/embed/${videoId}`}
+                                  title="YouTube video"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                  className="w-full h-full pointer-events-none"
+                                />
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                  <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 10a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                </div>
+                              </div>
+                            )
+                          }
                         }
-                      }
 
-                      // Vimeo video
-                      if (url.includes('vimeo.com/')) {
-                        const videoId = url.split('vimeo.com/')[1].split('?')[0]
-                        if (videoId) {
-                          return (
-                            <div className="aspect-video w-full rounded-xl overflow-hidden">
-                              <iframe
-                                src={`https://player.vimeo.com/video/${videoId}`}
-                                title="Vimeo video"
-                                allow="autoplay; fullscreen; picture-in-picture"
-                                allowFullScreen
-                                className="w-full h-full"
-                              />
-                            </div>
-                          )
+                        // Vimeo video
+                        if (url.includes('vimeo.com/')) {
+                          const videoId = url.split('vimeo.com/')[1].split('?')[0]
+                          if (videoId) {
+                            return (
+                              <div
+                                className="relative aspect-video w-full rounded-xl overflow-hidden cursor-pointer group"
+                                onClick={() => openVideoModal(url, item.title)}
+                              >
+                                <iframe
+                                  src={`https://player.vimeo.com/video/${videoId}`}
+                                  title="Vimeo video"
+                                  allow="autoplay; fullscreen; picture-in-picture"
+                                  allowFullScreen
+                                  className="w-full h-full pointer-events-none"
+                                />
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                  <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 10a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                </div>
+                              </div>
+                            )
+                          }
                         }
-                      }
 
-                      // Direct video files
-                      if (url.match(/\.(mp4|webm|ogg|mov|avi)(\?.*)?$/i)) {
-                        return (
-                          <div className="w-full rounded-xl overflow-hidden">
-                            <video
-                              controls
-                              className="w-full h-auto"
-                              preload="metadata"
+                        // Direct video files
+                        if (url.match(/\.(mp4|webm|ogg|mov|avi)(\?.*)?$/i)) {
+                          return (
+                            <div
+                              className="relative w-full rounded-xl overflow-hidden cursor-pointer group"
+                              onClick={() => openVideoModal(url, item.title)}
                             >
-                              <source src={url} type="video/mp4" />
-                              Your browser does not support the video tag.
-                            </video>
-                          </div>
-                        )
-                      }
-
-                      // Bilibili video
-                      if (url.includes('bilibili.com/video/')) {
-                        const bvMatch = url.match(/\/video\/(BV\w+)/)
-                        if (bvMatch) {
-                          const bvid = bvMatch[1]
-                          return (
-                            <div className="aspect-video w-full rounded-xl overflow-hidden">
-                              <iframe
-                                src={`https://player.bilibili.com/player.html?bvid=${bvid}&autoplay=0`}
-                                title="Bilibili video"
-                                allowFullScreen
-                                className="w-full h-full border-0"
-                              />
+                              <video
+                                controls
+                                className="w-full h-auto pointer-events-none"
+                                preload="metadata"
+                              >
+                                <source src={url} type="video/mp4" />
+                                Your browser does not support the video tag.
+                              </video>
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 10a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              </div>
                             </div>
                           )
+                        }
+
+                        // Bilibili video
+                        if (url.includes('bilibili.com/video/')) {
+                          const bvMatch = url.match(/\/video\/(BV\w+)/)
+                          if (bvMatch) {
+                            const bvid = bvMatch[1]
+                            return (
+                              <div
+                                className="relative aspect-video w-full rounded-xl overflow-hidden cursor-pointer group"
+                                onClick={() => openVideoModal(url, item.title)}
+                              >
+                                <iframe
+                                  src={`https://player.bilibili.com/player.html?bvid=${bvid}&autoplay=0`}
+                                  title="Bilibili video"
+                                  allowFullScreen
+                                  className="w-full h-full border-0 pointer-events-none"
+                                />
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                  <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 10a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                </div>
+                              </div>
+                            )
+                          }
                         }
                       }
 
@@ -300,6 +407,20 @@ export default function UserWebsitePage() {
           }
         }
       `}</style>
+
+      {/* Modals */}
+      <ImageModal
+        src={imageModal.src}
+        alt={imageModal.alt}
+        isOpen={imageModal.isOpen}
+        onClose={closeImageModal}
+      />
+      <VideoModal
+        url={videoModal.url}
+        title={videoModal.title}
+        isOpen={videoModal.isOpen}
+        onClose={closeVideoModal}
+      />
     </div>
   )
 }
