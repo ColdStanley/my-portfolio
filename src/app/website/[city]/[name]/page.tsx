@@ -118,6 +118,28 @@ export default function UserWebsitePage() {
   const filteredContent = notionData.filter(item => item.type === activeTab)
   const currentTheme = userConfig?.theme || 'pink'
 
+  // 首字母大写工具函数
+  const capitalizeWords = (str: string): string => {
+    return str
+      .toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+  }
+
+  // 动态更新浏览器标题
+  useEffect(() => {
+    if (userConfig?.name) {
+      const formattedName = capitalizeWords(userConfig.name)
+      document.title = `${formattedName}'s Portfolio`
+    }
+
+    // 可选：在组件卸载时恢复默认标题
+    return () => {
+      document.title = "Stanley's Portfolio"
+    }
+  }, [userConfig?.name])
+
   const openImageModal = (src: string, alt: string) => {
     setImageModal({ isOpen: true, src, alt })
   }
