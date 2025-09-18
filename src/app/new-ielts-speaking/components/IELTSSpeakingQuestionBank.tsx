@@ -4,9 +4,6 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { toast } from 'sonner'
-import clsx from 'clsx'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import {
   Popover,
@@ -38,7 +35,6 @@ export default function IELTSSpeakingQuestionBank() {
   // Main state
   const [selectedPart, setSelectedPart] = useState<'Part 1' | 'Part 2' | 'Part 3'>('Part 2')
   const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null)
-  const [selectedQuestionText, setSelectedQuestionText] = useState<string | null>(null)
   const [questions, setQuestions] = useState<QuestionItem[]>([])
 
   // Question selector state
@@ -53,16 +49,6 @@ export default function IELTSSpeakingQuestionBank() {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 
-  // Header state
-  const router = useRouter()
-  const [response, setResponse] = useState('')
-  const [submitted, setSubmitted] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-
-  const options = [
-    '题目自定义：可手动输入题目',
-    '串题：一个答案可用于多个题目',
-  ]
 
   const parts: ('Part 1' | 'Part 2' | 'Part 3')[] = ['Part 1', 'Part 2', 'Part 3']
 
@@ -77,7 +63,6 @@ export default function IELTSSpeakingQuestionBank() {
       if (part === 'Part 2' && selectedQuestionId === null && items.length > 0) {
         const random = items[Math.floor(Math.random() * items.length)]
         setSelectedQuestionId(random.id)
-        setSelectedQuestionText(random.questionText)
       }
     } catch (error) {
       console.error('❌ 获取题目失败:', error)
@@ -106,35 +91,9 @@ export default function IELTSSpeakingQuestionBank() {
   // Handle question selection
   const handleQuestionSelect = (id: string, text: string) => {
     setSelectedQuestionId(id)
-    setSelectedQuestionText(text)
     setSelectedId(id)
   }
 
-  // Handle feedback submission
-  const handleSubmit = async () => {
-    if (!response || submitted || submitting) return
-    setSubmitting(true)
-
-    const res = await fetch('/api/your-voice-matters', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        page: 'new-ielts-speaking',
-        responses: {
-          'Feature Expectation': response,
-        },
-      }),
-    })
-
-    if (res.ok) {
-      setSubmitted(true)
-      setSubmitting(false)
-      toast.success('🎉 感谢你的反馈，我们已收到！')
-    } else {
-      setSubmitting(false)
-      alert('提交失败，请稍后再试')
-    }
-  }
 
   // Pick random questions
   const pickRandomQuestions = () => {
@@ -312,66 +271,22 @@ export default function IELTSSpeakingQuestionBank() {
           </div>
         </div>
 
-        {/* 右侧：反馈问卷卡片 */}
+        {/* 右侧：功能预告卡片 */}
         <div className="hidden md:block bg-white shadow rounded-xl p-6 flex flex-col justify-between">
           <div className="flex flex-col justify-between h-full">
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-gray-800">Your Voice Matters.</h2>
-
-              {!submitted ? (
-                <>
-                  <p className="text-base font-medium text-gray-800 mb-3">你最期待的功能是什么？</p>
-                  <div className="space-y-2">
-                    {options.map((opt) => (
-                      <label
-                        key={opt}
-                        className="flex items-center gap-3 cursor-pointer text-sm text-gray-700"
-                      >
-                        <span
-                          className={clsx(
-                            'w-4 h-4 rounded-full border-2 flex items-center justify-center',
-                            response === opt ? 'border-purple-600' : 'border-gray-300'
-                          )}
-                        >
-                          {response === opt && (
-                            <span className="w-2 h-2 rounded-full bg-purple-600" />
-                          )}
-                        </span>
-                        <input
-                          type="radio"
-                          name="feature"
-                          value={opt}
-                          checked={response === opt}
-                          onChange={() => setResponse(opt)}
-                          className="hidden"
-                        />
-                        {opt}
-                      </label>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm text-gray-600 italic">页面下方邮件订阅获取最新资讯！</p>
-                  <p className="text-sm text-purple-600 font-medium">你选择了：{response}</p>
-                </>
-              )}
-            </div>
-
-            {/* 提交按钮始终保持位置不变 + 视觉降权 */}
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={handleSubmit}
-                disabled={submitted || submitting}
-                className={clsx(
-                  'w-[160px] h-[40px] text-sm font-medium text-gray-700',
-                  'bg-gray-200 hover:bg-gray-300 transition-all rounded-lg',
-                  'flex items-center justify-center',
-                  submitted && 'bg-gray-300 cursor-not-allowed'
-                )}
-              >
-                {submitted ? '感谢反馈！' : submitting ? '提交中...' : '提交'}
-              </button>
+              <h2 className="text-lg font-semibold text-gray-800">更多功能即将上线</h2>
+              <div className="space-y-3">
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-700">🎯 题目自定义功能</p>
+                  <p className="text-xs text-gray-500 mt-1">支持手动输入练习题目</p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-700">🔗 串题答案功能</p>
+                  <p className="text-xs text-gray-500 mt-1">一个答案适用多个相似题目</p>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 italic">敬请期待更多实用功能！</p>
             </div>
           </div>
         </div>

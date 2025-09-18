@@ -3,8 +3,6 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { toast } from 'sonner'
-import clsx from 'clsx'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/SimpleComponents'
 import { Loader2 } from 'lucide-react'
@@ -33,10 +31,6 @@ export default function IELTSSpeakingCustomPractice() {
     band8: string
   } | null>(null)
 
-  // Header state
-  const [response, setResponse] = useState('')
-  const [submitted, setSubmitted] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
 
   // Question selector state
   const [allQuestions, setAllQuestions] = useState<QuestionItem[]>([])
@@ -59,31 +53,6 @@ export default function IELTSSpeakingCustomPractice() {
     increaseCount,
   } = useAnswerCounter(userId, userType)
 
-  // Header functions
-  const handleHeaderSubmit = async () => {
-    if (!response.trim() || submitted || submitting) return
-    setSubmitting(true)
-
-    const res = await fetch('/api/your-voice-matters', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        page: 'new-ielts-speaking-custom',
-        responses: {
-          'Additional Suggestion': response,
-        },
-      }),
-    })
-
-    if (res.ok) {
-      setSubmitted(true)
-      setSubmitting(false)
-      toast.success('感谢你的反馈，我们已经收到！')
-    } else {
-      setSubmitting(false)
-      alert('提交失败，请稍后再试')
-    }
-  }
 
   // Question selector functions
   const fetchQuestions = async (partToFetch: 'Part 1' | 'Part 2' | 'Part 3') => {
@@ -252,45 +221,25 @@ export default function IELTSSpeakingCustomPractice() {
           </div>
         </div>
 
-        {/* 右侧：反馈状态说明卡片 */}
+        {/* 右侧：使用说明卡片 */}
         <div className="hidden md:block bg-white shadow rounded-xl p-6 flex flex-col justify-between">
           <div className="flex flex-col justify-between h-full">
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-gray-800">Your Voice Matters.</h2>
-
-              {!submitted ? (
-                <>
-                  <p className="text-base font-medium text-gray-800 mb-1">你希望加入哪些功能？</p>
-                  <textarea
-                    rows={4}
-                    value={response}
-                    onChange={(e) => setResponse(e.target.value)}
-                    placeholder="欢迎填写你的建议或期待的功能～"
-                    className="w-full p-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 resize-none"
-                  />
-                </>
-              ) : (
-                <>
-                  <p className="text-sm text-gray-600 italic mb-2">页面下方邮件订阅获取最新资讯！</p>
-                  <p className="text-sm text-purple-600 font-medium">感谢你的建议，我们会认真考虑！</p>
-                </>
-              )}
-            </div>
-
-            {/* 提交按钮移至右侧卡片底部 */}
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={handleHeaderSubmit}
-                disabled={submitted || submitting}
-                className={clsx(
-                  'w-[160px] h-[40px] text-sm font-medium text-gray-700',
-                  'bg-gray-200 hover:bg-gray-300 transition-all rounded-lg',
-                  'flex items-center justify-center',
-                  submitted && 'bg-gray-300 cursor-not-allowed'
-                )}
-              >
-                {submitted ? '感谢反馈！' : submitting ? '提交中...' : '提交'}
-              </button>
+              <h2 className="text-lg font-semibold text-gray-800">使用指南</h2>
+              <div className="space-y-3">
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm font-medium text-blue-700">🎯 步骤1：选择题目</p>
+                  <p className="text-xs text-blue-600 mt-1">从下方题库中选择一道题目</p>
+                </div>
+                <div className="p-3 bg-green-50 rounded-lg">
+                  <p className="text-sm font-medium text-green-700">🔑 步骤2：生成关键词</p>
+                  <p className="text-xs text-green-600 mt-1">点击生成答题关键词提示</p>
+                </div>
+                <div className="p-3 bg-purple-50 rounded-lg">
+                  <p className="text-sm font-medium text-purple-700">✨ 步骤3：生成答案</p>
+                  <p className="text-xs text-purple-600 mt-1">选择关键词生成多个段位答案</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

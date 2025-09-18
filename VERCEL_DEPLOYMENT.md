@@ -50,7 +50,6 @@ NOTION_DATABASE_ID=your-notion-database-id-here
 NOTION_SPEAKING_DB_ID=your-notion-speaking-db-id-here
 NOTION_NEW_SPEAKING_DB_ID=your-notion-new-speaking-db-id-here
 NOTION_SUBSCRIBE_DB_ID=your-notion-subscribe-db-id-here
-NOTION_VOICE_MATTERS_DB_ID=your-notion-voice-matters-db-id-here
 NOTION_IELTS_READING_DB_ID=your-notion-ielts-reading-db-id-here
 NOTION_Test_DB_ID=your-notion-test-db-id-here
 NOTION_LLM_DB_ID=your-notion-llm-db-id-here
