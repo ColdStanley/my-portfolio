@@ -198,7 +198,7 @@ function AIToolCard({
     if (!textareaRef.current) return
     const textarea = textareaRef.current
     const { selectionStart, selectionEnd, value } = textarea
-    const ranges = getReferenceRanges(value)
+    const ranges = getAllTokenRanges(value)
 
     const intersecting = ranges.find(range =>
       (selectionStart > range.start && selectionStart < range.end) ||
@@ -264,10 +264,10 @@ function AIToolCard({
       const textBefore = localPromptText.substring(0, cursorPosition)
       const textAfter = localPromptText.substring(textarea.selectionEnd)
       const referenceText = `[REF: ${selectedButtonName}]`
-      const newText = textBefore + referenceText + textAfter
+      const newText = textBefore + referenceText + ' ' + textAfter
       setLocalPromptText(newText)
       setTimeout(() => {
-        const newCursorPosition = cursorPosition + referenceText.length
+        const newCursorPosition = cursorPosition + referenceText.length + 1
         textarea.setSelectionRange(newCursorPosition, newCursorPosition)
         textarea.focus()
       }, 0)
@@ -282,10 +282,10 @@ function AIToolCard({
       const textBefore = localPromptText.substring(0, cursorPosition)
       const textAfter = localPromptText.substring(textarea.selectionEnd)
       const referenceText = `[INFO: ${selectedTitle}]`
-      const newText = textBefore + referenceText + textAfter
+      const newText = textBefore + referenceText + ' ' + textAfter
       setLocalPromptText(newText)
       setTimeout(() => {
-        const newCursorPosition = cursorPosition + referenceText.length
+        const newCursorPosition = cursorPosition + referenceText.length + 1
         textarea.setSelectionRange(newCursorPosition, newCursorPosition)
         textarea.focus()
       }, 0)
@@ -398,26 +398,26 @@ function AIToolCard({
   }
 
   const handleGenerateClick = async (selectedOption?: string) => {
-    if (!localPromptText.trim()) return
+    // Read-only generate: do not write structure (prompt/options/model/buttonName) here.
 
-    if ((localOptions || []).length > 0 && !selectedOption) {
+    // Always read fresh state from store after potential updates
+    const state = useWorkspaceStore.getState()
+    const updatedColumn = state.canvases.flatMap(c => c.columns).find(c => c.id === columnId)
+    const updatedCard = updatedColumn?.cards.find(card => card.id === cardId)
+
+    const promptFromStore = (updatedCard?.promptText ?? localPromptText ?? '').trim()
+    const optionsFromStore = (updatedCard?.options ?? localOptions) || []
+    const modelFromStore = updatedCard?.aiModel ?? localAiModel ?? aiModel
+
+    // Prefer the live textarea value to avoid any stale local state
+    const liveValue = (textareaRef.current?.value ?? '').trim()
+    const effectivePrompt = (liveValue || promptFromStore)
+
+    // Now validate inputs based on fresh data
+    if (!effectivePrompt) return
+    if (optionsFromStore.length > 0 && !selectedOption) {
       setShowOptionsTooltip(true)
       return
-    }
-
-    // Auto-save local changes before generating
-    const hasLocalChanges =
-      localButtonName !== buttonName ||
-      localPromptText !== promptText ||
-      JSON.stringify(localOptions) !== JSON.stringify(options) ||
-      localAiModel !== aiModel
-
-    if (hasLocalChanges) {
-      updateCardButtonName(cardId, localButtonName)
-      updateCardPromptText(cardId, localPromptText)
-      updateCardOptions(cardId, localOptions)
-      updateCardAiModel(cardId, localAiModel)
-      setHasUnsavedChanges(true)
     }
 
     // Set generating state
@@ -428,11 +428,11 @@ function AIToolCard({
     setIsFormatting(false) // Reset formatting state
 
     try {
-      // Use store data for consistent behavior
-      let resolvedPrompt = resolveReferences(localPromptText, canvases, columnId)
+      // Resolve references using latest canvases and prompt
+      let resolvedPrompt = resolveReferences(effectivePrompt, state.canvases, columnId)
 
       // Replace option placeholder with selected value if both exist
-      const hasOptions = (localOptions || []).length > 0
+      const hasOptions = optionsFromStore.length > 0
       if (hasOptions && selectedOption && typeof selectedOption === 'string') {
         resolvedPrompt = resolvedPrompt.replace(/\{\{option\}\}/g, selectedOption)
       }
@@ -444,7 +444,7 @@ function AIToolCard({
         },
         body: JSON.stringify({
           prompt: resolvedPrompt,
-          model: aiModel,
+          model: modelFromStore,
           stream: true
         }),
       })
@@ -1354,7 +1354,7 @@ function AIToolCard({
                     </button>
                   </label>
                   <div className="flex flex-wrap gap-2">
-                    {(options || []).length > 0 && (
+                    {(localOptions || []).length > 0 && (
                       <button
                         onClick={() => {
                           if (textareaRef.current) {
@@ -1379,7 +1379,7 @@ function AIToolCard({
                         Insert Option
                       </button>
                     )}
-                    {(options || []).length > 0 && (
+                    {(localOptions || []).length > 0 && (
                       <span className="px-2 py-1 text-xs text-gray-500 bg-gray-50 rounded">
                         {localOptions.length} option{localOptions.length !== 1 ? 's' : ''} configured
                       </span>
@@ -1474,7 +1474,7 @@ interface ReferenceRange {
   start: number
   end: number
   label: string
-  type: 'ref' | 'info'
+  type: 'ref' | 'info' | 'option'
 }
 
 function getReferenceRanges(text: string): ReferenceRange[] {
@@ -1494,20 +1494,41 @@ function getReferenceRanges(text: string): ReferenceRange[] {
   return ranges
 }
 
-function renderPromptOverlay(text: string) {
-  const segments: { type: 'text' | 'ref' | 'info'; value: string }[] = []
-  const pattern = /\[(REF|INFO):\s*([^\]]+)\]/g
-  let lastIndex = 0
+function getOptionRanges(text: string): ReferenceRange[] {
+  const pattern = /\{\{\s*option\s*\}\}/g
+  const ranges: ReferenceRange[] = []
   let match: RegExpExecArray | null
-
   while ((match = pattern.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      segments.push({ type: 'text', value: text.slice(lastIndex, match.index) })
-    }
-    const value = match[2]?.trim() ?? ''
-    segments.push({ type: match[1].toLowerCase() === 'ref' ? 'ref' : 'info', value })
-    lastIndex = match.index + match[0].length
+    ranges.push({
+      start: match.index,
+      end: match.index + match[0].length,
+      label: 'option',
+      type: 'option'
+    })
   }
+  return ranges
+}
+
+function getAllTokenRanges(text: string): ReferenceRange[] {
+  const refs = getReferenceRanges(text)
+  const opts = getOptionRanges(text)
+  return [...refs, ...opts].sort((a, b) => a.start - b.start)
+}
+
+function renderPromptOverlay(text: string) {
+  type Seg = { type: 'text' | 'ref' | 'info' | 'option'; value: string }
+  const segments: Seg[] = []
+
+  const tokens = getAllTokenRanges(text)
+  let lastIndex = 0
+
+  tokens.forEach(tok => {
+    if (tok.start > lastIndex) {
+      segments.push({ type: 'text', value: text.slice(lastIndex, tok.start) })
+    }
+    segments.push({ type: tok.type, value: tok.label })
+    lastIndex = tok.end
+  })
 
   if (lastIndex < text.length) {
     segments.push({ type: 'text', value: text.slice(lastIndex) })
@@ -1526,13 +1547,15 @@ function renderPromptOverlay(text: string) {
       'inline-flex items-center px-2 py-0.5 mr-1 mb-1 rounded-full text-[11px] font-semibold border'
     const refClasses = 'bg-purple-100 border-purple-200 text-purple-700'
     const infoClasses = 'bg-blue-100 border-blue-200 text-blue-700'
+    const optClasses = 'bg-amber-100 border-amber-200 text-amber-700'
+
+    const cls = segment.type === 'ref' ? refClasses : segment.type === 'info' ? infoClasses : optClasses
+    const label = segment.type === 'ref' ? 'REF' : segment.type === 'info' ? 'INFO' : 'OPTION'
 
     return (
-      <span
-        key={idx}
-        className={`${baseClasses} ${segment.type === 'ref' ? refClasses : infoClasses}`}
-      >
-        {segment.type === 'ref' ? 'REF' : 'INFO'}: {segment.value}
+      <span key={idx} className={`${baseClasses} ${cls}`}>
+        {label}
+        {segment.type !== 'option' && `: ${segment.value}`}
       </span>
     )
   })
