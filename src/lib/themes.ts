@@ -9,6 +9,12 @@ export interface Theme {
   tabHover: string
   cardBg: string
   linkColor: string
+  commentBg: string
+  commentBorder: string
+  commentButton: string
+  commentButtonHover: string
+  commentInputFocus: string
+  commentInputRing: string
 }
 
 export const themes: Record<string, Theme> = {
@@ -22,7 +28,13 @@ export const themes: Record<string, Theme> = {
     tabActive: 'from-pink-400 to-rose-400',
     tabHover: 'hover:text-pink-600 hover:bg-pink-50/50',
     cardBg: 'bg-white/80',
-    linkColor: 'text-pink-500 hover:text-pink-600'
+    linkColor: 'text-pink-500 hover:text-pink-600',
+    commentBg: 'bg-pink-50/70',
+    commentBorder: 'border-pink-200',
+    commentButton: 'bg-pink-600 hover:bg-pink-700 disabled:bg-pink-400',
+    commentButtonHover: 'hover:bg-pink-700',
+    commentInputFocus: 'focus:border-pink-400',
+    commentInputRing: 'focus:ring-pink-200'
   },
   blue: {
     id: 'blue',
@@ -34,7 +46,13 @@ export const themes: Record<string, Theme> = {
     tabActive: 'from-blue-400 to-cyan-400',
     tabHover: 'hover:text-blue-600 hover:bg-blue-50/50',
     cardBg: 'bg-white/80',
-    linkColor: 'text-blue-500 hover:text-blue-600'
+    linkColor: 'text-blue-500 hover:text-blue-600',
+    commentBg: 'bg-blue-50/70',
+    commentBorder: 'border-blue-200',
+    commentButton: 'bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400',
+    commentButtonHover: 'hover:bg-blue-700',
+    commentInputFocus: 'focus:border-blue-400',
+    commentInputRing: 'focus:ring-blue-200'
   },
   purple: {
     id: 'purple',
@@ -46,7 +64,13 @@ export const themes: Record<string, Theme> = {
     tabActive: 'from-purple-400 to-violet-400',
     tabHover: 'hover:text-purple-600 hover:bg-purple-50/50',
     cardBg: 'bg-white/80',
-    linkColor: 'text-purple-500 hover:text-purple-600'
+    linkColor: 'text-purple-500 hover:text-purple-600',
+    commentBg: 'bg-purple-50/70',
+    commentBorder: 'border-purple-200',
+    commentButton: 'bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400',
+    commentButtonHover: 'hover:bg-purple-700',
+    commentInputFocus: 'focus:border-purple-400',
+    commentInputRing: 'focus:ring-purple-200'
   },
   green: {
     id: 'green',
@@ -58,7 +82,13 @@ export const themes: Record<string, Theme> = {
     tabActive: 'from-emerald-300 to-teal-300',
     tabHover: 'hover:text-emerald-500 hover:bg-emerald-50/50',
     cardBg: 'bg-white/80',
-    linkColor: 'text-emerald-400 hover:text-emerald-500'
+    linkColor: 'text-emerald-400 hover:text-emerald-500',
+    commentBg: 'bg-emerald-50/70',
+    commentBorder: 'border-emerald-200',
+    commentButton: 'bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400',
+    commentButtonHover: 'hover:bg-emerald-700',
+    commentInputFocus: 'focus:border-emerald-400',
+    commentInputRing: 'focus:ring-emerald-200'
   },
   orange: {
     id: 'orange',
@@ -70,7 +100,13 @@ export const themes: Record<string, Theme> = {
     tabActive: 'from-orange-300 to-amber-300',
     tabHover: 'hover:text-orange-400 hover:bg-orange-50/50',
     cardBg: 'bg-white/80',
-    linkColor: 'text-orange-400 hover:text-orange-500'
+    linkColor: 'text-orange-400 hover:text-orange-500',
+    commentBg: 'bg-orange-50/70',
+    commentBorder: 'border-orange-200',
+    commentButton: 'bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400',
+    commentButtonHover: 'hover:bg-orange-700',
+    commentInputFocus: 'focus:border-orange-400',
+    commentInputRing: 'focus:ring-orange-200'
   },
   dark: {
     id: 'dark',
@@ -82,7 +118,13 @@ export const themes: Record<string, Theme> = {
     tabActive: 'from-slate-400 to-gray-400',
     tabHover: 'hover:text-slate-600 hover:bg-slate-50/50',
     cardBg: 'bg-white/80',
-    linkColor: 'text-slate-500 hover:text-slate-600'
+    linkColor: 'text-slate-500 hover:text-slate-600',
+    commentBg: 'bg-slate-50/70',
+    commentBorder: 'border-slate-200',
+    commentButton: 'bg-slate-600 hover:bg-slate-700 disabled:bg-slate-400',
+    commentButtonHover: 'hover:bg-slate-700',
+    commentInputFocus: 'focus:border-slate-400',
+    commentInputRing: 'focus:ring-slate-200'
   }
 }
 

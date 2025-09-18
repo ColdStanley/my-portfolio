@@ -465,7 +465,7 @@ export default function UserWebsitePage() {
                     <div className="space-y-2 mb-4">
                       <h4 className="text-sm font-medium text-gray-700">Comments</h4>
                       {item.comments.map((comment, commentIndex) => (
-                        <div key={commentIndex} className="bg-gray-50/70 backdrop-blur-sm rounded-lg p-3 text-sm text-gray-600">
+                        <div key={commentIndex} className={`${getThemeClasses(currentTheme, 'commentBg')} backdrop-blur-sm rounded-lg p-3 text-sm text-gray-600`}>
                           {comment}
                         </div>
                       ))}
@@ -479,7 +479,7 @@ export default function UserWebsitePage() {
                       value={newComments[item.id] || ''}
                       onChange={(e) => setNewComments(prev => ({ ...prev, [item.id]: e.target.value }))}
                       placeholder="Add a comment..."
-                      className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-purple-400 focus:ring-2 focus:ring-purple-200 bg-white/70 backdrop-blur-sm transition-all duration-200"
+                      className={`flex-1 px-3 py-2 text-sm border ${getThemeClasses(currentTheme, 'commentBorder')} rounded-lg ${getThemeClasses(currentTheme, 'commentInputFocus')} focus:ring-2 ${getThemeClasses(currentTheme, 'commentInputRing')} bg-white/70 backdrop-blur-sm transition-all duration-200`}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault()
@@ -491,7 +491,7 @@ export default function UserWebsitePage() {
                     <button
                       onClick={() => submitComment(item.id)}
                       disabled={!newComments[item.id]?.trim() || submittingComments[item.id]}
-                      className="px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg transition-all duration-200 flex items-center gap-1 text-sm font-medium"
+                      className={`px-3 py-2 ${getThemeClasses(currentTheme, 'commentButton')} text-white rounded-lg transition-all duration-200 flex items-center gap-1 text-sm font-medium`}
                     >
                       {submittingComments[item.id] ? (
                         <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">

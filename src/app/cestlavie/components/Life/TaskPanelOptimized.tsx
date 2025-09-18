@@ -388,6 +388,7 @@ export default function TaskPanelOptimized({
   const planRectangles = useMemo(() => {
     // Show plans for selected strategy
     const selectedStrategyPlans = plans.filter(plan => plan.strategy === selectedStrategyId)
+    console.log('planRectangles updated:', { selectedStrategyId, selectedStrategyPlans: selectedStrategyPlans.length })
     const items = selectedStrategyPlans.map(plan => ({
       id: plan.id,
       name: plan.objective,
@@ -399,8 +400,9 @@ export default function TaskPanelOptimized({
   // Calculate task list for selected plan
   const selectedPlanTasks = useMemo(() => {
     if (!selectedPlanId) return []
-    return tasks
-      .filter(task => task.plan === selectedPlanId)
+    const filteredTasks = tasks.filter(task => task.plan === selectedPlanId)
+    console.log('selectedPlanTasks updated:', { selectedPlanId, filteredTasks: filteredTasks.length })
+    return filteredTasks
       .sort((a, b) => {
         // Sort by start_date, then by title
         const aDate = a.start_date ? new Date(a.start_date).getTime() : 0
@@ -521,9 +523,10 @@ export default function TaskPanelOptimized({
     setSelectedPlanId(null) // Reset plan selection
   }, [])
 
-  // Handle Plan click  
+  // Handle Plan click
   const handlePlanClick = useCallback((planId: string) => {
     if (planId === 'blank') return // Ignore blank areas
+    console.log('Plan clicked:', planId)
     setSelectedPlanId(planId)
   }, [])
 
@@ -724,8 +727,18 @@ export default function TaskPanelOptimized({
 
   const loadAllData = useCallback(async (forceRefresh = false) => {
     try {
-      setLoading(true)
       setError(null)
+
+      // Check if we have any cached data
+      const hasTasksCache = dataCache.has(CACHE_KEYS.TASKS)
+      const hasStrategiesCache = dataCache.has(CACHE_KEYS.STRATEGIES)
+      const hasPlansCache = dataCache.has(CACHE_KEYS.PLANS)
+      const hasAnyCache = hasTasksCache && hasStrategiesCache && hasPlansCache
+
+      // Only show loading if we don't have cache or are force refreshing
+      if (!hasAnyCache || forceRefresh) {
+        setLoading(true)
+      }
 
       await Promise.all([
         fetchTasksData({ force: forceRefresh, includeSchema: true }),
@@ -758,8 +771,12 @@ export default function TaskPanelOptimized({
   }, [fetchPlansData, fetchStrategiesData, fetchTasksData])
 
   // Load all data only after authentication is complete and user exists
+  // Use a ref to track if we've already loaded data to prevent unnecessary reloads
+  const hasLoadedRef = useRef(false)
+
   useEffect(() => {
-    if (!authLoading && user) {
+    if (!authLoading && user && !hasLoadedRef.current) {
+      hasLoadedRef.current = true
       loadAllData()
     }
   }, [authLoading, user, loadAllData])
@@ -1521,12 +1538,12 @@ export default function TaskPanelOptimized({
                       y={rect.y + 1.5}
                       width={rect.width - 3}
                       height={rect.height - 3}
-                      className="pointer-events-none"
+                      className="pointer-events-auto"
                     >
                       <div
-                        className="h-full w-full overflow-hidden rounded-xl"
+                        className="h-full w-full overflow-hidden rounded-xl cursor-pointer"
                         style={{ background: theme.gradient }}
-                      onClick={() => handleStrategyClick(rect.id)}
+                        onClick={() => handleStrategyClick(rect.id)}
                       >
                         <div className="flex h-full flex-col justify-between p-3">
                           <div className="flex justify-end">
@@ -1658,12 +1675,12 @@ export default function TaskPanelOptimized({
                       y={rect.y + 1.5}
                       width={rect.width - 3}
                       height={rect.height - 3}
-                      className="pointer-events-none"
+                      className="pointer-events-auto"
                     >
                       <div
-                        className="h-full w-full overflow-hidden rounded-xl"
+                        className="h-full w-full overflow-hidden rounded-xl cursor-pointer"
                         style={{ background: theme.gradient }}
-                      onClick={() => handlePlanClick(rect.id)}
+                        onClick={() => handlePlanClick(rect.id)}
                       >
                         <div className="flex h-full flex-col justify-between p-3">
                           <div className="flex justify-end">
