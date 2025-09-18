@@ -7,12 +7,15 @@ import ImageModal from '@/components/ImageModal'
 import VideoModal from '@/components/VideoModal'
 
 interface NotionContent {
+  id: string
   title: string
   type: string
   date: string
   content: string
   image?: string
   link?: string
+  order?: number
+  comments?: string[]
 }
 
 export default function UserWebsitePage() {
@@ -32,6 +35,8 @@ export default function UserWebsitePage() {
     url: '',
     title: ''
   })
+  const [newComments, setNewComments] = useState<{ [key: string]: string }>({})
+  const [submittingComments, setSubmittingComments] = useState<{ [key: string]: boolean }>({})
 
   useEffect(() => {
     const userKey = `${params.city}-${params.name}`
@@ -92,19 +97,28 @@ export default function UserWebsitePage() {
       const data = await response.json()
 
       if (data.results) {
-        const processedData = data.results.map((item: any) => ({
-          title: item.properties.Title?.title?.[0]?.plain_text || 'Untitled',
-          type: item.properties.Type?.select?.name || 'General',
-          date: item.properties.Date?.date?.start || '',
-          content: item.properties.Content?.rich_text?.[0]?.plain_text || '',
-          image: item.properties.Image?.files?.[0]?.file?.url || item.properties.Image?.files?.[0]?.external?.url || '',
-          link: item.properties.Link?.url || ''
-        }))
+        const processedData = data.results.map((item: any) => {
+          // 处理评论字段 - 从富文本中解析多行评论
+          const commentText = item.properties.Comment?.rich_text?.[0]?.plain_text || ''
+          const comments = commentText ? commentText.split('\n').filter((comment: string) => comment.trim()) : []
+
+          return {
+            id: item.id,
+            title: item.properties.Title?.title?.[0]?.plain_text || 'Untitled',
+            type: item.properties.Type?.select?.name || 'General',
+            date: item.properties.Date?.date?.start || '',
+            content: item.properties.Content?.rich_text?.[0]?.plain_text || '',
+            image: item.properties.Image?.files?.[0]?.file?.url || item.properties.Image?.files?.[0]?.external?.url || '',
+            link: item.properties.Link?.url || '',
+            order: item.properties.Order?.number || 999,
+            comments: comments
+          }
+        })
 
         setNotionData(processedData)
 
         // Extract unique types for tabs
-        const uniqueTypes = [...new Set(processedData.map((item: NotionContent) => item.type))]
+        const uniqueTypes = [...new Set(processedData.map((item: NotionContent) => item.type))] as string[]
         setTabs(uniqueTypes)
         setActiveTab(uniqueTypes[0] || '')
       }
@@ -115,7 +129,9 @@ export default function UserWebsitePage() {
     }
   }
 
-  const filteredContent = notionData.filter(item => item.type === activeTab)
+  const filteredContent = notionData
+    .filter(item => item.type === activeTab)
+    .sort((a, b) => (a.order || 999) - (b.order || 999))
   const currentTheme = userConfig?.theme || 'pink'
 
   // 首字母大写工具函数
@@ -129,14 +145,36 @@ export default function UserWebsitePage() {
 
   // 动态更新浏览器标题
   useEffect(() => {
+    console.log('Title update effect triggered, userConfig:', userConfig)
     if (userConfig?.name) {
       const formattedName = capitalizeWords(userConfig.name)
-      document.title = `${formattedName}'s Portfolio`
+      const newTitle = `${formattedName}'s Portfolio`
+      console.log('Setting document title to:', newTitle)
+
+      // 设置document.title
+      document.title = newTitle
+
+      // 同时更新head中的title标签（强制更新）
+      const titleElement = document.querySelector('title')
+      if (titleElement) {
+        titleElement.textContent = newTitle
+      }
+
+      // 如果title标签不存在，创建一个
+      if (!titleElement) {
+        const newTitleElement = document.createElement('title')
+        newTitleElement.textContent = newTitle
+        document.head.appendChild(newTitleElement)
+      }
     }
 
     // 可选：在组件卸载时恢复默认标题
     return () => {
       document.title = "Stanley's Portfolio"
+      const titleElement = document.querySelector('title')
+      if (titleElement) {
+        titleElement.textContent = "Stanley's Portfolio"
+      }
     }
   }, [userConfig?.name])
 
@@ -162,6 +200,47 @@ export default function UserWebsitePage() {
            url.includes('vimeo.com/') ||
            url.includes('bilibili.com/video/') ||
            url.match(/\.(mp4|webm|ogg|mov|avi)(\?.*)?$/i)
+  }
+
+  const submitComment = async (cardId: string) => {
+    if (!newComments[cardId]?.trim() || !userConfig) return
+
+    setSubmittingComments(prev => ({ ...prev, [cardId]: true }))
+
+    try {
+      const response = await fetch('/api/notion/comment', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          pageId: cardId,
+          comment: newComments[cardId].trim(),
+          apiKey: userConfig.apiKey
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        // Update local state
+        setNotionData(prev => prev.map(item =>
+          item.id === cardId
+            ? { ...item, comments: result.comments }
+            : item
+        ))
+
+        // Clear input
+        setNewComments(prev => ({ ...prev, [cardId]: '' }))
+      } else {
+        alert('Failed to submit comment: ' + result.error)
+      }
+    } catch (error) {
+      console.error('Error submitting comment:', error)
+      alert('Failed to submit comment')
+    } finally {
+      setSubmittingComments(prev => ({ ...prev, [cardId]: false }))
+    }
   }
 
   if (loading) {
@@ -378,6 +457,55 @@ export default function UserWebsitePage() {
                     })()}
                   </div>
                 )}
+
+                {/* Comments Section */}
+                <div className="border-t border-gray-100 pt-4 mt-4">
+                  {/* Existing Comments */}
+                  {item.comments && item.comments.length > 0 && (
+                    <div className="space-y-2 mb-4">
+                      <h4 className="text-sm font-medium text-gray-700">Comments</h4>
+                      {item.comments.map((comment, commentIndex) => (
+                        <div key={commentIndex} className="bg-gray-50/70 backdrop-blur-sm rounded-lg p-3 text-sm text-gray-600">
+                          {comment}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* New Comment Input */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={newComments[item.id] || ''}
+                      onChange={(e) => setNewComments(prev => ({ ...prev, [item.id]: e.target.value }))}
+                      placeholder="Add a comment..."
+                      className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-purple-400 focus:ring-2 focus:ring-purple-200 bg-white/70 backdrop-blur-sm transition-all duration-200"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault()
+                          submitComment(item.id)
+                        }
+                      }}
+                      disabled={submittingComments[item.id]}
+                    />
+                    <button
+                      onClick={() => submitComment(item.id)}
+                      disabled={!newComments[item.id]?.trim() || submittingComments[item.id]}
+                      className="px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg transition-all duration-200 flex items-center gap-1 text-sm font-medium"
+                    >
+                      {submittingComments[item.id] ? (
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           ))}
