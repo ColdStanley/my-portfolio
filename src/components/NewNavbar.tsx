@@ -80,7 +80,6 @@ export default function NewNavbar() {
                 { name: 'AI Agent Gala', href: '/ai-agent-gala' }
               ]
             },
-            { name: 'Portfolio', href: '/original', type: 'link' },
             {
               name: 'About',
               type: 'dropdown',
