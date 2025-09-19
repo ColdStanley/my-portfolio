@@ -55,12 +55,21 @@ interface FormattedContent {
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('🔍 Homepage API Environment check:', {
+      NOTION_API_KEY: process.env.NOTION_API_KEY ? '✅ Present' : '❌ Missing',
+      NOTION_HOMEPAGE_CONTENT_DB_ID: process.env.NOTION_HOMEPAGE_CONTENT_DB_ID,
+      NODE_ENV: process.env.NODE_ENV,
+      URL: request.url
+    })
+
     const databaseId = process.env.NOTION_HOMEPAGE_CONTENT_DB_ID
 
     if (!databaseId) {
+      console.error('❌ Database ID missing')
       return NextResponse.json({ error: 'Homepage content database ID not configured' }, { status: 500 })
     }
 
+    console.log('📡 Starting Notion API query...')
     const response = await notion.databases.query({
       database_id: databaseId,
       filter: {
@@ -75,6 +84,11 @@ export async function GET(request: NextRequest) {
           direction: 'ascending'
         }
       ]
+    })
+
+    console.log('✅ Notion API response received:', {
+      resultsCount: response.results.length,
+      hasResults: response.results.length > 0
     })
 
     // Parse Notion data
@@ -115,6 +129,13 @@ export async function GET(request: NextRequest) {
     const projectItems = items.filter(item => item.section_type === 'project')
     const moreProjectItems = items.filter(item => item.section_type === 'more_project')
 
+    console.log('📊 Content categorization:', {
+      totalItems: items.length,
+      heroFound: !!heroItem,
+      projectCount: projectItems.length,
+      moreProjectCount: moreProjectItems.length
+    })
+
     const formattedContent: FormattedContent = {
       status: 'success',
       projects: projectItems.map((item, index) => ({
@@ -151,10 +172,23 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    console.log('🎉 Final response prepared:', {
+      hasHero: !!formattedContent.hero,
+      projectCount: formattedContent.projects.length,
+      moreProjectCount: formattedContent.more_projects.length,
+      status: formattedContent.status
+    })
+
     return NextResponse.json(formattedContent)
 
   } catch (error: any) {
-    console.error('Error fetching homepage content:', error)
+    console.error('🚨 Homepage API Detailed Error:', {
+      message: error.message,
+      code: error.code,
+      status: error.status,
+      stack: error.stack,
+      name: error.name
+    })
     return NextResponse.json(
       { error: 'Failed to fetch homepage content', details: error.message },
       { status: 500 }
