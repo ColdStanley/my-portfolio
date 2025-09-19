@@ -8,27 +8,112 @@ import NewNavbar from '@/components/NewNavbar'
 import FooterSection from '@/components/FooterSection'
 import PageTransition from '@/components/PageTransition'
 import GlobalLoader from '@/components/GlobalLoader'
-import { useHomepageContent } from '@/hooks/useHomepageContent'
-import { PageSkeleton } from '@/components/SkeletonLoaders'
 
-interface HomePageClientProps {
-  initialContent: any
+interface HomepageContent {
+  hero?: {
+    title: string
+    subtitle: string
+    background_video: string
+    primary_button_text: string
+    primary_button_href: string
+    secondary_button_text: string
+    secondary_button_href: string
+    gradient_text: string
+  }
+  projects: Array<{
+    title: string
+    description: string
+    benefits: string[]
+    button_text: string
+    href: string
+    gradient: string
+    project_images?: string[]
+    project_video?: string
+    reverse?: boolean
+  }>
+  more_projects: Array<{
+    title: string
+    subtitle: string
+    description: string
+    tech: string
+    href: string
+  }>
+  status: string
 }
 
-export default function HomePageClient({ initialContent }: HomePageClientProps) {
-  // Use hook for client-side updates if needed
-  const { content, isLoading } = useHomepageContent()
+export default function HomePageClient() {
+  const [content, setContent] = useState<HomepageContent | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Use static content as fallback
-  const displayContent = content || initialContent
+  useEffect(() => {
+    fetchHomepageContent()
+  }, [])
 
-  // Show skeleton if no content available
-  if (!displayContent && isLoading) {
+  const fetchHomepageContent = async () => {
+    try {
+      console.log('🏠 Homepage: Starting client-side data fetch')
+
+      const response = await fetch('/api/homepage-content', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      console.log('🏠 Homepage: Client-side fetch success:', {
+        hasHero: !!data.hero,
+        projectsCount: data.projects?.length || 0,
+        moreProjectsCount: data.more_projects?.length || 0
+      })
+
+      setContent(data)
+    } catch (err) {
+      console.error('🚨 Homepage: Client-side fetch failed:', err)
+      setError(err instanceof Error ? err.message : 'Unknown error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
     return (
       <>
         <GlobalLoader />
         <PageTransition>
-          <PageSkeleton />
+          <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-indigo-400 rounded-full animate-pulse mb-4 mx-auto"></div>
+              <p className="text-gray-600">Loading homepage content...</p>
+            </div>
+          </div>
+        </PageTransition>
+      </>
+    )
+  }
+
+  if (error || !content) {
+    return (
+      <>
+        <GlobalLoader />
+        <PageTransition>
+          <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-red-500 mb-4">⚠️ Failed to load homepage content</div>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <button
+                onClick={fetchHomepageContent}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
         </PageTransition>
       </>
     )
@@ -48,11 +133,11 @@ export default function HomePageClient({ initialContent }: HomePageClientProps) 
         <NewNavbar />
 
         {/* Hero Section */}
-        {displayContent?.hero && <HeroSection hero={displayContent.hero} />}
+        {content?.hero && <HeroSection hero={content.hero} />}
 
       {/* Dynamic Projects Section */}
       <div id="solutions">
-        {displayContent?.projects && displayContent.projects.map((project, index) => (
+        {content?.projects && content.projects.map((project, index) => (
           <ProjectSection
             key={project.href}
             title={project.title}
@@ -70,8 +155,8 @@ export default function HomePageClient({ initialContent }: HomePageClientProps) 
       </div>
 
       {/* More Projects Section */}
-      {displayContent?.more_projects && (
-        <MoreProjectsSection projects={displayContent.more_projects} />
+      {content?.more_projects && (
+        <MoreProjectsSection projects={content.more_projects} />
       )}
 
       {/* About Section (Footer) */}
