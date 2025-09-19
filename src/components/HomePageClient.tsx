@@ -100,7 +100,6 @@ interface HeroProps {
 function HeroSection({ hero }: HeroProps) {
   const [scrollY, setScrollY] = useState(0)
   const videoRef = useRef<HTMLVideoElement>(null)
-  const playCountRef = useRef(0)
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY)
@@ -115,44 +114,33 @@ function HeroSection({ hero }: HeroProps) {
         video.playbackRate = 0.3
       }
 
-      const handleEnded = () => {
-        playCountRef.current += 1
-        if (playCountRef.current < 2) {
-          // 播放第2次
-          video.currentTime = 0
-          video.play()
-        }
-        // 播放2次后自动停止，定格在最后一帧
-      }
-
       video.addEventListener('loadeddata', handleLoadedData)
-      video.addEventListener('ended', handleEnded)
 
       return () => {
         video.removeEventListener('loadeddata', handleLoadedData)
-        video.removeEventListener('ended', handleEnded)
       }
     }
   }, [])
 
   return (
     <section className="min-h-screen flex items-center justify-center px-6 pt-16 relative overflow-hidden">
-      {/* Background Video */}
+      {/* Foreground Video */}
       <video
         ref={videoRef}
         autoPlay
         muted
+        loop
         playsInline
-        className="absolute inset-0 w-full h-full object-cover opacity-40 z-0"
+        className="absolute inset-0 w-full h-full object-cover opacity-70 z-30 pointer-events-none"
       >
         <source src={hero.background_video} type="video/mp4" />
       </video>
 
-      {/* Video Overlay for better text readability */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900/10 to-purple-900/20 z-10" />
+      {/* Enhanced backdrop for text readability */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black/30 to-purple-900/40 z-20" />
 
       <motion.div
-        className="max-w-4xl mx-auto text-center relative z-20"
+        className="max-w-4xl mx-auto text-center relative z-40"
         style={{ y: scrollY * 0.3 }}
       >
         <motion.div
@@ -160,17 +148,17 @@ function HeroSection({ hero }: HeroProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight drop-shadow-lg">
             {hero.gradient_text && hero.gradient_text !== hero.title ? (
               <>
-                {hero.title.split(hero.gradient_text)[0]}
-                <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                <span className="text-white drop-shadow-2xl">{hero.title.split(hero.gradient_text)[0]}</span>
+                <span className="bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent drop-shadow-2xl">
                   {hero.gradient_text}
                 </span>
-                {hero.title.split(hero.gradient_text)[1]}
+                <span className="text-white drop-shadow-2xl">{hero.title.split(hero.gradient_text)[1]}</span>
               </>
             ) : (
-              <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent drop-shadow-2xl">
                 {hero.title}
               </span>
             )}
@@ -180,7 +168,7 @@ function HeroSection({ hero }: HeroProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-            className="text-xl md:text-2xl text-gray-600 mb-12 leading-relaxed"
+            className="text-xl md:text-2xl text-white mb-12 leading-relaxed drop-shadow-lg"
           >
             {hero.subtitle}
           </motion.p>
@@ -192,16 +180,16 @@ function HeroSection({ hero }: HeroProps) {
             className="flex flex-wrap justify-center gap-4"
           >
             {hero.primary_button_href.startsWith('#') ? (
-              <ScrollToSection targetId={hero.primary_button_href.slice(1)} className="w-40 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all duration-300 hover:shadow-lg hover:scale-105">
+              <ScrollToSection targetId={hero.primary_button_href.slice(1)} className="w-40 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all duration-300 hover:shadow-xl hover:scale-105 shadow-lg backdrop-blur-sm">
                 {hero.primary_button_text}
               </ScrollToSection>
             ) : (
-              <Link href={hero.primary_button_href} className="w-40 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all duration-300 hover:shadow-lg hover:scale-105 text-center">
+              <Link href={hero.primary_button_href} className="w-40 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all duration-300 hover:shadow-xl hover:scale-105 text-center shadow-lg backdrop-blur-sm">
                 {hero.primary_button_text}
               </Link>
             )}
             {hero.secondary_button_text && (
-              <Link href={hero.secondary_button_href} className="w-40 px-6 py-3 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-purple-600 rounded-lg font-medium border border-purple-200 transition-all duration-300 hover:shadow-lg hover:scale-105 text-center">
+              <Link href={hero.secondary_button_href} className="w-40 px-6 py-3 bg-white/90 backdrop-blur-md hover:bg-white text-purple-700 rounded-lg font-medium border border-white/50 transition-all duration-300 hover:shadow-xl hover:scale-105 text-center shadow-lg">
                 {hero.secondary_button_text}
               </Link>
             )}
