@@ -1,45 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
-
-export const runtime = "nodejs"
 
 const notion = new Client({
   auth: process.env.NOTION_API_KEY,
 })
-
-// Simple memory cache
-interface CacheEntry {
-  data: any
-  timestamp: number
-  expiry: number
-}
-
-const cache = new Map<string, CacheEntry>()
-const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes in milliseconds
-
-function getCacheKey(databaseId: string): string {
-  return `homepage-content-${databaseId}`
-}
-
-function getCachedData(key: string): any | null {
-  const entry = cache.get(key)
-  if (!entry) return null
-
-  if (Date.now() > entry.expiry) {
-    cache.delete(key)
-    return null
-  }
-
-  return entry.data
-}
-
-function setCachedData(key: string, data: any): void {
-  cache.set(key, {
-    data,
-    timestamp: Date.now(),
-    expiry: Date.now() + CACHE_DURATION
-  })
-}
 
 interface HomepageContentItem {
   id: string
@@ -59,6 +22,9 @@ interface HomepageContentItem {
   gradient: string
   order: number
   status: string
+  tech?: string
+  project_images?: string[]
+  project_video?: string
 }
 
 interface FormattedContent {
@@ -79,46 +45,34 @@ interface FormattedContent {
     button_text: string
     href: string
     gradient: string
+    project_images?: string[]
+    project_video?: string
     reverse?: boolean
   }>
   more_projects: Array<{
     title: string
+    subtitle: string
     description: string
+    tech: string
     href: string
   }>
   status: string
 }
 
-export async function GET(request: NextRequest) {
+export async function getHomepageContentData(): Promise<FormattedContent | null> {
   try {
-    // Environment variables debugging
-    console.log('🔍 Homepage API Environment check:', {
-      NOTION_API_KEY: process.env.NOTION_API_KEY ? '✅ Present' : '❌ Missing',
-      NOTION_HOMEPAGE_CONTENT_DB_ID: process.env.NOTION_HOMEPAGE_CONTENT_DB_ID,
-      NODE_ENV: process.env.NODE_ENV,
-      RUNTIME: 'nodejs'
-    })
-
     const databaseId = process.env.NOTION_HOMEPAGE_CONTENT_DB_ID
 
     if (!databaseId) {
-      console.error('❌ Database ID missing')
-      return NextResponse.json({ error: 'Homepage content database ID not configured' }, { status: 500 })
+      console.error('❌ Homepage content database ID not configured')
+      return null
     }
 
-    // Check cache first
-    const cacheKey = getCacheKey(databaseId)
-    const cachedData = getCachedData(cacheKey)
-
-    if (cachedData) {
-      console.log('📦 Serving from cache')
-      return NextResponse.json(cachedData, {
-        headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
-          'X-Cache-Status': 'HIT'
-        }
-      })
-    }
+    console.log('🔍 Direct SDK call - Environment check:', {
+      NOTION_API_KEY: process.env.NOTION_API_KEY ? '✅ Present' : '❌ Missing',
+      NOTION_HOMEPAGE_CONTENT_DB_ID: databaseId,
+      NODE_ENV: process.env.NODE_ENV
+    })
 
     // Add timeout wrapper for Notion API call
     const fetchWithTimeout = async (timeout = 10000) => {
@@ -158,7 +112,6 @@ export async function GET(request: NextRequest) {
     // Parse Notion data
     const items: HomepageContentItem[] = response.results.map((page: any) => {
       const properties = page.properties
-
 
       // Parse benefits from multi-line text
       const benefitsText = properties.benefits?.rich_text?.[0]?.text?.content || ''
@@ -229,35 +182,22 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Cache the result
-    setCachedData(cacheKey, formattedContent)
-    console.log('💾 Data cached for future requests')
-
-    return NextResponse.json(formattedContent, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
-        'X-Cache-Status': 'MISS'
-      }
+    console.log('✅ Homepage data fetched successfully:', {
+      hero: !!formattedContent.hero,
+      projects: formattedContent.projects.length,
+      more_projects: formattedContent.more_projects.length
     })
 
+    return formattedContent
+
   } catch (error: any) {
-    console.error('🚨 Homepage API Detailed Error:', {
+    console.error('🚨 Homepage data fetch error:', {
       message: error.message,
       code: error.code,
       status: error.status,
       stack: error.stack,
-      name: error.name,
       full: JSON.stringify(error, null, 2)
     })
-
-    return NextResponse.json(
-      {
-        error: 'Failed to fetch homepage content',
-        details: error.message,
-        errorCode: error.code,
-        errorStatus: error.status
-      },
-      { status: 500 }
-    )
+    return null
   }
 }
