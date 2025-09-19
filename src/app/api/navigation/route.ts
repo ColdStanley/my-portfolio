@@ -5,6 +5,40 @@ const notion = new Client({
   auth: process.env.NOTION_API_KEY,
 })
 
+// Simple memory cache
+interface CacheEntry {
+  data: any
+  timestamp: number
+  expiry: number
+}
+
+const cache = new Map<string, CacheEntry>()
+const CACHE_DURATION = 10 * 60 * 1000 // 10 minutes for navigation (more stable)
+
+function getCacheKey(databaseId: string): string {
+  return `navigation-${databaseId}`
+}
+
+function getCachedData(key: string): any | null {
+  const entry = cache.get(key)
+  if (!entry) return null
+
+  if (Date.now() > entry.expiry) {
+    cache.delete(key)
+    return null
+  }
+
+  return entry.data
+}
+
+function setCachedData(key: string, data: any): void {
+  cache.set(key, {
+    data,
+    timestamp: Date.now(),
+    expiry: Date.now() + CACHE_DURATION
+  })
+}
+
 interface NavigationItem {
   id: string
   item_type: string
@@ -31,21 +65,54 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Navigation database ID not configured' }, { status: 500 })
     }
 
-    const response = await notion.databases.query({
-      database_id: databaseId,
-      filter: {
-        property: 'status',
-        select: {
-          equals: 'active'
+    // Check cache first
+    const cacheKey = getCacheKey(databaseId)
+    const cachedData = getCachedData(cacheKey)
+
+    if (cachedData) {
+      console.log('📦 Navigation served from cache')
+      return NextResponse.json(cachedData, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
+          'X-Cache-Status': 'HIT'
         }
-      },
-      sorts: [
-        {
-          property: 'order',
-          direction: 'ascending'
+      })
+    }
+
+    // Add timeout wrapper for Notion API call
+    const fetchWithTimeout = async (timeout = 10000) => {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+      try {
+        const response = await notion.databases.query({
+          database_id: databaseId,
+          filter: {
+            property: 'status',
+            select: {
+              equals: 'active'
+            }
+          },
+          sorts: [
+            {
+              property: 'order',
+              direction: 'ascending'
+            }
+          ]
+        })
+
+        clearTimeout(timeoutId)
+        return response
+      } catch (error) {
+        clearTimeout(timeoutId)
+        if (controller.signal.aborted) {
+          throw new Error('Notion API request timed out')
         }
-      ]
-    })
+        throw error
+      }
+    }
+
+    const response = await fetchWithTimeout()
 
     // Parse Notion data
     const items: NavigationItem[] = response.results.map((page: any) => {
@@ -94,11 +161,22 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({
+    const navigationData = {
       logo: logoItem ? { name: logoItem.label, href: logoItem.href } : null,
       navItems: structuredNavItems,
       ctaButton: ctaButton ? { name: ctaButton.label, href: ctaButton.href } : null,
       status: 'success'
+    }
+
+    // Cache the result
+    setCachedData(cacheKey, navigationData)
+    console.log('💾 Navigation data cached')
+
+    return NextResponse.json(navigationData, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
+        'X-Cache-Status': 'MISS'
+      }
     })
 
   } catch (error: any) {

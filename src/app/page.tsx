@@ -3,14 +3,60 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, useInView, useAnimation, useMotionValue, useSpring } from 'framer-motion'
 import Link from 'next/link'
+import Image from 'next/image'
 import NewNavbar from '@/components/NewNavbar'
 import FooterSection from '@/components/FooterSection'
 import PageTransition from '@/components/PageTransition'
 import GlobalLoader from '@/components/GlobalLoader'
 import { useHomepageContent } from '@/hooks/useHomepageContent'
+import { PageSkeleton } from '@/components/SkeletonLoaders'
 
-export default function HomePage() {
+// ISR Configuration
+export const revalidate = 300 // Revalidate every 5 minutes
+
+async function getHomepageContent() {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+    const response = await fetch(`${baseUrl}/api/homepage-content`, {
+      next: { revalidate: 300 }
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch homepage content')
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('Error fetching homepage content:', error)
+    return null
+  }
+}
+
+export default async function HomePage() {
+  // Get static content at build time
+  const staticContent = await getHomepageContent()
+
+  return <HomePageClient initialContent={staticContent} />
+}
+
+function HomePageClient({ initialContent }: { initialContent: any }) {
+  // Use hook for client-side updates if needed
   const { content, isLoading } = useHomepageContent()
+
+  // Use static content as fallback
+  const displayContent = content || initialContent
+
+  // Show skeleton if no content available
+  if (!displayContent && isLoading) {
+    return (
+      <>
+        <GlobalLoader />
+        <PageTransition>
+          <PageSkeleton />
+        </PageTransition>
+      </>
+    )
+  }
 
   return (
     <>
@@ -26,11 +72,11 @@ export default function HomePage() {
         <NewNavbar />
 
         {/* Hero Section */}
-        {!isLoading && content?.hero && <HeroSection hero={content.hero} />}
-      
+        {displayContent?.hero && <HeroSection hero={displayContent.hero} />}
+
       {/* Dynamic Projects Section */}
       <div id="solutions">
-        {!isLoading && content?.projects && content.projects.map((project, index) => (
+        {displayContent?.projects && displayContent.projects.map((project, index) => (
           <ProjectSection
             key={project.href}
             title={project.title}
@@ -46,12 +92,12 @@ export default function HomePage() {
           />
         ))}
       </div>
-      
+
       {/* More Projects Section */}
-      {!isLoading && content?.more_projects && (
-        <MoreProjectsSection projects={content.more_projects} />
+      {displayContent?.more_projects && (
+        <MoreProjectsSection projects={displayContent.more_projects} />
       )}
-      
+
       {/* About Section (Footer) */}
       <div id="about">
         <FooterSection />
@@ -367,11 +413,17 @@ function ProjectSection({ title, description, benefits, buttonText, href, gradie
                       }}
                     >
                       {project_images.map((imageUrl, idx) => (
-                        <div key={idx} className="w-full flex-shrink-0">
-                          <img
+                        <div key={idx} className="w-full flex-shrink-0 relative">
+                          <Image
                             src={imageUrl}
                             alt={`${title} - Image ${idx + 1}`}
+                            width={800}
+                            height={320}
                             className="w-full h-80 object-cover"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 800px"
+                            priority={idx === 0}
+                            placeholder="blur"
+                            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
                           />
                         </div>
                       ))}
