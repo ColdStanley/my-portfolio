@@ -5,40 +5,94 @@ import HomePageClient from '@/components/HomePageClient'
 export const revalidate = 300 // Revalidate every 5 minutes
 
 async function getHomepageContent() {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
-    console.log('🏠 Server-side fetch starting:', {
-      baseUrl,
-      fullUrl: `${baseUrl}/api/homepage-content`,
-      env: process.env.NODE_ENV
-    })
+  console.log('🔧 Using hardcoded data for testing')
 
-    const response = await fetch(`${baseUrl}/api/homepage-content`, {
-      next: { revalidate: 300 }
-    })
-
-    console.log('🏠 Server-side fetch response:', {
-      status: response.status,
-      ok: response.ok,
-      statusText: response.statusText
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch homepage content: ${response.status} ${response.statusText}`)
-    }
-
-    const data = await response.json()
-    console.log('🏠 Server-side data received:', {
-      hasData: !!data,
-      hasHero: !!data?.hero,
-      projectCount: data?.projects?.length || 0,
-      status: data?.status
-    })
-
-    return data
-  } catch (error) {
-    console.error('🚨 Server-side fetch error:', error)
-    return null
+  // 临时硬编码数据
+  return {
+    status: 'success',
+    hero: {
+      title: 'Transform Your Workflow with AI-Powered Tools',
+      subtitle: 'Discover innovative solutions designed to enhance productivity and streamline your daily tasks.',
+      background_video: '',
+      primary_button_text: 'Explore Solutions',
+      primary_button_href: '#solutions',
+      secondary_button_text: 'Learn More',
+      secondary_button_href: '/about',
+      gradient_text: 'AI-Powered'
+    },
+    projects: [
+      {
+        title: 'AI Agent Gala',
+        description: 'Comprehensive platform for AI agent development and testing.',
+        benefits: [
+          'Advanced agent configuration',
+          'Real-time testing environment',
+          'Performance analytics',
+          'Seamless deployment'
+        ],
+        button_text: 'Explore Platform',
+        href: '/ai-agent-gala',
+        gradient: 'from-blue-500 to-purple-600',
+        project_images: [],
+        project_video: '',
+        reverse: false
+      },
+      {
+        title: "C'est La Vie",
+        description: 'Smart life management tools for modern productivity.',
+        benefits: [
+          'Task automation',
+          'Schedule optimization',
+          'Goal tracking',
+          'Progress insights'
+        ],
+        button_text: 'Start Managing',
+        href: '/cestlavie',
+        gradient: 'from-green-500 to-teal-600',
+        project_images: [],
+        project_video: '',
+        reverse: true
+      },
+      {
+        title: 'ReadLingua',
+        description: 'Intelligent reading comprehension and language learning platform.',
+        benefits: [
+          'Adaptive difficulty',
+          'Progress tracking',
+          'Multilingual support',
+          'Interactive exercises'
+        ],
+        button_text: 'Learn More',
+        href: '/readlingua',
+        gradient: 'from-purple-500 to-pink-600',
+        project_images: [],
+        project_video: '',
+        reverse: false
+      }
+    ],
+    more_projects: [
+      {
+        title: 'JD2CV Full',
+        subtitle: 'Career Tools',
+        description: 'Convert job descriptions to tailored CVs instantly.',
+        tech: 'AI, NLP, Document Processing',
+        href: '/jd2cv-full'
+      },
+      {
+        title: 'IELTS Speaking',
+        subtitle: 'Learning Hub',
+        description: 'AI-powered IELTS speaking practice platform.',
+        tech: 'Speech Recognition, AI Feedback',
+        href: '/ielts-speaking'
+      },
+      {
+        title: 'AI Studio Card',
+        subtitle: 'Creative Tools',
+        description: 'Generate stunning cards with AI assistance.',
+        tech: 'Image Generation, Design AI',
+        href: '/ai-studio-card'
+      }
+    ]
   }
 }
 
