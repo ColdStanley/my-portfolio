@@ -7,8 +7,11 @@ import NewNavbar from '@/components/NewNavbar'
 import FooterSection from '@/components/FooterSection'
 import PageTransition from '@/components/PageTransition'
 import GlobalLoader from '@/components/GlobalLoader'
+import { useHomepageContent } from '@/hooks/useHomepageContent'
 
 export default function HomePage() {
+  const { content, isLoading } = useHomepageContent()
+
   return (
     <>
       <GlobalLoader />
@@ -18,66 +21,36 @@ export default function HomePage() {
         <GridBackground />
         <WorkflowNetwork />
         <LightSculpture />
-        
+
         {/* Custom Navigation for new homepage */}
         <NewNavbar />
-        
+
         {/* Hero Section */}
-        <HeroSection />
+        {!isLoading && content?.hero && <HeroSection hero={content.hero} />}
       
-      {/* Solutions Section */}
+      {/* Dynamic Projects Section */}
       <div id="solutions">
-        <ProjectSection
-          title="AI Agent Applications Platform"
-          description="Comprehensive AI agent ecosystem for various professional and educational applications. IELTS Speaking Practice is our flagship demonstration of AI-powered learning."
-          benefits={[
-            "Reduce manual effort with intelligent automation",
-            "Get instant expert-level feedback and guidance",
-            "Scale personalized learning and professional development",
-            "Access advanced AI capabilities without technical complexity"
-          ]}
-          buttonText="Explore AI Agents"
-          href="/ai-agent-gala"
-          gradient="from-purple-600 to-indigo-600"
-          index={0}
-        />
+        {!isLoading && content?.projects && content.projects.map((project, index) => (
+          <ProjectSection
+            key={project.href}
+            title={project.title}
+            description={project.description}
+            benefits={project.benefits}
+            buttonText={project.button_text}
+            href={project.href}
+            gradient={project.gradient}
+            project_images={project.project_images}
+            project_video={project.project_video}
+            index={index}
+            reverse={project.reverse}
+          />
+        ))}
       </div>
       
-      {/* JD2CV Section */}
-      <ProjectSection
-        title="Resume Automation Engine"
-        description="Intelligent resume generation that automatically analyzes job requirements and creates perfectly tailored professional documents."
-        benefits={[
-          "Eliminate hours of manual resume customization",
-          "Guarantee perfect job-requirement alignment", 
-          "Generate multiple variations instantly",
-          "Maintain professional formatting consistency"
-        ]}
-        buttonText="Automate Resume"
-        href="/jd2cv-full"
-        gradient="from-indigo-600 to-purple-600"
-        index={1}
-        reverse
-      />
-      
-      {/* Readlingua Section */}
-      <ProjectSection
-        title="42-Language Learning Platform"
-        description="Advanced language learning system supporting 42 languages with AI tutoring, pronunciation tools, and adaptive learning paths."
-        benefits={[
-          "Master any of 42 languages efficiently",
-          "Get personalized AI explanations in your native language",
-          "Practice pronunciation with real-time feedback", 
-          "Track learning progress with detailed analytics"
-        ]}
-        buttonText="Start Learning"
-        href="/readlingua"
-        gradient="from-purple-600 to-violet-600"
-        index={2}
-      />
-      
       {/* More Projects Section */}
-      <MoreProjectsSection />
+      {!isLoading && content?.more_projects && (
+        <MoreProjectsSection projects={content.more_projects} />
+      )}
       
       {/* About Section (Footer) */}
       <div id="about">
@@ -89,7 +62,20 @@ export default function HomePage() {
   )
 }
 
-function HeroSection() {
+interface HeroProps {
+  hero: {
+    title: string
+    subtitle: string
+    background_video: string
+    primary_button_text: string
+    primary_button_href: string
+    secondary_button_text: string
+    secondary_button_href: string
+    gradient_text: string
+  }
+}
+
+function HeroSection({ hero }: HeroProps) {
   const [scrollY, setScrollY] = useState(0)
   const videoRef = useRef<HTMLVideoElement>(null)
   const playCountRef = useRef(0)
@@ -137,7 +123,7 @@ function HeroSection() {
         playsInline
         className="absolute inset-0 w-full h-full object-cover opacity-40 z-0"
       >
-        <source src="/AI in Purple Background.mp4" type="video/mp4" />
+        <source src={hero.background_video} type="video/mp4" />
       </video>
 
       {/* Video Overlay for better text readability */}
@@ -152,20 +138,29 @@ function HeroSection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-            Smart Solutions for{' '}
-            <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-              Every Part of Life
-            </span>
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
+            {hero.gradient_text && hero.gradient_text !== hero.title ? (
+              <>
+                {hero.title.split(hero.gradient_text)[0]}
+                <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                  {hero.gradient_text}
+                </span>
+                {hero.title.split(hero.gradient_text)[1]}
+              </>
+            ) : (
+              <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                {hero.title}
+              </span>
+            )}
           </h1>
-          
+
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
             className="text-xl md:text-2xl text-gray-600 mb-12 leading-relaxed"
           >
-            Life Management, Career Growth, and Learning - Powered by AI, All in One Place
+            {hero.subtitle}
           </motion.p>
           
           <motion.div
@@ -174,12 +169,20 @@ function HeroSection() {
             transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
             className="flex flex-wrap justify-center gap-4"
           >
-            <ScrollToSection targetId="solutions" className="w-40 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all duration-300 hover:shadow-lg hover:scale-105">
-              Explore Solutions
-            </ScrollToSection>
-            <Link href="/original" className="w-40 px-6 py-3 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-purple-600 rounded-lg font-medium border border-purple-200 transition-all duration-300 hover:shadow-lg hover:scale-105 text-center">
-              View Portfolio
-            </Link>
+            {hero.primary_button_href.startsWith('#') ? (
+              <ScrollToSection targetId={hero.primary_button_href.slice(1)} className="w-40 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all duration-300 hover:shadow-lg hover:scale-105">
+                {hero.primary_button_text}
+              </ScrollToSection>
+            ) : (
+              <Link href={hero.primary_button_href} className="w-40 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all duration-300 hover:shadow-lg hover:scale-105 text-center">
+                {hero.primary_button_text}
+              </Link>
+            )}
+            {hero.secondary_button_text && (
+              <Link href={hero.secondary_button_href} className="w-40 px-6 py-3 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-purple-600 rounded-lg font-medium border border-purple-200 transition-all duration-300 hover:shadow-lg hover:scale-105 text-center">
+                {hero.secondary_button_text}
+              </Link>
+            )}
           </motion.div>
         </motion.div>
       </motion.div>
@@ -196,9 +199,11 @@ interface ProjectSectionProps {
   gradient: string
   index: number
   reverse?: boolean
+  project_images?: string[]
+  project_video?: string
 }
 
-function ProjectSection({ title, description, benefits, buttonText, href, gradient, index, reverse = false }: ProjectSectionProps) {
+function ProjectSection({ title, description, benefits, buttonText, href, gradient, index, reverse = false, project_images = [], project_video }: ProjectSectionProps) {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: "-100px" })
   const controls = useAnimation()
@@ -206,6 +211,9 @@ function ProjectSection({ title, description, benefits, buttonText, href, gradie
   // 3D Tilt Effect
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [isHovering, setIsHovering] = useState(false)
+
+  // Image Carousel State
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
   const handleMouseMove = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect()
@@ -219,6 +227,19 @@ function ProjectSection({ title, description, benefits, buttonText, href, gradie
       controls.start("visible")
     }
   }, [isInView, controls])
+
+  // Auto-rotate images if multiple images exist
+  useEffect(() => {
+    if (project_images && project_images.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentImageIndex((prevIndex) =>
+          (prevIndex + 1) % project_images.length
+        )
+      }, 3000) // Change image every 3 seconds
+
+      return () => clearInterval(interval)
+    }
+  }, [project_images])
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -326,17 +347,63 @@ function ProjectSection({ title, description, benefits, buttonText, href, gradie
                 }}
               >
 
-                <div className={`w-full h-64 bg-gradient-to-br ${gradient} rounded-xl mb-6 flex items-center justify-center relative z-10`}>
-                  <div className="text-white text-6xl font-bold opacity-20">
-                    {index + 1}
+                {project_video ? (
+                  // Display video taking full space
+                  <video
+                    src={project_video}
+                    autoPlay
+                    muted
+                    loop
+                    className="w-full h-80 object-cover rounded-xl"
+                  />
+                ) : project_images && project_images.length > 0 ? (
+                  // Display image(s) with sliding animation
+                  <div className="relative overflow-hidden rounded-xl">
+                    <div
+                      className="flex transition-transform duration-700 ease-in-out"
+                      style={{
+                        transform: `translateX(-${currentImageIndex * 100}%)`,
+                        width: `${project_images.length * 100}%`
+                      }}
+                    >
+                      {project_images.map((imageUrl, idx) => (
+                        <div key={idx} className="w-full flex-shrink-0">
+                          <img
+                            src={imageUrl}
+                            alt={`${title} - Image ${idx + 1}`}
+                            className="w-full h-80 object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    {project_images.length > 1 && (
+                      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                        {project_images.map((_, idx) => (
+                          <div
+                            key={idx}
+                            className={`w-3 h-3 rounded-full transition-colors duration-300 ${
+                              idx === currentImageIndex ? 'bg-white' : 'bg-white/50'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
-                
-                <div className="space-y-3 relative z-10">
-                  <div className="h-4 bg-gray-200 rounded-full"></div>
-                  <div className="h-4 bg-gray-200 rounded-full w-3/4"></div>
-                  <div className="h-4 bg-gray-200 rounded-full w-1/2"></div>
-                </div>
+                ) : (
+                  // Fallback with gradient background and number
+                  <>
+                    <div className={`w-full h-64 bg-gradient-to-br ${gradient} rounded-xl mb-6 flex items-center justify-center relative z-10`}>
+                      <div className="text-white text-6xl font-bold opacity-20">
+                        {index + 1}
+                      </div>
+                    </div>
+                    <div className="space-y-3 relative z-10">
+                      <div className="h-4 bg-gray-200 rounded-full"></div>
+                      <div className="h-4 bg-gray-200 rounded-full w-3/4"></div>
+                      <div className="h-4 bg-gray-200 rounded-full w-1/2"></div>
+                    </div>
+                  </>
+                )}
               </motion.div>
               
               {/* Floating elements for depth */}
@@ -374,11 +441,21 @@ function ProjectSection({ title, description, benefits, buttonText, href, gradie
   )
 }
 
-function MoreProjectsSection() {
+interface MoreProjectsSectionProps {
+  projects: Array<{
+    title: string
+    subtitle: string
+    description: string
+    tech: string
+    href: string
+  }>
+}
+
+function MoreProjectsSection({ projects }: MoreProjectsSectionProps) {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: "-100px" })
   const controls = useAnimation()
-  
+
   // Mouse tracking for 3D effect
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
 
@@ -387,30 +464,6 @@ function MoreProjectsSection() {
       controls.start("visible")
     }
   }, [isInView, controls])
-
-  const projects = [
-    {
-      title: "C'est La Vie",
-      subtitle: "Life Management System",
-      description: "Complete life organization with Strategy, Plan, and Task management integrated with Notion for seamless productivity.",
-      tech: "Notion API • Task Automation • Strategy Planning",
-      href: "/cestlavie"
-    },
-    {
-      title: "Feelink",
-      subtitle: "Social Emotion Platform",
-      description: "Express emotions through AI-generated photos. Connect socially with meaningful visual communication that speaks louder than words.",
-      tech: "Photo AI • Emotion Recognition • Social Features",
-      href: "/feelink"
-    },
-    {
-      title: "New IELTS Speaking",
-      subtitle: "Advanced Speaking Training",
-      description: "Professional IELTS speaking preparation with AI-powered feedback, personalized learning paths, and comprehensive practice modules.",
-      tech: "Voice AI • Learning Analytics • Personalized Training",
-      href: "/new-ielts-speaking"
-    }
-  ]
 
   const containerVariants = {
     hidden: { opacity: 0 },

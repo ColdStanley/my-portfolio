@@ -7,11 +7,25 @@ import { usePathname } from 'next/navigation'
 import { useSimplifiedAuth } from '@/hooks/useSimplifiedAuth'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
+interface NavigationData {
+  logo: { name: string; href: string } | null
+  navItems: {
+    name: string
+    type: 'dropdown' | 'link'
+    href?: string
+    items?: { name: string; href: string }[]
+  }[]
+  ctaButton: { name: string; href: string } | null
+  status: string
+}
+
 export default function NewNavbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const [showUserDropdown, setShowUserDropdown] = useState(false)
+  const [navigationData, setNavigationData] = useState<NavigationData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const pathname = usePathname()
   const { user, profile, isAdmin } = useSimplifiedAuth()
   const supabase = createClientComponentClient()
@@ -22,6 +36,69 @@ export default function NewNavbar() {
     }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  // Fetch navigation data from API
+  useEffect(() => {
+    const fetchNavigationData = async () => {
+      try {
+        const response = await fetch('/api/navigation')
+        const data = await response.json()
+        setNavigationData(data)
+      } catch (error) {
+        console.error('Failed to fetch navigation data:', error)
+        // Fallback to default navigation if API fails
+        setNavigationData({
+          logo: { name: 'Stanly Hi', href: '/' },
+          navItems: [
+            {
+              name: 'Life Assistant',
+              type: 'dropdown',
+              items: [
+                { name: "C'est La Vie", href: '/cestlavie' }
+              ]
+            },
+            {
+              name: 'Career Tools',
+              type: 'dropdown',
+              items: [
+                { name: 'JD2CV 1.0', href: '/jd2cv-full' }
+              ]
+            },
+            {
+              name: 'Learning Hub',
+              type: 'dropdown',
+              items: [
+                { name: 'Readlingua', href: '/readlingua' },
+                { name: 'IELTS Speaking', href: '/ai-agent-gala' }
+              ]
+            },
+            {
+              name: 'AI Lab',
+              type: 'dropdown',
+              items: [
+                { name: 'AI Agent Gala', href: '/ai-agent-gala' }
+              ]
+            },
+            { name: 'Portfolio', href: '/original', type: 'link' },
+            {
+              name: 'About',
+              type: 'dropdown',
+              items: [
+                { name: 'Contact Me', href: '/aboutcontact' },
+                { name: 'Partnership', href: '/aboutcontact#partnership' }
+              ]
+            }
+          ],
+          ctaButton: { name: 'Explore Projects', href: '#' },
+          status: 'success'
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchNavigationData()
   }, [])
 
   // Close dropdowns when clicking outside
@@ -38,46 +115,10 @@ export default function NewNavbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const navItems = [
-    {
-      name: 'Life Assistant',
-      type: 'dropdown',
-      items: [
-        { name: "C'est La Vie", href: '/cestlavie' }
-      ]
-    },
-    {
-      name: 'Career Tools',
-      type: 'dropdown',
-      items: [
-        { name: 'JD2CV 1.0', href: '/jd2cv-full' }
-      ]
-    },
-    {
-      name: 'Learning Hub',
-      type: 'dropdown',
-      items: [
-        { name: 'Readlingua', href: '/readlingua' },
-        { name: 'IELTS Speaking', href: '/ai-agent-gala' }
-      ]
-    },
-    {
-      name: 'AI Lab',
-      type: 'dropdown',
-      items: [
-        { name: 'AI Agent Gala', href: '/ai-agent-gala' }
-      ]
-    },
-    { name: 'Portfolio', href: '/original', type: 'link' },
-    {
-      name: 'About',
-      type: 'dropdown',
-      items: [
-        { name: 'Contact Me', href: '/aboutcontact' },
-        { name: 'Partnership', href: '/aboutcontact#partnership' }
-      ]
-    }
-  ]
+  // Get navigation items from API data or fallback
+  const navItems = navigationData?.navItems || []
+  const logoData = navigationData?.logo || { name: 'Stanly Hi', href: '/' }
+  const ctaButtonData = navigationData?.ctaButton || { name: 'Explore Projects', href: '#' }
 
   const scrollToSection = (href: string) => {
     if (href.startsWith('#')) {
@@ -89,22 +130,28 @@ export default function NewNavbar() {
     setMobileMenuOpen(false)
   }
 
-  const exploreProjects = () => {
-    if (pathname === '/') {
-      // If on homepage, scroll to projects section
-      const element = document.getElementById('solutions')
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' })
+  const handleCtaClick = () => {
+    if (ctaButtonData.href === '#' || ctaButtonData.href.startsWith('#')) {
+      // Handle anchor links and default explore projects behavior
+      if (pathname === '/') {
+        // If on homepage, scroll to projects section
+        const element = document.getElementById('solutions')
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' })
+        }
+      } else {
+        // If on other pages, go to homepage first then scroll
+        window.location.href = '/#solutions'
       }
     } else {
-      // If on other pages, go to homepage first then scroll
-      window.location.href = '/#solutions'
+      // Navigate to specified URL
+      window.location.href = ctaButtonData.href
     }
   }
 
   const isActiveDropdown = (item: any) => {
     if (item.type !== 'dropdown') return false
-    return item.items.some((subItem: any) => pathname === subItem.href)
+    return item.items?.some((subItem: any) => pathname === subItem.href) || false
   }
 
   const handleLogout = async () => {
@@ -148,20 +195,20 @@ export default function NewNavbar() {
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center">
+          <Link href={logoData.href} className="flex items-center">
             <motion.span
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="text-xl font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent"
             >
-              Stanly Hi
+              {logoData.name}
             </motion.span>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            {navItems.map((item) => (
-              <div key={item.name} className="relative dropdown-container">
+            {!isLoading && navItems.map((item, index) => (
+              <div key={item.name || `nav-item-${index}`} className="relative dropdown-container">
                 {item.type === 'dropdown' ? (
                   <div
                     onMouseEnter={() => setOpenDropdown(item.name)}
@@ -198,8 +245,8 @@ export default function NewNavbar() {
                           transition={{ duration: 0.2 }}
                           className="absolute top-full left-0 mt-2 w-48 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50"
                         >
-                          {item.items.map((subItem) => (
-                            <Link key={subItem.name} href={subItem.href} prefetch={true}>
+                          {item.items?.map((subItem, subIndex) => (
+                            <Link key={subItem.name || `sub-item-${index}-${subIndex}`} href={subItem.href} prefetch={true}>
                               <motion.div
                                 whileHover={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}
                                 className="px-4 py-3 text-gray-700 hover:text-purple-600 transition-colors duration-200 border-b border-gray-100 last:border-b-0"
@@ -234,12 +281,12 @@ export default function NewNavbar() {
           {/* CTA & User Authentication */}
           <div className="hidden md:flex items-center gap-4">
             <motion.button
-              onClick={exploreProjects}
+              onClick={handleCtaClick}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl whitespace-nowrap"
             >
-              Explore Projects
+              {ctaButtonData.name}
             </motion.button>
             
             {user ? (
@@ -354,8 +401,8 @@ export default function NewNavbar() {
               className="md:hidden bg-white/95 backdrop-blur-md rounded-xl mx-4 mb-4 shadow-xl border border-gray-100 overflow-hidden"
             >
               <div className="px-6 py-4 space-y-4">
-                {navItems.map((item) => (
-                  <div key={item.name}>
+                {!isLoading && navItems.map((item, index) => (
+                  <div key={item.name || `mobile-nav-item-${index}`}>
                     {item.type === 'dropdown' ? (
                       <div>
                         <div className={`font-medium py-2 ${
@@ -366,8 +413,8 @@ export default function NewNavbar() {
                           {item.name}
                         </div>
                         <div className="ml-4 space-y-2">
-                          {item.items.map((subItem) => (
-                            <Link key={subItem.name} href={subItem.href} prefetch={true} onClick={() => setMobileMenuOpen(false)}>
+                          {item.items?.map((subItem, subIndex) => (
+                            <Link key={subItem.name || `mobile-sub-item-${index}-${subIndex}`} href={subItem.href} prefetch={true} onClick={() => setMobileMenuOpen(false)}>
                               <div className="py-2 text-gray-600 hover:text-purple-600 transition-colors duration-200">
                                 {subItem.name}
                               </div>
@@ -442,12 +489,12 @@ export default function NewNavbar() {
                   <motion.button
                     onClick={() => {
                       setMobileMenuOpen(false)
-                      exploreProjects()
+                      handleCtaClick()
                     }}
                     whileTap={{ scale: 0.95 }}
                     className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-medium transition-all duration-300 shadow-lg"
                   >
-                    Explore Projects
+                    {ctaButtonData.name}
                   </motion.button>
                 </div>
               </div>
