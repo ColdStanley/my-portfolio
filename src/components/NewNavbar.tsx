@@ -40,64 +40,57 @@ export default function NewNavbar() {
 
   // Fetch navigation data from API
   useEffect(() => {
-    const fetchNavigationData = async () => {
-      try {
-        const response = await fetch('/api/navigation')
-        const data = await response.json()
-        setNavigationData(data)
-      } catch (error) {
-        console.error('Failed to fetch navigation data:', error)
-        // Fallback to default navigation if API fails
-        setNavigationData({
-          logo: { name: 'Stanly Hi', href: '/' },
-          navItems: [
-            {
-              name: 'Life Assistant',
-              type: 'dropdown',
-              items: [
-                { name: "C'est La Vie", href: '/cestlavie' }
-              ]
-            },
-            {
-              name: 'Career Tools',
-              type: 'dropdown',
-              items: [
-                { name: 'JD2CV 1.0', href: '/jd2cv-full' }
-              ]
-            },
-            {
-              name: 'Learning Hub',
-              type: 'dropdown',
-              items: [
-                { name: 'Readlingua', href: '/readlingua' },
-                { name: 'IELTS Speaking', href: '/ai-agent-gala' }
-              ]
-            },
-            {
-              name: 'AI Lab',
-              type: 'dropdown',
-              items: [
-                { name: 'AI Agent Gala', href: '/ai-agent-gala' }
-              ]
-            },
-            {
-              name: 'About',
-              type: 'dropdown',
-              items: [
-                { name: 'Contact Me', href: '/aboutcontact' },
-                { name: 'Partnership', href: '/aboutcontact#partnership' }
-              ]
-            }
-          ],
-          ctaButton: { name: 'Explore Projects', href: '#' },
-          status: 'success'
-        })
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchNavigationData()
+    // Use hardcoded navigation data instead of API
+    setNavigationData({
+      logo: { name: 'Stanly Hi', href: '/' },
+      navItems: [
+        {
+          name: 'Life Assistant',
+          type: 'dropdown',
+          items: [
+            { name: "C'est La Vie", href: '/cestlavie' }
+          ]
+        },
+        {
+          name: 'Career Tools',
+          type: 'dropdown',
+          items: [
+            { name: 'JD2CV 1.0', href: '/jd2cv-full' }
+          ]
+        },
+        {
+          name: 'Learning Hub',
+          type: 'dropdown',
+          items: [
+            { name: 'Readlingua', href: '/readlingua' },
+            { name: 'IELTS Speaking', href: '/ai-agent-gala' }
+          ]
+        },
+        {
+          name: 'AI Lab',
+          type: 'dropdown',
+          items: [
+            { name: 'AI Agent Gala', href: '/ai-agent-gala' }
+          ]
+        },
+        {
+          name: 'Portfolio',
+          type: 'link',
+          href: '/original'
+        },
+        {
+          name: 'About',
+          type: 'dropdown',
+          items: [
+            { name: 'Contact Me', href: '/aboutcontact' },
+            { name: 'Partnership', href: '/aboutcontact#partnership' }
+          ]
+        }
+      ],
+      ctaButton: { name: 'Explore Projects', href: '/#solutions' },
+      status: 'success'
+    })
+    setIsLoading(false)
   }, [])
 
   // Close dropdowns when clicking outside

@@ -8,7 +8,6 @@ import NewNavbar from '@/components/NewNavbar'
 import FooterSection from '@/components/FooterSection'
 import PageTransition from '@/components/PageTransition'
 import GlobalLoader from '@/components/GlobalLoader'
-import { useHomepageContent } from '@/hooks/useHomepageContent'
 import { PageSkeleton } from '@/components/SkeletonLoaders'
 
 interface HomePageClientProps {
@@ -16,14 +15,11 @@ interface HomePageClientProps {
 }
 
 export default function HomePageClient({ initialContent }: HomePageClientProps) {
-  // Use hook for client-side updates if needed
-  const { content, isLoading } = useHomepageContent()
-
-  // Use static content as fallback
-  const displayContent = content || initialContent
+  // Use only static content from server-side
+  const displayContent = initialContent
 
   // Show skeleton if no content available
-  if (!displayContent && isLoading) {
+  if (!displayContent) {
     return (
       <>
         <GlobalLoader />
