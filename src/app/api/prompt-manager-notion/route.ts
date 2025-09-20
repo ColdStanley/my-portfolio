@@ -12,13 +12,18 @@ export async function GET(request: Request) {
   const project = searchParams.get('project')
   const agent = searchParams.get('agent')
 
+  console.log(`[PromptManagerAPI] 🔄 Request received: ${project}:${agent}`)
+
   if (!project || !agent) {
+    console.error(`[PromptManagerAPI] ❌ Missing parameters: project=${project}, agent=${agent}`)
     return NextResponse.json({
       error: 'Missing required parameters: project and agent'
     }, { status: 400 })
   }
 
   try {
+    console.log(`[PromptManagerAPI] 🔍 Querying Notion database: ${databaseId}`)
+
     const res = await notion.databases.query({
       database_id: databaseId,
       filter: {
@@ -51,7 +56,10 @@ export async function GET(request: Request) {
       ],
     })
 
+    console.log(`[PromptManagerAPI] 📊 Query results: ${res.results.length} records found`)
+
     if (res.results.length === 0) {
+      console.error(`[PromptManagerAPI] ❌ No active prompt found for ${project}:${agent}`)
       return NextResponse.json({
         error: `No active prompt found for project: ${project}, agent: ${agent}`
       }, { status: 404 })
@@ -65,6 +73,7 @@ export async function GET(request: Request) {
       : ''
 
     if (!promptContent) {
+      console.error(`[PromptManagerAPI] ❌ Empty prompt content for ${project}:${agent}`)
       return NextResponse.json({
         error: `Empty prompt content for project: ${project}, agent: ${agent}`
       }, { status: 404 })
@@ -78,6 +87,8 @@ export async function GET(request: Request) {
       ? props.Description.rich_text?.[0]?.plain_text || ''
       : ''
 
+    console.log(`[PromptManagerAPI] ✅ Success: prompt retrieved (version: ${version}, length: ${promptContent.length})`)
+
     return NextResponse.json({
       promptContent,
       version,
@@ -87,7 +98,7 @@ export async function GET(request: Request) {
     })
 
   } catch (err) {
-    console.error('❌ Failed to fetch prompt from Notion:', err)
+    console.error('[PromptManagerAPI] ❌ Failed to fetch prompt from Notion:', err)
     return NextResponse.json({
       error: 'Failed to fetch prompt from Notion database'
     }, { status: 500 })

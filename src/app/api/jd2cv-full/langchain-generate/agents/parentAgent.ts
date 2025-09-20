@@ -3,13 +3,17 @@ import { invokeDeepSeek } from '../utils/deepseekLLM'
 
 // Helper function to fetch prompt from Notion
 async function fetchPromptFromNotion(project: string, agent: string): Promise<string> {
+  console.log(`[ParentAgent] 🔄 Fetching prompt from Notion: ${project}:${agent}`)
+
   const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/prompt-manager-notion?project=${project}&agent=${agent}`)
 
   if (!response.ok) {
+    console.error(`[ParentAgent] ❌ Failed to fetch prompt: ${response.status}`)
     throw new Error(`Failed to fetch prompt for ${project}:${agent} - ${response.status}`)
   }
 
   const data = await response.json()
+  console.log(`[ParentAgent] ✅ Successfully fetched prompt (version: ${data.version})`)
   return data.promptContent
 }
 
@@ -41,18 +45,30 @@ class ParentAgent extends BaseAgent {
   }
 
   async initialize() {
+    console.log(`[ParentAgent] 🚀 Initializing Parent Agent`)
     this.systemPrompt = await fetchPromptFromNotion('JD2CV_Full', 'Parent')
+
     // Replace the VALID_ROLES placeholder if it exists in the prompt
+    const originalLength = this.systemPrompt.length
     this.systemPrompt = this.systemPrompt.replace('${VALID_ROLES}', VALID_ROLES.join(', '))
+
+    if (this.systemPrompt.length !== originalLength) {
+      console.log(`[ParentAgent] 🔄 Replaced VALID_ROLES placeholder with ${VALID_ROLES.length} roles`)
+    }
+    console.log(`[ParentAgent] ✅ Initialization complete, prompt length: ${this.systemPrompt.length}`)
   }
 
   async process(jd: { title: string; full_job_description: string }): Promise<ParentAgentOutput> {
+    console.log(`[ParentAgent] 🔄 Processing JD: ${jd.title}`)
+
     // Ensure prompt is loaded
     if (!this.systemPrompt) {
+      console.log(`[ParentAgent] ⚠️ Prompt not loaded, initializing...`)
       await this.initialize()
     }
 
     const input = `Job Title: ${jd.title}\nJob Description:\n${jd.full_job_description}\n`
+    console.log(`[ParentAgent] 📤 Sending to DeepSeek, input length: ${input.length}`)
 
     try {
       const result = await invokeDeepSeek(
@@ -60,8 +76,13 @@ class ParentAgent extends BaseAgent {
         0.15,
         2200
       )
+      console.log(`[ParentAgent] 📥 DeepSeek response received, tokens: ${JSON.stringify(result.tokens)}`)
+
       const parsed = this.parseResponse(result.content)
+      console.log(`[ParentAgent] 🔄 Parsed response: ${parsed.classification}, ${parsed.focus_points?.length || 0} focus points, ${parsed.keywords?.length || 0} keywords`)
+
       const classification = this.sanitiseClassification(parsed.classification, jd)
+      console.log(`[ParentAgent] ✅ Final classification: ${classification}`)
 
       return {
         classification,
@@ -71,7 +92,7 @@ class ParentAgent extends BaseAgent {
         tokens: result.tokens
       }
     } catch (error) {
-      console.error('Parent Agent LangChain execution error:', error)
+      console.error('[ParentAgent] ❌ LangChain execution error:', error)
       return this.fallbackOutput(jd)
     }
   }
@@ -188,7 +209,10 @@ type ParentAgentOutput = {
 
 // Export function interface for compatibility
 export async function parentAgent(jd: { title: string; full_job_description: string }): Promise<ParentAgentOutput> {
+  console.log(`[ParentAgent] 🎯 Starting Parent Agent workflow for: ${jd.title}`)
   const agent = new ParentAgent()
   await agent.initialize()
-  return await agent.process(jd)
+  const result = await agent.process(jd)
+  console.log(`[ParentAgent] 🏁 Parent Agent workflow completed successfully`)
+  return result
 }

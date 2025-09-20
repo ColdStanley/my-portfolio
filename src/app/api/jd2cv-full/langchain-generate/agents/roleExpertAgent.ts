@@ -2,13 +2,17 @@ import { invokeDeepSeek } from '../utils/deepseekLLM'
 
 // Helper function to fetch prompt from Notion
 async function fetchPromptFromNotion(project: string, agent: string): Promise<string> {
+  console.log(`[RoleExpertAgent] 🔄 Fetching prompt from Notion: ${project}:${agent}`)
+
   const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/prompt-manager-notion?project=${project}&agent=${agent}`)
 
   if (!response.ok) {
+    console.error(`[RoleExpertAgent] ❌ Failed to fetch prompt: ${response.status}`)
     throw new Error(`Failed to fetch prompt for ${project}:${agent} - ${response.status}`)
   }
 
   const data = await response.json()
+  console.log(`[RoleExpertAgent] ✅ Successfully fetched prompt (version: ${data.version})`)
   return data.promptContent
 }
 
@@ -25,10 +29,14 @@ export async function roleExpertAgent(
   parentInsights: ParentInsights
 ): Promise<{ content: string; tokens: { prompt: number; completion: number; total: number } }> {
 
+  console.log(`[RoleExpertAgent] 🎯 Starting Role Expert Agent for: ${jdTitle}`)
+  console.log(`[RoleExpertAgent] 📋 Classification: ${parentInsights.classification}`)
+
   const { classification, focusPoints, keywords, keySentences } = parentInsights
 
   // Get the work experience template based on role classification
   const workExperienceTemplate = getWorkExperienceByRole(classification)
+  console.log(`[RoleExpertAgent] 📄 Work experience template loaded (${classification}), length: ${workExperienceTemplate.length}`)
 
   const focusSection = focusPoints.length
     ? focusPoints.map(point => `- ${point}`).join('\n')
@@ -42,11 +50,14 @@ export async function roleExpertAgent(
     ? keySentences.map(s => `- "${s}"`).join('\n')
     : '- Use professional judgement to highlight accomplishments that match the role.'
 
+  console.log(`[RoleExpertAgent] 🔢 Variables prepared: ${focusPoints.length} focus points, ${keywords.length} keywords, ${keySentences.length} key sentences`)
+
   try {
     // Fetch prompt template from Notion
     const promptTemplate = await fetchPromptFromNotion('JD2CV_Full', 'RoleExpert')
 
     // Replace variables in the prompt template
+    console.log(`[RoleExpertAgent] 🔄 Replacing variables in prompt template`)
     const customizationPrompt = promptTemplate
       .replace(/\$\{classification\}/g, classification)
       .replace(/\$\{jdTitle\}/g, jdTitle)
@@ -55,11 +66,16 @@ export async function roleExpertAgent(
       .replace(/\$\{sentenceSection\}/g, sentenceSection)
       .replace(/\$\{workExperienceTemplate\}/g, workExperienceTemplate)
 
+    console.log(`[RoleExpertAgent] 📤 Sending to DeepSeek, final prompt length: ${customizationPrompt.length}`)
+
     const result = await invokeDeepSeek(customizationPrompt, 0.25, 5000)
+    console.log(`[RoleExpertAgent] 📥 DeepSeek response received, tokens: ${JSON.stringify(result.tokens)}`)
+    console.log(`[RoleExpertAgent] ✅ Role Expert Agent completed successfully`)
+
     return { content: result.content.trim(), tokens: result.tokens }
 
   } catch (error) {
-    console.error('Role Expert Agent error:', error)
+    console.error('[RoleExpertAgent] ❌ Role Expert Agent error:', error)
     // In test phase, throw error instead of fallback
     throw error
   }
