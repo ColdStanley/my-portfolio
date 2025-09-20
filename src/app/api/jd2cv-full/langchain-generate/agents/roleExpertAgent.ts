@@ -1,5 +1,17 @@
 import { invokeDeepSeek } from '../utils/deepseekLLM'
 
+// Helper function to fetch prompt from Notion
+async function fetchPromptFromNotion(project: string, agent: string): Promise<string> {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/prompt-manager-notion?project=${project}&agent=${agent}`)
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch prompt for ${project}:${agent} - ${response.status}`)
+  }
+
+  const data = await response.json()
+  return data.promptContent
+}
+
 export interface ParentInsights {
   classification: string
   focusPoints: string[]
@@ -30,46 +42,26 @@ export async function roleExpertAgent(
     ? keySentences.map(s => `- "${s}"`).join('\n')
     : '- Use professional judgement to highlight accomplishments that match the role.'
 
-  const customizationPrompt = `
-You are a senior resume experience writer for ${classification} roles.
-Rewrite the work experience template so it emphasises the following signals gathered from the job description.
-
-Role Title: ${jdTitle}
-
-Primary focus points:
-${focusSection}
-
-Priority keywords and themes:
-${keywordSection}
-
-Signature expectations from the JD:
-${sentenceSection}
-
-Existing work experience template:
-${workExperienceTemplate}
-
-Strict Instructions:
-1. Preserve authenticity: do not invent or exaggerate facts, numbers, clients, or industries beyond the template.
-2. Keep structure stable: retain Company | Title | Time lines and the same number of bullet points per experience.
-3. Use the focus points and keywords ONLY to steer tone and emphasis. If a bullet naturally connects to a keyword, highlight it; otherwise, keep improvements minimal.
-4. Language style: concise, professional, measurable impact. Prioritise what was achieved, how it was done, and the outcome.
-5. Maintain measurable or factual elements already in the template. You may add metrics ONLY if implied or obvious from the template.
-6. Output format must stay as plain text:
-   Company | Title | Time
-   - Bullet 1
-   - Bullet 2
-   ...
-
-Return only the rewritten experience content.
-`
-
   try {
+    // Fetch prompt template from Notion
+    const promptTemplate = await fetchPromptFromNotion('JD2CV_Full', 'RoleExpert')
+
+    // Replace variables in the prompt template
+    const customizationPrompt = promptTemplate
+      .replace(/\$\{classification\}/g, classification)
+      .replace(/\$\{jdTitle\}/g, jdTitle)
+      .replace(/\$\{focusSection\}/g, focusSection)
+      .replace(/\$\{keywordSection\}/g, keywordSection)
+      .replace(/\$\{sentenceSection\}/g, sentenceSection)
+      .replace(/\$\{workExperienceTemplate\}/g, workExperienceTemplate)
+
     const result = await invokeDeepSeek(customizationPrompt, 0.25, 5000)
     return { content: result.content.trim(), tokens: result.tokens }
 
   } catch (error) {
     console.error('Role Expert Agent error:', error)
-    return { content: workExperienceTemplate, tokens: { prompt: 0, completion: 0, total: 0 } }
+    // In test phase, throw error instead of fallback
+    throw error
   }
 }
 

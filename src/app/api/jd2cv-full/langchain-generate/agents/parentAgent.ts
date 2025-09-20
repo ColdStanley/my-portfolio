@@ -1,6 +1,18 @@
 import { BaseAgent } from './baseAgent'
 import { invokeDeepSeek } from '../utils/deepseekLLM'
 
+// Helper function to fetch prompt from Notion
+async function fetchPromptFromNotion(project: string, agent: string): Promise<string> {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/prompt-manager-notion?project=${project}&agent=${agent}`)
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch prompt for ${project}:${agent} - ${response.status}`)
+  }
+
+  const data = await response.json()
+  return data.promptContent
+}
+
 type ParentAgentResponse = {
   classification: string
   focus_points: string[]
@@ -22,31 +34,24 @@ const VALID_ROLES = [
 
 // Parent Agent for Role Classification using LangChain
 class ParentAgent extends BaseAgent {
+  private systemPrompt: string = ''
+
   constructor() {
-    const systemPrompt = `
-You are an expert job role classifier and summariser. Analyse the provided job description and:
-1. Classify it into ONE of the following categories: ${VALID_ROLES.join(', ')}.
-2. Extract 3-5 concise focus points capturing the role's primary responsibilities or outcomes. Each focus point should be a short phrase (max 12 words).
-3. List 6-10 keywords/skills that are essential to the role (single words or short phrases).
-4. Provide 2-3 key sentences from the JD that best capture the expectations for this role (quote or lightly paraphrase).
+    super('', 0.1, 1500) // Initialize with empty prompt
+  }
 
-Respond ONLY with valid JSON using this schema:
-{
-  "classification": "<one of the categories>",
-  "focus_points": ["..."],
-  "keywords": ["..."],
-  "key_sentences": ["..."]
-}
-
-Rules:
-- Do not invent facts not present in the job description.
-- Keep focus_points and key_sentences short and relevant.
-- If information is missing, leave the corresponding array empty.
-`
-    super(systemPrompt, 0.1, 1500)
+  async initialize() {
+    this.systemPrompt = await fetchPromptFromNotion('JD2CV_Full', 'Parent')
+    // Replace the VALID_ROLES placeholder if it exists in the prompt
+    this.systemPrompt = this.systemPrompt.replace('${VALID_ROLES}', VALID_ROLES.join(', '))
   }
 
   async process(jd: { title: string; full_job_description: string }): Promise<ParentAgentOutput> {
+    // Ensure prompt is loaded
+    if (!this.systemPrompt) {
+      await this.initialize()
+    }
+
     const input = `Job Title: ${jd.title}\nJob Description:\n${jd.full_job_description}\n`
 
     try {
@@ -184,5 +189,6 @@ type ParentAgentOutput = {
 // Export function interface for compatibility
 export async function parentAgent(jd: { title: string; full_job_description: string }): Promise<ParentAgentOutput> {
   const agent = new ParentAgent()
+  await agent.initialize()
   return await agent.process(jd)
 }

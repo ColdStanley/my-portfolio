@@ -1,6 +1,18 @@
 import { invokeDeepSeek } from '../utils/deepseekLLM'
 import type { ParentInsights } from './roleExpertAgent'
 
+// Helper function to fetch prompt from Notion
+async function fetchPromptFromNotion(project: string, agent: string): Promise<string> {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/prompt-manager-notion?project=${project}&agent=${agent}`)
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch prompt for ${project}:${agent} - ${response.status}`)
+  }
+
+  const data = await response.json()
+  return data.promptContent
+}
+
 // Reviewer Agent - Style Unification and Final Formatting
 export async function reviewerAgent(input: {
   workExperience: string;
@@ -20,46 +32,20 @@ export async function reviewerAgent(input: {
     ? parentInsights.keywords.join(', ')
     : 'N/A'
 
-  const reviewPrompt = `
-You are a senior resume reviewer and quality assurance expert. Your task is to ensure the customized resume maintains consistency, removes redundancy, and follows ATS-friendly formatting.
-
-Job Description: ${jd.title} - ${jd.full_job_description}
-
-Role classification: ${parentInsights.classification}
-Role focus points:
-${focusSummary}
-Priority keywords to emphasise: ${keywordList}
-
-Customized Work Experience:
-${workExperience}
-
-Customized Personal Info:
-${JSON.stringify(personalInfo, null, 2)}
-
-Your review tasks:
-1. **Style Unification**: Ensure consistent tone and language throughout all sections
-2. **Redundancy Removal**: Remove duplicate skills, achievements, or keywords
-3. **ATS Optimization**: Ensure keywords are naturally integrated and action verbs are strong
-4. **Structure Validation**: Maintain the exact JSON structure for personal info
-5. **Quality Check**: Verify all claims are backed by measurable outcomes
-
-Guidelines:
-- Maintain authenticity - don't add fake achievements
-- Keep the same number of bullet points in work experience
-- Ensure technical skills list has no duplicates
-- Use consistent verb tenses and writing style
-- Prioritize most relevant content first
-
-Return a JSON object with this exact structure:
-{
-  "personalInfo": { /* refined personal info with same structure */ },
-  "workExperience": "refined work experience text"
-}
-
-Output only valid JSON, no explanations or extra text.
-`
-
   try {
+    // Fetch prompt template from Notion
+    const promptTemplate = await fetchPromptFromNotion('JD2CV_Full', 'Reviewer')
+
+    // Replace variables in the prompt template
+    const reviewPrompt = promptTemplate
+      .replace(/\$\{jd\.title\}/g, jd.title)
+      .replace(/\$\{jd\.full_job_description\}/g, jd.full_job_description)
+      .replace(/\$\{parentInsights\.classification\}/g, parentInsights.classification)
+      .replace(/\$\{focusSummary\}/g, focusSummary)
+      .replace(/\$\{keywordList\}/g, keywordList)
+      .replace(/\$\{workExperience\}/g, workExperience)
+      .replace(/\$\{JSON\.stringify\(personalInfo, null, 2\)\}/g, JSON.stringify(personalInfo, null, 2))
+
     // Use DeepSeek LLM for final review and unification
     const result = await invokeDeepSeek(reviewPrompt, 0.2, 5000)
 
@@ -83,21 +69,19 @@ Output only valid JSON, no explanations or extra text.
           tokens: result.tokens
         }
       } else {
-        console.warn('Reviewer Agent: Invalid response structure')
-        const fallbackResult = performBasicReview(personalInfo, workExperience, originalPersonalInfo)
-        return { ...fallbackResult, tokens: result.tokens }
+        console.error('Reviewer Agent: Invalid response structure')
+        throw new Error('Invalid response structure')
       }
 
     } catch (parseError) {
-      console.warn('Reviewer Agent: Failed to parse LLM response as JSON')
-      const fallbackResult = performBasicReview(personalInfo, workExperience, originalPersonalInfo)
-      return { ...fallbackResult, tokens: result.tokens }
+      console.error('Reviewer Agent: Failed to parse LLM response as JSON', parseError)
+      throw parseError
     }
 
   } catch (error) {
     console.error('Reviewer Agent error:', error)
-    const fallbackResult = performBasicReview(personalInfo, workExperience, originalPersonalInfo)
-    return { ...fallbackResult, tokens: { prompt: 0, completion: 0, total: 0 } }
+    // In test phase, throw error instead of fallback
+    throw error
   }
 }
 
