@@ -196,17 +196,18 @@ const generateViaRest = async ({ jd, personalInfo }: { jd: JD; personalInfo: any
 
 const runPostGenerationSteps = async (customizedResume: any, context: { jd: JD; onPDFUploaded?: () => void }) => {
   const { jd, onPDFUploaded } = context
-  const generatedPersonalInfo = customizedResume.personalInfo
   const workExperience = customizedResume.workExperience
 
-  // Update local storage for downstream components
-  localStorage.setItem('jd2cv-v2-personal-info', JSON.stringify(generatedPersonalInfo))
+  // Store only the AI-generated work experience, preserve user's original profile
   localStorage.setItem(`jd2cv-v2-ai-content-${jd.id}`, workExperience)
 
+  // Get original personal info from localStorage (user input should not be overwritten)
+  const originalPersonalInfo = JSON.parse(localStorage.getItem('jd2cv-v2-personal-info') || '{}')
+
   const completeResumeData = {
-    personalInfo: generatedPersonalInfo,
+    personalInfo: originalPersonalInfo,
     aiGeneratedExperience: workExperience,
-    format: generatedPersonalInfo.format || 'A4',
+    format: originalPersonalInfo.format || 'A4',
     jobTitle: jd.title
   }
 
@@ -223,7 +224,7 @@ const runPostGenerationSteps = async (customizedResume: any, context: { jd: JD; 
   }
 
   const blob = await pdfResponse.blob()
-  const filename = `${generatedPersonalInfo.fullName.replace(/[^a-z0-9]/gi, '_')}_${jd.company.replace(/[^a-z0-9]/gi, '_')}_${jd.title.replace(/[^a-z0-9]/gi, '_')}_Resume.pdf`
+  const filename = `${originalPersonalInfo.fullName?.replace(/[^a-z0-9]/gi, '_') || 'Resume'}_${jd.company.replace(/[^a-z0-9]/gi, '_')}_${jd.title.replace(/[^a-z0-9]/gi, '_')}_Resume.pdf`
 
   const url = window.URL.createObjectURL(blob)
   const a = document.createElement('a')

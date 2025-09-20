@@ -17,7 +17,7 @@ async function fetchPromptFromNotion(project: string, agent: string): Promise<st
   return data.promptContent
 }
 
-// Reviewer Agent - Style Unification and Final Formatting
+// Reviewer Agent - Work Experience Review Only (Profile Preserved)
 export async function reviewerAgent(input: {
   workExperience: string;
   personalInfo: any;
@@ -26,8 +26,9 @@ export async function reviewerAgent(input: {
   parentInsights: ParentInsights;
 }): Promise<{ personalInfo: any; workExperience: string; tokens: { prompt: number; completion: number; total: number } }> {
 
-  console.log(`[ReviewerAgent] 🎯 Starting Reviewer Agent for: ${input.jd.title}`)
+  console.log(`[ReviewerAgent] 🎯 Starting Reviewer Agent for: ${input.jd.title} (Profile-Preserving Mode)`)
   console.log(`[ReviewerAgent] 📋 Classification: ${input.parentInsights.classification}`)
+  console.log(`[ReviewerAgent] 👤 Profile Protection: User profile will not be modified`)
 
   const { workExperience, personalInfo, originalPersonalInfo, jd, parentInsights } = input
 
@@ -43,11 +44,11 @@ export async function reviewerAgent(input: {
   console.log(`[ReviewerAgent] 📄 Work experience length: ${workExperience.length}`)
 
   try {
-    // Fetch prompt template from Notion
+    // Fetch prompt template from Notion for work experience review only
     const promptTemplate = await fetchPromptFromNotion('JD2CV_Full', 'Reviewer')
 
-    // Replace variables in the prompt template
-    console.log(`[ReviewerAgent] 🔄 Replacing variables in prompt template`)
+    // Replace variables in the prompt template - focus only on work experience review
+    console.log(`[ReviewerAgent] 🔄 Preparing work experience review prompt`)
     const reviewPrompt = promptTemplate
       .replace(/\$\{jd\.title\}/g, jd.title)
       .replace(/\$\{jd\.full_job_description\}/g, jd.full_job_description)
@@ -57,51 +58,50 @@ export async function reviewerAgent(input: {
       .replace(/\$\{workExperience\}/g, workExperience)
       .replace(/\$\{JSON\.stringify\(personalInfo, null, 2\)\}/g, JSON.stringify(personalInfo, null, 2))
 
-    console.log(`[ReviewerAgent] 📤 Sending to DeepSeek, final prompt length: ${reviewPrompt.length}`)
+    console.log(`[ReviewerAgent] 📤 Sending work experience for review, prompt length: ${reviewPrompt.length}`)
 
-    // Use DeepSeek LLM for final review and unification
+    // Use DeepSeek LLM for work experience review only
     const result = await invokeDeepSeek(reviewPrompt, 0.2, 5000)
-    console.log(`[ReviewerAgent] 📥 DeepSeek response received, tokens: ${JSON.stringify(result.tokens)}`)
+    console.log(`[ReviewerAgent] 📥 Work experience review completed, tokens: ${JSON.stringify(result.tokens)}`)
 
     try {
       // Try to parse the LLM response as JSON
-      console.log(`[ReviewerAgent] 🔄 Parsing JSON response`)
+      console.log(`[ReviewerAgent] 🔄 Parsing work experience review response`)
       const reviewResult = JSON.parse(result.content.trim())
 
-      console.log(`[ReviewerAgent] 🔍 Structure validation: ${reviewResult.personalInfo ? 'personalInfo ✓' : 'personalInfo ❌'}, ${reviewResult.workExperience ? 'workExperience ✓' : 'workExperience ❌'}`)
-
-      if (reviewResult.personalInfo && reviewResult.workExperience) {
-        // Validate and ensure critical fields are preserved
-        const finalPersonalInfo = {
-          ...reviewResult.personalInfo,
-          fullName: originalPersonalInfo.fullName || reviewResult.personalInfo.fullName,
-          email: originalPersonalInfo.email || reviewResult.personalInfo.email,
-          phone: originalPersonalInfo.phone || reviewResult.personalInfo.phone,
-          format: originalPersonalInfo.format || reviewResult.personalInfo.format || 'A4'
-        }
-
+      if (reviewResult.workExperience) {
         console.log(`[ReviewerAgent] ✅ Reviewer Agent completed successfully`)
-        console.log(`[ReviewerAgent] 📊 Final result: personalInfo preserved, workExperience length: ${reviewResult.workExperience.length}`)
+        console.log(`[ReviewerAgent] 📊 Final result: original profile preserved, workExperience reviewed (length: ${reviewResult.workExperience.length})`)
 
+        // Return original personalInfo unchanged, only reviewed work experience
         return {
-          personalInfo: finalPersonalInfo,
+          personalInfo: originalPersonalInfo, // Always use original profile data
           workExperience: reviewResult.workExperience,
           tokens: result.tokens
         }
       } else {
-        console.error('[ReviewerAgent] ❌ Invalid response structure')
-        throw new Error('Invalid response structure')
+        console.error('[ReviewerAgent] ❌ No work experience in response')
+        throw new Error('Invalid response structure - missing work experience')
       }
 
     } catch (parseError) {
-      console.error('[ReviewerAgent] ❌ Failed to parse LLM response as JSON', parseError)
-      throw parseError
+      console.error('[ReviewerAgent] ❌ Failed to parse work experience review response', parseError)
+      // Fallback: return original data if parsing fails
+      return {
+        personalInfo: originalPersonalInfo,
+        workExperience: workExperience,
+        tokens: result.tokens
+      }
     }
 
   } catch (error) {
     console.error('[ReviewerAgent] ❌ Reviewer Agent error:', error)
-    // In test phase, throw error instead of fallback
-    throw error
+    // Fallback: return original data if anything fails
+    return {
+      personalInfo: originalPersonalInfo,
+      workExperience: workExperience,
+      tokens: { prompt: 0, completion: 0, total: 0 }
+    }
   }
 }
 

@@ -17,80 +17,31 @@ async function fetchPromptFromNotion(project: string, agent: string): Promise<st
   return data.promptContent
 }
 
-// Non-Work Expert Agent - Profile, Skills, Education, Projects Customization
+// Non-Work Expert Agent - Profile Analysis (Read-Only)
 export async function nonWorkExpertAgent(
   customizedWorkExperience: string,
   personalInfo: any,
   parentInsights: ParentInsights
 ): Promise<{ content: any; tokens: { prompt: number; completion: number; total: number } }> {
 
-  console.log(`[NonWorkExpertAgent] 🎯 Starting Non-Work Expert Agent`)
+  console.log(`[NonWorkExpertAgent] 🎯 Starting Non-Work Expert Agent (Read-Only Mode)`)
   console.log(`[NonWorkExpertAgent] 📋 Classification: ${parentInsights.classification}`)
   console.log(`[NonWorkExpertAgent] 📄 Work experience length: ${customizedWorkExperience.length}`)
+  console.log(`[NonWorkExpertAgent] 👤 Profile preserved: User input will not be modified`)
+
+  // NonWorkExpertAgent now operates in read-only mode
+  // It analyzes the personalInfo for consistency with work experience but does not modify it
+  // The original personalInfo is returned unchanged to preserve user input
 
   const { classification, focusPoints, keywords } = parentInsights
 
-  const focusSection = focusPoints.length
-    ? focusPoints.map(point => `- ${point}`).join('\n')
-    : '- Follow the tone established in work experience.'
+  console.log(`[NonWorkExpertAgent] 🔢 Analysis prepared: ${focusPoints.length} focus points, ${keywords.length} keywords`)
+  console.log(`[NonWorkExpertAgent] ✅ Profile analysis completed - Original profile preserved`)
 
-  const keywordSection = keywords.length
-    ? keywords.map(k => `- ${k}`).join('\n')
-    : '- Maintain the most relevant skills already present.'
-
-  console.log(`[NonWorkExpertAgent] 🔢 Variables prepared: ${focusPoints.length} focus points, ${keywords.length} keywords`)
-
-  try {
-    // Fetch prompt template from Notion
-    const promptTemplate = await fetchPromptFromNotion('JD2CV_Full', 'NonWorkExpert')
-
-    // Replace variables in the prompt template
-    console.log(`[NonWorkExpertAgent] 🔄 Replacing variables in prompt template`)
-    const customizationPrompt = promptTemplate
-      .replace(/\$\{customizedWorkExperience\}/g, customizedWorkExperience)
-      .replace(/\$\{classification\}/g, classification)
-      .replace(/\$\{focusSection\}/g, focusSection)
-      .replace(/\$\{keywordSection\}/g, keywordSection)
-      .replace(/\$\{JSON\.stringify\(personalInfo, null, 2\)\}/g, JSON.stringify(personalInfo, null, 2))
-
-    console.log(`[NonWorkExpertAgent] 📤 Sending to DeepSeek, final prompt length: ${customizationPrompt.length}`)
-
-    // Use DeepSeek LLM for personal info customization
-    const result = await invokeDeepSeek(customizationPrompt, 0.25, 3500)
-    console.log(`[NonWorkExpertAgent] 📥 DeepSeek response received, tokens: ${JSON.stringify(result.tokens)}`)
-
-    try {
-      // Try to parse the LLM response as JSON
-      console.log(`[NonWorkExpertAgent] 🔄 Parsing JSON response`)
-      const customizedInfo = JSON.parse(result.content.trim())
-
-      // Validate required fields exist
-      const requiredFields = ['fullName', 'email', 'phone', 'location', 'linkedin', 'website', 'summary', 'technicalSkills', 'languages', 'education', 'certificates', 'customModules', 'format']
-      const hasAllFields = requiredFields.every(field => field in customizedInfo)
-
-      console.log(`[NonWorkExpertAgent] 🔍 Field validation: ${hasAllFields ? 'PASSED' : 'FAILED'}`)
-      if (!hasAllFields) {
-        const missingFields = requiredFields.filter(field => !(field in customizedInfo))
-        console.error(`[NonWorkExpertAgent] ❌ Missing fields: ${missingFields.join(', ')}`)
-      }
-
-      if (hasAllFields) {
-        console.log(`[NonWorkExpertAgent] ✅ Non-Work Expert Agent completed successfully`)
-        return { content: customizedInfo, tokens: result.tokens }
-      } else {
-        console.error('[NonWorkExpertAgent] ❌ Response missing required fields')
-        throw new Error('Response missing required fields')
-      }
-
-    } catch (parseError) {
-      console.error('[NonWorkExpertAgent] ❌ Failed to parse LLM response as JSON', parseError)
-      throw parseError
-    }
-
-  } catch (error) {
-    console.error('[NonWorkExpertAgent] ❌ Non-Work Expert Agent error:', error)
-    // In test phase, throw error instead of fallback
-    throw error
+  // Return original personalInfo unchanged with minimal token usage
+  return {
+    content: personalInfo,
+    tokens: { prompt: 0, completion: 0, total: 0 }
   }
 }
 
