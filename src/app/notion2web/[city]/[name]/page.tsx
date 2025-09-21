@@ -37,6 +37,8 @@ export default function UserWebsitePage() {
   })
   const [newComments, setNewComments] = useState<{ [key: string]: string }>({})
   const [submittingComments, setSubmittingComments] = useState<{ [key: string]: boolean }>({})
+  const [viewMode, setViewMode] = useState<'gallery' | 'presentation'>('gallery')
+  const [currentSlide, setCurrentSlide] = useState(0)
 
   useEffect(() => {
     const userKey = `${params.city}-${params.name}`
@@ -180,6 +182,85 @@ export default function UserWebsitePage() {
     }
   }, [userConfig?.name])
 
+  // Keyboard navigation for presentation mode
+  useEffect(() => {
+    if (viewMode !== 'presentation') return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault()
+          setCurrentSlide(prev => Math.max(0, prev - 1))
+          break
+        case 'ArrowRight':
+        case ' ': // Space bar
+          e.preventDefault()
+          setCurrentSlide(prev => Math.min(filteredContent.length - 1, prev + 1))
+          break
+        case 'Escape':
+          e.preventDefault()
+          setViewMode('gallery')
+          break
+        case 'Home':
+          e.preventDefault()
+          setCurrentSlide(0)
+          break
+        case 'End':
+          e.preventDefault()
+          setCurrentSlide(filteredContent.length - 1)
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [viewMode, filteredContent.length])
+
+  // Reset slide when switching tabs or modes
+  useEffect(() => {
+    setCurrentSlide(0)
+  }, [activeTab, viewMode])
+
+  // Touch gesture support for presentation mode
+  useEffect(() => {
+    if (viewMode !== 'presentation') return
+
+    let touchStartX = 0
+    let touchEndX = 0
+
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartX = e.changedTouches[0].screenX
+    }
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      touchEndX = e.changedTouches[0].screenX
+      handleSwipe()
+    }
+
+    const handleSwipe = () => {
+      const swipeThreshold = 50
+      const swipeDistance = touchStartX - touchEndX
+
+      if (Math.abs(swipeDistance) > swipeThreshold) {
+        if (swipeDistance > 0) {
+          // Swipe left - next slide
+          setCurrentSlide(prev => Math.min(filteredContent.length - 1, prev + 1))
+        } else {
+          // Swipe right - previous slide
+          setCurrentSlide(prev => Math.max(0, prev - 1))
+        }
+      }
+    }
+
+    document.addEventListener('touchstart', handleTouchStart)
+    document.addEventListener('touchend', handleTouchEnd)
+
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart)
+      document.removeEventListener('touchend', handleTouchEnd)
+    }
+  }, [viewMode, filteredContent.length])
+
   const openImageModal = (src: string, alt: string) => {
     setImageModal({ isOpen: true, src, alt })
   }
@@ -267,37 +348,62 @@ export default function UserWebsitePage() {
               <p className="text-sm text-gray-500">{userConfig?.city}</p>
             </div>
 
-            {/* Tab Navigation */}
-            <nav className="flex items-center gap-1 bg-white/60 backdrop-blur-sm rounded-2xl p-1 border border-gray-100/50">
-              {tabs.map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-6 py-2 rounded-xl text-sm font-medium transition-all duration-300 transform ${
-                    activeTab === tab
-                      ? `bg-gradient-to-r ${getThemeClasses(currentTheme, 'tabActive')} text-white shadow-lg scale-105`
-                      : `text-gray-600 ${getThemeClasses(currentTheme, 'tabHover')}`
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </nav>
+            <div className="flex items-center gap-4">
+              {/* Tab Navigation */}
+              <nav className="flex items-center gap-1 bg-white/60 backdrop-blur-sm rounded-2xl p-1 border border-gray-100/50">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`px-6 py-2 rounded-xl text-sm font-medium transition-all duration-300 transform ${
+                      activeTab === tab
+                        ? `bg-gradient-to-r ${getThemeClasses(currentTheme, 'tabActive')} text-white shadow-lg scale-105`
+                        : `text-gray-600 ${getThemeClasses(currentTheme, 'tabHover')}`
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </nav>
+
+              {/* View Mode Toggle */}
+              <button
+                onClick={() => setViewMode(viewMode === 'gallery' ? 'presentation' : 'gallery')}
+                className={`p-3 rounded-xl transition-all duration-300 transform hover:scale-110 ${
+                  viewMode === 'presentation'
+                    ? `bg-gradient-to-r ${getThemeClasses(currentTheme, 'tabActive')} text-white shadow-lg`
+                    : `bg-white/60 backdrop-blur-sm text-gray-600 ${getThemeClasses(currentTheme, 'tabHover')} border border-gray-100/50`
+                }`}
+                title={viewMode === 'gallery' ? 'Switch to Presentation Mode' : 'Switch to Gallery Mode'}
+              >
+                {viewMode === 'gallery' ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2h4a1 1 0 011 1v14a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1h4zM9 3v1h6V3H9zm-4 3v12h14V6H5z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h8M8 14h8" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2zM16 18a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2z" />
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Content Area */}
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="masonry-container">
-          {filteredContent.map((item, index) => (
-            <div
-              key={index}
-              className={`masonry-item ${getThemeClasses(currentTheme, 'cardBg')} backdrop-blur-sm rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] border border-gray-100/50`}
-              style={{
-                animationDelay: `${index * 100}ms`
-              }}
-            >
+      {viewMode === 'gallery' ? (
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          <div className="masonry-container">
+            {filteredContent.map((item, index) => (
+              <div
+                key={index}
+                className={`masonry-item ${getThemeClasses(currentTheme, 'cardBg')} backdrop-blur-sm rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] border border-gray-100/50`}
+                style={{
+                  animationDelay: `${index * 100}ms`
+                }}
+              >
               <div className="space-y-4">
                 <h3 className="text-lg font-medium text-gray-800">{item.title}</h3>
 
@@ -513,17 +619,110 @@ export default function UserWebsitePage() {
           ))}
         </div>
 
-        {filteredContent.length === 0 && (
-          <div className="text-center py-16">
-            <div className={`w-24 h-24 bg-gradient-to-r ${getThemeClasses(currentTheme, 'accent')} opacity-20 rounded-full flex items-center justify-center mx-auto mb-4`}>
-              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-              </svg>
+          {filteredContent.length === 0 && (
+            <div className="text-center py-16">
+              <div className={`w-24 h-24 bg-gradient-to-r ${getThemeClasses(currentTheme, 'accent')} opacity-20 rounded-full flex items-center justify-center mx-auto mb-4`}>
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+              </div>
+              <p className="text-gray-500">No content available for {activeTab}</p>
             </div>
-            <p className="text-gray-500">No content available for {activeTab}</p>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      ) : (
+        /* Presentation Mode */
+        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center animate-fadeIn">
+          {filteredContent.length > 0 && (
+            <>
+              {/* Current Slide */}
+              <div className="max-w-4xl max-h-[90vh] mx-auto p-8 overflow-y-auto">
+                <div
+                  key={currentSlide}
+                  className={`${getThemeClasses(currentTheme, 'cardBg')} backdrop-blur-md rounded-2xl p-8 shadow-2xl border border-gray-100/50 transform transition-all duration-700 ease-out animate-slideIn`}
+                >
+                  {/* Slide Content - Same as card content */}
+                  <div className="space-y-6">
+                    <h3 className="text-2xl font-medium text-gray-800">{filteredContent[currentSlide]?.title}</h3>
+
+                    {filteredContent[currentSlide]?.date && (
+                      <p className="text-sm text-gray-400 uppercase tracking-wider">{filteredContent[currentSlide].date}</p>
+                    )}
+
+                    {filteredContent[currentSlide]?.image && (
+                      <div className="relative overflow-hidden rounded-xl">
+                        <img
+                          src={filteredContent[currentSlide].image}
+                          alt={filteredContent[currentSlide].title}
+                          className="w-full max-h-96 object-cover"
+                        />
+                      </div>
+                    )}
+
+                    {filteredContent[currentSlide]?.content && (
+                      <div className="text-gray-600 leading-relaxed whitespace-pre-line text-lg">
+                        {filteredContent[currentSlide].content}
+                      </div>
+                    )}
+
+                    {filteredContent[currentSlide]?.link && (
+                      <div>
+                        <a
+                          href={filteredContent[currentSlide].link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`inline-flex items-center gap-2 ${getThemeClasses(currentTheme, 'linkColor')} text-lg font-medium transition-colors duration-200`}
+                        >
+                          View Link
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Navigation Controls */}
+              <button
+                onClick={() => setCurrentSlide(Math.max(0, currentSlide - 1))}
+                disabled={currentSlide === 0}
+                className="fixed left-8 top-1/2 transform -translate-y-1/2 p-4 bg-white/20 backdrop-blur-sm rounded-full text-white transition-all duration-300 hover:bg-white/30 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+
+              <button
+                onClick={() => setCurrentSlide(Math.min(filteredContent.length - 1, currentSlide + 1))}
+                disabled={currentSlide === filteredContent.length - 1}
+                className="fixed right-8 top-1/2 transform -translate-y-1/2 p-4 bg-white/20 backdrop-blur-sm rounded-full text-white transition-all duration-300 hover:bg-white/30 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+
+              {/* Close Button */}
+              <button
+                onClick={() => setViewMode('gallery')}
+                className="fixed top-8 right-8 p-3 bg-white/20 backdrop-blur-sm rounded-full text-white transition-all duration-300 hover:bg-white/30 hover:scale-110 hover:rotate-90"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              {/* Slide Counter */}
+              <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm">
+                {currentSlide + 1} / {filteredContent.length}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       <style jsx>{`
         .masonry-container {
@@ -545,6 +744,34 @@ export default function UserWebsitePage() {
             opacity: 1;
             transform: translateY(0);
           }
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95) translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+
+        .animate-fadeIn {
+          animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        .animate-slideIn {
+          animation: slideIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
         @media (max-width: 1024px) {
