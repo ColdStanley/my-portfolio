@@ -41,11 +41,19 @@ export interface ReviewerStepUpdate extends StepUpdateBase {
   workExperience: string
 }
 
+// New interface for streaming content updates within a stage
+export interface StreamContentUpdate {
+  stage: StageKey
+  streamingContent: string
+  isComplete: boolean
+}
+
 export type StepUpdate =
   | ParentStepUpdate
   | RoleExpertStepUpdate
   | NonWorkStepUpdate
   | ReviewerStepUpdate
+  | StreamContentUpdate
 
 export interface WorkflowResult {
   roleClassification: string
@@ -76,7 +84,16 @@ export async function runLangchainWorkflow({ jd, personalInfo, onStep }: Workflo
 
   // Step 1 - Parent Agent
   const parentStart = Date.now()
-  const parentResult = await parentAgent(jd)
+  const parentResult = await parentAgent(jd, (chunk: string) => {
+    if (onStep) {
+      // Send streaming content update
+      onStep({
+        stage: 'parent',
+        streamingContent: chunk,
+        isComplete: false
+      } as StreamContentUpdate)
+    }
+  })
   const parentDuration = Date.now() - parentStart
 
   const parentContext: ParentInsights = {
@@ -101,7 +118,16 @@ export async function runLangchainWorkflow({ jd, personalInfo, onStep }: Workflo
 
   // Step 2 - Role Expert
   const roleStart = Date.now()
-  const roleExpertResult = await roleExpertAgent(jd.title, parentContext)
+  const roleExpertResult = await roleExpertAgent(jd.title, parentContext, (chunk: string) => {
+    if (onStep) {
+      // Send streaming content update
+      onStep({
+        stage: 'roleExpert',
+        streamingContent: chunk,
+        isComplete: false
+      } as StreamContentUpdate)
+    }
+  })
   const customizedWorkExperience = roleExpertResult.content
   const roleDuration = Date.now() - roleStart
 
@@ -138,7 +164,17 @@ export async function runLangchainWorkflow({ jd, personalInfo, onStep }: Workflo
     personalInfo: customizedPersonalInfo,
     originalPersonalInfo: personalInfo,
     jd,
-    parentInsights: parentContext
+    parentInsights: parentContext,
+    onStreamChunk: (chunk: string) => {
+      if (onStep) {
+        // Send streaming content update
+        onStep({
+          stage: 'reviewer',
+          streamingContent: chunk,
+          isComplete: false
+        } as StreamContentUpdate)
+      }
+    }
   })
   const reviewerDuration = Date.now() - reviewerStart
 

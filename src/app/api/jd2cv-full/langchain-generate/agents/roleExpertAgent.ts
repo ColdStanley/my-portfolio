@@ -1,4 +1,4 @@
-import { invokeDeepSeek } from '../utils/deepseekLLM'
+import { invokeDeepSeek, invokeDeepSeekStream } from '../utils/deepseekLLM'
 
 // Helper function to fetch prompt from Notion
 async function fetchPromptFromNotion(project: string, agent: string): Promise<string> {
@@ -26,7 +26,8 @@ export interface ParentInsights {
 // Role Expert Agent - Work Experience Customization
 export async function roleExpertAgent(
   jdTitle: string,
-  parentInsights: ParentInsights
+  parentInsights: ParentInsights,
+  onStreamChunk?: (chunk: string) => void
 ): Promise<{ content: string; tokens: { prompt: number; completion: number; total: number } }> {
 
   console.log(`[RoleExpertAgent] 🎯 Starting Role Expert Agent for: ${jdTitle}`)
@@ -68,7 +69,19 @@ export async function roleExpertAgent(
 
     console.log(`[RoleExpertAgent] 📤 Sending to DeepSeek, final prompt length: ${customizationPrompt.length}`)
 
-    const result = await invokeDeepSeek(customizationPrompt, 0.25, 5000)
+    // Use streaming if callback provided, otherwise use regular DeepSeek
+    const result = onStreamChunk
+      ? await invokeDeepSeekStream(
+          customizationPrompt,
+          (chunk: string) => {
+            console.log(`[RoleExpertAgent] 📝 Streaming chunk: ${chunk.slice(0, 50)}...`)
+            onStreamChunk(chunk)
+          },
+          0.25,
+          5000
+        )
+      : await invokeDeepSeek(customizationPrompt, 0.25, 5000)
+
     console.log(`[RoleExpertAgent] 📥 DeepSeek response received, tokens: ${JSON.stringify(result.tokens)}`)
     console.log(`[RoleExpertAgent] ✅ Role Expert Agent completed successfully`)
 

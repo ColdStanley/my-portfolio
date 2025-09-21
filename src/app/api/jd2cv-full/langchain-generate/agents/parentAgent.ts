@@ -1,5 +1,5 @@
 import { BaseAgent } from './baseAgent'
-import { invokeDeepSeek } from '../utils/deepseekLLM'
+import { invokeDeepSeek, invokeDeepSeekStream } from '../utils/deepseekLLM'
 
 // Helper function to fetch prompt from Notion
 async function fetchPromptFromNotion(project: string, agent: string): Promise<string> {
@@ -58,7 +58,7 @@ class ParentAgent extends BaseAgent {
     console.log(`[ParentAgent] ✅ Initialization complete, prompt length: ${this.systemPrompt.length}`)
   }
 
-  async process(jd: { title: string; full_job_description: string }): Promise<ParentAgentOutput> {
+  async process(jd: { title: string; full_job_description: string }, onStreamChunk?: (chunk: string) => void): Promise<ParentAgentOutput> {
     console.log(`[ParentAgent] 🔄 Processing JD: ${jd.title}`)
 
     // Ensure prompt is loaded
@@ -71,11 +71,22 @@ class ParentAgent extends BaseAgent {
     console.log(`[ParentAgent] 📤 Sending to DeepSeek, input length: ${input.length}`)
 
     try {
-      const result = await invokeDeepSeek(
-        `${this.systemPrompt}\n\n${input}`,
-        0.15,
-        2200
-      )
+      // Use streaming if callback provided, otherwise use regular DeepSeek
+      const result = onStreamChunk
+        ? await invokeDeepSeekStream(
+            `${this.systemPrompt}\n\n${input}`,
+            (chunk: string) => {
+              console.log(`[ParentAgent] 📝 Streaming chunk: ${chunk.slice(0, 30)}...`)
+              onStreamChunk(chunk)
+            },
+            0.15,
+            2200
+          )
+        : await invokeDeepSeek(
+            `${this.systemPrompt}\n\n${input}`,
+            0.15,
+            2200
+          )
       console.log(`[ParentAgent] 📥 DeepSeek response received, tokens: ${JSON.stringify(result.tokens)}`)
 
       const parsed = this.parseResponse(result.content)
@@ -208,11 +219,14 @@ type ParentAgentOutput = {
 }
 
 // Export function interface for compatibility
-export async function parentAgent(jd: { title: string; full_job_description: string }): Promise<ParentAgentOutput> {
+export async function parentAgent(
+  jd: { title: string; full_job_description: string },
+  onStreamChunk?: (chunk: string) => void
+): Promise<ParentAgentOutput> {
   console.log(`[ParentAgent] 🎯 Starting Parent Agent workflow for: ${jd.title}`)
   const agent = new ParentAgent()
   await agent.initialize()
-  const result = await agent.process(jd)
+  const result = await agent.process(jd, onStreamChunk)
   console.log(`[ParentAgent] 🏁 Parent Agent workflow completed successfully`)
   return result
 }

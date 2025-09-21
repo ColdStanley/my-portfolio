@@ -1,5 +1,49 @@
-import { invokeDeepSeek } from '../utils/deepseekLLM'
+import { invokeDeepSeek, invokeDeepSeekStream } from '../utils/deepseekLLM'
 import type { ParentInsights } from './roleExpertAgent'
+
+// Robust JSON parsing function that handles LLM responses with extra text
+function parseJsonFromLLMResponse(content: string): any {
+  try {
+    // Remove common prefixes that LLMs often add
+    const prefixesToRemove = [
+      'Of course.',
+      'Sure!',
+      'Here is',
+      'Here\'s',
+      'Certainly.',
+      'Absolutely.',
+      'I\'ll help you',
+      'Here you go',
+    ]
+
+    let cleaned = content.trim()
+
+    // Remove common prefixes (case insensitive)
+    for (const prefix of prefixesToRemove) {
+      const regex = new RegExp(`^${prefix}\\s*`, 'i')
+      cleaned = cleaned.replace(regex, '')
+    }
+
+    // Remove markdown code blocks
+    cleaned = cleaned
+      .replace(/```json\s*/gi, '')
+      .replace(/```\s*/g, '')
+      .trim()
+
+    // Try to find JSON content between braces
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      cleaned = jsonMatch[0]
+    }
+
+    // Parse the cleaned content
+    return JSON.parse(cleaned)
+  } catch (error) {
+    console.warn('Failed to parse JSON from LLM response:', error)
+    console.warn('Original content:', content.slice(0, 200) + '...')
+    throw error
+  }
+}
 
 // Helper function to fetch prompt from Notion
 async function fetchPromptFromNotion(project: string, agent: string): Promise<string> {
@@ -24,13 +68,14 @@ export async function reviewerAgent(input: {
   originalPersonalInfo: any;
   jd: { title: string; full_job_description: string };
   parentInsights: ParentInsights;
+  onStreamChunk?: (chunk: string) => void; // Optional streaming callback
 }): Promise<{ personalInfo: any; workExperience: string; tokens: { prompt: number; completion: number; total: number } }> {
 
   console.log(`[ReviewerAgent] 🎯 Starting Reviewer Agent for: ${input.jd.title} (Profile-Preserving Mode)`)
   console.log(`[ReviewerAgent] 📋 Classification: ${input.parentInsights.classification}`)
   console.log(`[ReviewerAgent] 👤 Profile Protection: User profile will not be modified`)
 
-  const { workExperience, personalInfo, originalPersonalInfo, jd, parentInsights } = input
+  const { workExperience, personalInfo, originalPersonalInfo, jd, parentInsights, onStreamChunk } = input
 
   const focusSummary = parentInsights.focusPoints.length
     ? parentInsights.focusPoints.map((point, idx) => `${idx + 1}. ${point}`).join('\n')
@@ -60,14 +105,25 @@ export async function reviewerAgent(input: {
 
     console.log(`[ReviewerAgent] 📤 Sending work experience for review, prompt length: ${reviewPrompt.length}`)
 
-    // Use DeepSeek LLM for work experience review only
-    const result = await invokeDeepSeek(reviewPrompt, 0.2, 5000)
+    // Use streaming if callback provided, otherwise use regular DeepSeek
+    const result = onStreamChunk
+      ? await invokeDeepSeekStream(
+          reviewPrompt,
+          (chunk: string) => {
+            console.log(`[ReviewerAgent] 📝 Streaming chunk: ${chunk.slice(0, 50)}...`)
+            onStreamChunk(chunk)
+          },
+          0.2,
+          5000
+        )
+      : await invokeDeepSeek(reviewPrompt, 0.2, 5000)
+
     console.log(`[ReviewerAgent] 📥 Work experience review completed, tokens: ${JSON.stringify(result.tokens)}`)
 
     try {
-      // Try to parse the LLM response as JSON
+      // Try to parse the LLM response as JSON using robust parser
       console.log(`[ReviewerAgent] 🔄 Parsing work experience review response`)
-      const reviewResult = JSON.parse(result.content.trim())
+      const reviewResult = parseJsonFromLLMResponse(result.content)
 
       if (reviewResult.workExperience) {
         console.log(`[ReviewerAgent] ✅ Reviewer Agent completed successfully`)

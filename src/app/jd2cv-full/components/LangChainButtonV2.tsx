@@ -52,6 +52,23 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
 
   const handleStreamEvent = (event: string, data: any) => {
     console.log('LangChain SSE event:', event, data)
+
+    // Handle streaming content updates
+    if (data.streamingContent && !data.isComplete) {
+      const stage = data.stage as StageKey
+
+      // If this is the first chunk for this stage, switch to it
+      if (!stageOutputs[stage]?.streamingContent) {
+        setActiveStage(stage)
+      }
+
+      updateStage(stage, {
+        status: 'in_progress',
+        streamingContent: (stageOutputs[stage]?.streamingContent || '') + data.streamingContent
+      })
+      return
+    }
+
     switch (event) {
       case 'start':
         updateStage('parent', { status: 'in_progress' })
@@ -491,6 +508,7 @@ interface StageData {
   focusPoints?: string[]
   keywords?: string[]
   keySentences?: string[]
+  streamingContent?: string // For real-time streaming content
 }
 
 interface TokensUsage {
@@ -554,6 +572,11 @@ function useStageHelpers(
   const completeStage = (stage: StageKey, updates?: Partial<StageData>) => {
     updateStage(stage, { status: 'completed', ...updates })
     activateNextStage(stage)
+
+    // Clear streaming content after a brief delay to allow final content to render
+    setTimeout(() => {
+      updateStage(stage, { streamingContent: undefined })
+    }, 100)
   }
 
   const markError = (message?: string) => {
@@ -578,6 +601,21 @@ function renderStageContent(stage: StageData) {
   }
   if (stage.status === 'error') {
     return <div className="text-rose-500">Step failed. Please retry.</div>
+  }
+
+  // Show streaming content only if stage is in progress, has streaming content, and no final content yet
+  if (stage.status === 'in_progress' && stage.streamingContent && !stage.content && !stage.json && !stage.roleClassification) {
+    return (
+      <div className="space-y-2">
+        <div className="text-xs text-purple-600 font-medium flex items-center gap-1">
+          <div className="animate-spin w-3 h-3 border border-purple-300 border-t-purple-600 rounded-full"></div>
+          AI Generating...
+        </div>
+        <pre className="whitespace-pre-wrap text-[11px] text-slate-600 bg-slate-50 p-2 rounded max-h-48 overflow-y-auto">
+          {stage.streamingContent}<span className="animate-pulse">▊</span>
+        </pre>
+      </div>
+    )
   }
   const hasParentInsights = Boolean(
     (stage.focusPoints && stage.focusPoints.length) ||
