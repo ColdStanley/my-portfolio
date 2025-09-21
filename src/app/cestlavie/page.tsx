@@ -3,9 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSimplifiedAuth } from '@/hooks/useSimplifiedAuth'
-import { TaskRecord } from './types/task'
 import Sidebar from './components/Sidebar'
-import TaskPanelOptimized from './components/Life/TaskPanelOptimized'
 import NotionConfigModal from './components/NotionConfigModal'
 import NewNavbar from '@/components/NewNavbar'
 import FooterSection from '@/components/FooterSection'
@@ -17,7 +15,6 @@ export default function CestLaViePage() {
   const [activeSubTab, setActiveSubTab] = useState('task')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showConfigModal, setShowConfigModal] = useState(false)
-  const [tasks, setTasks] = useState<TaskRecord[]>([])
   const { user, loading, notionConfig } = useSimplifiedAuth()
   const router = useRouter()
 
@@ -25,10 +22,7 @@ export default function CestLaViePage() {
   const mobileNavTabs = [
     {
       key: 'life',
-      label: 'Life',
-      subTabs: [
-        { key: 'task', label: 'Task Manager' }
-      ]
+      label: 'Life'
     },
     {
       key: 'career',
@@ -130,7 +124,6 @@ export default function CestLaViePage() {
             sidebarOpen={sidebarOpen}
             setSidebarOpen={setSidebarOpen}
             onConfigClick={() => setShowConfigModal(true)}
-            tasks={tasks}
           />
         </div>
         
@@ -145,15 +138,16 @@ export default function CestLaViePage() {
         
         {/* 主内容区域 - 响应式布局 */}
         <div className="flex-1 ml-0 mt-0 md:ml-[68px] md:mt-[52px]">
-          {/* Life子导航路由逻辑 */}
-          {(activeTab === 'life' || activeTab === 'task') && (
-            <TaskPanelOptimized
-              onTasksUpdate={setTasks}
-              user={user}
-              loading={loading}
-            />
+          {activeTab === 'life' && (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-6xl mb-4">🌱</div>
+                <h2 className="text-2xl font-bold text-gray-700 mb-2">Life</h2>
+                <p className="text-gray-500">Coming soon...</p>
+              </div>
+            </div>
           )}
-          
+
           {activeTab === 'career' && (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
@@ -163,7 +157,7 @@ export default function CestLaViePage() {
               </div>
             </div>
           )}
-          
+
           {activeTab === 'study' && (
             <div className="flex-1 p-6 flex items-center justify-center">
               <div className="text-center">
@@ -173,7 +167,7 @@ export default function CestLaViePage() {
               </div>
             </div>
           )}
-          
+
         </div>
       </div>
 
