@@ -9,14 +9,18 @@ import FooterSection from '@/components/FooterSection'
 import PageTransition from '@/components/PageTransition'
 import GlobalLoader from '@/components/GlobalLoader'
 import { PageSkeleton } from '@/components/SkeletonLoaders'
+import { NavigationItem } from '@/lib/notionHomepage'
 
 interface HomePageClientProps {
   initialContent: any
+  navigationData: NavigationItem[]
 }
 
-export default function HomePageClient({ initialContent }: HomePageClientProps) {
+export default function HomePageClient({ initialContent, navigationData }: HomePageClientProps) {
   // Use only static content from server-side
   const displayContent = initialContent
+
+  console.log('🎨 HomePageClient rendering with navigation items:', navigationData?.length || 0)
 
   // Show skeleton if no content available
   if (!displayContent) {
@@ -41,7 +45,7 @@ export default function HomePageClient({ initialContent }: HomePageClientProps) 
         <LightSculpture />
 
         {/* Custom Navigation for new homepage */}
-        <NewNavbar />
+        <NewNavbar navigationData={navigationData} />
 
         {/* Hero Section */}
         {displayContent?.hero && <HeroSection hero={displayContent.hero} />}

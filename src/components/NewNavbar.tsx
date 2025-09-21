@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSimplifiedAuth } from '@/hooks/useSimplifiedAuth'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { NavigationItem } from '@/lib/notionHomepage'
 
 interface NavigationData {
   logo: { name: string; href: string } | null
@@ -19,12 +20,59 @@ interface NavigationData {
   status: string
 }
 
-export default function NewNavbar() {
+interface NewNavbarProps {
+  navigationData?: NavigationItem[]
+}
+
+// Transform NavigationItem[] to NavigationData
+function transformNavigationData(items: NavigationItem[]): NavigationData {
+  console.log('🔄 Transforming navigation data:', items.length, 'items')
+
+  const logo = items.find(item => item.item_type === 'logo')
+  const navItems = items.filter(item => item.item_type === 'nav_item')
+  const ctaButton = items.find(item => item.item_type === 'cta_button')
+
+  const transformedNavItems = navItems.map(item => {
+    if (item.is_dropdown && item.children) {
+      return {
+        name: item.label,
+        type: 'dropdown' as const,
+        items: item.children.map(child => ({
+          name: child.label,
+          href: child.href
+        }))
+      }
+    } else {
+      return {
+        name: item.label,
+        type: 'link' as const,
+        href: item.href
+      }
+    }
+  })
+
+  const result = {
+    logo: logo ? { name: logo.label, href: logo.href } : null,
+    navItems: transformedNavItems,
+    ctaButton: ctaButton ? { name: ctaButton.label, href: ctaButton.href } : null,
+    status: 'success'
+  }
+
+  console.log('✅ Navigation transformation complete:', {
+    logo: !!result.logo,
+    navItems: result.navItems.length,
+    ctaButton: !!result.ctaButton
+  })
+
+  return result
+}
+
+export default function NewNavbar({ navigationData }: NewNavbarProps) {
   const [scrolled, setScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const [showUserDropdown, setShowUserDropdown] = useState(false)
-  const [navigationData, setNavigationData] = useState<NavigationData | null>(null)
+  const [transformedNavData, setTransformedNavData] = useState<NavigationData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const pathname = usePathname()
   const { user, profile, isAdmin } = useSimplifiedAuth()
@@ -38,60 +86,25 @@ export default function NewNavbar() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Fetch navigation data from API
+  // Transform navigation data from props
   useEffect(() => {
-    // Use hardcoded navigation data instead of API
-    setNavigationData({
-      logo: { name: 'Stanly Hi', href: '/' },
-      navItems: [
-        {
-          name: 'Life Assistant',
-          type: 'dropdown',
-          items: [
-            { name: "C'est La Vie", href: '/cestlavie' }
-          ]
-        },
-        {
-          name: 'Career Tools',
-          type: 'dropdown',
-          items: [
-            { name: 'JD2CV 1.0', href: '/jd2cv-full' }
-          ]
-        },
-        {
-          name: 'Learning Hub',
-          type: 'dropdown',
-          items: [
-            { name: 'Readlingua', href: '/readlingua' },
-            { name: 'IELTS Speaking', href: '/ai-agent-gala' }
-          ]
-        },
-        {
-          name: 'AI Lab',
-          type: 'dropdown',
-          items: [
-            { name: 'AI Agent Gala', href: '/ai-agent-gala' }
-          ]
-        },
-        {
-          name: 'Portfolio',
-          type: 'link',
-          href: '/original'
-        },
-        {
-          name: 'About',
-          type: 'dropdown',
-          items: [
-            { name: 'Contact Me', href: '/aboutcontact' },
-            { name: 'Partnership', href: '/aboutcontact#partnership' }
-          ]
-        }
-      ],
-      ctaButton: { name: 'Explore Projects', href: '/#solutions' },
-      status: 'success'
-    })
-    setIsLoading(false)
-  }, [])
+    if (navigationData && navigationData.length > 0) {
+      console.log('🚚 NewNavbar received navigation data:', navigationData.length, 'items')
+      const transformed = transformNavigationData(navigationData)
+      setTransformedNavData(transformed)
+      setIsLoading(false)
+    } else {
+      console.log('⚠️ NewNavbar: No navigation data provided, using fallback')
+      // Fallback to ensure navbar always renders
+      setTransformedNavData({
+        logo: { name: 'Stanly Hi', href: '/' },
+        navItems: [],
+        ctaButton: null,
+        status: 'success'
+      })
+      setIsLoading(false)
+    }
+  }, [navigationData])
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -107,10 +120,10 @@ export default function NewNavbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Get navigation items from API data or fallback
-  const navItems = navigationData?.navItems || []
-  const logoData = navigationData?.logo || { name: 'Stanly Hi', href: '/' }
-  const ctaButtonData = navigationData?.ctaButton || { name: 'Explore Projects', href: '#' }
+  // Get navigation items from transformed data or fallback
+  const navItems = transformedNavData?.navItems || []
+  const logoData = transformedNavData?.logo || { name: 'Stanly Hi', href: '/' }
+  const ctaButtonData = transformedNavData?.ctaButton || { name: 'Explore Projects', href: '#' }
 
   const scrollToSection = (href: string) => {
     if (href.startsWith('#')) {
