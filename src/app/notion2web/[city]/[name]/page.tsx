@@ -72,7 +72,7 @@ export default function UserWebsitePage() {
     // Fallback to localStorage
     const config = localStorage.getItem(`notion-${userKey}`)
     if (!config) {
-      window.location.href = '/website'
+      window.location.href = '/notion2web'
       return
     }
 
@@ -97,23 +97,25 @@ export default function UserWebsitePage() {
       const data = await response.json()
 
       if (data.results) {
-        const processedData = data.results.map((item: any) => {
-          // 处理评论字段 - 从富文本中解析多行评论
-          const commentText = item.properties.Comment?.rich_text?.[0]?.plain_text || ''
-          const comments = commentText ? commentText.split('\n').filter((comment: string) => comment.trim()) : []
+        const processedData = data.results
+          .filter((item: any) => item.properties.Type?.select?.name) // Only include items with valid Type
+          .map((item: any) => {
+            // 处理评论字段 - 从富文本中解析多行评论
+            const commentText = item.properties.Comment?.rich_text?.[0]?.plain_text || ''
+            const comments = commentText ? commentText.split('\n').filter((comment: string) => comment.trim()) : []
 
-          return {
-            id: item.id,
-            title: item.properties.Title?.title?.[0]?.plain_text || 'Untitled',
-            type: item.properties.Type?.select?.name || 'General',
-            date: item.properties.Date?.date?.start || '',
-            content: item.properties.Content?.rich_text?.[0]?.plain_text || '',
-            image: item.properties.Image?.files?.[0]?.file?.url || item.properties.Image?.files?.[0]?.external?.url || '',
-            link: item.properties.Link?.url || '',
-            order: item.properties.Order?.number || 999,
-            comments: comments
-          }
-        })
+            return {
+              id: item.id,
+              title: item.properties.Title?.title?.[0]?.plain_text || 'Untitled',
+              type: item.properties.Type.select.name, // No fallback needed since we filtered
+              date: item.properties.Date?.date?.start || '',
+              content: item.properties.Content?.rich_text?.[0]?.plain_text || '',
+              image: item.properties.Image?.files?.[0]?.file?.url || item.properties.Image?.files?.[0]?.external?.url || '',
+              link: item.properties.Link?.url || '',
+              order: item.properties.Order?.number || 999,
+              comments: comments
+            }
+          })
 
         setNotionData(processedData)
 

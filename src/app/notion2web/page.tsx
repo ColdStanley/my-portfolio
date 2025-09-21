@@ -62,13 +62,13 @@ export default function WebsitePage() {
     const citySlug = city.toLowerCase().replace(/\s+/g, '')
     const nameSlug = name.toLowerCase().replace(/\s+/g, '')
     const baseUrl = window.location.origin
-    const shareLink = `${baseUrl}/website/${citySlug}/${nameSlug}?apiKey=${encodeURIComponent(notionApiKey)}&dbId=${databaseId}&theme=${selectedTheme}`
+    const shareLink = `${baseUrl}/notion2web/${citySlug}/${nameSlug}?apiKey=${encodeURIComponent(notionApiKey)}&dbId=${databaseId}&theme=${selectedTheme}`
 
     setShareUrl(shareLink)
     setShowShareUrl(true)
 
     setTimeout(() => {
-      router.push(`/website/${citySlug}/${nameSlug}`)
+      router.push(`/notion2web/${citySlug}/${nameSlug}`)
     }, 800)
   }
 
