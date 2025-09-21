@@ -378,12 +378,15 @@ export default function UserWebsitePage() {
               >
                 {viewMode === 'gallery' ? (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2h4a1 1 0 011 1v14a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1h4zM9 3v1h6V3H9zm-4 3v12h14V6H5z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h8M8 14h8" />
+                    <rect x="3" y="3" width="7" height="7" rx="1" strokeWidth="1.5"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1" strokeWidth="1.5"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1" strokeWidth="1.5"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1" strokeWidth="1.5"/>
                   </svg>
                 ) : (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2zM16 18a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2z" />
+                    <rect x="2" y="3" width="20" height="18" rx="2" strokeWidth="1.5"/>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 12h8M8 16h8"/>
                   </svg>
                 )}
               </button>
@@ -632,14 +635,14 @@ export default function UserWebsitePage() {
         </div>
       ) : (
         /* Presentation Mode */
-        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center animate-fadeIn" style={{backdropFilter: 'blur(8px)'}}>
           {filteredContent.length > 0 && (
             <>
               {/* Current Slide */}
-              <div className="max-w-4xl max-h-[90vh] mx-auto p-8 overflow-y-auto">
+              <div className="max-w-5xl max-h-[85vh] mx-auto p-6 overflow-y-auto">
                 <div
                   key={currentSlide}
-                  className={`${getThemeClasses(currentTheme, 'cardBg')} backdrop-blur-md rounded-2xl p-8 shadow-2xl border border-gray-100/50 transform transition-all duration-700 ease-out animate-slideIn`}
+                  className={`${getThemeClasses(currentTheme, 'cardBg')} backdrop-blur-md rounded-2xl p-10 shadow-2xl border border-gray-100/50 transform transition-all duration-700 ease-out animate-slideIn`}
                 >
                   {/* Slide Content - Same as card content */}
                   <div className="space-y-6">
@@ -667,17 +670,132 @@ export default function UserWebsitePage() {
 
                     {filteredContent[currentSlide]?.link && (
                       <div>
-                        <a
-                          href={filteredContent[currentSlide].link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`inline-flex items-center gap-2 ${getThemeClasses(currentTheme, 'linkColor')} text-lg font-medium transition-colors duration-200`}
-                        >
-                          View Link
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                          </svg>
-                        </a>
+                        {(() => {
+                          const url = filteredContent[currentSlide].link
+
+                          // Check if it's a video URL
+                          if (isVideoUrl(url)) {
+                            // YouTube video
+                            if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) {
+                              const videoId = url.includes('youtu.be/')
+                                ? url.split('youtu.be/')[1].split('?')[0]
+                                : url.split('v=')[1]?.split('&')[0]
+
+                              if (videoId) {
+                                return (
+                                  <div
+                                    className="relative aspect-video w-full rounded-xl overflow-hidden cursor-pointer group"
+                                    onClick={() => openVideoModal(url, filteredContent[currentSlide].title)}
+                                  >
+                                    <iframe
+                                      src={`https://www.youtube.com/embed/${videoId}`}
+                                      title="YouTube video"
+                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                      allowFullScreen
+                                      className="w-full h-full pointer-events-none"
+                                    />
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                      <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 10a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      </svg>
+                                    </div>
+                                  </div>
+                                )
+                              }
+                            }
+
+                            // Vimeo video
+                            if (url.includes('vimeo.com/')) {
+                              const videoId = url.split('vimeo.com/')[1].split('?')[0]
+                              if (videoId) {
+                                return (
+                                  <div
+                                    className="relative aspect-video w-full rounded-xl overflow-hidden cursor-pointer group"
+                                    onClick={() => openVideoModal(url, filteredContent[currentSlide].title)}
+                                  >
+                                    <iframe
+                                      src={`https://player.vimeo.com/video/${videoId}`}
+                                      title="Vimeo video"
+                                      allow="autoplay; fullscreen; picture-in-picture"
+                                      allowFullScreen
+                                      className="w-full h-full pointer-events-none"
+                                    />
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                      <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 10a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      </svg>
+                                    </div>
+                                  </div>
+                                )
+                              }
+                            }
+
+                            // Direct video files
+                            if (url.match(/\.(mp4|webm|ogg|mov|avi)(\?.*)?$/i)) {
+                              return (
+                                <div
+                                  className="relative w-full rounded-xl overflow-hidden cursor-pointer group"
+                                  onClick={() => openVideoModal(url, filteredContent[currentSlide].title)}
+                                >
+                                  <video
+                                    controls
+                                    className="w-full h-auto pointer-events-none"
+                                    preload="metadata"
+                                  >
+                                    <source src={url} type="video/mp4" />
+                                    Your browser does not support the video tag.
+                                  </video>
+                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                    <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 10a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                  </div>
+                                </div>
+                              )
+                            }
+
+                            // Bilibili video
+                            if (url.includes('bilibili.com/video/')) {
+                              const bvMatch = url.match(/\/video\/(BV\w+)/)
+                              if (bvMatch) {
+                                const bvid = bvMatch[1]
+                                return (
+                                  <div
+                                    className="relative aspect-video w-full rounded-xl overflow-hidden cursor-pointer group"
+                                    onClick={() => openVideoModal(url, filteredContent[currentSlide].title)}
+                                  >
+                                    <iframe
+                                      src={`https://player.bilibili.com/player.html?bvid=${bvid}&autoplay=0`}
+                                      title="Bilibili video"
+                                      allowFullScreen
+                                      className="w-full h-full border-0 pointer-events-none"
+                                    />
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                      <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 10a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      </svg>
+                                    </div>
+                                  </div>
+                                )
+                              }
+                            }
+                          }
+
+                          // Default link
+                          return (
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`inline-flex items-center gap-2 ${getThemeClasses(currentTheme, 'linkColor')} text-lg font-medium transition-colors duration-200`}
+                            >
+                              View Link
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </a>
+                          )
+                        })()}
                       </div>
                     )}
                   </div>
@@ -688,9 +806,9 @@ export default function UserWebsitePage() {
               <button
                 onClick={() => setCurrentSlide(Math.max(0, currentSlide - 1))}
                 disabled={currentSlide === 0}
-                className="fixed left-8 top-1/2 transform -translate-y-1/2 p-4 bg-white/20 backdrop-blur-sm rounded-full text-white transition-all duration-300 hover:bg-white/30 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="fixed left-6 top-1/2 transform -translate-y-1/2 p-3 bg-black/40 backdrop-blur-sm rounded-full text-white shadow-lg transition-all duration-300 hover:bg-black/60 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
@@ -698,9 +816,9 @@ export default function UserWebsitePage() {
               <button
                 onClick={() => setCurrentSlide(Math.min(filteredContent.length - 1, currentSlide + 1))}
                 disabled={currentSlide === filteredContent.length - 1}
-                className="fixed right-8 top-1/2 transform -translate-y-1/2 p-4 bg-white/20 backdrop-blur-sm rounded-full text-white transition-all duration-300 hover:bg-white/30 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="fixed right-6 top-1/2 transform -translate-y-1/2 p-3 bg-black/40 backdrop-blur-sm rounded-full text-white shadow-lg transition-all duration-300 hover:bg-black/60 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </button>
@@ -708,15 +826,15 @@ export default function UserWebsitePage() {
               {/* Close Button */}
               <button
                 onClick={() => setViewMode('gallery')}
-                className="fixed top-8 right-8 p-3 bg-white/20 backdrop-blur-sm rounded-full text-white transition-all duration-300 hover:bg-white/30 hover:scale-110 hover:rotate-90"
+                className="fixed top-6 right-6 p-2.5 bg-black/40 backdrop-blur-sm rounded-full text-white shadow-lg transition-all duration-300 hover:bg-black/60 hover:scale-110 hover:rotate-90"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
 
               {/* Slide Counter */}
-              <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm">
+              <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 px-3 py-1.5 bg-black/40 backdrop-blur-sm rounded-full text-white shadow-lg text-xs">
                 {currentSlide + 1} / {filteredContent.length}
               </div>
             </>
