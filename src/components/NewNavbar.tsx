@@ -92,19 +92,18 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
       console.log('🚚 NewNavbar received navigation data:', navigationData.length, 'items')
       const transformed = transformNavigationData(navigationData)
       setTransformedNavData(transformed)
-      setIsLoading(false)
     } else {
-      console.log('⚠️ NewNavbar: No navigation data provided, using fallback')
-      // Fallback to ensure navbar always renders
-      setTransformedNavData({
-        logo: { name: 'Stanly Hi', href: '/' },
-        navItems: [],
-        ctaButton: null,
-        status: 'success'
-      })
-      setIsLoading(false)
+      console.warn('⚠️ NewNavbar: No navigation data provided from CMS')
+      setTransformedNavData(null)
     }
+    setIsLoading(false)
   }, [navigationData])
+
+  useEffect(() => {
+    if (transformedNavData) {
+      console.log('🧭 Transformed navigation:', JSON.stringify(transformedNavData, null, 2))
+    }
+  }, [transformedNavData])
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -122,8 +121,8 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
 
   // Get navigation items from transformed data or fallback
   const navItems = transformedNavData?.navItems || []
-  const logoData = transformedNavData?.logo || { name: 'Stanly Hi', href: '/' }
-  const ctaButtonData = transformedNavData?.ctaButton || { name: 'Explore Projects', href: '#' }
+  const logoData = transformedNavData?.logo
+  const ctaButtonData = transformedNavData?.ctaButton
 
   const scrollToSection = (href: string) => {
     if (href.startsWith('#')) {
@@ -136,6 +135,10 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
   }
 
   const handleCtaClick = () => {
+    if (!ctaButtonData?.href) {
+      return
+    }
+
     if (ctaButtonData.href === '#' || ctaButtonData.href.startsWith('#')) {
       // Handle anchor links and default explore projects behavior
       if (pathname === '/') {
@@ -200,28 +203,34 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href={logoData.href} className="flex items-center">
-            <motion.span
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="text-xl font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent"
-            >
-              {logoData.name}
-            </motion.span>
-          </Link>
+          {logoData ? (
+            <Link href={logoData.href} className="flex items-center">
+              <motion.span
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="text-xl font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent"
+              >
+                {logoData.name}
+              </motion.span>
+            </Link>
+          ) : null}
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {!isLoading && navItems.map((item, index) => (
-              <div key={item.name || `nav-item-${index}`} className="relative dropdown-container">
+              <div
+                key={item.name || `nav-item-${index}`}
+                className="relative dropdown-container"
+                onMouseEnter={() => item.type === 'dropdown' && setOpenDropdown(item.name)}
+                onMouseLeave={() => item.type === 'dropdown' && setOpenDropdown(null)}
+              >
                 {item.type === 'dropdown' ? (
-                  <div
-                    onMouseEnter={() => setOpenDropdown(item.name)}
-                    onMouseLeave={() => setOpenDropdown(null)}
-                  >
+                  <>
                     <motion.button
+                      type="button"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
+                      onClick={() => setOpenDropdown(prev => prev === item.name ? null : item.name)}
                       className={`font-medium transition-all duration-200 flex items-center gap-1 ${
                         isActiveDropdown(item)
                           ? 'bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent'
@@ -248,22 +257,26 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 10 }}
                           transition={{ duration: 0.2 }}
-                          className="absolute top-full left-0 mt-2 w-48 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50"
+                          className="absolute top-full left-0 pt-2 z-[999] pointer-events-auto"
+                          onMouseEnter={() => setOpenDropdown(item.name)}
+                          onMouseLeave={() => setOpenDropdown(null)}
                         >
-                          {item.items?.map((subItem, subIndex) => (
-                            <Link key={subItem.name || `sub-item-${index}-${subIndex}`} href={subItem.href} prefetch={true}>
-                              <motion.div
-                                whileHover={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}
-                                className="px-4 py-3 text-gray-700 hover:text-purple-600 transition-colors duration-200 border-b border-gray-100 last:border-b-0"
-                              >
-                                {subItem.name}
-                              </motion.div>
-                            </Link>
-                          ))}
+                          <div className="w-48 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-gray-100 overflow-hidden">
+                            {item.items?.map((subItem, subIndex) => (
+                              <Link key={subItem.name || `sub-item-${index}-${subIndex}`} href={subItem.href} prefetch={true}>
+                                <motion.div
+                                  whileHover={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}
+                                  className="px-4 py-3 text-gray-700 hover:text-purple-600 transition-colors duration-200 border-b border-gray-100 last:border-b-0"
+                                >
+                                  {subItem.name}
+                                </motion.div>
+                              </Link>
+                            ))}
+                          </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
-                  </div>
+                  </>
                 ) : (
                   <Link href={item.href} prefetch={true}>
                     <motion.span
@@ -285,14 +298,16 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
 
           {/* CTA & User Authentication */}
           <div className="hidden md:flex items-center gap-4">
-            <motion.button
-              onClick={handleCtaClick}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl whitespace-nowrap"
-            >
-              {ctaButtonData.name}
-            </motion.button>
+            {ctaButtonData ? (
+              <motion.button
+                onClick={handleCtaClick}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl whitespace-nowrap"
+              >
+                {ctaButtonData.name}
+              </motion.button>
+            ) : null}
             
             {user ? (
               <div className="relative dropdown-container">
@@ -491,16 +506,18 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
                     </div>
                   )}
                   
-                  <motion.button
-                    onClick={() => {
-                      setMobileMenuOpen(false)
-                      handleCtaClick()
-                    }}
-                    whileTap={{ scale: 0.95 }}
-                    className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-medium transition-all duration-300 shadow-lg"
-                  >
-                    {ctaButtonData.name}
-                  </motion.button>
+                  {ctaButtonData ? (
+                    <motion.button
+                      onClick={() => {
+                        setMobileMenuOpen(false)
+                        handleCtaClick()
+                      }}
+                      whileTap={{ scale: 0.95 }}
+                      className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-medium transition-all duration-300 shadow-lg"
+                    >
+                      {ctaButtonData.name}
+                    </motion.button>
+                  ) : null}
                 </div>
               </div>
             </motion.div>

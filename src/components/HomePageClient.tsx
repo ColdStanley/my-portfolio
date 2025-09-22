@@ -37,15 +37,13 @@ export default function HomePageClient({ initialContent, navigationData }: HomeP
   return (
     <>
       <GlobalLoader />
+      <NewNavbar navigationData={navigationData} />
       <PageTransition>
-        <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 relative overflow-hidden">
+        <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 relative overflow-x-hidden">
         {/* Background Effects */}
         <GridBackground />
         <WorkflowNetwork />
         <LightSculpture />
-
-        {/* Custom Navigation for new homepage */}
-        <NewNavbar navigationData={navigationData} />
 
         {/* Hero Section */}
         {displayContent?.hero && <HeroSection hero={displayContent.hero} />}
@@ -136,78 +134,111 @@ function HeroSection({ hero }: HeroProps) {
   }, [])
 
   return (
-    <section className="min-h-screen flex items-center justify-center px-6 pt-16 relative overflow-hidden">
-      {/* Background Video */}
-      <video
-        ref={videoRef}
-        autoPlay
-        muted
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover opacity-40 z-0"
-      >
-        <source src={hero.background_video} type="video/mp4" />
-      </video>
+    <section className="relative px-6 pt-28 pb-20 lg:min-h-[calc(100vh-6rem)] overflow-visible">
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-purple-50/60 pointer-events-none" />
 
-      {/* Video Overlay for better text readability */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900/10 to-purple-900/20 z-10" />
-
-      <motion.div
-        className="max-w-4xl mx-auto text-center relative z-20"
-        style={{ y: scrollY * 0.3 }}
-      >
+      <div className="max-w-6xl mx-auto relative z-20 flex flex-col-reverse lg:flex-row items-center gap-14">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="w-full lg:w-1/2 text-center lg:text-left"
+          style={{ y: scrollY * 0.2 }}
         >
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
-            {hero.gradient_text && hero.gradient_text !== hero.title ? (
-              <>
-                {hero.title.split(hero.gradient_text)[0]}
-                <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                  {hero.gradient_text}
-                </span>
-                {hero.title.split(hero.gradient_text)[1]}
-              </>
-            ) : (
-              <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                {hero.title}
-              </span>
-            )}
-          </h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-            className="text-xl md:text-2xl text-gray-600 mb-12 leading-relaxed"
-          >
-            {hero.subtitle}
-          </motion.p>
-
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-            className="flex flex-wrap justify-center gap-4"
+            transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            {hero.primary_button_href.startsWith('#') ? (
-              <ScrollToSection targetId={hero.primary_button_href.slice(1)} className="w-40 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all duration-300 hover:shadow-lg hover:scale-105">
-                {hero.primary_button_text}
-              </ScrollToSection>
-            ) : (
-              <Link href={hero.primary_button_href} className="w-40 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all duration-300 hover:shadow-lg hover:scale-105 text-center">
-                {hero.primary_button_text}
-              </Link>
-            )}
-            {hero.secondary_button_text && (
-              <Link href={hero.secondary_button_href} className="w-40 px-6 py-3 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-purple-600 rounded-lg font-medium border border-purple-200 transition-all duration-300 hover:shadow-lg hover:scale-105 text-center">
-                {hero.secondary_button_text}
-              </Link>
-            )}
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+              {hero.gradient_text && hero.gradient_text !== hero.title ? (
+                <>
+                  {hero.title.split(hero.gradient_text)[0]}
+                  <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                    {hero.gradient_text}
+                  </span>
+                  {hero.title.split(hero.gradient_text)[1]}
+                </>
+              ) : (
+                <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                  {hero.title}
+                </span>
+              )}
+            </h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+              className="text-lg md:text-xl text-gray-600 mb-10 leading-relaxed"
+            >
+              {hero.subtitle}
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
+              className="flex flex-wrap justify-center lg:justify-start gap-4"
+            >
+              {hero.primary_button_href.startsWith('#') ? (
+                <ScrollToSection targetId={hero.primary_button_href.slice(1)} className="w-44 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all duration-300 hover:shadow-lg hover:scale-105">
+                  {hero.primary_button_text}
+                </ScrollToSection>
+              ) : (
+                <Link href={hero.primary_button_href} className="w-44 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all duration-300 hover:shadow-lg hover:scale-105 text-center">
+                  {hero.primary_button_text}
+                </Link>
+              )}
+
+              {hero.secondary_button_text && hero.secondary_button_href && (
+                hero.secondary_button_href.startsWith('#') ? (
+                  <ScrollToSection targetId={hero.secondary_button_href.slice(1)} className="w-44 px-6 py-3 bg-white/80 hover:bg-white text-gray-700 rounded-lg border border-purple-100 font-medium transition-all duration-300 hover:shadow-lg hover:scale-105">
+                    {hero.secondary_button_text}
+                  </ScrollToSection>
+                ) : (
+                  <Link href={hero.secondary_button_href} className="w-44 px-6 py-3 bg-white/80 hover:bg-white text-gray-700 rounded-lg border border-purple-100 font-medium transition-all duration-300 hover:shadow-lg hover:scale-105 text-center">
+                    {hero.secondary_button_text}
+                  </Link>
+                )
+              )}
+            </motion.div>
           </motion.div>
         </motion.div>
-      </motion.div>
+
+        <motion.div
+          className="w-full lg:w-1/2 flex justify-center lg:justify-end"
+          initial={{ opacity: 0, x: 40 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+        >
+          <div className="relative w-full max-w-xl aspect-[16/10] md:aspect-[4/3] lg:aspect-[3/2] rounded-[28px] overflow-hidden shadow-[0_24px_65px_-30px_rgba(79,70,229,0.6)] ring-1 ring-purple-100/50">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/15 via-transparent to-indigo-500/10 pointer-events-none" />
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+            >
+              <source src={hero.background_video} type="video/mp4" />
+            </video>
+          </div>
+        </motion.div>
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 0.35, scale: 1 }}
+        transition={{ duration: 1.2, delay: 0.3, ease: "easeOut" }}
+        className="absolute -left-16 top-1/3 w-72 h-72 bg-purple-200/50 rounded-full blur-3xl pointer-events-none"
+        style={{ y: scrollY * 0.2 }}
+      />
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 0.3, scale: 1 }}
+        transition={{ duration: 1.2, delay: 0.5, ease: "easeOut" }}
+        className="absolute -right-24 bottom-10 w-60 h-60 bg-indigo-200/50 rounded-full blur-3xl pointer-events-none"
+        style={{ y: scrollY * 0.2 }}
+      />
     </section>
   )
 }
@@ -629,7 +660,7 @@ function ScrollToSection({ targetId, className, children }: { targetId: string; 
 
 function GridBackground() {
   return (
-    <div className="absolute inset-0 opacity-[0.015]">
+    <div className="absolute inset-0 opacity-[0.015] pointer-events-none">
       <div className="absolute inset-0" style={{
         backgroundImage: `
           radial-gradient(circle at 1px 1px, rgba(139, 92, 246, 0.8) 1px, transparent 0)

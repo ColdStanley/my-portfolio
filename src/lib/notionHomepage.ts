@@ -29,8 +29,11 @@ export interface NotionSelect {
 }
 
 export interface NavigationItem {
+  id: string
+  normalized_id: string
   item_type: 'logo' | 'nav_item' | 'cta_button'
   parent_id?: string
+  normalized_parent_id?: string
   label: string
   href: string
   order: number
@@ -127,18 +130,26 @@ export function validateRequiredFields(data: any, requiredFields: string[], cont
 export function buildNavigationTree(flatItems: any[]): NavigationItem[] {
   console.log(`🌳 Building navigation tree from ${flatItems.length} items`)
 
-  const items: NavigationItem[] = flatItems.map(item => {
+  const items: NavigationItem[] = flatItems.map((item: any) => {
     const properties = item.properties
+    const parentIdRaw = extractRichText(properties.parent_id?.rich_text).trim()
+    const normalizedParentId = parentIdRaw ? parentIdRaw.replace(/-/g, '').toLowerCase() : undefined
+    const label = extractRichText(properties.label?.rich_text)
 
-    return {
+    const navigationItem: NavigationItem = {
+      id: item.id,
+      normalized_id: item.id ? item.id.replace(/-/g, '').toLowerCase() : '',
       item_type: extractSelect(properties.item_type?.select) as 'logo' | 'nav_item' | 'cta_button',
-      parent_id: extractRichText(properties.parent_id?.rich_text),
-      label: extractRichText(properties.label?.rich_text),
+      parent_id: parentIdRaw || undefined,
+      normalized_parent_id: normalizedParentId,
+      label,
       href: extractUrl(properties.href?.url),
       order: extractNumber(properties.order?.number),
       status: extractSelect(properties.status?.select) as 'active' | 'inactive',
       is_dropdown: extractCheckbox(properties.is_dropdown?.checkbox),
     }
+
+    return navigationItem
   })
 
   // Filter active items
@@ -152,12 +163,37 @@ export function buildNavigationTree(flatItems: any[]): NavigationItem[] {
   const rootItems = activeItems.filter(item => !item.parent_id)
   const childItems = activeItems.filter(item => item.parent_id)
 
-  // Attach children to parents
+  const parentLookup = new Map<string, NavigationItem>()
+
   rootItems.forEach(parent => {
-    if (parent.is_dropdown) {
-      parent.children = childItems
-        .filter(child => child.parent_id === parent.label)
-        .sort((a, b) => a.order - b.order)
+    if (parent.normalized_id) {
+      parentLookup.set(parent.normalized_id, parent)
+    }
+
+    const normalizedLabel = parent.label.trim().toLowerCase()
+    if (normalizedLabel) {
+      parentLookup.set(normalizedLabel, parent)
+    }
+  })
+
+  childItems.forEach(child => {
+    const lookupKeys = [child.normalized_parent_id, child.parent_id?.trim().toLowerCase()].filter(Boolean) as string[]
+
+    for (const key of lookupKeys) {
+      const parent = parentLookup.get(key)
+      if (parent && parent.is_dropdown) {
+        if (!parent.children) {
+          parent.children = []
+        }
+        parent.children.push(child)
+        return
+      }
+    }
+  })
+
+  rootItems.forEach(parent => {
+    if (parent.children && parent.children.length > 0) {
+      parent.children.sort((a, b) => a.order - b.order)
     }
   })
 
