@@ -6,6 +6,7 @@ import { themes, getThemeClasses } from '@/lib/themes'
 import ImageModal from '@/components/ImageModal'
 import VideoModal from '@/components/VideoModal'
 import { RichTextRenderer, parseRichText } from '@/lib/richTextParser'
+import Masonry from 'react-masonry-css'
 
 interface NotionContent {
   id: string
@@ -14,7 +15,7 @@ interface NotionContent {
   date: string
   content: string
   richContent?: any[]
-  image?: string
+  images: string[]
   link?: string
   order?: number
   comments?: string[]
@@ -41,6 +42,15 @@ export default function UserWebsitePage() {
   const [submittingComments, setSubmittingComments] = useState<{ [key: string]: boolean }>({})
   const [viewMode, setViewMode] = useState<'gallery' | 'presentation'>('gallery')
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [imageIndices, setImageIndices] = useState<{ [key: string]: number }>({})
+
+  // Helper function to extract primary background color from theme
+  const getThemeIndicatorColor = (themeId: string): string => {
+    const commentButtonClasses = getThemeClasses(themeId, 'commentButton')
+    // Extract the primary bg- class from commentButton (e.g., "bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400")
+    const bgMatch = commentButtonClasses.match(/bg-(\w+-\d+)/)
+    return bgMatch ? `bg-${bgMatch[1]}` : 'bg-purple-600' // fallback
+  }
 
   useEffect(() => {
     const userKey = `${params.city}-${params.name}`
@@ -130,7 +140,9 @@ export default function UserWebsitePage() {
               date: item.properties.Date?.date?.start || '',
               content: plainText,
               richContent: richTextContent,
-              image: item.properties.Image?.files?.[0]?.file?.url || item.properties.Image?.files?.[0]?.external?.url || '',
+              images: item.properties.Image?.files?.map((file: any) =>
+                file.file?.url || file.external?.url
+              ).filter(Boolean) || [],
               link: item.properties.Link?.url || '',
               order: item.properties.Order?.number || 999,
               comments: comments
@@ -155,6 +167,13 @@ export default function UserWebsitePage() {
     .filter(item => item.type === activeTab)
     .sort((a, b) => (a.order || 999) - (b.order || 999))
   const currentTheme = userConfig?.theme || 'pink'
+
+  // Masonry breakpoint configuration
+  const breakpointColumnsObj = {
+    default: 3,
+    1024: 2,
+    640: 1
+  }
 
   // 首字母大写工具函数
   const capitalizeWords = (str: string): string => {
@@ -416,13 +435,17 @@ export default function UserWebsitePage() {
       {/* Content Area */}
       {viewMode === 'gallery' ? (
         <div className="max-w-6xl mx-auto px-6 py-8">
-          <div className="masonry-container">
+          <Masonry
+            breakpointCols={breakpointColumnsObj}
+            className="flex -ml-6 w-auto"
+            columnClassName="pl-6"
+          >
             {filteredContent.map((item, index) => (
               <div
                 key={index}
-                className={`masonry-item ${getThemeClasses(currentTheme, 'cardBg')} backdrop-blur-sm rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] border border-gray-100/50`}
+                className={`masonry-card mb-6 ${getThemeClasses(currentTheme, 'cardBg')} backdrop-blur-sm rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] border border-gray-100/50`}
                 style={{
-                  animationDelay: `${index * 100}ms`
+                  animationDelay: index < 20 ? `${index * 100}ms` : '0ms'
                 }}
               >
               <div className="space-y-4">
@@ -432,21 +455,39 @@ export default function UserWebsitePage() {
                   <p className="text-xs text-gray-400 uppercase tracking-wider">{item.date}</p>
                 )}
 
-                {item.image && (
-                  <div
-                    className="relative overflow-hidden rounded-xl cursor-pointer group"
-                    onClick={() => openImageModal(item.image!, item.title)}
-                  >
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="w-full h-auto object-contain transform hover:scale-105 transition-transform duration-700"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                      </svg>
+                {item.images && item.images.length > 0 && (
+                  <div className="relative">
+                    <div
+                      className="relative overflow-hidden rounded-xl cursor-pointer group"
+                      onClick={() => openImageModal(item.images[imageIndices[item.id] || 0], item.title)}
+                    >
+                      <img
+                        src={item.images[imageIndices[item.id] || 0]}
+                        alt={item.title}
+                        className="w-full h-auto object-contain transform hover:scale-105 transition-transform duration-700"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                        </svg>
+                      </div>
                     </div>
+
+                    {item.images.length > 1 && (
+                      <div className="flex gap-2 mt-3 justify-center">
+                        {item.images.map((_, imgIndex) => (
+                          <button
+                            key={imgIndex}
+                            onClick={() => setImageIndices(prev => ({ ...prev, [item.id]: imgIndex }))}
+                            className={`h-1 rounded-full transition-all duration-300 ${
+                              imgIndex === (imageIndices[item.id] || 0)
+                                ? `w-8 ${getThemeIndicatorColor(currentTheme)}`
+                                : 'w-4 bg-gray-300 hover:bg-gray-400'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -642,7 +683,7 @@ export default function UserWebsitePage() {
               </div>
             </div>
           ))}
-        </div>
+          </Masonry>
 
           {filteredContent.length === 0 && (
             <div className="text-center py-16">
@@ -674,13 +715,31 @@ export default function UserWebsitePage() {
                       <p className="text-sm text-gray-400 uppercase tracking-wider">{filteredContent[currentSlide].date}</p>
                     )}
 
-                    {filteredContent[currentSlide]?.image && (
-                      <div className="relative overflow-hidden rounded-xl">
-                        <img
-                          src={filteredContent[currentSlide].image}
-                          alt={filteredContent[currentSlide].title}
-                          className="w-full max-h-96 object-contain"
-                        />
+                    {filteredContent[currentSlide]?.images && filteredContent[currentSlide]?.images.length > 0 && (
+                      <div className="relative">
+                        <div className="relative overflow-hidden rounded-xl">
+                          <img
+                            src={filteredContent[currentSlide].images[imageIndices[filteredContent[currentSlide].id] || 0]}
+                            alt={filteredContent[currentSlide].title}
+                            className="w-full max-h-96 object-contain"
+                          />
+                        </div>
+
+                        {filteredContent[currentSlide].images.length > 1 && (
+                          <div className="flex gap-2 mt-4 justify-center">
+                            {filteredContent[currentSlide].images.map((_, imgIndex) => (
+                              <button
+                                key={imgIndex}
+                                onClick={() => setImageIndices(prev => ({ ...prev, [filteredContent[currentSlide].id]: imgIndex }))}
+                                className={`h-1.5 rounded-full transition-all duration-300 ${
+                                  imgIndex === (imageIndices[filteredContent[currentSlide].id] || 0)
+                                    ? `w-10 ${getThemeIndicatorColor(currentTheme)}`
+                                    : 'w-5 bg-gray-300 hover:bg-gray-400'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -869,15 +928,8 @@ export default function UserWebsitePage() {
       )}
 
       <style jsx>{`
-        .masonry-container {
-          columns: 3;
-          column-gap: 1.5rem;
-          column-fill: balance;
-        }
-
-        .masonry-item {
+        .masonry-card {
           break-inside: avoid;
-          margin-bottom: 1.5rem;
           animation: fadeInUp 0.6s ease-out forwards;
           opacity: 0;
           transform: translateY(20px);
@@ -918,17 +970,6 @@ export default function UserWebsitePage() {
           animation: slideIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
-        @media (max-width: 1024px) {
-          .masonry-container {
-            columns: 2;
-          }
-        }
-
-        @media (max-width: 640px) {
-          .masonry-container {
-            columns: 1;
-          }
-        }
       `}</style>
 
       {/* Modals */}
