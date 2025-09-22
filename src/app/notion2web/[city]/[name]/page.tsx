@@ -52,12 +52,23 @@ export default function UserWebsitePage() {
     const theme = urlParams.get('theme')
 
     if (apiKey && dbId) {
-      // Use URL parameters
+      // Check if we have existing config in localStorage first
+      const existingConfig = localStorage.getItem(`notion-${userKey}`)
+      let originalName = params.name as string
+      let originalCity = params.city as string
+
+      if (existingConfig) {
+        const parsed = JSON.parse(existingConfig)
+        originalName = parsed.name || params.name as string
+        originalCity = parsed.city || params.city as string
+      }
+
+      // Use URL parameters with preserved original names
       const configFromUrl = {
         apiKey,
         databaseId: dbId,
-        city: params.city as string,
-        name: params.name as string,
+        city: originalCity,
+        name: originalName,
         theme: theme || 'pink'
       }
 
