@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import { themes, getThemeClasses } from '@/lib/themes'
 import ImageModal from '@/components/ImageModal'
 import VideoModal from '@/components/VideoModal'
+import { RichTextRenderer, parseRichText } from '@/lib/richTextParser'
 
 interface NotionContent {
   id: string
@@ -12,6 +13,7 @@ interface NotionContent {
   type: string
   date: string
   content: string
+  richContent?: any[]
   image?: string
   link?: string
   order?: number
@@ -106,12 +108,17 @@ export default function UserWebsitePage() {
             const commentText = item.properties.Comment?.rich_text?.[0]?.plain_text || ''
             const comments = commentText ? commentText.split('\n').filter((comment: string) => comment.trim()) : []
 
+            // Parse rich text content
+            const richTextContent = item.properties.Content?.rich_text || []
+            const { plainText } = parseRichText(richTextContent)
+
             return {
               id: item.id,
               title: item.properties.Title?.title?.[0]?.plain_text || 'Untitled',
               type: item.properties.Type.select.name, // No fallback needed since we filtered
               date: item.properties.Date?.date?.start || '',
-              content: item.properties.Content?.rich_text?.[0]?.plain_text || '',
+              content: plainText,
+              richContent: richTextContent,
               image: item.properties.Image?.files?.[0]?.file?.url || item.properties.Image?.files?.[0]?.external?.url || '',
               link: item.properties.Link?.url || '',
               order: item.properties.Order?.number || 999,
@@ -432,7 +439,11 @@ export default function UserWebsitePage() {
                   </div>
                 )}
 
-                {item.content && (
+                {(item.richContent && item.richContent.length > 0) ? (
+                  <div className="text-gray-600 leading-relaxed">
+                    <RichTextRenderer richText={item.richContent} />
+                  </div>
+                ) : item.content && (
                   <div className="text-gray-600 leading-relaxed whitespace-pre-line">
                     {item.content}
                   </div>
@@ -662,7 +673,11 @@ export default function UserWebsitePage() {
                       </div>
                     )}
 
-                    {filteredContent[currentSlide]?.content && (
+                    {(filteredContent[currentSlide]?.richContent && filteredContent[currentSlide]?.richContent.length > 0) ? (
+                      <div className="text-gray-600 leading-relaxed text-lg">
+                        <RichTextRenderer richText={filteredContent[currentSlide].richContent} />
+                      </div>
+                    ) : filteredContent[currentSlide]?.content && (
                       <div className="text-gray-600 leading-relaxed whitespace-pre-line text-lg">
                         {filteredContent[currentSlide].content}
                       </div>
