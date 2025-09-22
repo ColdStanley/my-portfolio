@@ -39,53 +39,63 @@ export function parseRichText(richTextBlocks: RichTextBlock[]): ParsedRichText {
     const text = block.text.content
     plainText += text
 
-    let element: React.ReactNode = text
+    // Split text by line breaks and create separate elements
+    const lines = text.split('\n')
 
-    // Apply text styles
-    if (block.annotations.bold) {
-      element = <strong key={`bold-${index}`}>{element}</strong>
-    }
+    lines.forEach((line, lineIndex) => {
+      let element: React.ReactNode = line
 
-    if (block.annotations.italic) {
-      element = <em key={`italic-${index}`}>{element}</em>
-    }
+      // Apply text styles
+      if (block.annotations.bold) {
+        element = <strong key={`bold-${index}-${lineIndex}`}>{element}</strong>
+      }
 
-    if (block.annotations.strikethrough) {
-      element = <s key={`strike-${index}`}>{element}</s>
-    }
+      if (block.annotations.italic) {
+        element = <em key={`italic-${index}-${lineIndex}`}>{element}</em>
+      }
 
-    if (block.annotations.underline) {
-      element = <u key={`underline-${index}`}>{element}</u>
-    }
+      if (block.annotations.strikethrough) {
+        element = <s key={`strike-${index}-${lineIndex}`}>{element}</s>
+      }
 
-    if (block.annotations.code) {
-      element = (
-        <code
-          key={`code-${index}`}
-          className="px-1.5 py-0.5 bg-gray-100 text-purple-600 rounded text-sm font-mono"
-        >
-          {element}
-        </code>
-      )
-    }
+      if (block.annotations.underline) {
+        element = <u key={`underline-${index}-${lineIndex}`}>{element}</u>
+      }
 
-    // Apply hyperlink
-    const linkUrl = block.text.link?.url || block.href
-    if (linkUrl) {
-      element = (
-        <a
-          key={`link-${index}`}
-          href={linkUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-purple-600 hover:text-purple-800 underline transition-colors duration-200"
-        >
-          {element}
-        </a>
-      )
-    }
+      if (block.annotations.code) {
+        element = (
+          <code
+            key={`code-${index}-${lineIndex}`}
+            className="px-1.5 py-0.5 bg-gray-100 text-purple-600 rounded text-sm font-mono"
+          >
+            {element}
+          </code>
+        )
+      }
 
-    content.push(element)
+      // Apply hyperlink
+      const linkUrl = block.text.link?.url || block.href
+      if (linkUrl) {
+        element = (
+          <a
+            key={`link-${index}-${lineIndex}`}
+            href={linkUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-purple-600 hover:text-purple-800 underline transition-colors duration-200"
+          >
+            {element}
+          </a>
+        )
+      }
+
+      content.push(element)
+
+      // Add line break after each line except the last one
+      if (lineIndex < lines.length - 1) {
+        content.push(<br key={`br-${index}-${lineIndex}`} />)
+      }
+    })
   })
 
   return { content, plainText }
@@ -95,7 +105,7 @@ export function RichTextRenderer({ richText }: { richText: RichTextBlock[] }) {
   const { content } = parseRichText(richText)
 
   return (
-    <div className="rich-text-content">
+    <div className="rich-text-content leading-relaxed">
       {content.map((element, index) => (
         <React.Fragment key={index}>{element}</React.Fragment>
       ))}

@@ -440,7 +440,7 @@ export default function UserWebsitePage() {
                     <img
                       src={item.image}
                       alt={item.title}
-                      className="w-full h-48 object-cover transform hover:scale-110 transition-transform duration-700"
+                      className="w-full h-auto object-contain transform hover:scale-105 transition-transform duration-700"
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
                       <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -679,7 +679,7 @@ export default function UserWebsitePage() {
                         <img
                           src={filteredContent[currentSlide].image}
                           alt={filteredContent[currentSlide].title}
-                          className="w-full max-h-96 object-cover"
+                          className="w-full max-h-96 object-contain"
                         />
                       </div>
                     )}
