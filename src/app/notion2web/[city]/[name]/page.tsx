@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { themes, getThemeClasses } from '@/lib/themes'
 import ImageModal from '@/components/ImageModal'
@@ -43,6 +43,8 @@ export default function UserWebsitePage() {
   const [viewMode, setViewMode] = useState<'gallery' | 'presentation'>('gallery')
   const [currentSlide, setCurrentSlide] = useState(0)
   const [imageIndices, setImageIndices] = useState<{ [key: string]: number }>({})
+  const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false)
+  const themeMenuRef = useRef<HTMLDivElement>(null)
 
   // Helper function to extract primary background color from theme
   const getThemeIndicatorColor = (themeId: string): string => {
@@ -50,6 +52,16 @@ export default function UserWebsitePage() {
     // Extract the primary bg- class from commentButton (e.g., "bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400")
     const bgMatch = commentButtonClasses.match(/bg-(\w+-\d+)/)
     return bgMatch ? `bg-${bgMatch[1]}` : 'bg-purple-600' // fallback
+  }
+
+  // Handle theme change
+  const handleThemeChange = (newTheme: string) => {
+    const userKey = `${params.city}-${params.name}`
+    const updatedConfig = { ...userConfig, theme: newTheme }
+
+    setUserConfig(updatedConfig)
+    localStorage.setItem(`notion-${userKey}`, JSON.stringify(updatedConfig))
+    setIsThemeMenuOpen(false)
   }
 
   useEffect(() => {
@@ -105,6 +117,18 @@ export default function UserWebsitePage() {
     setUserConfig(parsedConfig)
     fetchNotionData(parsedConfig)
   }, [params])
+
+  // Handle click outside theme menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (themeMenuRef.current && !themeMenuRef.current.contains(event.target as Node)) {
+        setIsThemeMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const fetchNotionData = async (config: any) => {
     try {
@@ -403,7 +427,55 @@ export default function UserWebsitePage() {
                 ))}
               </nav>
 
-              {/* View Mode Toggle */}
+              <div className="flex items-center gap-3">
+                {/* Theme Selection */}
+                <div className="relative" ref={themeMenuRef}>
+                  <button
+                    onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
+                    className={`p-3 rounded-xl transition-all duration-300 transform hover:scale-110 ${
+                      isThemeMenuOpen
+                        ? `bg-gradient-to-r ${getThemeClasses(currentTheme, 'tabActive')} text-white shadow-lg`
+                        : `bg-white/60 backdrop-blur-sm text-gray-600 ${getThemeClasses(currentTheme, 'tabHover')} border border-gray-100/50`
+                    }`}
+                    title="Change Theme"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5H11l3 7-3 7h10a2 2 0 002-2V7a2 2 0 00-2-2z"/>
+                    </svg>
+                  </button>
+
+                  {/* Theme Dropdown */}
+                  {isThemeMenuOpen && (
+                    <div className="absolute top-full right-0 mt-2 w-72 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-gray-100 p-4 z-50 animate-dropdown">
+                      <h3 className="text-sm font-medium text-gray-700 mb-3">Choose Theme</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        {Object.values(themes).map((theme) => (
+                          <button
+                            key={theme.id}
+                            onClick={() => handleThemeChange(theme.id)}
+                            className={`relative p-3 rounded-xl border-2 transition-all duration-300 hover:scale-105 ${
+                              currentTheme === theme.id
+                                ? 'border-gray-400 shadow-lg'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            <div className={`w-full h-6 rounded-lg bg-gradient-to-r ${theme.accent} mb-2`}></div>
+                            <p className="text-xs font-medium text-gray-700">{theme.name}</p>
+                            {currentTheme === theme.id && (
+                              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                                <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* View Mode Toggle */}
               <button
                 onClick={() => setViewMode(viewMode === 'gallery' ? 'presentation' : 'gallery')}
                 className={`p-3 rounded-xl transition-all duration-300 transform hover:scale-110 ${
@@ -427,6 +499,7 @@ export default function UserWebsitePage() {
                   </svg>
                 )}
               </button>
+              </div>
             </div>
           </div>
         </div>
@@ -493,7 +566,7 @@ export default function UserWebsitePage() {
 
                 {(item.richContent && item.richContent.length > 0) ? (
                   <div className="text-gray-600 leading-relaxed">
-                    <RichTextRenderer richText={item.richContent} />
+                    <RichTextRenderer richText={item.richContent} theme={currentTheme} />
                   </div>
                 ) : item.content && (
                   <div className="text-gray-600 leading-relaxed whitespace-pre-line">
@@ -745,7 +818,7 @@ export default function UserWebsitePage() {
 
                     {(filteredContent[currentSlide]?.richContent && filteredContent[currentSlide]?.richContent.length > 0) ? (
                       <div className="text-gray-600 leading-relaxed text-lg">
-                        <RichTextRenderer richText={filteredContent[currentSlide].richContent} />
+                        <RichTextRenderer richText={filteredContent[currentSlide].richContent} theme={currentTheme} />
                       </div>
                     ) : filteredContent[currentSlide]?.content && (
                       <div className="text-gray-600 leading-relaxed whitespace-pre-line text-lg">
