@@ -1,64 +1,45 @@
 import { invokeDeepSeek, invokeDeepSeekStream } from '../utils/deepseekLLM'
-import type { ParentInsights } from './roleExpertAgent'
+import { fetchPromptFromNotion } from '../utils/promptFetcher'
+import type { ClassificationResult } from './classifierAgent'
 
 // Robust JSON parsing function that handles LLM responses with extra text
 function parseJsonFromLLMResponse(content: string): any {
-  try {
-    // Remove common prefixes that LLMs often add
-    const prefixesToRemove = [
-      'Of course.',
-      'Sure!',
-      'Here is',
-      'Here\'s',
-      'Certainly.',
-      'Absolutely.',
-      'I\'ll help you',
-      'Here you go',
-    ]
+  const raw = content.trim()
+  const withoutCodeBlocks = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
 
-    let cleaned = content.trim()
+  const candidates: string[] = []
+  let depth = 0
+  let startIndex: number | null = null
 
-    // Remove common prefixes (case insensitive)
-    for (const prefix of prefixesToRemove) {
-      const regex = new RegExp(`^${prefix}\\s*`, 'i')
-      cleaned = cleaned.replace(regex, '')
+  for (let i = 0; i < withoutCodeBlocks.length; i++) {
+    const char = withoutCodeBlocks[i]
+    if (char === '{') {
+      if (depth === 0) {
+        startIndex = i
+      }
+      depth += 1
+    } else if (char === '}') {
+      depth -= 1
+      if (depth === 0 && startIndex != null) {
+        candidates.push(withoutCodeBlocks.slice(startIndex, i + 1))
+        startIndex = null
+      }
     }
-
-    // Remove markdown code blocks
-    cleaned = cleaned
-      .replace(/```json\s*/gi, '')
-      .replace(/```\s*/g, '')
-      .trim()
-
-    // Try to find JSON content between braces
-    const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
-    if (jsonMatch) {
-      cleaned = jsonMatch[0]
-    }
-
-    // Parse the cleaned content
-    return JSON.parse(cleaned)
-  } catch (error) {
-    console.warn('Failed to parse JSON from LLM response:', error)
-    console.warn('Original content:', content.slice(0, 200) + '...')
-    throw error
-  }
-}
-
-// Helper function to fetch prompt from Notion
-async function fetchPromptFromNotion(project: string, agent: string): Promise<string> {
-  console.log(`[ReviewerAgent] 🔄 Fetching prompt from Notion: ${project}:${agent}`)
-
-  const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/prompt-manager-notion?project=${project}&agent=${agent}`)
-
-  if (!response.ok) {
-    console.error(`[ReviewerAgent] ❌ Failed to fetch prompt: ${response.status}`)
-    throw new Error(`Failed to fetch prompt for ${project}:${agent} - ${response.status}`)
   }
 
-  const data = await response.json()
-  console.log(`[ReviewerAgent] ✅ Successfully fetched prompt (version: ${data.version})`)
-  return data.promptContent
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate)
+      if (parsed && typeof parsed === 'object' && 'workExperience' in parsed && 'personalInfo' in parsed) {
+        return parsed
+      }
+    } catch (error) {
+      continue
+    }
+  }
+
+  console.warn('Failed to parse JSON from LLM response. Preview:', withoutCodeBlocks.slice(0, 200) + '...')
+  throw new Error('ReviewerAgent expected JSON but did not receive a valid payload')
 }
 
 // Reviewer Agent - Work Experience Review Only (Profile Preserved)
@@ -67,139 +48,93 @@ export async function reviewerAgent(input: {
   personalInfo: any;
   originalPersonalInfo: any;
   jd: { title: string; full_job_description: string };
-  parentInsights: ParentInsights;
+  classification: ClassificationResult;
   onStreamChunk?: (chunk: string) => void; // Optional streaming callback
 }): Promise<{ personalInfo: any; workExperience: string; tokens: { prompt: number; completion: number; total: number } }> {
 
-  console.log(`[ReviewerAgent] 🎯 Starting Reviewer Agent for: ${input.jd.title} (Profile-Preserving Mode)`)
-  console.log(`[ReviewerAgent] 📋 Classification: ${input.parentInsights.classification}`)
-  console.log(`[ReviewerAgent] 👤 Profile Protection: User profile will not be modified`)
+  console.log(`[ReviewerAgent] 🎯 Starting Reviewer Agent for: ${input.jd.title} (Profile-Optimizing Mode)`)
+  console.log(`[ReviewerAgent] 📋 Role Type: ${input.classification.roleType}`)
+  console.log(`[ReviewerAgent] 👤 Profile Enhancement: Technical skills and custom modules will be optimized`)
 
-  const { workExperience, personalInfo, originalPersonalInfo, jd, parentInsights, onStreamChunk } = input
+  const { workExperience, personalInfo, originalPersonalInfo, jd, classification, onStreamChunk } = input
 
-  const focusSummary = parentInsights.focusPoints.length
-    ? parentInsights.focusPoints.map((point, idx) => `${idx + 1}. ${point}`).join('\n')
-    : 'No additional focus points provided.'
+  const insightSummary = classification.insights.length
+    ? classification.insights.slice(0, 5).map((point, idx) => `${idx + 1}. ${point}`).join('\n')
+    : 'No additional insights provided.'
 
-  const keywordList = parentInsights.keywords.length
-    ? parentInsights.keywords.join(', ')
+  const keywordList = classification.keywords.length
+    ? classification.keywords.slice(0, 10).join(', ')
     : 'N/A'
 
-  console.log(`[ReviewerAgent] 🔢 Variables prepared: ${parentInsights.focusPoints.length} focus points, ${parentInsights.keywords.length} keywords`)
+  console.log(`[ReviewerAgent] 🔢 Variables prepared: ${classification.insights.length} insights, ${classification.keywords.length} keywords`)
   console.log(`[ReviewerAgent] 📄 Work experience length: ${workExperience.length}`)
 
   try {
-    // Fetch prompt template from Notion for work experience review only
-    const promptTemplate = await fetchPromptFromNotion('JD2CV_Full', 'Reviewer')
+    // Fetch prompt template and profile data from Notion
+    const promptTemplate = await fetchPromptFromNotion('JD2CV_Full', 'Reviewer', 'ReviewerAgent')
+    const profileDataRaw = await fetchPromptFromNotion('JD2CV_Full', 'Profile', 'ReviewerAgent')
 
-    // Replace variables in the prompt template - focus only on work experience review
-    console.log(`[ReviewerAgent] 🔄 Preparing work experience review prompt`)
+    // Parse profile data
+    let profileData: any
+    try {
+      const profileParsed = JSON.parse(profileDataRaw)
+      if (!profileParsed || !profileParsed['jd2cv-v2-personal-info']) {
+        throw new Error('Profile data missing jd2cv-v2-personal-info')
+      }
+      profileData = profileParsed['jd2cv-v2-personal-info']
+    } catch (error) {
+      console.error('ReviewerAgent failed to parse profile data:', error)
+      throw new Error('Invalid profile data format')
+    }
+
+    // Replace variables in the prompt template for profile optimization
+    console.log(`[ReviewerAgent] 🔄 Preparing profile optimization prompt`)
     const reviewPrompt = promptTemplate
-      .replace(/\$\{jd\.title\}/g, jd.title)
-      .replace(/\$\{jd\.full_job_description\}/g, jd.full_job_description)
-      .replace(/\$\{parentInsights\.classification\}/g, parentInsights.classification)
-      .replace(/\$\{focusSummary\}/g, focusSummary)
-      .replace(/\$\{keywordList\}/g, keywordList)
+      .replace(/\$\{classifier\.role_type\}/g, classification.roleType)
+      .replace(/\$\{classifier\.keywords\}/g, classification.keywords.join(', '))
+      .replace(/\$\{classifier\.insights\}/g, classification.insights.join('\n'))
+      .replace(/\$\{JSON\.stringify\(personalInfo, null, 2\)\}/g, JSON.stringify(profileData, null, 2))
       .replace(/\$\{workExperience\}/g, workExperience)
-      .replace(/\$\{JSON\.stringify\(personalInfo, null, 2\)\}/g, JSON.stringify(personalInfo, null, 2))
 
-    console.log(`[ReviewerAgent] 📤 Sending work experience for review, prompt length: ${reviewPrompt.length}`)
+    console.log(`[ReviewerAgent] 📤 Sending profile for optimization, prompt length: ${reviewPrompt.length}`)
 
     // Use streaming if callback provided, otherwise use regular DeepSeek
     const result = onStreamChunk
       ? await invokeDeepSeekStream(
           reviewPrompt,
-          (chunk: string) => {
-            console.log(`[ReviewerAgent] 📝 Streaming chunk: ${chunk.slice(0, 50)}...`)
-            onStreamChunk(chunk)
-          },
+          onStreamChunk,
           0.2,
           5000
         )
       : await invokeDeepSeek(reviewPrompt, 0.2, 5000)
 
-    console.log(`[ReviewerAgent] 📥 Work experience review completed, tokens: ${JSON.stringify(result.tokens)}`)
+    console.log(`[ReviewerAgent] 📥 Profile optimization completed, tokens: ${JSON.stringify(result.tokens)}`)
 
-    try {
-      // Try to parse the LLM response as JSON using robust parser
-      console.log(`[ReviewerAgent] 🔄 Parsing work experience review response`)
-      const reviewResult = parseJsonFromLLMResponse(result.content)
+    console.log(`[ReviewerAgent] 🔄 Parsing profile optimization response`)
+    const reviewResult = parseJsonFromLLMResponse(result.content)
 
-      if (reviewResult.workExperience) {
-        console.log(`[ReviewerAgent] ✅ Reviewer Agent completed successfully`)
-        console.log(`[ReviewerAgent] 📊 Final result: original profile preserved, workExperience reviewed (length: ${reviewResult.workExperience.length})`)
+    if (!reviewResult.personalInfo) {
+      console.error('[ReviewerAgent] ❌ No personalInfo in response payload')
+      throw new Error('Invalid response structure - missing personalInfo')
+    }
 
-        // Return original personalInfo unchanged, only reviewed work experience
-        return {
-          personalInfo: originalPersonalInfo, // Always use original profile data
-          workExperience: reviewResult.workExperience,
-          tokens: result.tokens
-        }
-      } else {
-        console.error('[ReviewerAgent] ❌ No work experience in response')
-        throw new Error('Invalid response structure - missing work experience')
-      }
+    if (!reviewResult.workExperience) {
+      console.error('[ReviewerAgent] ❌ No workExperience in response payload')
+      throw new Error('Invalid response structure - missing workExperience')
+    }
 
-    } catch (parseError) {
-      console.error('[ReviewerAgent] ❌ Failed to parse work experience review response', parseError)
-      // Fallback: return original data if parsing fails
-      return {
-        personalInfo: originalPersonalInfo,
-        workExperience: workExperience,
-        tokens: result.tokens
-      }
+    console.log(`[ReviewerAgent] ✅ Reviewer Agent completed successfully`)
+    console.log(`[ReviewerAgent] 📊 Final result: optimized profile and preserved workExperience (length: ${reviewResult.workExperience.length})`)
+
+    return {
+      personalInfo: reviewResult.personalInfo,
+      workExperience: reviewResult.workExperience,
+      tokens: result.tokens
     }
 
   } catch (error) {
-    console.error('[ReviewerAgent] ❌ Reviewer Agent error:', error)
-    // Fallback: return original data if anything fails
-    return {
-      personalInfo: originalPersonalInfo,
-      workExperience: workExperience,
-      tokens: { prompt: 0, completion: 0, total: 0 }
-    }
-  }
-}
-
-// Fallback function for basic review
-function performBasicReview(personalInfo: any, workExperience: string, originalPersonalInfo: any) {
-  const reviewedPersonalInfo = { ...personalInfo }
-
-  // Remove duplicate skills
-  if (reviewedPersonalInfo.technicalSkills) {
-    reviewedPersonalInfo.technicalSkills = [...new Set(reviewedPersonalInfo.technicalSkills)]
-  }
-
-  // Remove duplicate languages
-  if (reviewedPersonalInfo.languages) {
-    reviewedPersonalInfo.languages = [...new Set(reviewedPersonalInfo.languages)]
-  }
-
-  // Remove duplicate certificates
-  if (reviewedPersonalInfo.certificates) {
-    reviewedPersonalInfo.certificates = [...new Set(reviewedPersonalInfo.certificates)]
-  }
-
-  // Ensure required fields from original are preserved
-  reviewedPersonalInfo.fullName = originalPersonalInfo.fullName || reviewedPersonalInfo.fullName
-  reviewedPersonalInfo.email = originalPersonalInfo.email || reviewedPersonalInfo.email
-  reviewedPersonalInfo.phone = originalPersonalInfo.phone || reviewedPersonalInfo.phone
-  reviewedPersonalInfo.format = originalPersonalInfo.format || reviewedPersonalInfo.format || 'A4'
-
-  // Validate structure matches localStorage requirements
-  const requiredFields = [
-    'fullName', 'email', 'phone', 'location', 'linkedin', 'website',
-    'summary', 'technicalSkills', 'languages', 'education', 'certificates', 'customModules', 'format'
-  ]
-
-  requiredFields.forEach(field => {
-    if (!(field in reviewedPersonalInfo)) {
-      reviewedPersonalInfo[field] = originalPersonalInfo[field] || (Array.isArray(originalPersonalInfo[field]) ? [] : '')
-    }
-  })
-
-  return {
-    personalInfo: reviewedPersonalInfo,
-    workExperience: workExperience
+    const message = error instanceof Error ? error.message : String(error)
+    console.error(`[ReviewerAgent] ❌ Reviewer Agent error for JD "${jd.title}": ${message}`)
+    throw error
   }
 }

@@ -1,9 +1,8 @@
-import { parentAgent } from '../agents/parentAgent'
-import { roleExpertAgent, ParentInsights } from '../agents/roleExpertAgent'
-import { nonWorkExpertAgent } from '../agents/nonWorkExpertAgent'
+import { classifierAgent, ClassificationResult } from '../agents/classifierAgent'
+import { experienceGeneratorAgent } from '../agents/experienceGeneratorAgent'
 import { reviewerAgent } from '../agents/reviewerAgent'
 
-export type StageKey = 'parent' | 'roleExpert' | 'nonWorkExpert' | 'reviewer'
+export type StageKey = 'classifier' | 'experience' | 'reviewer'
 
 export interface TokensUsage {
   prompt: number
@@ -17,22 +16,16 @@ export interface StepUpdateBase {
   tokens: TokensUsage
 }
 
-export interface ParentStepUpdate extends StepUpdateBase {
-  stage: 'parent'
-  roleClassification: string
-  focusPoints: string[]
+export interface ClassifierStepUpdate extends StepUpdateBase {
+  stage: 'classifier'
+  roleType: string
   keywords: string[]
-  keySentences: string[]
+  insights: string[]
 }
 
-export interface RoleExpertStepUpdate extends StepUpdateBase {
-  stage: 'roleExpert'
+export interface ExperienceStepUpdate extends StepUpdateBase {
+  stage: 'experience'
   workExperience: string
-}
-
-export interface NonWorkStepUpdate extends StepUpdateBase {
-  stage: 'nonWorkExpert'
-  personalInfo: any
 }
 
 export interface ReviewerStepUpdate extends StepUpdateBase {
@@ -49,9 +42,8 @@ export interface StreamContentUpdate {
 }
 
 export type StepUpdate =
-  | ParentStepUpdate
-  | RoleExpertStepUpdate
-  | NonWorkStepUpdate
+  | ClassifierStepUpdate
+  | ExperienceStepUpdate
   | ReviewerStepUpdate
   | StreamContentUpdate
 
@@ -82,89 +74,67 @@ export async function runLangchainWorkflow({ jd, personalInfo, onStep }: Workflo
   const stepDetails = {} as Record<StageKey, StepUpdate>
   let cumulativeTokens: TokensUsage = { prompt: 0, completion: 0, total: 0 }
 
-  // Step 1 - Parent Agent
+  // Step 1 - Classifier Agent
   const parentStart = Date.now()
-  const parentResult = await parentAgent(jd, (chunk: string) => {
+  const classifierResult = await classifierAgent(jd, (chunk: string) => {
     if (onStep) {
       // Send streaming content update
       onStep({
-        stage: 'parent',
+        stage: 'classifier',
         streamingContent: chunk,
         isComplete: false
       } as StreamContentUpdate)
     }
   })
-  const parentDuration = Date.now() - parentStart
+  const classifierDuration = Date.now() - parentStart
 
-  const parentContext: ParentInsights = {
-    classification: parentResult.classification,
-    focusPoints: parentResult.focusPoints,
-    keywords: parentResult.keywords,
-    keySentences: parentResult.keySentences
+  const classifierContext: ClassificationResult = classifierResult
+
+  const classifierUpdate: ClassifierStepUpdate = {
+    stage: 'classifier',
+    roleType: classifierContext.roleType,
+    keywords: classifierContext.keywords,
+    insights: classifierContext.insights,
+    tokens: classifierContext.tokens,
+    duration: classifierDuration
   }
+  stepDetails.classifier = classifierUpdate
+  cumulativeTokens = addTokens(cumulativeTokens, classifierContext.tokens)
+  if (onStep) await onStep(classifierUpdate)
 
-  const parentUpdate: ParentStepUpdate = {
-    stage: 'parent',
-    roleClassification: parentResult.classification,
-    focusPoints: parentContext.focusPoints,
-    keywords: parentContext.keywords,
-    keySentences: parentContext.keySentences,
-    tokens: parentResult.tokens,
-    duration: parentDuration
-  }
-  stepDetails.parent = parentUpdate
-  cumulativeTokens = addTokens(cumulativeTokens, parentResult.tokens)
-  if (onStep) await onStep(parentUpdate)
-
-  // Step 2 - Role Expert
-  const roleStart = Date.now()
-  const roleExpertResult = await roleExpertAgent(jd.title, parentContext, (chunk: string) => {
+  // Step 2 - Experience Generator
+  const experienceStart = Date.now()
+  const experienceResult = await experienceGeneratorAgent(classifierContext, (chunk: string) => {
     if (onStep) {
       // Send streaming content update
       onStep({
-        stage: 'roleExpert',
+        stage: 'experience',
         streamingContent: chunk,
         isComplete: false
       } as StreamContentUpdate)
     }
   })
-  const customizedWorkExperience = roleExpertResult.content
-  const roleDuration = Date.now() - roleStart
+  const customizedWorkExperience = experienceResult.workExperience
+  const experienceDuration = Date.now() - experienceStart
 
-  const roleUpdate: RoleExpertStepUpdate = {
-    stage: 'roleExpert',
+  const experienceUpdate: ExperienceStepUpdate = {
+    stage: 'experience',
     workExperience: customizedWorkExperience,
-    tokens: roleExpertResult.tokens,
-    duration: roleDuration
+    tokens: experienceResult.tokens,
+    duration: experienceDuration
   }
-  stepDetails.roleExpert = roleUpdate
-  cumulativeTokens = addTokens(cumulativeTokens, roleExpertResult.tokens)
-  if (onStep) await onStep(roleUpdate)
+  stepDetails.experience = experienceUpdate
+  cumulativeTokens = addTokens(cumulativeTokens, experienceResult.tokens)
+  if (onStep) await onStep(experienceUpdate)
 
-  // Step 3 - Non-work Expert
-  const nonWorkStart = Date.now()
-  const nonWorkExpertResult = await nonWorkExpertAgent(customizedWorkExperience, personalInfo, parentContext)
-  const customizedPersonalInfo = nonWorkExpertResult.content
-  const nonWorkDuration = Date.now() - nonWorkStart
-
-  const nonWorkUpdate: NonWorkStepUpdate = {
-    stage: 'nonWorkExpert',
-    personalInfo: customizedPersonalInfo,
-    tokens: nonWorkExpertResult.tokens,
-    duration: nonWorkDuration
-  }
-  stepDetails.nonWorkExpert = nonWorkUpdate
-  cumulativeTokens = addTokens(cumulativeTokens, nonWorkExpertResult.tokens)
-  if (onStep) await onStep(nonWorkUpdate)
-
-  // Step 4 - Reviewer
+  // Step 3 - Reviewer
   const reviewerStart = Date.now()
   const reviewerResult = await reviewerAgent({
     workExperience: customizedWorkExperience,
-    personalInfo: customizedPersonalInfo,
+    personalInfo,
     originalPersonalInfo: personalInfo,
     jd,
-    parentInsights: parentContext,
+    classification: classifierContext,
     onStreamChunk: (chunk: string) => {
       if (onStep) {
         // Send streaming content update
@@ -192,7 +162,7 @@ export async function runLangchainWorkflow({ jd, personalInfo, onStep }: Workflo
   const processingTime = Date.now() - workflowStart
 
   return {
-    roleClassification: parentResult.classification,
+    roleClassification: classifierContext.roleType,
     personalInfo: reviewerResult.personalInfo,
     workExperience: reviewerResult.workExperience,
     processingTime,

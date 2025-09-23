@@ -37,7 +37,7 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
   const [isGenerating, setIsGenerating] = useState(false)
   const [countdown, setCountdown] = useState(180)
   const [showPanel, setShowPanel] = useState(false)
-  const [activeStage, setActiveStage] = useState<StageKey>('parent')
+  const [activeStage, setActiveStage] = useState<StageKey>('classifier')
   const [stageOutputs, setStageOutputs] = useState<Record<StageKey, StageData>>(() => createInitialStageState())
   const [tasks, setTasks] = useState<TaskEntry[]>([])
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null)
@@ -133,14 +133,12 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
 
   const resetStageOutputs = () => {
     const initial = createInitialStageState()
-    initial.parent.status = 'in_progress'
+    initial.classifier.status = 'in_progress'
     setStageOutputs(initial)
     return initial
   }
 
   const handleStreamEvent = (event: string, data: any) => {
-    console.log('Resume SSE event:', event, data)
-
     // Handle streaming content updates
     if (data.streamingContent && !data.isComplete) {
       const stage = data.stage as StageKey
@@ -171,45 +169,36 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
 
     switch (event) {
       case 'start':
-        updateStage('parent', { status: 'in_progress' })
+        updateStage('classifier', { status: 'in_progress' })
         break
-      case 'parent':
-        completeStage('parent', {
-          content: data.roleClassification,
-          roleClassification: data.roleClassification,
-          focusPoints: data.focusPoints || data.focus_points || [],
+      case 'classifier':
+        completeStage('classifier', {
+          content: data.roleType,
+          roleType: data.roleType,
           keywords: data.keywords || [],
-          keySentences: data.keySentences || data.key_sentences || [],
+          insights: data.insights || [],
           tokens: data.tokens,
           duration: data.duration
         })
-        setActiveStage('parent')
+        setActiveStage('classifier')
         break
-    case 'roleExpert':
-      completeStage('roleExpert', {
-        content: data.workExperience,
-        tokens: data.tokens,
-        duration: data.duration
-      })
-      setActiveStage(prev => (prev === 'parent' ? 'roleExpert' : prev))
-      break
-    case 'nonWorkExpert':
-      completeStage('nonWorkExpert', {
-        json: data.personalInfo,
-        tokens: data.tokens,
-        duration: data.duration
-      })
-      setActiveStage(prev => (prev === 'roleExpert' ? 'nonWorkExpert' : prev))
-      break
-    case 'reviewer':
-      completeStage('reviewer', {
-        content: data.workExperience,
-        json: data.personalInfo,
-        tokens: data.tokens,
-        duration: data.duration
-      })
-      setActiveStage('reviewer')
-      break
+      case 'experience':
+        completeStage('experience', {
+          content: data.workExperience,
+          tokens: data.tokens,
+          duration: data.duration
+        })
+        setActiveStage(prev => (prev === 'classifier' ? 'experience' : prev))
+        break
+      case 'reviewer':
+        completeStage('reviewer', {
+          content: data.workExperience,
+          json: data.personalInfo,
+          tokens: data.tokens,
+          duration: data.duration
+        })
+        setActiveStage('reviewer')
+        break
       case 'done':
         if (data?.steps?.reviewer) {
           updateStage('reviewer', {
@@ -224,14 +213,14 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
           applyStepSummaries(data.steps)
         }
         break
-    case 'error':
-      markError(data?.message)
-      setShowPanel(true)
-      break
-    default:
-      break
+      case 'error':
+        markError(data?.message)
+        setShowPanel(true)
+        break
+      default:
+        break
+    }
   }
-}
 
 const applyStepSummaries = (steps?: Record<StageKey, any>) => {
   if (!steps) return
@@ -244,28 +233,20 @@ const applyStepSummaries = (steps?: Record<StageKey, any>) => {
         return
       }
 
-      if (stageKey === 'parent') {
+      if (stageKey === 'classifier') {
         nextState[stageKey] = {
           status: 'completed',
-          content: step.roleClassification,
-          roleClassification: step.roleClassification,
-          focusPoints: step.focusPoints || step.focus_points || [],
+          content: step.roleType,
+          roleType: step.roleType,
           keywords: step.keywords || [],
-          keySentences: step.keySentences || step.key_sentences || [],
+          insights: step.insights || [],
           tokens: step.tokens,
           duration: step.duration
         }
-      } else if (stageKey === 'roleExpert') {
+      } else if (stageKey === 'experience') {
         nextState[stageKey] = {
           status: 'completed',
           content: step.workExperience,
-          tokens: step.tokens,
-          duration: step.duration
-        }
-      } else if (stageKey === 'nonWorkExpert') {
-        nextState[stageKey] = {
-          status: 'completed',
-          json: step.personalInfo,
           tokens: step.tokens,
           duration: step.duration
         }
@@ -552,7 +533,7 @@ const runPostGenerationSteps = async (customizedResume: any, context: { jd: JD; 
       startedAt: Date.now(),
       updatedAt: Date.now(),
       stageOutputs: cloneStageState(initialStages),
-      activeStage: 'parent'
+      activeStage: 'classifier'
     }
 
     setCurrentTaskId(taskId)
@@ -561,7 +542,7 @@ const runPostGenerationSteps = async (customizedResume: any, context: { jd: JD; 
       const nextTasks = [newTask, ...filtered]
       return nextTasks.slice(0, 5)
     })
-    setActiveStage('parent')
+    setActiveStage('classifier')
     setShowPanel(true)
     setIsPanelMinimized(false)
     setIsDockOpen(true)
@@ -838,10 +819,9 @@ const runPostGenerationSteps = async (customizedResume: any, context: { jd: JD; 
 }
 
 const STAGE_CONFIG = [
-  { key: 'parent', label: 'Role', icon: '🎯' },
-  { key: 'roleExpert', label: 'Experience', icon: '💼' },
-  { key: 'nonWorkExpert', label: 'Profile', icon: '👤' },
-  { key: 'reviewer', label: 'Reviewer', icon: '🔍' }
+  { key: 'classifier', label: 'Insights', icon: '🎯' },
+  { key: 'experience', label: 'Experience', icon: '💼' },
+  { key: 'reviewer', label: 'Review', icon: '🔍' }
 ] as const
 
 const STAGE_ORDER = STAGE_CONFIG.map(stage => stage.key)
@@ -854,10 +834,9 @@ interface StageData {
   json?: any
   tokens?: TokensUsage
   duration?: number
-  roleClassification?: string
-  focusPoints?: string[]
+  roleType?: string
   keywords?: string[]
-  keySentences?: string[]
+  insights?: string[]
   streamingContent?: string // For real-time streaming content
 }
 
@@ -1084,7 +1063,7 @@ function renderStageContent(stage: StageData) {
   }
 
   // Show streaming content only if stage is in progress, has streaming content, and no final content yet
-  if (stage.status === 'in_progress' && stage.streamingContent && !stage.content && !stage.json && !stage.roleClassification) {
+  if (stage.status === 'in_progress' && stage.streamingContent && !stage.content && !stage.json && !stage.roleType) {
     return (
       <div className="space-y-2">
         <div className="text-xs text-purple-600 font-medium flex items-center gap-1">
@@ -1097,26 +1076,26 @@ function renderStageContent(stage: StageData) {
       </div>
     )
   }
-  const hasParentInsights = Boolean(
-    (stage.focusPoints && stage.focusPoints.length) ||
-    (stage.keywords && stage.keywords.length) ||
-    (stage.keySentences && stage.keySentences.length)
+  const hasClassifierInsights = Boolean(
+    stage.roleType ||
+    (stage.insights && stage.insights.length) ||
+    (stage.keywords && stage.keywords.length)
   )
-  if (hasParentInsights) {
+  if (hasClassifierInsights) {
     return (
       <div className="space-y-3 text-[11px] text-slate-600">
-        {stage.roleClassification && (
+        {stage.roleType && (
           <div>
-            <div className="text-xs font-semibold text-purple-700">Role Classification</div>
-            <div>{stage.roleClassification}</div>
+            <div className="text-xs font-semibold text-purple-700">Role Type</div>
+            <div>{stage.roleType}</div>
           </div>
         )}
-        {stage.focusPoints && stage.focusPoints.length > 0 && (
+        {stage.insights && stage.insights.length > 0 && (
           <div>
-            <div className="text-xs font-semibold text-purple-700">Focus Points</div>
+            <div className="text-xs font-semibold text-purple-700">Classifier Insights</div>
             <ul className="list-disc pl-4 space-y-1">
-              {stage.focusPoints.map((fp, idx) => (
-                <li key={idx}>{fp}</li>
+              {stage.insights.map((insight, idx) => (
+                <li key={idx}>{insight}</li>
               ))}
             </ul>
           </div>
@@ -1125,16 +1104,6 @@ function renderStageContent(stage: StageData) {
           <div>
             <div className="text-xs font-semibold text-purple-700">Priority Keywords</div>
             <div>{stage.keywords.join(', ')}</div>
-          </div>
-        )}
-        {stage.keySentences && stage.keySentences.length > 0 && (
-          <div>
-            <div className="text-xs font-semibold text-purple-700">Key Sentences</div>
-            <ul className="list-disc pl-4 space-y-1">
-              {stage.keySentences.map((sentence, idx) => (
-                <li key={idx}>{sentence}</li>
-              ))}
-            </ul>
           </div>
         )}
       </div>
@@ -1266,12 +1235,12 @@ async function runWorkflowWithStream({ jd, personalInfo, requestId }: StreamPayl
     }
   })
 
-  if (errorMessage) {
-    throw new Error(errorMessage)
+  if (!finalResult) {
+    throw new Error(errorMessage || 'Workflow did not return final result')
   }
 
-  if (!finalResult) {
-    throw new Error('Workflow did not return final result')
+  if (errorMessage) {
+    console.warn('Resume workflow warning:', errorMessage)
   }
 
   return finalResult

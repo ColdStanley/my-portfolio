@@ -20,9 +20,8 @@ export async function POST(request: NextRequest) {
 
     const workflowResult = await runLangchainWorkflow({ jd, personalInfo })
 
-    console.log('🎯 Parent Agent - Role Classification:', workflowResult.roleClassification)
-    console.log('💼 Role Expert Agent - Customized Work Experience:', workflowResult.stepDetails.roleExpert.workExperience)
-    console.log('👤 Non-Work Expert Agent - Customized Personal Info:', workflowResult.stepDetails.nonWorkExpert.personalInfo)
+    console.log('🎯 Classifier Agent - Role Type:', workflowResult.roleClassification)
+    console.log('💼 Experience Generator - Work Experience Preview:', workflowResult.workExperience.slice(0, 120))
 
     return NextResponse.json({
       success: true,
