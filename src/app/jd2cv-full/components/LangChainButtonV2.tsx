@@ -621,13 +621,6 @@ const runPostGenerationSteps = async (customizedResume: any, context: { jd: JD; 
     setIsDockOpen(false)
   }
 
-  const currentTask = currentTaskId ? tasks.find(task => task.id === currentTaskId) : tasks[0]
-  const runningCount = tasks.filter(task => task.status === 'running').length
-  const completedCount = tasks.filter(task => task.status === 'completed').length
-  const errorCount = tasks.filter(task => task.status === 'error').length
-  const dockProgress = currentTask ? calculateTaskProgress(currentTask.stageOutputs) : 0
-  const dockStatusLabel = currentTask ? formatTaskStatusLabel(currentTask.status) : 'Idle'
-  const dockSummaryText = buildDockSummary(runningCount, completedCount, errorCount)
   return (
     <>
       <div className={`relative ${className}`.trim()}>
@@ -656,7 +649,7 @@ const runPostGenerationSteps = async (customizedResume: any, context: { jd: JD; 
               className="fixed z-[95]"
               style={{ top: dockPosition.y, left: dockPosition.x }}
             >
-              <div className="w-[260px] rounded-3xl border border-purple-100 bg-white/95 shadow-2xl backdrop-blur p-4">
+              <div className="w-[320px] rounded-3xl border border-purple-100 bg-white/95 shadow-2xl backdrop-blur p-4">
                 <div
                   className={`flex items-start justify-between gap-3 select-none ${isDockDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
                   onPointerDown={handleDockPointerDown}
@@ -674,25 +667,14 @@ const runPostGenerationSteps = async (customizedResume: any, context: { jd: JD; 
                     <span className={`transition-transform transform ${isDockOpen ? 'rotate-180' : ''}`}>▾</span>
                   </button>
                 </div>
-
-                <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-purple-100">
-                  <div
-                    className="h-full rounded-full bg-purple-500 transition-all duration-300"
-                    style={{ width: `${dockProgress}%` }}
-                  />
-                </div>
-                <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500">
-                  <span className="truncate pr-2">{dockSummaryText}</span>
-                  <span className="font-semibold text-purple-600">{dockStatusLabel}</span>
-                </div>
-
                 {isDockOpen && (
                   <div className="mt-4 max-h-64 space-y-3 overflow-y-auto pr-1">
                     {tasks.map(task => {
-                      const progress = calculateTaskProgress(task.stageOutputs)
                       const statusLabel = formatTaskStatusLabel(task.status)
                       const isActiveTask = task.id === currentTaskId
                       const statusAccent = getStatusAccentClass(task.status)
+                      const stageKey = getTaskStage(task.stageOutputs)
+                      const stageLabel = getStageLabel(stageKey)
                       const cardBaseClass = isActiveTask
                         ? 'border-purple-300 bg-purple-50/70 shadow-sm'
                         : 'border-purple-100 bg-white hover:border-purple-200 hover:shadow-sm'
@@ -708,13 +690,10 @@ const runPostGenerationSteps = async (customizedResume: any, context: { jd: JD; 
                             <span className="truncate" title={task.label}>{task.label}</span>
                             <span className="text-[10px] text-slate-400">{formatRelativeTime(task.updatedAt)}</span>
                           </div>
-                          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
-                            <div
-                              className={`h-full transition-all duration-300 ${task.status === 'error' ? 'bg-rose-400' : 'bg-purple-500'}`}
-                              style={{ width: `${progress}%` }}
-                            />
+                          <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500">
+                            <span className="truncate">Stage: {stageLabel}</span>
+                            <span className={`font-semibold ${statusAccent}`}>{statusLabel}</span>
                           </div>
-                          <div className={`mt-2 text-[10px] font-semibold ${statusAccent}`}>{statusLabel}</div>
                         </button>
                       )
                     })}
@@ -908,27 +887,6 @@ function deriveTaskStatus(stageState: Record<StageKey, StageData>): TaskStatus {
   return 'pending'
 }
 
-function calculateTaskProgress(stageState: Record<StageKey, StageData>) {
-  if (!stageState) return 0
-  let completed = 0
-  let hasInProgress = false
-
-  STAGE_ORDER.forEach(stage => {
-    const status = stageState[stage]?.status
-    if (status === 'completed') {
-      completed += 1
-    }
-    if (status === 'in_progress') {
-      hasInProgress = true
-    }
-  })
-
-  const total = STAGE_ORDER.length || 1
-  const partial = hasInProgress ? 0.4 : 0
-  const rawProgress = ((completed + partial) / total) * 100
-  return Math.min(100, Math.max(0, Math.round(rawProgress)))
-}
-
 function formatTaskStatusLabel(status: TaskStatus) {
   switch (status) {
     case 'running':
@@ -940,17 +898,6 @@ function formatTaskStatusLabel(status: TaskStatus) {
     default:
       return 'Pending'
   }
-}
-
-function buildDockSummary(running: number, completed: number, error: number) {
-  const parts: string[] = []
-  if (running > 0) parts.push(`${running} running`)
-  if (completed > 0) parts.push(`${completed} done`)
-  if (error > 0) parts.push(`${error} error`)
-  if (running === 0 && completed > 0 && error === 0) {
-    return 'All tasks complete'
-  }
-  return parts.length > 0 ? parts.join(' • ') : 'No active tasks'
 }
 
 function getStatusAccentClass(status: TaskStatus) {
@@ -984,6 +931,27 @@ function buildTaskLabel(jd: JD) {
   const title = jd.title?.trim() || 'Resume'
   const company = jd.company?.trim()
   return company ? `${title} · ${company}` : title
+}
+
+function getTaskStage(stageOutputs: Record<StageKey, StageData>): StageKey {
+  for (const key of STAGE_ORDER) {
+    const status = stageOutputs[key]?.status
+    if (status === 'in_progress' || status === 'pending') {
+      return key
+    }
+  }
+  for (let i = STAGE_ORDER.length - 1; i >= 0; i--) {
+    const key = STAGE_ORDER[i]
+    if (stageOutputs[key]?.status === 'completed') {
+      return key
+    }
+  }
+  return STAGE_ORDER[0]
+}
+
+function getStageLabel(stageKey: StageKey) {
+  const stage = STAGE_CONFIG.find(item => item.key === stageKey)
+  return stage ? stage.label : stageKey
 }
 
 const formatStageStatus = (status: StageData['status']) => {
