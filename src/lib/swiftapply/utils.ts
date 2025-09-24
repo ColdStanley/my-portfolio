@@ -61,6 +61,29 @@ export function isValidEmail(email: string): boolean {
   return emailRegex.test(email)
 }
 
+
+/**
+ * Validate phone number format (basic)
+ */
+export function isValidPhone(phone: string): boolean {
+  if (!phone.trim()) return true // Empty is ok
+  const phoneRegex = /^[+]?[\d\s\-\(\)]{7,20}$/
+  return phoneRegex.test(phone)
+}
+
+/**
+ * Validate URL format
+ */
+export function isValidUrl(url: string): boolean {
+  if (!url.trim()) return true // Empty is ok
+  try {
+    new URL(url.startsWith('http') ? url : `https://${url}`)
+    return true
+  } catch {
+    return false
+  }
+}
+
 /**
  * Clean filename for download
  */

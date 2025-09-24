@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useSwiftApplyStore, type ExperienceTemplate } from '@/lib/swiftapply/store'
 import { parseMultilineToArray, arrayToMultiline } from '@/lib/swiftapply/utils'
+import ConfirmDialog from './ConfirmDialog'
 
 export default function StepTemplates() {
   const {
@@ -17,8 +18,14 @@ export default function StepTemplates() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [editingTemplate, setEditingTemplate] = useState<{
     title: string
+    targetRole: string
     content: string
-  }>({ title: '', content: '' })
+  }>({ title: '', targetRole: '', content: '' })
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    show: boolean
+    templateId: string
+    templateTitle: string
+  }>({ show: false, templateId: '', templateTitle: '' })
 
   // Toggle template expansion
   const toggleExpanded = (id: string) => {
@@ -30,6 +37,7 @@ export default function StepTemplates() {
       if (template) {
         setEditingTemplate({
           title: template.title,
+          targetRole: template.targetRole,
           content: arrayToMultiline(template.content)
         })
       }
@@ -38,10 +46,11 @@ export default function StepTemplates() {
 
   // Save expanded template
   const saveTemplate = (id: string) => {
-    if (!editingTemplate.title.trim()) return
+    if (!editingTemplate.title.trim() || !editingTemplate.targetRole.trim()) return
 
     updateTemplate(id, {
       title: editingTemplate.title.trim(),
+      targetRole: editingTemplate.targetRole.trim(),
       content: parseMultilineToArray(editingTemplate.content)
     })
     setExpandedId(null)
@@ -50,31 +59,40 @@ export default function StepTemplates() {
   // Cancel editing
   const cancelEdit = () => {
     setExpandedId(null)
-    setEditingTemplate({ title: '', content: '' })
+    setEditingTemplate({ title: '', targetRole: '', content: '' })
   }
 
   // Add new template
   const handleAddTemplate = () => {
-    const newId = Date.now().toString()
-    addTemplate({
+    const templateData = {
       title: 'New Experience Template',
+      targetRole: 'Software Engineer',
       content: ['• Add your experience bullet points here...']
-    })
+    }
+    const newId = addTemplate(templateData)
     setExpandedId(newId)
     setEditingTemplate({
-      title: 'New Experience Template',
+      title: templateData.title,
+      targetRole: templateData.targetRole,
       content: '• Add your experience bullet points here...'
     })
   }
 
   // Delete template with confirmation
-  const handleDeleteTemplate = (id: string) => {
-    if (confirm('Are you sure you want to delete this template?')) {
-      deleteTemplate(id)
-      if (expandedId === id) {
-        setExpandedId(null)
-      }
+  const handleDeleteTemplate = (id: string, title: string) => {
+    setDeleteConfirm({
+      show: true,
+      templateId: id,
+      templateTitle: title
+    })
+  }
+
+  const confirmDeleteTemplate = () => {
+    deleteTemplate(deleteConfirm.templateId)
+    if (expandedId === deleteConfirm.templateId) {
+      setExpandedId(null)
     }
+    setDeleteConfirm({ show: false, templateId: '', templateTitle: '' })
   }
 
   return (
@@ -116,7 +134,7 @@ export default function StepTemplates() {
                       {isExpanded ? 'Collapse' : 'Edit'}
                     </button>
                     <button
-                      onClick={() => handleDeleteTemplate(template.id)}
+                      onClick={() => handleDeleteTemplate(template.id, template.title)}
                       className="px-3 py-1 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
                     >
                       Delete
@@ -139,6 +157,20 @@ export default function StepTemplates() {
                           onChange={(e) => setEditingTemplate(prev => ({ ...prev, title: e.target.value }))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors"
                           placeholder="e.g., Software Engineer at TechCorp"
+                        />
+                      </div>
+
+                      {/* Target Role Input */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Target Role
+                        </label>
+                        <input
+                          type="text"
+                          value={editingTemplate.targetRole}
+                          onChange={(e) => setEditingTemplate(prev => ({ ...prev, targetRole: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors"
+                          placeholder="e.g., Software Engineer"
                         />
                       </div>
 
@@ -167,7 +199,7 @@ export default function StepTemplates() {
                         </button>
                         <button
                           onClick={() => saveTemplate(template.id)}
-                          disabled={!editingTemplate.title.trim()}
+                          disabled={!editingTemplate.title.trim() || !editingTemplate.targetRole.trim()}
                           className="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg transition-colors"
                         >
                           Save Template
@@ -247,6 +279,18 @@ export default function StepTemplates() {
           Save & Close
         </button>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteConfirm.show}
+        onClose={() => setDeleteConfirm({ show: false, templateId: '', templateTitle: '' })}
+        onConfirm={confirmDeleteTemplate}
+        title="Delete Template"
+        message={`Are you sure you want to delete "${deleteConfirm.templateTitle}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
     </div>
   )
 }

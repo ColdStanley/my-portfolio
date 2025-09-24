@@ -54,7 +54,7 @@ export default function SettingsModal() {
           <div
             className="flex transition-transform duration-500 ease-out"
             style={{
-              transform: `translateX(-${(settingsStep - 1) * 100}%)`,
+              transform: `translateX(-${(settingsStep - 1) * 50}%)`,
               width: '200%'
             }}
           >

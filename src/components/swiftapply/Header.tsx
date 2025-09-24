@@ -1,9 +1,47 @@
 'use client'
 
+import { useState } from 'react'
 import { useSwiftApplyStore } from '@/lib/swiftapply/store'
+import ConfirmDialog from './ConfirmDialog'
 
 export default function Header() {
   const { openSettings, clearAll } = useSwiftApplyStore()
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
+
+  const handleClearAll = () => {
+    setShowClearConfirm(true)
+  }
+
+  const confirmClearAll = () => {
+    clearAll()
+  }
+
+  const handleGenerateCV = () => {
+    const { personalInfo, templates, jobTitle, jobDescription, startAIGeneration } = useSwiftApplyStore.getState()
+
+    if (!personalInfo) {
+      alert('Please configure your personal information first')
+      return
+    }
+
+    if (!jobTitle.trim()) {
+      alert('Please enter a job title first')
+      return
+    }
+
+    if (!jobDescription.trim()) {
+      alert('Please enter a job description first')
+      return
+    }
+
+    if (templates.length === 0) {
+      alert('Please create at least one experience template')
+      return
+    }
+
+    // Start AI generation
+    startAIGeneration()
+  }
 
   return (
     <header className="h-16 bg-white/90 backdrop-blur-sm border-b border-gray-200 shadow-sm">
@@ -24,7 +62,7 @@ export default function Header() {
         <div className="flex items-center gap-2 lg:gap-3">
           {/* Clear All */}
           <button
-            onClick={clearAll}
+            onClick={handleClearAll}
             className="hidden sm:block px-4 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             title="Clear all data"
           >
@@ -32,7 +70,7 @@ export default function Header() {
           </button>
           {/* Mobile Clear All */}
           <button
-            onClick={clearAll}
+            onClick={handleClearAll}
             className="sm:hidden p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             title="Clear all data"
             aria-label="Clear all data"
@@ -42,13 +80,25 @@ export default function Header() {
             </svg>
           </button>
 
-          {/* Generate CV Button (Disabled) */}
+          {/* Generate CV Button (AI Enabled) - Desktop */}
           <button
-            disabled
-            className="hidden sm:block px-4 py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed text-sm font-medium"
-            title="PDF generation coming soon"
+            onClick={handleGenerateCV}
+            className="hidden sm:block px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
+            title="Generate AI-powered resume"
           >
             Generate CV
+          </button>
+
+          {/* Generate CV Button (AI Enabled) - Mobile */}
+          <button
+            onClick={handleGenerateCV}
+            className="sm:hidden p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+            title="Generate AI-powered resume"
+            aria-label="Generate AI-powered resume"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
           </button>
 
           {/* Settings Button */}
@@ -65,6 +115,18 @@ export default function Header() {
           </button>
         </div>
       </div>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={showClearConfirm}
+        onClose={() => setShowClearConfirm(false)}
+        onConfirm={confirmClearAll}
+        title="Clear All Data"
+        message="This will permanently delete all your personal information, experience templates, and job description. This action cannot be undone."
+        confirmText="Clear All"
+        cancelText="Cancel"
+        type="danger"
+      />
     </header>
   )
 }

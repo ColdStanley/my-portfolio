@@ -29,22 +29,62 @@ export type PersonalInfo = {
 export type ExperienceTemplate = {
   id: string        // Use Date.now().toString()
   title: string
+  targetRole: string
   content: string[]
+}
+
+// AI Generation Types
+export type AIStageKey = 'classifier' | 'experience' | 'reviewer'
+
+export interface AIStageData {
+  status: 'pending' | 'in_progress' | 'completed' | 'error'
+  content?: string
+  streamingContent?: string
+  duration?: number | null
+  tokens?: {
+    prompt: number
+    completion: number
+    total: number
+  } | null
+  timestamp?: number
+  // Classifier specific
+  roleType?: string
+  keywords?: string[]
+  insights?: string[]
+  // Reviewer specific
+  personalInfo?: any
+}
+
+export interface AIGenerationState {
+  isGenerating: boolean
+  showProgressPanel: boolean
+  activeStage: AIStageKey
+  stageOutputs: Record<AIStageKey, AIStageData>
+  generatedContent: {
+    workExperience?: string
+    personalInfo?: any
+  } | null
+  error: string | null
 }
 
 interface SwiftApplyState {
   // Data
   personalInfo: PersonalInfo | null
   templates: ExperienceTemplate[]
+  jobTitle: string
   jobDescription: string
 
   // UI State
   isSettingsOpen: boolean
   settingsStep: 1 | 2
 
+  // AI Generation State
+  ai: AIGenerationState
+
   // Actions
   setPersonalInfo: (pi: PersonalInfo) => void
   setTemplates: (t: ExperienceTemplate[]) => void
+  setJobTitle: (v: string) => void
   setJobDescription: (v: string) => void
   openSettings: (step?: 1 | 2) => void
   closeSettings: () => void
@@ -52,18 +92,42 @@ interface SwiftApplyState {
   initializeFromStorage: () => void
 
   // Template management helpers
-  addTemplate: (template: Omit<ExperienceTemplate, 'id'>) => void
+  addTemplate: (template: Omit<ExperienceTemplate, 'id'>) => string
   updateTemplate: (id: string, updates: Partial<ExperienceTemplate>) => void
   deleteTemplate: (id: string) => void
+
+  // AI Generation actions
+  startAIGeneration: () => void
+  stopAIGeneration: () => void
+  setAIStage: (stage: AIStageKey) => void
+  updateAIStageData: (stage: AIStageKey, data: Partial<AIStageData>) => void
+  setAIGeneratedContent: (content: any) => void
+  resetAIState: () => void
 }
+
+// Initial AI state
+const getInitialAIState = (): AIGenerationState => ({
+  isGenerating: false,
+  showProgressPanel: false,
+  activeStage: 'classifier',
+  stageOutputs: {
+    classifier: { status: 'pending' },
+    experience: { status: 'pending' },
+    reviewer: { status: 'pending' }
+  },
+  generatedContent: null,
+  error: null
+})
 
 export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
   // Initial state
   personalInfo: null,
   templates: [],
+  jobTitle: '',
   jobDescription: '',
   isSettingsOpen: false,
   settingsStep: 1,
+  ai: getInitialAIState(),
 
   // Core setters
   setPersonalInfo: (personalInfo) => {
@@ -76,9 +140,14 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
     saveToStorage('swiftapply-templates', templates)
   },
 
+  setJobTitle: (jobTitle) => {
+    set({ jobTitle })
+    saveToStorage('swiftapply-job-title', jobTitle)
+  },
+
   setJobDescription: (jobDescription) => {
     set({ jobDescription })
-    // JD is not persisted to localStorage
+    saveToStorage('swiftapply-job-description', jobDescription)
   },
 
   // UI actions
@@ -94,11 +163,15 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
     set({
       personalInfo: null,
       templates: [],
+      jobTitle: '',
       jobDescription: '',
-      settingsStep: 1
+      settingsStep: 1,
+      ai: getInitialAIState()
     })
     localStorage.removeItem('jd2cv-v2-personal-info')
     localStorage.removeItem('swiftapply-templates')
+    localStorage.removeItem('swiftapply-job-title')
+    localStorage.removeItem('swiftapply-job-description')
     // Auto-open settings after clearing
     setTimeout(() => get().openSettings(1), 100)
   },
@@ -106,21 +179,27 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
   initializeFromStorage: () => {
     const personalInfo = loadFromStorage<PersonalInfo>('jd2cv-v2-personal-info')
     const templates = loadFromStorage<ExperienceTemplate[]>('swiftapply-templates') || []
+    const jobTitle = loadFromStorage<string>('swiftapply-job-title') || ''
+    const jobDescription = loadFromStorage<string>('swiftapply-job-description') || ''
 
     set({
       personalInfo,
-      templates
+      templates,
+      jobTitle,
+      jobDescription
     })
   },
 
   // Template helpers
   addTemplate: (templateData) => {
+    const newId = Date.now().toString()
     const newTemplate: ExperienceTemplate = {
       ...templateData,
-      id: Date.now().toString()
+      id: newId
     }
     const updatedTemplates = [...get().templates, newTemplate]
     get().setTemplates(updatedTemplates)
+    return newId
   },
 
   updateTemplate: (id, updates) => {
@@ -133,5 +212,194 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
   deleteTemplate: (id) => {
     const updatedTemplates = get().templates.filter(template => template.id !== id)
     get().setTemplates(updatedTemplates)
+  },
+
+  // AI Generation actions
+  startAIGeneration: async () => {
+    const state = get()
+
+    set(state => ({
+      ai: {
+        ...state.ai,
+        isGenerating: true,
+        showProgressPanel: true,
+        activeStage: 'classifier',
+        stageOutputs: {
+          classifier: { status: 'in_progress' },
+          experience: { status: 'pending' },
+          reviewer: { status: 'pending' }
+        },
+        error: null
+      }
+    }))
+
+    try {
+      // Process all 3 stages sequentially
+      const stages: AIStageKey[] = ['classifier', 'experience', 'reviewer']
+      let stageData: Record<string, any> = {}
+
+      for (const stage of stages) {
+        // Update active stage
+        set(state => ({
+          ai: {
+            ...state.ai,
+            activeStage: stage
+          }
+        }))
+
+        // Start the stage
+        get().updateAIStageData(stage, {
+          status: 'in_progress',
+          content: '',
+          tokens: null,
+          duration: null,
+          timestamp: Date.now()
+        })
+
+        // Call streaming endpoint
+        const response = await fetch('/api/swiftapply/ai-generate/stream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jd: {
+              title: state.jobTitle || 'Job Application',
+              description: state.jobDescription
+            },
+            personalInfo: state.personalInfo,
+            templates: state.templates,
+            stage,
+            stageData
+          })
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to process AI request')
+        }
+
+        const reader = response.body?.getReader()
+        const decoder = new TextDecoder()
+
+        if (!reader) {
+          throw new Error('No response stream available')
+        }
+
+        let fullContent = ''
+        let result: any = null
+
+        // Read stream
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          const chunk = decoder.decode(value)
+          const lines = chunk.split('\n')
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6))
+
+                if (data.type === 'content_chunk') {
+                  fullContent = data.fullContent
+                  get().updateAIStageData(stage, {
+                    status: 'in_progress',
+                    content: fullContent
+                  })
+                } else if (data.type === 'stage_complete') {
+                  result = data.result
+                  get().updateAIStageData(stage, {
+                    status: 'completed',
+                    content: fullContent,
+                    tokens: data.tokens,
+                    duration: data.duration,
+                    timestamp: data.timestamp
+                  })
+                  break
+                } else if (data.type === 'error') {
+                  throw new Error(data.error)
+                }
+              } catch (e) {
+                // Ignore JSON parse errors for malformed SSE data
+              }
+            }
+          }
+        }
+
+        // Store stage result for next stage
+        if (stage === 'classifier') {
+          stageData.classifier = result
+        } else if (stage === 'experience') {
+          stageData.experience = result
+        } else if (stage === 'reviewer') {
+          // Set final generated content (result is already parsed JSON)
+          get().setAIGeneratedContent({
+            workExperience: result.workExperience,
+            personalInfo: result.personalInfo
+          })
+        }
+
+        // Small delay between stages for better UX
+        await new Promise(resolve => setTimeout(resolve, 500))
+      }
+
+    } catch (error) {
+      console.error('AI Generation error:', error)
+      set(state => ({
+        ai: {
+          ...state.ai,
+          isGenerating: false,
+          error: (error as Error).message
+        }
+      }))
+    }
+  },
+
+  stopAIGeneration: () => {
+    set(state => ({
+      ai: {
+        ...state.ai,
+        isGenerating: false
+      }
+    }))
+  },
+
+  setAIStage: (stage) => {
+    set(state => ({
+      ai: {
+        ...state.ai,
+        activeStage: stage
+      }
+    }))
+  },
+
+  updateAIStageData: (stage, data) => {
+    set(state => ({
+      ai: {
+        ...state.ai,
+        stageOutputs: {
+          ...state.ai.stageOutputs,
+          [stage]: {
+            ...state.ai.stageOutputs[stage],
+            ...data
+          }
+        }
+      }
+    }))
+  },
+
+  setAIGeneratedContent: (content) => {
+    set(state => ({
+      ai: {
+        ...state.ai,
+        generatedContent: content,
+        isGenerating: false
+      }
+    }))
+  },
+
+  resetAIState: () => {
+    set(state => ({
+      ai: getInitialAIState()
+    }))
   }
 }))

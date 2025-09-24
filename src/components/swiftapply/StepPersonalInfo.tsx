@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSwiftApplyStore, type PersonalInfo } from '@/lib/swiftapply/store'
 import { getDefaultPersonalInfo } from '@/lib/swiftapply/localStorage'
-import { validatePersonalInfo, parseMultilineToArray, arrayToMultiline, isValidEmail } from '@/lib/swiftapply/utils'
+import { validatePersonalInfo, parseMultilineToArray, arrayToMultiline, isValidEmail, isValidPhone, isValidUrl } from '@/lib/swiftapply/utils'
 
 export default function StepPersonalInfo() {
   const { personalInfo, setPersonalInfo, openSettings } = useSwiftApplyStore()
@@ -82,6 +82,21 @@ export default function StepPersonalInfo() {
     if (formData.email && !isValidEmail(formData.email)) {
       validationErrors.push('Please enter a valid email address')
     }
+
+    // Additional phone validation
+    if (formData.phone && !isValidPhone(formData.phone)) {
+      validationErrors.push('Please enter a valid phone number')
+    }
+
+    // Additional URL validation
+    if (formData.linkedin && !isValidUrl(formData.linkedin)) {
+      validationErrors.push('Please enter a valid LinkedIn URL')
+    }
+
+    if (formData.website && !isValidUrl(formData.website)) {
+      validationErrors.push('Please enter a valid website URL')
+    }
+
 
     setErrors(validationErrors)
 
