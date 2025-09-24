@@ -57,6 +57,13 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
   const dockPointerIdRef = useRef<number | null>(null)
   const { completeStage, markError, updateStage } = useStageHelpers(setStageOutputs)
 
+  const [pendingReview, setPendingReview] = useState<{ resume: any; personalInfo: any } | null>(null)
+  const [manualReviewOpen, setManualReviewOpen] = useState(false)
+  const [manualWorkExperience, setManualWorkExperience] = useState('')
+  const [manualPersonalInfoText, setManualPersonalInfoText] = useState('')
+  const [manualReviewError, setManualReviewError] = useState<string | null>(null)
+  const [isFinalizingPdf, setIsFinalizingPdf] = useState(false)
+
   const portalRef = useRef<HTMLDivElement | null>(null)
   const [portalReady, setPortalReady] = useState(false)
 
@@ -292,20 +299,28 @@ const generateViaRest = async ({ jd, personalInfo }: { jd: JD; personalInfo: any
   return result
 }
 
-const runPostGenerationSteps = async (customizedResume: any, context: { jd: JD; onPDFUploaded?: () => void }) => {
-  const { jd, onPDFUploaded } = context
-  const workExperience = customizedResume.workExperience
+const runPostGenerationSteps = async (
+  customizedResume: any,
+  context: { jd: JD; onPDFUploaded?: () => void; personalInfoOverride?: any; workExperienceOverride?: string }
+) => {
+  const { jd, onPDFUploaded, personalInfoOverride, workExperienceOverride } = context
+  const workExperience = workExperienceOverride ?? customizedResume.workExperience
 
   // Store only the AI-generated work experience, preserve user's original profile
   localStorage.setItem(`jd2cv-v2-ai-content-${jd.id}`, workExperience)
 
   // Get original personal info from localStorage (user input should not be overwritten)
-  const originalPersonalInfo = JSON.parse(localStorage.getItem('jd2cv-v2-personal-info') || '{}')
+  const storedPersonalInfo = JSON.parse(localStorage.getItem('jd2cv-v2-personal-info') || '{}')
+  const finalPersonalInfo = personalInfoOverride ?? storedPersonalInfo
+
+  if (!finalPersonalInfo || typeof finalPersonalInfo !== 'object' || Array.isArray(finalPersonalInfo)) {
+    throw new Error('Personal information must be a JSON object.')
+  }
 
   const completeResumeData = {
-    personalInfo: originalPersonalInfo,
+    personalInfo: finalPersonalInfo,
     aiGeneratedExperience: workExperience,
-    format: originalPersonalInfo.format || 'A4',
+    format: finalPersonalInfo.format || 'A4',
     jobTitle: jd.title
   }
 
@@ -322,7 +337,7 @@ const runPostGenerationSteps = async (customizedResume: any, context: { jd: JD; 
   }
 
   const blob = await pdfResponse.blob()
-  const filename = `${originalPersonalInfo.fullName?.replace(/[^a-z0-9]/gi, '_') || 'Resume'}_${jd.company.replace(/[^a-z0-9]/gi, '_')}_${jd.title.replace(/[^a-z0-9]/gi, '_')}_Resume.pdf`
+  const filename = `${finalPersonalInfo.fullName?.replace(/[^a-z0-9]/gi, '_') || 'Resume'}_${jd.company.replace(/[^a-z0-9]/gi, '_')}_${jd.title.replace(/[^a-z0-9]/gi, '_')}_Resume.pdf`
 
   const url = window.URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -518,6 +533,12 @@ const runPostGenerationSteps = async (customizedResume: any, context: { jd: JD; 
       return
     }
 
+    setPendingReview(null)
+    setManualReviewOpen(false)
+    setManualWorkExperience('')
+    setManualPersonalInfoText('')
+    setManualReviewError(null)
+
     // Mark as clicked in localStorage
     localStorage.setItem(`langchain-clicked-${jd.id}`, 'true')
 
@@ -556,8 +577,8 @@ const runPostGenerationSteps = async (customizedResume: any, context: { jd: JD; 
         requestId: `${Date.now()}`
       }, handleStreamEvent)
       workflowFinished = true
-      await runPostGenerationSteps(streamResult, { jd, onPDFUploaded })
-
+      openManualReview(streamResult, parsedPersonalInfo)
+      return
     } catch (error) {
       console.error('Error generating CV with AI service:', error)
 
@@ -566,7 +587,8 @@ const runPostGenerationSteps = async (customizedResume: any, context: { jd: JD; 
           const fallbackResult = await generateViaRest({ jd, personalInfo: parsedPersonalInfo })
           applyStepSummaries(fallbackResult.steps)
           workflowFinished = true
-          await runPostGenerationSteps(fallbackResult, { jd, onPDFUploaded })
+          openManualReview(fallbackResult, parsedPersonalInfo)
+          return
         } catch (fallbackError) {
           console.error('Fallback generation error:', fallbackError)
         alert(`Failed to generate CV: ${error.message || fallbackError.message || 'Unknown error'}`)
@@ -619,6 +641,64 @@ const runPostGenerationSteps = async (customizedResume: any, context: { jd: JD; 
     setIsPanelMinimized(false)
     setShowPanel(true)
     setIsDockOpen(false)
+  }
+
+  const openManualReview = (resumeResult: any, basePersonalInfo: any) => {
+    const personalInfoPayload = resumeResult?.personalInfo && Object.keys(resumeResult.personalInfo).length
+      ? resumeResult.personalInfo
+      : basePersonalInfo
+
+    setPendingReview({ resume: resumeResult, personalInfo: personalInfoPayload })
+    setManualWorkExperience(resumeResult?.workExperience || '')
+    setManualPersonalInfoText(JSON.stringify(personalInfoPayload || {}, null, 2))
+    setManualReviewError(null)
+    setIsFinalizingPdf(false)
+    setManualReviewOpen(true)
+  }
+
+  const openExistingManualReview = () => {
+    if (!pendingReview) return
+    setManualReviewError(null)
+    setIsFinalizingPdf(false)
+    setManualReviewOpen(true)
+  }
+
+  const handleManualReviewConfirm = async () => {
+    if (!pendingReview) return
+
+    let parsedPersonalInfo: any
+    try {
+      parsedPersonalInfo = JSON.parse(manualPersonalInfoText)
+      if (!parsedPersonalInfo || typeof parsedPersonalInfo !== 'object' || Array.isArray(parsedPersonalInfo)) {
+        throw new Error('Personal info must be a JSON object')
+      }
+    } catch (error) {
+      setManualReviewError('Personal info must be valid JSON. Please correct and try again.')
+      return
+    }
+
+    const trimmedWorkExperience = manualWorkExperience.trim()
+    if (!trimmedWorkExperience) {
+      setManualReviewError('Work experience cannot be empty.')
+      return
+    }
+
+    setManualReviewError(null)
+    setIsFinalizingPdf(true)
+
+    try {
+      await runPostGenerationSteps(
+        { ...pendingReview.resume, workExperience: trimmedWorkExperience },
+        { jd, onPDFUploaded, personalInfoOverride: parsedPersonalInfo, workExperienceOverride: trimmedWorkExperience }
+      )
+      setPendingReview(null)
+      setManualReviewOpen(false)
+    } catch (error) {
+      console.error('Manual review finalization failed:', error)
+      setManualReviewError((error as Error)?.message || 'Failed to generate PDF with the provided content.')
+    } finally {
+      setIsFinalizingPdf(false)
+    }
   }
 
   return (
@@ -719,6 +799,14 @@ const runPostGenerationSteps = async (customizedResume: any, context: { jd: JD; 
                 </div>
                 <div className="flex items-center gap-2">
                   {isGenerating && <span className="text-xs text-purple-500 animate-softPulse">Processing…</span>}
+                  {!isGenerating && pendingReview && !manualReviewOpen && (
+                    <button
+                      onClick={openExistingManualReview}
+                      className="rounded-full border border-purple-200 bg-white px-3 py-1 text-[11px] font-medium text-purple-600 hover:bg-purple-50"
+                    >
+                      Review & Download
+                    </button>
+                  )}
                   <button
                     onClick={handlePanelMinimize}
                     className="h-7 w-7 rounded-full text-slate-500 hover:bg-slate-100 flex items-center justify-center"
@@ -791,6 +879,77 @@ const runPostGenerationSteps = async (customizedResume: any, context: { jd: JD; 
             </div>
           )}
         </>,
+        portalRef.current
+      )}
+
+      {manualReviewOpen && pendingReview && portalReady && portalRef.current && createPortal(
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+              <div>
+                <div className="text-lg font-semibold text-slate-800">Review & Edit Before Download</div>
+                <div className="text-xs text-slate-500">Update any content below. Formatting is preserved automatically.</div>
+              </div>
+              <button
+                onClick={() => setManualReviewOpen(false)}
+                className="h-8 w-8 rounded-full text-slate-400 hover:bg-slate-100 flex items-center justify-center"
+                aria-label="Close review dialog"
+              >
+                ×
+              </button>
+            </div>
+            <div className="grid gap-4 overflow-y-auto px-6 py-4 md:grid-cols-2">
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-semibold text-slate-600" htmlFor="manual-work-experience">Work Experience</label>
+                <textarea
+                  id="manual-work-experience"
+                  className="h-64 w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] text-slate-700 focus:border-purple-400 focus:outline-none focus:ring-1 focus:ring-purple-300"
+                  value={manualWorkExperience}
+                  onChange={event => setManualWorkExperience(event.target.value)}
+                  spellCheck={false}
+                />
+                <p className="text-[11px] text-slate-400">Keep bullet points separated by new lines.</p>
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-semibold text-slate-600" htmlFor="manual-personal-info">Personal Info (JSON)</label>
+                <textarea
+                  id="manual-personal-info"
+                  className="h-64 w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] font-mono text-slate-700 focus:border-purple-400 focus:outline-none focus:ring-1 focus:ring-purple-300"
+                  value={manualPersonalInfoText}
+                  onChange={event => setManualPersonalInfoText(event.target.value)}
+                  spellCheck={false}
+                />
+                <p className="text-[11px] text-slate-400">Must remain valid JSON. Do not rename fields.</p>
+              </div>
+            </div>
+            {manualReviewError && (
+              <div className="px-6">
+                <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[11px] text-rose-600">
+                  {manualReviewError}
+                </div>
+              </div>
+            )}
+            <div className="flex items-center justify-between border-t border-slate-200 px-6 py-4 text-xs text-slate-500">
+              <span>Ready to download? Confirm to generate the PDF with your changes.</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setManualReviewOpen(false)}
+                  className="rounded-full border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                  disabled={isFinalizingPdf}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleManualReviewConfirm}
+                  className="rounded-full bg-purple-600 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-purple-700 disabled:opacity-60"
+                  disabled={isFinalizingPdf}
+                >
+                  {isFinalizingPdf ? 'Generating…' : 'Confirm & Download PDF'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
         portalRef.current
       )}
     </>
