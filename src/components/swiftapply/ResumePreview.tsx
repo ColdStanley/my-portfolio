@@ -52,17 +52,14 @@ export default function ResumePreview() {
       {/* PDF-style Preview */}
       <div className="flex-1 p-4 overflow-auto">
         <div
-          className={`mx-auto bg-white shadow-lg ${
-            personalInfo.format === 'A4'
-              ? 'aspect-[210/297]'
-              : 'aspect-[8.5/11]'
-          } max-w-full`}
+          className="mx-auto bg-white shadow-lg max-w-full"
           style={{
             width: '100%',
-            maxWidth: personalInfo.format === 'A4' ? '595px' : '612px'
+            maxWidth: personalInfo.format === 'A4' ? '595px' : '612px',
+            minHeight: personalInfo.format === 'A4' ? '842px' : '792px' // A4: 842px, Letter: 792px
           }}
         >
-          <div className="p-8 h-full overflow-hidden text-sm">
+          <div className="p-8 text-sm">
             {/* Header */}
             <div className="text-center border-b-2 border-purple-600 pb-4 mb-6">
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
@@ -128,28 +125,30 @@ export default function ResumePreview() {
               </div>
             )}
 
-            {/* Experience Templates */}
+            {/* Experience Templates - Preview Only */}
             {templates.length > 0 && (
               <div className="mb-6">
                 <h2 className="text-sm font-bold text-purple-700 border-b border-gray-200 pb-1 mb-3 uppercase tracking-wide">
                   Professional Experience
                 </h2>
-                <div className="space-y-4">
-                  {templates.map((template) => (
-                    <div key={template.id}>
-                      <h3 className="text-xs font-semibold text-gray-900 mb-2">
-                        {template.title}
-                      </h3>
-                      <ul className="list-none space-y-1">
-                        {template.content.map((item, index) => (
-                          <li key={index} className="text-xs leading-relaxed pl-3 relative">
-                            <span className="absolute left-0 top-1 text-purple-600">•</span>
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
+                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                  <div className="space-y-2">
+                    {templates.map((template) => (
+                      <div key={template.id} className="bg-white rounded p-2 border border-gray-200">
+                        <h3 className="text-xs font-semibold text-gray-900">
+                          {template.title}
+                        </h3>
+                        <div className="text-xs text-gray-500 mt-1">
+                          Template available for AI customization
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="border-t border-gray-200 pt-3 mt-3">
+                    <p className="text-xs text-gray-600 leading-relaxed">
+                      <span className="font-medium text-purple-600">AI Smart Selection:</span> AI will automatically analyze the job description and select the most suitable template for customization, enabling you to apply for multiple roles with intelligently tailored content.
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
@@ -168,22 +167,6 @@ export default function ResumePreview() {
                       {personalInfo.technicalSkills.map((skill, index) => (
                         <span key={index} className="text-xs bg-gray-100 px-2 py-1 rounded">
                           {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Languages */}
-                {personalInfo.languages.length > 0 && (
-                  <div>
-                    <h2 className="text-sm font-bold text-purple-700 border-b border-gray-200 pb-1 mb-2 uppercase tracking-wide">
-                      Languages
-                    </h2>
-                    <div className="flex flex-wrap gap-1">
-                      {personalInfo.languages.map((language, index) => (
-                        <span key={index} className="text-xs bg-gray-100 px-2 py-1 rounded">
-                          {language}
                         </span>
                       ))}
                     </div>
@@ -227,6 +210,22 @@ export default function ResumePreview() {
                         </li>
                       ))}
                     </ul>
+                  </div>
+                )}
+
+                {/* Languages */}
+                {personalInfo.languages.length > 0 && (
+                  <div>
+                    <h2 className="text-sm font-bold text-purple-700 border-b border-gray-200 pb-1 mb-2 uppercase tracking-wide">
+                      Languages
+                    </h2>
+                    <div className="flex flex-wrap gap-1">
+                      {personalInfo.languages.map((language, index) => (
+                        <span key={index} className="text-xs bg-gray-100 px-2 py-1 rounded">
+                          {language}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

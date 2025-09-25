@@ -90,6 +90,7 @@ interface SwiftApplyState {
   closeSettings: () => void
   clearAll: () => void
   initializeFromStorage: () => void
+  hasStoredData: () => boolean
 
   // Template management helpers
   addTemplate: (template: Omit<ExperienceTemplate, 'id'>) => string
@@ -188,6 +189,14 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
       jobTitle,
       jobDescription
     })
+  },
+
+  hasStoredData: () => {
+    const personalInfo = loadFromStorage<PersonalInfo>('jd2cv-v2-personal-info')
+    const templates = loadFromStorage<ExperienceTemplate[]>('swiftapply-templates')
+
+    // 有任一数据存在就认为是已有数据
+    return !!(personalInfo || (templates && templates.length > 0))
   },
 
   // Template helpers
@@ -392,7 +401,8 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
       ai: {
         ...state.ai,
         generatedContent: content,
-        isGenerating: false
+        isGenerating: false,
+        showProgressPanel: false
       }
     }))
   },

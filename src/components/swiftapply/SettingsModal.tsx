@@ -5,7 +5,7 @@ import StepPersonalInfo from './StepPersonalInfo'
 import StepTemplates from './StepTemplates'
 
 export default function SettingsModal() {
-  const { settingsStep, closeSettings } = useSwiftApplyStore()
+  const { settingsStep, closeSettings, openSettings } = useSwiftApplyStore()
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/50">
@@ -37,16 +37,50 @@ export default function SettingsModal() {
           </button>
         </div>
 
-        {/* Progress Bar */}
-        <div className="h-2 bg-gray-100">
-          <div
-            className="h-full bg-gradient-to-r from-purple-600 to-indigo-600 transition-all duration-500 ease-out"
-            style={{ width: `${settingsStep * 50}%` }}
-            role="progressbar"
-            aria-valuenow={settingsStep * 50}
-            aria-valuemin={0}
-            aria-valuemax={100}
-          />
+        {/* Step Navigation */}
+        <div className="px-4 sm:px-6 py-4 bg-gray-50 border-b border-gray-100">
+          <div className="flex items-center justify-center space-x-8">
+            {/* Step 1: Personal Info */}
+            <button
+              onClick={() => openSettings(1)}
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ${
+                settingsStep === 1
+                  ? 'bg-purple-600 text-white shadow-md'
+                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
+              }`}
+            >
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                settingsStep === 1
+                  ? 'bg-white text-purple-600'
+                  : 'bg-gray-200 text-gray-600'
+              }`}>
+                1
+              </div>
+              <span className="font-medium">Personal Info</span>
+            </button>
+
+            {/* Connector Line */}
+            <div className="w-16 h-0.5 bg-gray-200"></div>
+
+            {/* Step 2: Templates */}
+            <button
+              onClick={() => openSettings(2)}
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ${
+                settingsStep === 2
+                  ? 'bg-purple-600 text-white shadow-md'
+                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
+              }`}
+            >
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                settingsStep === 2
+                  ? 'bg-white text-purple-600'
+                  : 'bg-gray-200 text-gray-600'
+              }`}>
+                2
+              </div>
+              <span className="font-medium">Templates</span>
+            </button>
+          </div>
         </div>
 
         {/* Step Content */}

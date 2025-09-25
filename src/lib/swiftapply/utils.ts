@@ -35,7 +35,7 @@ export function validatePersonalInfo(data: any): string[] {
 export function parseMultilineToArray(text: string): string[] {
   return text
     .split('\n')
-    .map(line => line.trim())
+    .map(line => line?.trim() || '')
     .filter(line => line.length > 0)
 }
 

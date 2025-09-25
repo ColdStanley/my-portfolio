@@ -36,9 +36,9 @@ export default function StepTemplates() {
       const template = templates.find(t => t.id === id)
       if (template) {
         setEditingTemplate({
-          title: template.title,
-          targetRole: template.targetRole,
-          content: arrayToMultiline(template.content)
+          title: template.title || '',
+          targetRole: template.targetRole || '',
+          content: arrayToMultiline(template.content || [])
         })
       }
     }
@@ -46,12 +46,12 @@ export default function StepTemplates() {
 
   // Save expanded template
   const saveTemplate = (id: string) => {
-    if (!editingTemplate.title.trim() || !editingTemplate.targetRole.trim()) return
+    if (!(editingTemplate.title || '').trim() || !(editingTemplate.targetRole || '').trim()) return
 
     updateTemplate(id, {
-      title: editingTemplate.title.trim(),
-      targetRole: editingTemplate.targetRole.trim(),
-      content: parseMultilineToArray(editingTemplate.content)
+      title: (editingTemplate.title || '').trim(),
+      targetRole: (editingTemplate.targetRole || '').trim(),
+      content: parseMultilineToArray(editingTemplate.content || '')
     })
     setExpandedId(null)
   }
@@ -199,7 +199,7 @@ export default function StepTemplates() {
                         </button>
                         <button
                           onClick={() => saveTemplate(template.id)}
-                          disabled={!editingTemplate.title.trim() || !editingTemplate.targetRole.trim()}
+                          disabled={!(editingTemplate.title || '').trim() || !(editingTemplate.targetRole || '').trim()}
                           className="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg transition-colors"
                         >
                           Save Template
@@ -213,10 +213,10 @@ export default function StepTemplates() {
                 {!isExpanded && template.content.length > 0 && (
                   <div className="p-4 bg-gray-50 border-t border-gray-100">
                     <div className="text-sm text-gray-600 space-y-1">
-                      {template.content.slice(0, 3).map((bullet, index) => (
+                      {template.content.filter(bullet => bullet != null).slice(0, 3).map((bullet, index) => (
                         <div key={index} className="flex items-start gap-2">
                           <span className="text-purple-600 mt-1 text-xs">•</span>
-                          <span className="line-clamp-1">{bullet}</span>
+                          <span className="line-clamp-1">{bullet || ''}</span>
                         </div>
                       ))}
                       {template.content.length > 3 && (

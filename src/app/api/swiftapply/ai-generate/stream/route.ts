@@ -1,128 +1,6 @@
 import { NextRequest } from 'next/server'
 import { CLASSIFIER_PROMPT, EXPERIENCE_GENERATOR_PROMPT, REVIEWER_PROMPT } from '@/lib/swiftapply/prompts'
-
-// Mock streaming AI call
-async function mockStreamingAICall(prompt: string, onChunk: (chunk: string) => void): Promise<any> {
-  // Mock responses based on prompt type
-  let response: any = ''
-  let chunks: string[] = []
-
-  if (prompt.includes('enterprise resume strategist')) {
-    response = {
-      role_type: "Software Engineer",
-      keywords: ["React", "TypeScript", "Node.js", "API Development", "Agile"],
-      insights: [
-        "Strong emphasis on full-stack development capabilities",
-        "Frontend framework experience is crucial",
-        "API design and backend integration skills required",
-        "Team collaboration and agile methodologies important"
-      ]
-    }
-    chunks = [
-      '{"role_type": "Software Engineer"',
-      ', "keywords": ["React", "TypeScript", "Node.js"',
-      ', "API Development", "Agile"], "insights": [',
-      '"Strong emphasis on full-stack development capabilities",',
-      '"Frontend framework experience is crucial",',
-      '"API design and backend integration skills required",',
-      '"Team collaboration and agile methodologies important"]}'
-    ]
-  } else if (prompt.includes('resume strategist specializing')) {
-    const workExperience = `**Senior Software Developer | TechCorp Inc. | 2021-2024**
-• Developed and maintained 15+ React applications serving 100K+ daily active users
-• Built RESTful APIs using Node.js and TypeScript, improving response times by 40%
-• Collaborated with cross-functional teams in Agile environment to deliver features on time
-• Implemented automated testing strategies, reducing production bugs by 60%
-• Mentored 3 junior developers and led code review processes
-
-**Frontend Developer | StartupXYZ | 2019-2021**
-• Created responsive web applications using React and TypeScript
-• Optimized application performance, achieving 95+ Lighthouse scores
-• Integrated third-party APIs and payment systems for e-commerce platform
-• Participated in daily standups and sprint planning sessions
-• Contributed to design system and component library development`
-
-    response = { workExperience }
-
-    chunks = [
-      '{"workExperience": "**Senior Software Developer | TechCorp Inc. | 2021-2024**\\n',
-      '• Developed and maintained 15+ React applications serving 100K+ daily active users\\n',
-      '• Built RESTful APIs using Node.js and TypeScript, improving response times by 40%\\n',
-      '• Collaborated with cross-functional teams in Agile environment to deliver features on time\\n',
-      '• Implemented automated testing strategies, reducing production bugs by 60%\\n',
-      '• Mentored 3 junior developers and led code review processes\\n\\n',
-      '**Frontend Developer | StartupXYZ | 2019-2021**\\n',
-      '• Created responsive web applications using React and TypeScript\\n',
-      '• Optimized application performance, achieving 95+ Lighthouse scores\\n',
-      '• Integrated third-party APIs and payment systems for e-commerce platform\\n',
-      '• Participated in daily standups and sprint planning sessions\\n',
-      '• Contributed to design system and component library development"}'
-    ]
-  } else if (prompt.includes('resume optimization specialist')) {
-    const reviewerWorkExperience = `**Senior Software Developer | TechCorp Inc. | 2021-2024**
-• Architected and delivered 15+ production React applications with TypeScript, serving 100K+ daily active users
-• Engineered high-performance RESTful APIs using Node.js, achieving 40% improvement in response times
-• Led cross-functional Agile teams to deliver critical features on schedule with zero critical bugs
-• Implemented comprehensive testing framework (Jest, Cypress), reducing production incidents by 60%
-• Mentored 3 junior developers and established code review best practices
-
-**Frontend Developer | StartupXYZ | 2019-2021**
-• Built responsive, mobile-first web applications using React and TypeScript
-• Optimized web performance achieving 95+ Google Lighthouse scores across all metrics
-• Integrated complex third-party APIs and payment gateways for high-volume e-commerce platform
-• Actively participated in Agile ceremonies and contributed to sprint planning and retrospectives
-• Developed reusable component library, improving development velocity by 30%`
-
-    response = {
-      personalInfo: {
-        "fullName": "John Developer",
-        "email": "john@example.com",
-        "phone": "+1 (555) 123-4567",
-        "location": "San Francisco, CA",
-        "linkedin": "linkedin.com/in/johndeveloper",
-        "website": "johndeveloper.dev",
-        "summary": [
-          "Full-stack software engineer with 5+ years experience building scalable web applications",
-          "Expertise in React, TypeScript, Node.js, and modern development practices",
-          "Proven track record of delivering high-quality software in fast-paced environments",
-          "Strong collaborator with experience mentoring junior developers"
-        ],
-        "technicalSkills": ["React", "TypeScript", "Node.js", "JavaScript", "API Development", "Agile", "Jest", "Cypress"],
-        "languages": ["English (Native)"],
-        "education": [],
-        "certificates": [],
-        "customModules": [],
-        "format": "A4"
-      },
-      workExperience: reviewerWorkExperience
-    }
-
-    chunks = [
-      '{"personalInfo": {"fullName": "John Developer", "email": "john@example.com",',
-      '"phone": "+1 (555) 123-4567", "location": "San Francisco, CA",',
-      '"linkedin": "linkedin.com/in/johndeveloper", "website": "johndeveloper.dev",',
-      '"summary": ["Full-stack software engineer with 5+ years experience", "Expertise in React, TypeScript, Node.js"],',
-      '"technicalSkills": ["React", "TypeScript", "Node.js", "API Development", "Agile"],',
-      '"languages": ["English (Native)"], "education": [], "certificates": [], "customModules": [], "format": "A4"},',
-      '"workExperience": "**Senior Software Developer | TechCorp Inc. | 2021-2024**\\n',
-      '• Architected and delivered 15+ production React applications with TypeScript\\n',
-      '• Engineered high-performance RESTful APIs using Node.js\\n',
-      '**Frontend Developer | StartupXYZ | 2019-2021**\\n',
-      '• Built responsive web applications using React and TypeScript"}'
-    ]
-  } else {
-    chunks = ['Mock AI response chunk']
-    response = 'Mock AI response'
-  }
-
-  // Simulate streaming with delays
-  for (const chunk of chunks) {
-    await new Promise(resolve => setTimeout(resolve, 100))
-    onChunk(chunk)
-  }
-
-  return response
-}
+import { invokeSwiftApplyStream, parseAIJsonResponse } from '@/lib/swiftapply/aiService'
 
 export async function POST(request: NextRequest) {
   try {
@@ -175,14 +53,15 @@ export async function POST(request: NextRequest) {
                 }
 
                 // Find matching template based on classified role (LangChain Agent智能匹配)
-                const matchingTemplate = templates?.find((t: any) => t.targetRole === classifierData.roleType)
+                const roleType = classifierData.role_type || classifierData.roleType
+                const matchingTemplate = templates?.find((t: any) => t.targetRole === roleType)
                 if (!matchingTemplate) {
-                  throw new Error(`No template found for classified role: ${classifierData.roleType}`)
+                  throw new Error(`No template found for classified role: ${roleType}`)
                 }
 
                 const templateContent = `${matchingTemplate.title}:\n${matchingTemplate.content.join('\n')}`
                 prompt = EXPERIENCE_GENERATOR_PROMPT
-                  .replace('{role_type}', classifierData.roleType || '')
+                  .replace('{role_type}', roleType || '')
                   .replace('{keywords}', classifierData.keywords?.join(', ') || '')
                   .replace('{insights}', classifierData.insights?.join(', ') || '')
                   .replace('{template_content}', templateContent)
@@ -194,8 +73,9 @@ export async function POST(request: NextRequest) {
                 if (!experienceData || !classifierDataForReview) {
                   throw new Error('Missing stage data for reviewer stage')
                 }
+                const reviewerRoleType = classifierDataForReview.role_type || classifierDataForReview.roleType
                 prompt = REVIEWER_PROMPT
-                  .replace('{role_type}', classifierDataForReview.roleType || '')
+                  .replace('{role_type}', reviewerRoleType || '')
                   .replace('{keywords}', classifierDataForReview.keywords?.join(', ') || '')
                   .replace('{insights}', classifierDataForReview.insights?.join(', ') || '')
                   .replace('{work_experience}', experienceData.workExperience || '')
@@ -214,28 +94,48 @@ export async function POST(request: NextRequest) {
             })
 
             let fullContent = ''
+            let aiResult: any = null
 
-            // Process with streaming
-            const result = await mockStreamingAICall(prompt, (chunk: string) => {
-              fullContent += chunk
+            // Process with real AI streaming
+            try {
+              aiResult = await invokeSwiftApplyStream(prompt, (chunk: string) => {
+                fullContent += chunk
+                sendData({
+                  type: 'content_chunk',
+                  stage,
+                  chunk,
+                  fullContent,
+                  timestamp: Date.now()
+                })
+              }, 0.1, 4000, 'deepseek')
+
+              // Parse result based on stage
+              let parsedResult: any
+              if (stage === 'classifier') {
+                // For classifier, parse JSON response
+                parsedResult = parseAIJsonResponse(aiResult.content)
+              } else if (stage === 'experience') {
+                // For experience, extract work experience
+                parsedResult = { workExperience: aiResult.content.trim() }
+              } else if (stage === 'reviewer') {
+                // For reviewer, parse complete JSON response
+                parsedResult = parseAIJsonResponse(aiResult.content)
+              }
+
+              // Send completion event
               sendData({
-                type: 'content_chunk',
+                type: 'stage_complete',
                 stage,
-                chunk,
-                fullContent,
+                result: parsedResult,
+                tokens: aiResult.tokens,
+                duration: Date.now() - Date.now(), // Will be calculated properly by client
                 timestamp: Date.now()
               })
-            })
 
-            // Send completion event
-            sendData({
-              type: 'stage_complete',
-              stage,
-              result: stage === 'classifier' ? result : fullContent,
-              tokens: { prompt: 150, completion: 80, total: 230 },
-              duration: 3000,
-              timestamp: Date.now()
-            })
+            } catch (aiError) {
+              console.error(`AI generation failed for stage ${stage}:`, aiError)
+              throw new Error(`AI generation failed: ${aiError.message}`)
+            }
 
             sendData({ type: 'done' })
             controller.close()
