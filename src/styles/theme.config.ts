@@ -24,8 +24,9 @@ export const theme = {
   textSecondary: "#6B7280", // 次要文字
 
   // ---- Neutrals（层次感灰度系统）----
-  neutralLight: "#F9FAFB",
-  neutralDark: "#E5E7EB",
+  neutralLight: "#F9FAFB",  // 最浅灰（背景/底色）
+  neutralDark: "#E5E7EB",   // 保留，避免 break change
+  neutralMid: "#9CA3AF",    // 新增，中灰，用于分隔/边框
 
   // ---- Interactive States ----
   hover: {
@@ -34,6 +35,18 @@ export const theme = {
   },
   active: {
     brightness: 95,
+  },
+  focus: {
+    ring: "#11111166", // 主色 + 40% 透明度
+  },
+
+  // ---- Shadows (统一阴影等级) ----
+  shadows: {
+    sm: "0 1px 2px rgba(0,0,0,0.05)",
+    md: "0 4px 6px rgba(0,0,0,0.1)",
+    lg: "0 10px 15px rgba(0,0,0,0.15)",
+    xl: "0 20px 25px rgba(0,0,0,0.2)",
+    inner: "inset 0 2px 4px rgba(0,0,0,0.05)",
   },
 } as const
 
@@ -51,6 +64,8 @@ export const cssVariables = {
   "--text-secondary": theme.textSecondary,
   "--neutral-light": theme.neutralLight,
   "--neutral-dark": theme.neutralDark,
+  "--neutral-mid": theme.neutralMid,
+  "--focus-ring": theme.focus.ring,
 } as const
 
 export type ThemeColors = keyof typeof theme

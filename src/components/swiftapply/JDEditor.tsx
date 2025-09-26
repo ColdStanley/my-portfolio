@@ -34,18 +34,15 @@ export default function JDEditor() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-neutral-dark h-full flex flex-col">
+    <div className="bg-white rounded-xl shadow-sm border border-[var(--neutral-dark)] h-full flex flex-col">
       {/* Header */}
       <div className="p-4 border-b border-neutral-light">
-        <h2 className="text-lg font-semibold text-text-primary">Job Description</h2>
-        <p className="text-sm text-text-secondary mt-1">
-          Paste the job posting here to tailor your resume
-        </p>
+        <h2 className="text-lg font-semibold text-[var(--text-primary)]">Job Description</h2>
       </div>
 
       {/* Job Title Input */}
-      <div className="p-4 border-b border-neutral-light">
-        <label className="block text-sm font-medium text-text-primary mb-2">
+      <div className="px-4 py-4 border-b border-neutral-light flex items-center gap-3">
+        <label className="text-sm font-medium text-[var(--text-primary)] whitespace-nowrap">
           Job Title
         </label>
         <Input
@@ -54,12 +51,13 @@ export default function JDEditor() {
           onChange={handleTitleChange}
           placeholder="e.g. Senior Software Engineer"
           aria-label="Job Title Input"
+          containerClassName="flex-1"
         />
       </div>
 
       {/* Job Description Textarea */}
-      <div className="flex-1 p-4">
-        <label className="block text-sm font-medium text-text-primary mb-2">
+      <div className="flex-1 min-h-0 flex flex-col px-4 pb-2">
+        <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
           Job Description
         </label>
         <Input
@@ -67,8 +65,8 @@ export default function JDEditor() {
           defaultValue={jobDescription}
           onChange={handleDescriptionChange}
           placeholder="Paste the full job description here..."
-          className="h-full resize-none leading-relaxed"
-          style={{ minHeight: '250px' }}
+          className="flex-1 min-h-0 resize-none leading-relaxed"
+          containerClassName="flex-1 min-h-0 flex"
           aria-label="Job Description Input"
         />
       </div>

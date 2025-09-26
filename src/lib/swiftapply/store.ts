@@ -162,19 +162,11 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
 
   clearAll: () => {
     set({
-      personalInfo: null,
-      templates: [],
       jobTitle: '',
-      jobDescription: '',
-      settingsStep: 1,
-      ai: getInitialAIState()
+      jobDescription: ''
     })
-    localStorage.removeItem('jd2cv-v2-personal-info')
-    localStorage.removeItem('swiftapply-templates')
     localStorage.removeItem('swiftapply-job-title')
     localStorage.removeItem('swiftapply-job-description')
-    // Auto-open settings after clearing
-    setTimeout(() => get().openSettings(1), 100)
   },
 
   initializeFromStorage: () => {
