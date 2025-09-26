@@ -3,6 +3,7 @@
 import { useSwiftApplyStore } from '@/lib/swiftapply/store'
 import StepPersonalInfo from './StepPersonalInfo'
 import StepTemplates from './StepTemplates'
+import Button from '@/components/ui/button'
 
 export default function SettingsModal() {
   const { settingsStep, closeSettings, openSettings } = useSwiftApplyStore()
@@ -16,43 +17,45 @@ export default function SettingsModal() {
         aria-labelledby="settings-title"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-neutral-dark bg-surface">
           <div>
-            <h2 id="settings-title" className="text-lg sm:text-xl font-bold text-gray-900">
+            <h2 id="settings-title" className="text-lg sm:text-xl font-bold text-text-primary">
               Setup Your Resume
             </h2>
-            <p className="text-xs sm:text-sm text-gray-500 mt-1">
+            <p className="text-xs sm:text-sm text-text-secondary mt-1">
               Step {settingsStep} of 2
             </p>
           </div>
 
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={closeSettings}
-            className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+            className="w-8 h-8 p-0"
             aria-label="Close settings"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
-          </button>
+          </Button>
         </div>
 
         {/* Step Navigation */}
-        <div className="px-4 sm:px-6 py-4 bg-gray-50 border-b border-gray-100">
+        <div className="px-4 sm:px-6 py-4 bg-surface border-b border-neutral-light">
           <div className="flex items-center justify-center space-x-8">
             {/* Step 1: Personal Info */}
             <button
               onClick={() => openSettings(1)}
               className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ${
                 settingsStep === 1
-                  ? 'bg-purple-600 text-white shadow-md'
-                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'text-text-secondary hover:text-primary hover:bg-surface'
               }`}
             >
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                 settingsStep === 1
-                  ? 'bg-white text-purple-600'
-                  : 'bg-gray-200 text-gray-600'
+                  ? 'bg-white text-primary'
+                  : 'bg-neutral-light text-text-secondary'
               }`}>
                 1
               </div>
@@ -60,21 +63,21 @@ export default function SettingsModal() {
             </button>
 
             {/* Connector Line */}
-            <div className="w-16 h-0.5 bg-gray-200"></div>
+            <div className="w-16 h-0.5 bg-neutral-light"></div>
 
             {/* Step 2: Templates */}
             <button
               onClick={() => openSettings(2)}
               className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ${
                 settingsStep === 2
-                  ? 'bg-purple-600 text-white shadow-md'
-                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'text-text-secondary hover:text-primary hover:bg-surface'
               }`}
             >
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                 settingsStep === 2
-                  ? 'bg-white text-purple-600'
-                  : 'bg-gray-200 text-gray-600'
+                  ? 'bg-white text-primary'
+                  : 'bg-neutral-light text-text-secondary'
               }`}>
                 2
               </div>

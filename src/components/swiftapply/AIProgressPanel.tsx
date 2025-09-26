@@ -21,7 +21,7 @@ export default function AIProgressPanel() {
   }
 
   return (
-    <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl h-full flex flex-col">
+    <div className="bg-white rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl h-full flex flex-col border border-neutral-dark">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
         <div>
@@ -30,7 +30,7 @@ export default function AIProgressPanel() {
         </div>
         <div className="flex items-center gap-2">
           {isGenerating && (
-            <span className="text-xs text-purple-500 animate-pulse">Processing…</span>
+            <span className="text-xs text-primary animate-pulse">Processing…</span>
           )}
           <button
             onClick={handleClose}
@@ -48,12 +48,12 @@ export default function AIProgressPanel() {
           const data = stageOutputs[stage.key]
           const isActive = activeStage === stage.key
           const statusClass = data.status === 'completed'
-            ? 'bg-purple-600 text-white'
+            ? 'bg-primary text-primary-foreground'
             : data.status === 'in_progress'
-              ? 'bg-purple-100 text-purple-700'
+              ? 'bg-surface text-primary'
               : data.status === 'error'
-                ? 'bg-rose-100 text-rose-600'
-                : 'bg-gray-50 text-gray-500'
+                ? 'bg-red-50 text-error'
+                : 'bg-neutral-light text-text-secondary'
 
           return (
             <button
@@ -61,8 +61,8 @@ export default function AIProgressPanel() {
               onClick={() => setAIStage(stage.key)}
               className={`flex-1 rounded-t-lg px-3 py-2 text-xs font-semibold transition-all duration-300 ${
                 isActive
-                  ? 'bg-white text-purple-700 shadow-md border-b-2 border-purple-600'
-                  : 'text-gray-500 hover:bg-gray-50'
+                  ? 'bg-white text-primary shadow-md border-b-2 border-primary'
+                  : 'text-text-secondary hover:bg-neutral-light'
               }`}
             >
               <div className={`mx-auto w-max rounded-full px-3 py-1 ${statusClass}`}>
@@ -110,27 +110,27 @@ function renderStageContent(stage: any) {
   }, [stage.content, stage.status])
 
   if (stage.status === 'pending') {
-    return <div className="text-gray-400">Waiting for execution…</div>
+    return <div className="text-text-secondary">Waiting for execution…</div>
   }
 
   if (stage.status === 'error') {
-    return <div className="text-rose-500">Stage failed. Please retry.</div>
+    return <div className="text-error">Stage failed. Please retry.</div>
   }
 
   // Show streaming content for in-progress stages
   if (stage.status === 'in_progress' && stage.content) {
     return (
       <div className="space-y-2">
-        <div className="text-sm text-purple-600 font-medium flex items-center gap-2">
-          <div className="animate-spin w-4 h-4 border-2 border-purple-300 border-t-purple-600 rounded-full"></div>
+        <div className="text-sm text-primary font-medium flex items-center gap-2">
+          <div className="animate-spin w-4 h-4 border-2 border-neutral-light border-t-primary rounded-full"></div>
           AI Processing...
         </div>
         <div
           ref={scrollRef}
           className="bg-gray-50 rounded-lg p-4 h-96 overflow-y-auto"
         >
-          <pre className="whitespace-pre-wrap text-sm text-gray-700 font-mono leading-relaxed">
-            {stage.content}<span className="animate-pulse text-purple-600">▊</span>
+          <pre className="whitespace-pre-wrap text-sm text-text-primary font-mono leading-relaxed">
+            {stage.content}<span className="animate-pulse text-primary">▊</span>
           </pre>
         </div>
       </div>
@@ -143,17 +143,17 @@ function renderStageContent(stage: any) {
       <div className="space-y-4">
         {stage.roleType && (
           <div>
-            <div className="text-sm font-semibold text-purple-700 mb-2">Role Classification</div>
-            <div className="bg-purple-50 rounded-lg p-3 text-sm text-purple-800">{stage.roleType}</div>
+            <div className="text-sm font-semibold text-primary mb-2">Role Classification</div>
+            <div className="bg-surface rounded-lg p-3 text-sm text-primary">{stage.roleType}</div>
           </div>
         )}
         {stage.insights && stage.insights.length > 0 && (
           <div>
-            <div className="text-sm font-semibold text-purple-700 mb-2">Key Insights</div>
-            <ul className="bg-gray-50 rounded-lg p-3 space-y-1 text-sm">
+            <div className="text-sm font-semibold text-primary mb-2">Key Insights</div>
+            <ul className="bg-neutral-light rounded-lg p-3 space-y-1 text-sm">
               {stage.insights.map((insight: string, idx: number) => (
                 <li key={idx} className="flex items-start gap-2">
-                  <span className="text-purple-600 font-bold">•</span>
+                  <span className="text-primary font-bold">•</span>
                   <span>{insight}</span>
                 </li>
               ))}
@@ -162,11 +162,11 @@ function renderStageContent(stage: any) {
         )}
         {stage.keywords && stage.keywords.length > 0 && (
           <div>
-            <div className="text-sm font-semibold text-purple-700 mb-2">Priority Keywords</div>
-            <div className="bg-gray-50 rounded-lg p-3">
+            <div className="text-sm font-semibold text-primary mb-2">Priority Keywords</div>
+            <div className="bg-neutral-light rounded-lg p-3">
               <div className="flex flex-wrap gap-2">
                 {stage.keywords.map((keyword: string, idx: number) => (
-                  <span key={idx} className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
+                  <span key={idx} className="px-2 py-1 bg-surface text-primary text-xs rounded-full">
                     {keyword}
                   </span>
                 ))}
@@ -181,13 +181,13 @@ function renderStageContent(stage: any) {
   // Show content
   if (stage.content) {
     return (
-      <div className="bg-gray-50 rounded-lg p-4 h-96 overflow-y-auto">
-        <pre className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">{stage.content}</pre>
+      <div className="bg-neutral-light rounded-lg p-4 h-96 overflow-y-auto">
+        <pre className="whitespace-pre-wrap text-sm text-text-primary leading-relaxed">{stage.content}</pre>
       </div>
     )
   }
 
-  return <div className="text-gray-400">No content available</div>
+  return <div className="text-text-secondary">No content available</div>
 }
 
 function formatStageStatus(status: string) {

@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { useSwiftApplyStore } from '@/lib/swiftapply/store'
+import Button from '@/components/ui/button'
+import Input from '@/components/ui/input'
 
 export default function AIReviewModal() {
   const {
@@ -113,83 +115,88 @@ export default function AIReviewModal() {
   }
 
   return (
-    <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl h-full flex flex-col">
+    <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 h-full flex flex-col border border-neutral-dark">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+      <div className="flex items-center justify-between border-b border-neutral-dark px-6 py-4">
         <div>
-          <div className="text-lg font-semibold text-gray-800">Review & Download</div>
-          <div className="text-xs text-gray-500">Edit the content below before downloading your PDF</div>
+          <div className="text-lg font-semibold text-text-primary">Review & Download</div>
+          <div className="text-xs text-text-secondary">Edit the content below before downloading your PDF</div>
         </div>
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={handleCancel}
-          className="h-8 w-8 rounded-full text-gray-400 hover:bg-gray-100 flex items-center justify-center"
+          className="h-8 w-8 p-0"
           aria-label="Close review dialog"
         >
           ×
-        </button>
+        </Button>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
         {/* Work Experience */}
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-gray-700" htmlFor="work-experience">
+          <label className="text-sm font-semibold text-text-primary" htmlFor="work-experience">
             AI-Generated Work Experience
           </label>
-          <textarea
+          <Input
             id="work-experience"
-            className="h-48 w-full resize-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 focus:border-purple-400 focus:outline-none focus:ring-1 focus:ring-purple-300"
+            multiline
+            rows={12}
             value={editedWorkExperience}
             onChange={event => setEditedWorkExperience(event.target.value)}
-            spellCheck={false}
             placeholder="AI-generated work experience will appear here..."
+            className="resize-none"
           />
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-text-muted">
             Review and edit the AI-generated experience content
           </p>
         </div>
 
         {/* Personal Info */}
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-gray-700" htmlFor="personal-info">
+          <label className="text-sm font-semibold text-text-primary" htmlFor="personal-info">
             Personal Information (JSON)
           </label>
-          <textarea
+          <Input
             id="personal-info"
-            className="h-48 w-full resize-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-mono text-gray-700 focus:border-purple-400 focus:outline-none focus:ring-1 focus:ring-purple-300"
+            multiline
+            rows={12}
             value={editedPersonalInfoText}
             onChange={event => setEditedPersonalInfoText(event.target.value)}
-            spellCheck={false}
             placeholder="Personal information JSON..."
+            className="font-mono resize-none"
           />
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-text-muted">
             Must be valid JSON format. Do not rename fields.
           </p>
         </div>
 
         {/* Error Display */}
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+          <div className="rounded-lg border border-error/20 bg-error/5 px-3 py-2 text-sm text-error">
             {error}
           </div>
         )}
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between border-t border-gray-200 px-6 py-4">
-        <span className="text-sm text-gray-500">Review your AI-generated resume content before downloading</span>
+      <div className="flex items-center justify-between border-t border-neutral-dark px-6 py-4">
+        <span className="text-sm text-text-secondary">Review your AI-generated resume content before downloading</span>
         <div className="flex items-center gap-3">
-          <button
+          <Button
+            variant="secondary"
             onClick={handleCancel}
             disabled={isGeneratingPDF}
-            className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="primary"
             onClick={handleConfirm}
             disabled={isGeneratingPDF}
-            className="px-6 py-2 text-sm font-semibold text-white bg-purple-600 rounded-lg shadow hover:bg-purple-700 disabled:opacity-50 transition-colors"
+            className="px-6"
           >
             {isGeneratingPDF ? (
               <div className="flex items-center gap-2">
@@ -199,7 +206,7 @@ export default function AIReviewModal() {
             ) : (
               'Confirm & Download PDF'
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

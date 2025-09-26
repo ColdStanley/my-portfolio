@@ -7,5 +7,9 @@ export const metadata: Metadata = {
 }
 
 export default function SwiftApplyPage() {
-  return <SwiftApplyClient />
+  return (
+    <div className="theme-swiftapply">
+      <SwiftApplyClient />
+    </div>
+  )
 }

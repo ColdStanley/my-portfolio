@@ -22,14 +22,9 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
+  /* 品牌色映射移除 - 由项目作用域定义 */
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -41,6 +36,20 @@
 }
 
 :root {
+  /* ✅ 默认 fallback 值，避免空变量 */
+  --primary: #000000; /* 默认黑色，将被项目作用域覆盖 */
+  --secondary: #666666;
+  --accent: #999999;
+  --success: #22C55E;
+  --warning: #EAB308;
+  --error: #EF4444;
+  --surface: #FFFFFF;
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --text-muted: #6B7280;
+  --neutral-light: #F8F9FA;
+  --neutral-dark: #E5E7EB;
+
   --radius: 0.625rem;
   --navbar-height: 96px;
 
@@ -48,13 +57,7 @@
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
 
-  /* 主色 & 强调色 */
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
+  /* 品牌色移除 - 由项目作用域定义 */
 
   /* 辅助色 */
   --muted: oklch(0.968 0.007 247.896);
@@ -97,14 +100,10 @@
   --card-foreground: oklch(0.984 0.003 247.858);
   --popover: oklch(0.208 0.042 265.755);
   --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
+  /* 品牌色移除 - 由项目作用域定义 */
   --muted: oklch(0.279 0.041 260.031);
   --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
+  /* accent 移除 - 由项目作用域定义 */
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);

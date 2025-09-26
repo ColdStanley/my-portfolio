@@ -1,0 +1,90 @@
+/* SwiftApply 专属主题作用域 */
+/* 绿色系品牌主题，避免与全局变量冲突 */
+
+/* 🚨 高优先级选择器，覆盖全局主题（如 html.lakers）*/
+html .theme-swiftapply,
+html.lakers .theme-swiftapply,
+html.anno .theme-swiftapply,
+html.cyberpunk .theme-swiftapply,
+html.lightpink .theme-swiftapply,
+html.hellokitty .theme-swiftapply,
+.theme-swiftapply {
+  /* 🎨 品牌主色 */
+  --primary: #10B981;           /* SwiftApply 绿色 */
+  --primary-foreground: #ffffff; /* 确保主色背景上的文字是纯白色 */
+
+  --secondary: #1F2937;         /* 深灰色 */
+  --secondary-foreground: #ffffff;
+
+  --accent: #F59E0B;            /* 琥珀色 */
+  --accent-foreground: #ffffff;
+
+  /* 🎯 语义色彩 */
+  --success: #10B981;           /* 成功绿色，与品牌色一致 */
+  --warning: #EAB308;           /* 警告黄色 */
+  --error: #EF4444;             /* 错误红色 */
+
+  /* 🎪 中性色系 */
+  --neutral-light: #F8F9FA;     /* 浅色背景 */
+  --neutral-dark: #E5E7EB;      /* 边框分割线 */
+
+  /* 📝 文本色彩 */
+  --text-primary: #111827;      /* 主要文字 */
+  --text-secondary: #6B7280;    /* 次要文字 */
+  --text-muted: #6B7280;        /* 弱化文字 */
+
+  /* 🏗️ 布局色彩 */
+  --surface: #F9FAFB;           /* 卡片表面 */
+  --border: var(--neutral-dark);
+
+  /* ✅ Tailwind 基础变量补充 */
+  --background: #FFFFFF;        /* 页面背景 */
+  --foreground: #111827;        /* 页面前景文字 */
+  --input: #E5E7EB;             /* 输入框背景 */
+  --muted: #F3F4F6;             /* 弱化背景 */
+  --muted-foreground: #6B7280;  /* 弱化文字 */
+  --card: #FFFFFF;              /* 卡片背景 */
+  --card-foreground: #111827;   /* 卡片文字 */
+  --popover: #FFFFFF;           /* 弹出框背景 */
+  --popover-foreground: #111827;/* 弹出框文字 */
+}
+
+/* 🎯 强制覆盖全局主题的背景和基础样式 */
+html .theme-swiftapply,
+html.lakers .theme-swiftapply,
+html.anno .theme-swiftapply,
+html.cyberpunk .theme-swiftapply,
+html.lightpink .theme-swiftapply,
+html.hellokitty .theme-swiftapply {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+/* 确保所有子元素背景正确 */
+html .theme-swiftapply .bg-white,
+html.lakers .theme-swiftapply .bg-white,
+html.anno .theme-swiftapply .bg-white,
+html.cyberpunk .theme-swiftapply .bg-white,
+html.lightpink .theme-swiftapply .bg-white,
+html.hellokitty .theme-swiftapply .bg-white {
+  background: #ffffff !important;
+  color: var(--foreground) !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* 确保主色按钮样式正确 */
+html .theme-swiftapply .bg-primary,
+html.lakers .theme-swiftapply .bg-primary,
+html.anno .theme-swiftapply .bg-primary,
+html.cyberpunk .theme-swiftapply .bg-primary,
+html.lightpink .theme-swiftapply .bg-primary,
+html.hellokitty .theme-swiftapply .bg-primary {
+  background: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+}
+
+/* 确保作用域优先级 */
+.theme-swiftapply * {
+  /* 让所有子元素都能正确继承变量 */
+}

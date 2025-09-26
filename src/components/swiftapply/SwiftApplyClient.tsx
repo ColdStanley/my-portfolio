@@ -59,7 +59,7 @@ export default function SwiftApplyClient() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
+    <div className="min-h-screen bg-white">
       <Header />
 
       {/* Horizontal Navigation Arrows */}
@@ -68,7 +68,7 @@ export default function SwiftApplyClient() {
           {canScrollLeft && (
             <button
               onClick={() => scrollTo('left')}
-              className="fixed left-4 top-1/2 transform -translate-y-1/2 z-50 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center text-gray-600 hover:text-purple-600 border border-gray-200"
+              className="fixed left-4 top-1/2 transform -translate-y-1/2 z-50 w-10 h-10 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center text-text-secondary hover:text-primary border border-neutral-dark"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -78,7 +78,7 @@ export default function SwiftApplyClient() {
           {canScrollRight && (
             <button
               onClick={() => scrollTo('right')}
-              className="fixed right-4 top-1/2 transform -translate-y-1/2 z-50 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center text-gray-600 hover:text-purple-600 border border-gray-200"
+              className="fixed right-4 top-1/2 transform -translate-y-1/2 z-50 w-10 h-10 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center text-text-secondary hover:text-primary border border-neutral-dark"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

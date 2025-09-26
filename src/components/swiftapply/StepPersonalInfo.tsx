@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useSwiftApplyStore, type PersonalInfo } from '@/lib/swiftapply/store'
 import { getDefaultPersonalInfo } from '@/lib/swiftapply/localStorage'
 import { validatePersonalInfo, parseMultilineToArray, arrayToMultiline, isValidEmail, isValidPhone, isValidUrl } from '@/lib/swiftapply/utils'
+import Button from '@/components/ui/button'
+import Input from '@/components/ui/input'
 
 export default function StepPersonalInfo() {
   const { personalInfo, setPersonalInfo, openSettings } = useSwiftApplyStore()
@@ -117,11 +119,10 @@ export default function StepPersonalInfo() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Full Name *
               </label>
-              <input
+              <Input
                 type="text"
                 value={formData.fullName}
                 onChange={(e) => handleChange('fullName', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors"
                 required
               />
             </div>
@@ -130,11 +131,10 @@ export default function StepPersonalInfo() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email *
               </label>
-              <input
+              <Input
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleChange('email', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors"
                 required
               />
             </div>
@@ -143,11 +143,10 @@ export default function StepPersonalInfo() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Phone
               </label>
-              <input
+              <Input
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => handleChange('phone', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors"
               />
             </div>
 
@@ -155,12 +154,11 @@ export default function StepPersonalInfo() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Location
               </label>
-              <input
+              <Input
                 type="text"
                 value={formData.location}
                 onChange={(e) => handleChange('location', e.target.value)}
                 placeholder="City, State/Country"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors"
               />
             </div>
 
@@ -168,12 +166,11 @@ export default function StepPersonalInfo() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 LinkedIn
               </label>
-              <input
+              <Input
                 type="url"
                 value={formData.linkedin}
                 onChange={(e) => handleChange('linkedin', e.target.value)}
                 placeholder="linkedin.com/in/username"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors"
               />
             </div>
 
@@ -181,12 +178,11 @@ export default function StepPersonalInfo() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Website
               </label>
-              <input
+              <Input
                 type="url"
                 value={formData.website}
                 onChange={(e) => handleChange('website', e.target.value)}
                 placeholder="https://yourwebsite.com"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors"
               />
             </div>
           </div>
@@ -198,11 +194,11 @@ export default function StepPersonalInfo() {
             Professional Summary
           </label>
           <p className="text-xs text-gray-500 mb-2">One point per line</p>
-          <textarea
+          <Input
+            multiline
+            rows={3}
             value={arrayToMultiline(formData.summary)}
             onChange={(e) => handleArrayChange('summary', e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors resize-none"
             placeholder="• Experienced software developer with 5+ years..."
           />
         </div>
@@ -214,12 +210,15 @@ export default function StepPersonalInfo() {
               Technical Skills
             </label>
             <p className="text-xs text-gray-500 mb-2">One skill per line</p>
-            <textarea
+            <Input
+              multiline
+              rows={4}
               value={arrayToMultiline(formData.technicalSkills)}
               onChange={(e) => handleArrayChange('technicalSkills', e.target.value)}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors resize-none"
-              placeholder="JavaScript&#10;React&#10;Node.js&#10;Python"
+              placeholder="JavaScript
+React
+Node.js
+Python"
             />
           </div>
 
@@ -228,12 +227,13 @@ export default function StepPersonalInfo() {
               Languages
             </label>
             <p className="text-xs text-gray-500 mb-2">One language per line</p>
-            <textarea
+            <Input
+              multiline
+              rows={4}
               value={arrayToMultiline(formData.languages)}
               onChange={(e) => handleArrayChange('languages', e.target.value)}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors resize-none"
-              placeholder="English (Native)&#10;Spanish (Fluent)"
+              placeholder="English (Native)
+Spanish (Fluent)"
             />
           </div>
         </div>
@@ -242,13 +242,13 @@ export default function StepPersonalInfo() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Education</h3>
-            <button
-              type="button"
+            <Button
               onClick={addEducation}
-              className="px-3 py-1 text-xs sm:text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+              variant="primary"
+              size="sm"
             >
               Add Education
-            </button>
+            </Button>
           </div>
 
           {formData.education.map((edu, index) => (
@@ -257,13 +257,14 @@ export default function StepPersonalInfo() {
                 <span className="text-sm font-medium text-gray-700">
                   Education {index + 1}
                 </span>
-                <button
-                  type="button"
+                <Button
                   onClick={() => removeEducation(index)}
-                  className="text-red-500 hover:text-red-700 text-sm"
+                  variant="ghost"
+                  size="sm"
+                  className="text-error hover:text-red-700 text-sm"
                 >
                   Remove
-                </button>
+                </Button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -271,12 +272,12 @@ export default function StepPersonalInfo() {
                   <label className="block text-xs font-medium text-gray-600 mb-1">
                     Degree
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={edu.degree}
                     onChange={(e) => handleEducationChange(index, 'degree', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors text-sm"
                     placeholder="Bachelor of Science in Computer Science"
+                    className="text-sm"
                   />
                 </div>
 
@@ -284,12 +285,12 @@ export default function StepPersonalInfo() {
                   <label className="block text-xs font-medium text-gray-600 mb-1">
                     Institution
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={edu.institution}
                     onChange={(e) => handleEducationChange(index, 'institution', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors text-sm"
                     placeholder="University Name"
+                    className="text-sm"
                   />
                 </div>
 
@@ -297,12 +298,12 @@ export default function StepPersonalInfo() {
                   <label className="block text-xs font-medium text-gray-600 mb-1">
                     Year
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={edu.year}
                     onChange={(e) => handleEducationChange(index, 'year', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors text-sm"
                     placeholder="2020"
+                    className="text-sm"
                   />
                 </div>
 
@@ -310,12 +311,12 @@ export default function StepPersonalInfo() {
                   <label className="block text-xs font-medium text-gray-600 mb-1">
                     GPA (Optional)
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={edu.gpa || ''}
                     onChange={(e) => handleEducationChange(index, 'gpa', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors text-sm"
                     placeholder="3.8"
+                    className="text-sm"
                   />
                 </div>
               </div>
@@ -329,12 +330,13 @@ export default function StepPersonalInfo() {
             Certifications
           </label>
           <p className="text-xs text-gray-500 mb-2">One certification per line</p>
-          <textarea
+          <Input
+            multiline
+            rows={3}
             value={arrayToMultiline(formData.certificates)}
             onChange={(e) => handleArrayChange('certificates', e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors resize-none"
-            placeholder="AWS Certified Solutions Architect&#10;Google Cloud Professional"
+            placeholder="AWS Certified Solutions Architect
+Google Cloud Professional"
           />
         </div>
 
@@ -342,13 +344,13 @@ export default function StepPersonalInfo() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Custom Sections</h3>
-            <button
-              type="button"
+            <Button
               onClick={addCustomModule}
-              className="px-3 py-1 text-xs sm:text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+              variant="primary"
+              size="sm"
             >
               Add Section
-            </button>
+            </Button>
           </div>
 
           {formData.customModules.map((module, index) => (
@@ -357,13 +359,14 @@ export default function StepPersonalInfo() {
                 <span className="text-sm font-medium text-gray-700">
                   Section {index + 1}
                 </span>
-                <button
-                  type="button"
+                <Button
                   onClick={() => removeCustomModule(index)}
-                  className="text-red-500 hover:text-red-700 text-sm"
+                  variant="ghost"
+                  size="sm"
+                  className="text-error hover:text-red-700 text-sm"
                 >
                   Remove
-                </button>
+                </Button>
               </div>
 
               <div className="space-y-3">
@@ -371,12 +374,12 @@ export default function StepPersonalInfo() {
                   <label className="block text-xs font-medium text-gray-600 mb-1">
                     Section Title
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={module.title}
                     onChange={(e) => handleCustomModuleChange(index, 'title', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors text-sm"
                     placeholder="Projects, Publications, Awards, etc."
+                    className="text-sm"
                   />
                 </div>
 
@@ -385,12 +388,13 @@ export default function StepPersonalInfo() {
                     Content
                   </label>
                   <p className="text-xs text-gray-500 mb-2">One item per line</p>
-                  <textarea
+                  <Input
+                    multiline
+                    rows={3}
                     value={arrayToMultiline(module.content)}
                     onChange={(e) => handleCustomModuleChange(index, 'content', e.target.value)}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors resize-none text-sm"
                     placeholder="• Built a web application that serves 10,000+ users..."
+                    className="text-sm"
                   />
                 </div>
               </div>
@@ -411,7 +415,7 @@ export default function StepPersonalInfo() {
                 value="A4"
                 checked={formData.format === 'A4'}
                 onChange={(e) => handleChange('format', e.target.value as 'A4' | 'Letter')}
-                className="mr-2 text-purple-600 focus:ring-purple-500"
+                className="mr-2 text-primary focus:ring-primary"
               />
               A4 (210 × 297 mm)
             </label>
@@ -422,7 +426,7 @@ export default function StepPersonalInfo() {
                 value="Letter"
                 checked={formData.format === 'Letter'}
                 onChange={(e) => handleChange('format', e.target.value as 'A4' | 'Letter')}
-                className="mr-2 text-purple-600 focus:ring-purple-500"
+                className="mr-2 text-primary focus:ring-primary"
               />
               Letter (8.5 × 11 in)
             </label>
@@ -444,12 +448,13 @@ export default function StepPersonalInfo() {
 
       {/* Actions */}
       <div className="flex justify-end mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200">
-        <button
+        <Button
           onClick={handleSaveAndContinue}
-          className="px-4 sm:px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm sm:text-base font-medium transition-colors"
+          variant="primary"
+          size="md"
         >
           Save & Continue
-        </button>
+        </Button>
       </div>
     </div>
   )

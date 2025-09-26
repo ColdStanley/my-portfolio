@@ -1,6 +1,8 @@
 'use client'
 
 import { useSwiftApplyStore } from '@/lib/swiftapply/store'
+import { Card } from '@/components/ui/card'
+import Button from '@/components/ui/button'
 
 export default function ResumePreview() {
   const { personalInfo, templates } = useSwiftApplyStore()
@@ -9,28 +11,29 @@ export default function ResumePreview() {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-full flex flex-col">
         <div className="p-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900">Resume Preview</h2>
+          <h2 className="text-lg font-semibold text-text-primary">Resume Preview</h2>
         </div>
 
         <div className="flex-1 flex items-center justify-center text-center p-8">
           <div className="max-w-md">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <div className="w-16 h-16 bg-neutral-light rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-text-secondary" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm3 1h6v4H7V5zm0 6h6v2H7v-2z" clipRule="evenodd" />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <h3 className="text-lg font-medium text-text-primary mb-2">
               Configure Your Information
             </h3>
-            <p className="text-gray-500 text-sm mb-4">
+            <p className="text-text-secondary text-sm mb-4">
               Set up your personal information and experience templates to see the resume preview
             </p>
-            <button
+            <Button
               onClick={() => useSwiftApplyStore.getState().openSettings(1)}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
+              variant="primary"
+              size="sm"
             >
               Open Settings
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -42,8 +45,8 @@ export default function ResumePreview() {
       {/* Header */}
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Resume Preview</h2>
-          <div className="text-sm text-gray-500">
+          <h2 className="text-lg font-semibold text-text-primary">Resume Preview</h2>
+          <div className="text-sm text-text-secondary">
             {personalInfo.format} Format
           </div>
         </div>
@@ -61,13 +64,13 @@ export default function ResumePreview() {
         >
           <div className="p-8 text-sm">
             {/* Header */}
-            <div className="text-center border-b-2 border-purple-600 pb-4 mb-6">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <div className="text-center border-b-2 border-primary pb-4 mb-6">
+              <h1 className="text-2xl font-bold text-text-primary mb-2">
                 {personalInfo.fullName}
               </h1>
 
               {/* Contact Info */}
-              <div className="flex flex-wrap justify-center gap-x-6 gap-y-1 text-xs text-gray-600">
+              <div className="flex flex-wrap justify-center gap-x-6 gap-y-1 text-xs text-text-secondary">
                 {personalInfo.email && (
                   <span className="flex items-center gap-1">
                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -97,7 +100,7 @@ export default function ResumePreview() {
 
               {/* Links */}
               {(personalInfo.linkedin || personalInfo.website) && (
-                <div className="flex flex-wrap justify-center gap-x-6 gap-y-1 text-xs text-gray-600 mt-1">
+                <div className="flex flex-wrap justify-center gap-x-6 gap-y-1 text-xs text-text-secondary mt-1">
                   {personalInfo.linkedin && (
                     <span>{personalInfo.linkedin}</span>
                   )}
@@ -111,13 +114,13 @@ export default function ResumePreview() {
             {/* Professional Summary */}
             {personalInfo.summary.length > 0 && (
               <div className="mb-6">
-                <h2 className="text-sm font-bold text-purple-700 border-b border-gray-200 pb-1 mb-3 uppercase tracking-wide">
+                <h2 className="text-sm font-bold text-primary border-b border-neutral-dark pb-1 mb-3 uppercase tracking-wide">
                   Professional Summary
                 </h2>
                 <ul className="list-none space-y-1">
                   {personalInfo.summary.map((item, index) => (
                     <li key={index} className="text-xs leading-relaxed pl-3 relative">
-                      <span className="absolute left-0 top-1 text-purple-600">•</span>
+                      <span className="absolute left-0 top-1 text-primary">•</span>
                       {item}
                     </li>
                   ))}
@@ -128,25 +131,25 @@ export default function ResumePreview() {
             {/* Experience Templates - Preview Only */}
             {templates.length > 0 && (
               <div className="mb-6">
-                <h2 className="text-sm font-bold text-purple-700 border-b border-gray-200 pb-1 mb-3 uppercase tracking-wide">
+                <h2 className="text-sm font-bold text-primary border-b border-neutral-dark pb-1 mb-3 uppercase tracking-wide">
                   Professional Experience
                 </h2>
                 <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                   <div className="space-y-2">
                     {templates.map((template) => (
                       <div key={template.id} className="bg-white rounded p-2 border border-gray-200">
-                        <h3 className="text-xs font-semibold text-gray-900">
+                        <h3 className="text-xs font-semibold text-text-primary">
                           {template.title}
                         </h3>
-                        <div className="text-xs text-gray-500 mt-1">
+                        <div className="text-xs text-text-secondary mt-1">
                           Template available for AI customization
                         </div>
                       </div>
                     ))}
                   </div>
                   <div className="border-t border-gray-200 pt-3 mt-3">
-                    <p className="text-xs text-gray-600 leading-relaxed">
-                      <span className="font-medium text-purple-600">AI Smart Selection:</span> AI will automatically analyze the job description and select the most suitable template for customization, enabling you to apply for multiple roles with intelligently tailored content.
+                    <p className="text-xs text-text-secondary leading-relaxed">
+                      <span className="font-medium text-primary">AI Smart Selection:</span> AI will automatically analyze the job description and select the most suitable template for customization, enabling you to apply for multiple roles with intelligently tailored content.
                     </p>
                   </div>
                 </div>
@@ -160,12 +163,12 @@ export default function ResumePreview() {
                 {/* Technical Skills */}
                 {personalInfo.technicalSkills.length > 0 && (
                   <div>
-                    <h2 className="text-sm font-bold text-purple-700 border-b border-gray-200 pb-1 mb-2 uppercase tracking-wide">
+                    <h2 className="text-sm font-bold text-primary border-b border-neutral-dark pb-1 mb-2 uppercase tracking-wide">
                       Technical Skills
                     </h2>
                     <div className="flex flex-wrap gap-1">
                       {personalInfo.technicalSkills.map((skill, index) => (
-                        <span key={index} className="text-xs bg-gray-100 px-2 py-1 rounded">
+                        <span key={index} className="text-xs bg-neutral-light px-2 py-1 rounded">
                           {skill}
                         </span>
                       ))}
@@ -179,14 +182,14 @@ export default function ResumePreview() {
                 {/* Education */}
                 {personalInfo.education.length > 0 && (
                   <div>
-                    <h2 className="text-sm font-bold text-purple-700 border-b border-gray-200 pb-1 mb-2 uppercase tracking-wide">
+                    <h2 className="text-sm font-bold text-primary border-b border-neutral-dark pb-1 mb-2 uppercase tracking-wide">
                       Education
                     </h2>
                     <div className="space-y-2">
                       {personalInfo.education.map((edu, index) => (
                         <div key={index} className="text-xs">
-                          <div className="font-semibold text-gray-900">{edu.degree}</div>
-                          <div className="text-gray-600">
+                          <div className="font-semibold text-text-primary">{edu.degree}</div>
+                          <div className="text-text-secondary">
                             {edu.institution} • {edu.year}
                             {edu.gpa && ` • GPA: ${edu.gpa}`}
                           </div>
@@ -199,13 +202,13 @@ export default function ResumePreview() {
                 {/* Certifications */}
                 {personalInfo.certificates.length > 0 && (
                   <div>
-                    <h2 className="text-sm font-bold text-purple-700 border-b border-gray-200 pb-1 mb-2 uppercase tracking-wide">
+                    <h2 className="text-sm font-bold text-primary border-b border-neutral-dark pb-1 mb-2 uppercase tracking-wide">
                       Certifications
                     </h2>
                     <ul className="list-none space-y-1">
                       {personalInfo.certificates.map((cert, index) => (
                         <li key={index} className="text-xs pl-3 relative">
-                          <span className="absolute left-0 top-1 text-purple-600">•</span>
+                          <span className="absolute left-0 top-1 text-primary">•</span>
                           {cert}
                         </li>
                       ))}
@@ -216,12 +219,12 @@ export default function ResumePreview() {
                 {/* Languages */}
                 {personalInfo.languages.length > 0 && (
                   <div>
-                    <h2 className="text-sm font-bold text-purple-700 border-b border-gray-200 pb-1 mb-2 uppercase tracking-wide">
+                    <h2 className="text-sm font-bold text-primary border-b border-neutral-dark pb-1 mb-2 uppercase tracking-wide">
                       Languages
                     </h2>
                     <div className="flex flex-wrap gap-1">
                       {personalInfo.languages.map((language, index) => (
-                        <span key={index} className="text-xs bg-gray-100 px-2 py-1 rounded">
+                        <span key={index} className="text-xs bg-neutral-light px-2 py-1 rounded">
                           {language}
                         </span>
                       ))}
@@ -234,13 +237,13 @@ export default function ResumePreview() {
             {/* Custom Modules */}
             {personalInfo.customModules.map((module) => (
               <div key={module.id} className="mt-6">
-                <h2 className="text-sm font-bold text-purple-700 border-b border-gray-200 pb-1 mb-3 uppercase tracking-wide">
+                <h2 className="text-sm font-bold text-primary border-b border-neutral-dark pb-1 mb-3 uppercase tracking-wide">
                   {module.title}
                 </h2>
                 <ul className="list-none space-y-1">
                   {module.content.map((item, index) => (
                     <li key={index} className="text-xs leading-relaxed pl-3 relative">
-                      <span className="absolute left-0 top-1 text-purple-600">•</span>
+                      <span className="absolute left-0 top-1 text-primary">•</span>
                       {item}
                     </li>
                   ))}

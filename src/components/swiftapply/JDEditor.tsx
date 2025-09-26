@@ -3,6 +3,7 @@
 import { useCallback } from 'react'
 import { useSwiftApplyStore } from '@/lib/swiftapply/store'
 import { debounce } from '@/lib/swiftapply/utils'
+import Input from '@/components/ui/input'
 
 export default function JDEditor() {
   const { jobTitle, jobDescription, setJobTitle, setJobDescription } = useSwiftApplyStore()
@@ -33,48 +34,48 @@ export default function JDEditor() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-full flex flex-col">
+    <div className="bg-white rounded-xl shadow-sm border border-neutral-dark h-full flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b border-gray-100">
-        <h2 className="text-lg font-semibold text-gray-900">Job Description</h2>
-        <p className="text-sm text-gray-500 mt-1">
+      <div className="p-4 border-b border-neutral-light">
+        <h2 className="text-lg font-semibold text-text-primary">Job Description</h2>
+        <p className="text-sm text-text-secondary mt-1">
           Paste the job posting here to tailor your resume
         </p>
       </div>
 
       {/* Job Title Input */}
-      <div className="p-4 border-b border-gray-100">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+      <div className="p-4 border-b border-neutral-light">
+        <label className="block text-sm font-medium text-text-primary mb-2">
           Job Title
         </label>
-        <input
+        <Input
           type="text"
           defaultValue={jobTitle}
           onChange={handleTitleChange}
           placeholder="e.g. Senior Software Engineer"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm text-gray-700 placeholder-gray-400"
           aria-label="Job Title Input"
         />
       </div>
 
       {/* Job Description Textarea */}
       <div className="flex-1 p-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-text-primary mb-2">
           Job Description
         </label>
-        <textarea
+        <Input
+          multiline
           defaultValue={jobDescription}
           onChange={handleDescriptionChange}
           placeholder="Paste the full job description here..."
-          className="w-full h-full resize-none border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm text-gray-700 placeholder-gray-400 leading-relaxed"
+          className="h-full resize-none leading-relaxed"
           style={{ minHeight: '250px' }}
           aria-label="Job Description Input"
         />
       </div>
 
       {/* Footer Stats */}
-      <div className="p-4 border-t border-gray-100 bg-gray-50/50">
-        <div className="flex items-center justify-between text-xs text-gray-500">
+      <div className="p-4 border-t border-neutral-light bg-surface/50">
+        <div className="flex items-center justify-between text-xs text-text-secondary">
           <span>
             Title: {jobTitle.length} chars
           </span>
