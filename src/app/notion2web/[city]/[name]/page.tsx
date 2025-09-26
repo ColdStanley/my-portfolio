@@ -775,11 +775,12 @@ export default function UserWebsitePage() {
           {filteredContent.length > 0 && (
             <>
               {/* Current Slide */}
-              <div className="max-w-5xl max-h-[85vh] mx-auto p-6 overflow-y-auto">
-                <div
-                  key={currentSlide}
-                  className={`${getThemeClasses(currentTheme, 'cardBg')} backdrop-blur-md rounded-2xl p-10 shadow-2xl border border-gray-100/50 transform transition-all duration-700 ease-out animate-slideIn`}
-                >
+              <div className="w-[90vw] h-[80vh] max-w-6xl mx-auto p-6 flex items-center justify-center">
+                <div className="w-full h-full flex flex-col justify-center">
+                  <div
+                    key={currentSlide}
+                    className={`${getThemeClasses(currentTheme, 'cardBg')} backdrop-blur-md rounded-2xl p-10 shadow-2xl border border-gray-100/50 transform transition-all duration-700 ease-out animate-slideIn h-full overflow-y-auto`}
+                  >
                   {/* Slide Content - Same as card content */}
                   <div className="space-y-6">
                     <h3 className="text-2xl font-medium text-gray-800">{filteredContent[currentSlide]?.title}</h3>
@@ -956,6 +957,7 @@ export default function UserWebsitePage() {
                         })()}
                       </div>
                     )}
+                    </div>
                   </div>
                 </div>
               </div>
