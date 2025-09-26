@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, useInView, useAnimation, useMotionValue, useSpring } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
+import Button from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import NewNavbar from '@/components/NewNavbar'
 import FooterSection from '@/components/FooterSection'
 import PageTransition from '@/components/PageTransition'
@@ -39,7 +41,7 @@ export default function HomePageClient({ initialContent, navigationData }: HomeP
       <GlobalLoader />
       <NewNavbar navigationData={navigationData} />
       <PageTransition>
-        <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 relative overflow-x-hidden">
+        <main className="min-h-screen bg-[var(--background)] relative overflow-x-hidden">
         {/* Background Effects */}
         <GridBackground />
         <WorkflowNetwork />
@@ -135,7 +137,7 @@ function HeroSection({ hero }: HeroProps) {
 
   return (
     <section className="relative px-6 pt-28 pb-20 lg:min-h-[calc(100vh-6rem)] overflow-visible">
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-purple-50/60 pointer-events-none" />
+      <div className="absolute inset-0 bg-[var(--surface)] pointer-events-none" />
 
       <div className="max-w-6xl mx-auto relative z-20 flex flex-col-reverse lg:flex-row items-center gap-14">
         <motion.div
@@ -150,14 +152,14 @@ function HeroSection({ hero }: HeroProps) {
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
               {hero.gradient_text && hero.gradient_text !== hero.title ? (
                 <>
-                  {hero.title.split(hero.gradient_text)[0]}
-                  <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                  <span className="text-[var(--text-primary)]">{hero.title.split(hero.gradient_text)[0]}</span>
+                  <span className="text-[var(--primary)]">
                     {hero.gradient_text}
                   </span>
-                  {hero.title.split(hero.gradient_text)[1]}
+                  <span className="text-[var(--text-primary)]">{hero.title.split(hero.gradient_text)[1]}</span>
                 </>
               ) : (
-                <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                <span className="text-[var(--primary)]">
                   {hero.title}
                 </span>
               )}
@@ -167,7 +169,7 @@ function HeroSection({ hero }: HeroProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-              className="text-lg md:text-xl text-gray-600 mb-10 leading-relaxed"
+              className="text-lg md:text-xl text-[var(--text-secondary)] mb-10 leading-relaxed"
             >
               {hero.subtitle}
             </motion.p>
@@ -179,23 +181,31 @@ function HeroSection({ hero }: HeroProps) {
               className="flex flex-wrap justify-center lg:justify-start gap-4"
             >
               {hero.primary_button_href.startsWith('#') ? (
-                <ScrollToSection targetId={hero.primary_button_href.slice(1)} className="w-44 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all duration-300 hover:shadow-lg hover:scale-105">
-                  {hero.primary_button_text}
+                <ScrollToSection targetId={hero.primary_button_href.slice(1)}>
+                  <Button variant="primary" className="w-44">
+                    {hero.primary_button_text}
+                  </Button>
                 </ScrollToSection>
               ) : (
-                <Link href={hero.primary_button_href} className="w-44 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all duration-300 hover:shadow-lg hover:scale-105 text-center">
-                  {hero.primary_button_text}
+                <Link href={hero.primary_button_href}>
+                  <Button variant="primary" className="w-44">
+                    {hero.primary_button_text}
+                  </Button>
                 </Link>
               )}
 
               {hero.secondary_button_text && hero.secondary_button_href && (
                 hero.secondary_button_href.startsWith('#') ? (
-                  <ScrollToSection targetId={hero.secondary_button_href.slice(1)} className="w-44 px-6 py-3 bg-white/80 hover:bg-white text-gray-700 rounded-lg border border-purple-100 font-medium transition-all duration-300 hover:shadow-lg hover:scale-105">
-                    {hero.secondary_button_text}
+                  <ScrollToSection targetId={hero.secondary_button_href.slice(1)}>
+                    <Button variant="secondary" className="w-44">
+                      {hero.secondary_button_text}
+                    </Button>
                   </ScrollToSection>
                 ) : (
-                  <Link href={hero.secondary_button_href} className="w-44 px-6 py-3 bg-white/80 hover:bg-white text-gray-700 rounded-lg border border-purple-100 font-medium transition-all duration-300 hover:shadow-lg hover:scale-105 text-center">
-                    {hero.secondary_button_text}
+                  <Link href={hero.secondary_button_href}>
+                    <Button variant="secondary" className="w-44">
+                      {hero.secondary_button_text}
+                    </Button>
                   </Link>
                 )
               )}
@@ -209,8 +219,8 @@ function HeroSection({ hero }: HeroProps) {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
         >
-          <div className="relative w-full max-w-xl aspect-[16/10] md:aspect-[4/3] lg:aspect-[3/2] rounded-[28px] overflow-hidden shadow-[0_24px_65px_-30px_rgba(79,70,229,0.6)] ring-1 ring-purple-100/50">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/15 via-transparent to-indigo-500/10 pointer-events-none" />
+          <div className="relative w-full max-w-xl aspect-[16/10] md:aspect-[4/3] lg:aspect-[3/2] rounded-[28px] overflow-hidden shadow-xl ring-1 ring-[var(--neutral-dark)]">
+            <div className="absolute inset-0 bg-[var(--surface)]/10 pointer-events-none" />
             <video
               ref={videoRef}
               autoPlay
@@ -228,7 +238,7 @@ function HeroSection({ hero }: HeroProps) {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 0.35, scale: 1 }}
         transition={{ duration: 1.2, delay: 0.3, ease: "easeOut" }}
-        className="absolute -left-16 top-1/3 w-72 h-72 bg-purple-200/50 rounded-full blur-3xl pointer-events-none"
+        className="absolute -left-16 top-1/3 w-72 h-72 bg-[var(--accent)]/20 rounded-full blur-3xl pointer-events-none"
         style={{ y: scrollY * 0.2 }}
       />
 
@@ -236,7 +246,7 @@ function HeroSection({ hero }: HeroProps) {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 0.3, scale: 1 }}
         transition={{ duration: 1.2, delay: 0.5, ease: "easeOut" }}
-        className="absolute -right-24 bottom-10 w-60 h-60 bg-indigo-200/50 rounded-full blur-3xl pointer-events-none"
+        className="absolute -right-24 bottom-10 w-60 h-60 bg-[var(--primary)]/10 rounded-full blur-3xl pointer-events-none"
         style={{ y: scrollY * 0.2 }}
       />
     </section>
@@ -338,29 +348,29 @@ function ProjectSection({ title, description, benefits, buttonText, href, gradie
             <div>
               <motion.h2
                 variants={itemVariants}
-                className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight"
+                className="text-4xl md:text-5xl font-bold text-[var(--text-primary)] mb-6 leading-tight"
               >
                 {title}
               </motion.h2>
 
               <motion.p
                 variants={itemVariants}
-                className="text-lg md:text-xl text-gray-600 leading-relaxed mb-8"
+                className="text-lg md:text-xl text-[var(--text-secondary)] leading-relaxed mb-8"
               >
                 {description}
               </motion.p>
             </div>
 
             <motion.div variants={itemVariants} className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Core Benefits:</h3>
+              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Core Benefits:</h3>
               <ul className="space-y-3">
                 {benefits.map((benefit, idx) => (
                   <motion.li
                     key={idx}
                     variants={itemVariants}
-                    className="flex items-start gap-3 text-gray-600"
+                    className="flex items-start gap-3 text-[var(--text-secondary)]"
                   >
-                    <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                    <div className="w-2 h-2 bg-[var(--primary)] rounded-full mt-2 flex-shrink-0"></div>
                     <span className="leading-relaxed">{benefit}</span>
                   </motion.li>
                 ))}
@@ -368,11 +378,10 @@ function ProjectSection({ title, description, benefits, buttonText, href, gradie
             </motion.div>
 
             <motion.div variants={itemVariants}>
-              <Link
-                href={href}
-                className="inline-block w-40 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-medium transition-all duration-300 hover:shadow-xl hover:scale-105 text-center"
-              >
-                {buttonText}
+              <Link href={href}>
+                <Button variant="primary" className="w-40">
+                  {buttonText}
+                </Button>
               </Link>
             </motion.div>
           </motion.div>
@@ -393,9 +402,9 @@ function ProjectSection({ title, description, benefits, buttonText, href, gradie
                   scale: isHovering ? 1.02 : 1
                 }}
                 transition={{ duration: 0.3 }}
-                className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl p-8 border border-white/20 relative overflow-hidden"
+                className="bg-[var(--surface)] rounded-2xl shadow-2xl p-8 border border-[var(--neutral-dark)] relative overflow-hidden"
                 style={{
-                  boxShadow: '0 25px 50px rgba(139, 92, 246, 0.15), 0 10px 30px rgba(0, 0, 0, 0.1)',
+                  boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15), 0 10px 30px rgba(0, 0, 0, 0.1)',
                   transformStyle: 'preserve-3d'
                 }}
               >
@@ -449,17 +458,17 @@ function ProjectSection({ title, description, benefits, buttonText, href, gradie
                     )}
                   </div>
                 ) : (
-                  // Fallback with gradient background and number
+                  // Fallback with solid background and number
                   <>
-                    <div className={`w-full h-64 bg-gradient-to-br ${gradient} rounded-xl mb-6 flex items-center justify-center relative z-10`}>
-                      <div className="text-white text-6xl font-bold opacity-20">
+                    <div className="w-full h-64 bg-[var(--accent)] rounded-xl mb-6 flex items-center justify-center relative z-10">
+                      <div className="text-[var(--primary)] text-6xl font-bold opacity-20">
                         {index + 1}
                       </div>
                     </div>
                     <div className="space-y-3 relative z-10">
-                      <div className="h-4 bg-gray-200 rounded-full"></div>
-                      <div className="h-4 bg-gray-200 rounded-full w-3/4"></div>
-                      <div className="h-4 bg-gray-200 rounded-full w-1/2"></div>
+                      <div className="h-4 bg-[var(--neutral-light)] rounded-full"></div>
+                      <div className="h-4 bg-[var(--neutral-light)] rounded-full w-3/4"></div>
+                      <div className="h-4 bg-[var(--neutral-light)] rounded-full w-1/2"></div>
                     </div>
                   </>
                 )}
@@ -476,7 +485,7 @@ function ProjectSection({ title, description, benefits, buttonText, href, gradie
                   repeat: Infinity,
                   ease: "easeInOut"
                 }}
-                className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-r from-purple-400 to-indigo-400 rounded-full opacity-20"
+                className="absolute -top-4 -right-4 w-8 h-8 bg-[var(--accent)] rounded-full opacity-20"
               />
               <motion.div
                 animate={{
@@ -489,7 +498,7 @@ function ProjectSection({ title, description, benefits, buttonText, href, gradie
                   ease: "easeInOut",
                   delay: 1
                 }}
-                className="absolute -bottom-6 -left-6 w-12 h-12 bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full opacity-15"
+                className="absolute -bottom-6 -left-6 w-12 h-12 bg-[var(--primary)] rounded-full opacity-15"
               />
             </div>
           </motion.div>
@@ -555,10 +564,10 @@ function MoreProjectsSection({ projects }: MoreProjectsSectionProps) {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            More <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Projects</span>
+          <h2 className="text-4xl md:text-5xl font-bold text-[var(--text-primary)] mb-4">
+            More <span className="text-[var(--primary)]">Projects</span>
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-[var(--text-secondary)] max-w-3xl mx-auto">
             Discover additional tools and platforms designed to enhance your productivity and learning experience.
           </p>
         </motion.div>
@@ -588,35 +597,34 @@ function MoreProjectsSection({ projects }: MoreProjectsSectionProps) {
                   rotateY: (mousePosition.x - 0.5) * 5
                 }}
                 transition={{ duration: 0.3 }}
-                className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl p-6 border border-white/20 h-full flex flex-col relative overflow-hidden"
+                className="bg-[var(--surface)] rounded-xl shadow-xl p-6 border border-[var(--neutral-dark)] h-full flex flex-col relative overflow-hidden"
                 style={{
                   transformStyle: 'preserve-3d'
                 }}
               >
-                {/* Background gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                {/* Background overlay */}
+                <div className="absolute inset-0 bg-[var(--accent)]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                 <div className="relative z-10 flex-1 flex flex-col">
                   <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-purple-600 transition-colors duration-300">
+                    <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2 group-hover:text-[var(--primary)] transition-colors duration-300">
                       {project.title}
                     </h3>
-                    <p className="text-sm text-purple-600 mb-3 font-medium">
+                    <p className="text-sm text-[var(--primary)] mb-3 font-medium">
                       {project.subtitle}
                     </p>
-                    <p className="text-gray-600 mb-4 leading-relaxed">
+                    <p className="text-[var(--text-secondary)] mb-4 leading-relaxed">
                       {project.description}
                     </p>
-                    <p className="text-sm text-gray-500 mb-6">
+                    <p className="text-sm text-[var(--text-secondary)] mb-6">
                       {project.tech}
                     </p>
                   </div>
 
-                  <Link
-                    href={project.href}
-                    className="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-medium transition-all duration-300 hover:shadow-lg hover:scale-105 text-center"
-                  >
-                    Explore Project
+                  <Link href={project.href}>
+                    <Button variant="primary" className="w-full">
+                      Explore Project
+                    </Button>
                   </Link>
                 </div>
 
@@ -631,7 +639,7 @@ function MoreProjectsSection({ projects }: MoreProjectsSectionProps) {
                     repeat: Infinity,
                     ease: "linear"
                   }}
-                  className="absolute top-4 right-4 w-3 h-3 bg-gradient-to-r from-purple-400 to-indigo-400 rounded-full opacity-30"
+                  className="absolute top-4 right-4 w-3 h-3 bg-[var(--accent)] rounded-full opacity-30"
                 />
               </motion.div>
             </motion.div>
@@ -643,7 +651,7 @@ function MoreProjectsSection({ projects }: MoreProjectsSectionProps) {
 }
 
 // Helper Components
-function ScrollToSection({ targetId, className, children }: { targetId: string; className: string; children: React.ReactNode }) {
+function ScrollToSection({ targetId, children }: { targetId: string; children: React.ReactNode }) {
   const handleClick = () => {
     const element = document.getElementById(targetId)
     if (element) {
@@ -652,9 +660,9 @@ function ScrollToSection({ targetId, className, children }: { targetId: string; 
   }
 
   return (
-    <button onClick={handleClick} className={className}>
+    <div onClick={handleClick} style={{ cursor: 'pointer' }}>
       {children}
-    </button>
+    </div>
   )
 }
 
@@ -663,7 +671,7 @@ function GridBackground() {
     <div className="absolute inset-0 opacity-[0.015] pointer-events-none">
       <div className="absolute inset-0" style={{
         backgroundImage: `
-          radial-gradient(circle at 1px 1px, rgba(139, 92, 246, 0.8) 1px, transparent 0)
+          radial-gradient(circle at 1px 1px, rgba(17, 17, 17, 0.1) 1px, transparent 0)
         `,
         backgroundSize: '24px 24px'
       }} />
@@ -677,7 +685,7 @@ function WorkflowNetwork() {
       <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <pattern id="workflow-grid" width="120" height="120" patternUnits="userSpaceOnUse">
-            <circle cx="60" cy="60" r="1.5" fill="rgba(139, 92, 246, 0.1)" />
+            <circle cx="60" cy="60" r="1.5" fill="rgba(17, 17, 17, 0.1)" />
           </pattern>
         </defs>
         <rect width="100%" height="100%" fill="url(#workflow-grid)" />
@@ -685,7 +693,7 @@ function WorkflowNetwork() {
         {/* Animated connection lines */}
         <motion.path
           d="M 100 200 Q 400 100 700 250 Q 900 350 1200 200"
-          stroke="rgba(139, 92, 246, 0.1)"
+          stroke="rgba(17, 17, 17, 0.1)"
           strokeWidth="1"
           fill="none"
           initial={{ pathLength: 0 }}
@@ -694,7 +702,7 @@ function WorkflowNetwork() {
         />
         <motion.path
           d="M 200 600 Q 500 400 800 700 Q 1000 800 1300 600"
-          stroke="rgba(79, 70, 229, 0.08)"
+          stroke="rgba(244, 211, 94, 0.08)"
           strokeWidth="1"
           fill="none"
           initial={{ pathLength: 0 }}
@@ -732,7 +740,7 @@ function LightSculpture() {
       <motion.div
         className="absolute w-96 h-96 rounded-full opacity-20"
         style={{
-          background: 'radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(17, 17, 17, 0.15) 0%, transparent 70%)',
           left: `${x.get()}%`,
           top: `${y.get()}%`,
           transform: 'translate(-50%, -50%)',
@@ -743,7 +751,7 @@ function LightSculpture() {
       <motion.div
         className="absolute w-64 h-64 rounded-full opacity-10"
         style={{
-          background: 'radial-gradient(circle, rgba(79, 70, 229, 0.2) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(244, 211, 94, 0.2) 0%, transparent 70%)',
           left: `${100 - x.get()}%`,
           top: `${100 - y.get()}%`,
           transform: 'translate(-50%, -50%)',

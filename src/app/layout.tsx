@@ -49,8 +49,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         {/* SEO & Social Media Meta Tags */}
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#9333ea" />
-        <meta name="msapplication-TileColor" content="#9333ea" />
+        <meta name="theme-color" content="#111111" />
+        <meta name="msapplication-TileColor" content="#111111" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         

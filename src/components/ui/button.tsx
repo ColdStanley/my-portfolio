@@ -22,7 +22,7 @@ type ButtonProps<T extends ElementType = 'button'> = BaseButtonProps & {
 const buttonVariants = {
   primary: [
     // Primary 按钮：Brand Primary 填充，白字，质感导向
-    'bg-primary text-primary-foreground',
+    'bg-[var(--primary)] text-white',
     'shadow-sm hover:shadow-md',
     'hover:brightness-105 active:brightness-95',
     'transition duration-200',
@@ -30,21 +30,21 @@ const buttonVariants = {
 
   secondary: [
     // Secondary 按钮：透明背景 + Brand Primary 边框
-    'border border-primary text-primary bg-transparent',
-    'hover:bg-neutral-light',
+    'border border-[var(--primary)] text-[var(--primary)] bg-transparent',
+    'hover:bg-[var(--neutral-light)]',
     'transition duration-200',
   ].join(' '),
 
   ghost: [
     // Ghost 按钮：透明背景，hover时显示背景
-    'text-text-primary bg-transparent',
-    'hover:bg-neutral-light',
+    'text-[var(--text-primary)] bg-transparent',
+    'hover:bg-[var(--neutral-light)]',
     'transition duration-200',
   ].join(' '),
 
   danger: [
     // Danger 按钮：错误状态色，保持质感
-    'bg-error text-white',
+    'bg-[var(--error)] text-white',
     'shadow-sm hover:shadow-md',
     'hover:brightness-105 active:brightness-95',
     'transition duration-200',
@@ -72,7 +72,7 @@ const Button = <T extends ElementType = 'button'>({
   // 基础样式组合
   const baseStyles = [
     'inline-flex items-center justify-center',
-    'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+    'focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2',
     'disabled:opacity-50 disabled:cursor-not-allowed',
     buttonSizes[size],
     buttonVariants[variant],

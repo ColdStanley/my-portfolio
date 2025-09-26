@@ -195,8 +195,8 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
       animate={{ y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
       className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
-        scrolled 
-          ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-100' 
+        scrolled
+          ? 'bg-[var(--surface)]/95 shadow-lg border-b border-[var(--neutral-dark)]'
           : 'bg-transparent'
       }`}
     >
@@ -208,7 +208,7 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
               <motion.span
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="text-xl font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent"
+                className="text-xl font-semibold text-[var(--primary)]"
               >
                 {logoData.name}
               </motion.span>
@@ -233,8 +233,8 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
                       onClick={() => setOpenDropdown(prev => prev === item.name ? null : item.name)}
                       className={`font-medium transition-all duration-200 flex items-center gap-1 ${
                         isActiveDropdown(item)
-                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent'
-                          : 'text-gray-600 hover:text-purple-600'
+                          ? 'text-[var(--primary)]'
+                          : 'text-[var(--text-secondary)] hover:text-[var(--primary)]'
                       }`}
                     >
                       {item.name}
@@ -261,12 +261,12 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
                           onMouseEnter={() => setOpenDropdown(item.name)}
                           onMouseLeave={() => setOpenDropdown(null)}
                         >
-                          <div className="w-48 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-gray-100 overflow-hidden">
+                          <div className="w-48 bg-[var(--surface)] rounded-xl shadow-xl border border-[var(--neutral-dark)] overflow-hidden">
                             {item.items?.map((subItem, subIndex) => (
                               <Link key={subItem.name || `sub-item-${index}-${subIndex}`} href={subItem.href} prefetch={true}>
                                 <motion.div
-                                  whileHover={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}
-                                  className="px-4 py-3 text-gray-700 hover:text-purple-600 transition-colors duration-200 border-b border-gray-100 last:border-b-0"
+                                  whileHover={{ backgroundColor: 'var(--neutral-light)' }}
+                                  className="px-4 py-3 text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors duration-200 border-b border-[var(--neutral-dark)] last:border-b-0"
                                 >
                                   {subItem.name}
                                 </motion.div>
@@ -283,9 +283,9 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       className={`font-medium transition-colors duration-200 ${
-                        pathname === item.href 
-                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent'
-                          : 'text-gray-600 hover:text-purple-600'
+                        pathname === item.href
+                          ? 'text-[var(--primary)]'
+                          : 'text-[var(--text-secondary)] hover:text-[var(--primary)]'
                       }`}
                     >
                       {item.name}
@@ -303,7 +303,7 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
                 onClick={handleCtaClick}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl whitespace-nowrap"
+                className="px-6 py-2 bg-[var(--primary)] hover:brightness-105 text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl whitespace-nowrap"
               >
                 {ctaButtonData.name}
               </motion.button>
@@ -315,7 +315,7 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
                   onClick={() => setShowUserDropdown(!showUserDropdown)}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-2 px-4 py-2 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-purple-600 rounded-lg font-medium border border-purple-200 transition-all duration-300"
+                  className="flex items-center gap-2 px-4 py-2 bg-[var(--surface)] hover:brightness-105 text-[var(--primary)] rounded-lg font-medium border border-[var(--neutral-dark)] transition-all duration-300"
                 >
                   <span className="text-sm">{user.email?.split('@')[0]}</span>
                   <motion.svg
@@ -337,12 +337,12 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute top-full right-0 mt-2 w-56 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50"
+                      className="absolute top-full right-0 mt-2 w-56 bg-[var(--surface)] rounded-xl shadow-xl border border-[var(--neutral-dark)] overflow-hidden z-50"
                     >
-                      <div className="p-4 border-b border-gray-100">
-                        <p className="text-sm text-gray-600 mb-1">Signed in as</p>
-                        <p className="text-sm font-medium text-gray-900">{user.email}</p>
-                        <p className="text-xs text-purple-600 mt-1">
+                      <div className="p-4 border-b border-[var(--neutral-dark)]">
+                        <p className="text-sm text-[var(--text-secondary)] mb-1">Signed in as</p>
+                        <p className="text-sm font-medium text-[var(--text-primary)]">{user.email}</p>
+                        <p className="text-xs text-[var(--primary)] mt-1">
                           {profile?.role?.toUpperCase() || 'USER'}
                         </p>
                       </div>
@@ -350,7 +350,7 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
                       <div className="py-2">
                         <Link
                           href="/membership"
-                          className="block px-4 py-3 text-sm text-gray-700 hover:bg-purple-50/50 hover:text-purple-600 transition-colors duration-200"
+                          className="block px-4 py-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--neutral-light)] hover:text-[var(--primary)] transition-colors duration-200"
                           onClick={() => setShowUserDropdown(false)}
                         >
                           My Membership
@@ -360,7 +360,7 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
                             setShowUserDropdown(false)
                             handleLogout()
                           }}
-                          className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50/50 hover:text-red-700 transition-colors duration-200"
+                          className="w-full text-left px-4 py-3 text-sm text-[var(--error)] hover:bg-[var(--neutral-light)] hover:brightness-110 transition-colors duration-200"
                         >
                           Sign Out
                         </button>
@@ -373,13 +373,13 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
               <div className="flex items-center gap-3">
                 <Link
                   href="/auth/login"
-                  className="text-sm font-medium bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent hover:from-purple-700 hover:to-indigo-700 transition-all duration-200"
+                  className="text-sm font-medium text-[var(--primary)] hover:brightness-110 transition-all duration-200"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/register"
-                  className="px-4 py-2 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-purple-600 rounded-lg font-medium border border-purple-200 transition-all duration-300 text-sm"
+                  className="px-4 py-2 bg-[var(--surface)] hover:brightness-105 text-[var(--primary)] rounded-lg font-medium border border-[var(--neutral-dark)] transition-all duration-300 text-sm"
                 >
                   Register
                 </Link>
@@ -391,7 +391,7 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden w-10 h-10 flex items-center justify-center text-gray-600 hover:text-purple-600 transition-colors duration-200"
+            className="md:hidden w-10 h-10 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors duration-200"
           >
             <div className="w-5 h-5 flex flex-col justify-center items-center">
               <motion.span
@@ -418,7 +418,7 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              className="md:hidden bg-white/95 backdrop-blur-md rounded-xl mx-4 mb-4 shadow-xl border border-gray-100 overflow-hidden"
+              className="md:hidden bg-[var(--surface)] rounded-xl mx-4 mb-4 shadow-xl border border-[var(--neutral-dark)] overflow-hidden"
             >
               <div className="px-6 py-4 space-y-4">
                 {!isLoading && navItems.map((item, index) => (
@@ -427,15 +427,15 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
                       <div>
                         <div className={`font-medium py-2 ${
                           isActiveDropdown(item)
-                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent'
-                            : 'text-gray-800'
+                            ? 'text-[var(--primary)]'
+                            : 'text-[var(--text-primary)]'
                         }`}>
                           {item.name}
                         </div>
                         <div className="ml-4 space-y-2">
                           {item.items?.map((subItem, subIndex) => (
                             <Link key={subItem.name || `mobile-sub-item-${index}-${subIndex}`} href={subItem.href} prefetch={true} onClick={() => setMobileMenuOpen(false)}>
-                              <div className="py-2 text-gray-600 hover:text-purple-600 transition-colors duration-200">
+                              <div className="py-2 text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors duration-200">
                                 {subItem.name}
                               </div>
                             </Link>
@@ -447,9 +447,9 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
                         <motion.span
                           whileTap={{ scale: 0.95 }}
                           className={`block font-medium py-2 transition-colors duration-200 ${
-                            pathname === item.href 
-                              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent'
-                              : 'text-gray-600 hover:text-purple-600'
+                            pathname === item.href
+                              ? 'text-[var(--primary)]'
+                              : 'text-[var(--text-secondary)] hover:text-[var(--primary)]'
                           }`}
                         >
                           {item.name}
@@ -460,19 +460,19 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
                 ))}
                 
                 {/* Mobile User Authentication */}
-                <div className="pt-4 border-t border-gray-200 space-y-3">
+                <div className="pt-4 border-t border-[var(--neutral-dark)] space-y-3">
                   {user ? (
                     <div className="space-y-3">
-                      <div className="p-3 bg-purple-50/50 rounded-lg">
-                        <p className="text-sm text-gray-600 mb-1">Signed in as</p>
-                        <p className="text-sm font-medium text-gray-900">{user.email}</p>
-                        <p className="text-xs text-purple-600 mt-1">
+                      <div className="p-3 bg-[var(--neutral-light)] rounded-lg">
+                        <p className="text-sm text-[var(--text-secondary)] mb-1">Signed in as</p>
+                        <p className="text-sm font-medium text-[var(--text-primary)]">{user.email}</p>
+                        <p className="text-xs text-[var(--primary)] mt-1">
                           {profile?.role?.toUpperCase() || 'USER'}
                         </p>
                       </div>
                       <Link
                         href="/membership"
-                        className="block w-full py-2 text-sm text-purple-600 hover:text-purple-700 transition-colors duration-200"
+                        className="block w-full py-2 text-sm text-[var(--primary)] hover:brightness-110 transition-colors duration-200"
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         My Membership
@@ -482,7 +482,7 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
                           setMobileMenuOpen(false)
                           handleLogout()
                         }}
-                        className="w-full py-2 text-sm text-red-600 hover:text-red-700 transition-colors duration-200 text-left"
+                        className="w-full py-2 text-sm text-[var(--error)] hover:brightness-110 transition-colors duration-200 text-left"
                       >
                         Sign Out
                       </button>
@@ -491,14 +491,14 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
                     <div className="space-y-3">
                       <Link
                         href="/auth/login"
-                        className="block w-full py-2 text-sm font-medium bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent"
+                        className="block w-full py-2 text-sm font-medium text-[var(--primary)]"
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         Sign In
                       </Link>
                       <Link
                         href="/register"
-                        className="block w-full px-4 py-2 bg-white/70 backdrop-blur-sm text-purple-600 rounded-lg font-medium border border-purple-200 transition-all duration-300 text-sm text-center"
+                        className="block w-full px-4 py-2 bg-[var(--surface)] text-[var(--primary)] rounded-lg font-medium border border-[var(--neutral-dark)] transition-all duration-300 text-sm text-center"
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         Register
@@ -513,7 +513,7 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
                         handleCtaClick()
                       }}
                       whileTap={{ scale: 0.95 }}
-                      className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-medium transition-all duration-300 shadow-lg"
+                      className="w-full px-6 py-3 bg-[var(--primary)] text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:brightness-105"
                     >
                       {ctaButtonData.name}
                     </motion.button>

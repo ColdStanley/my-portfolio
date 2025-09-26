@@ -1,62 +1,57 @@
-// theme.config.ts for SwiftApply
+// theme.config.ts
 // ---------------------------------------------------
-// SwiftApply 专用主题配置
+// 全站统一主题配置
 // 所有 UI 必须引用这里的变量，禁止硬编码颜色
 // ---------------------------------------------------
 
 export const theme = {
-  // ---- Brand Colors (SwiftApply 独特绿色系) ----
-  primary: "#10B981",       // SwiftApply 主色：翠绿色（区别于其他项目）
-  secondary: "#1F2937",     // 深灰色：用于文本和深色背景
-
-  // ---- Accent & Neutral ----
-  accent: "#F59E0B",        // 点缀色：琥珀色（用于强调元素）
-  neutral: "#6B7280",       // 中性色：用于边框和次要元素
+  // ---- Brand Colors (Monocle风格，简约+轻奢+优雅) ----
+  primary: "#111111",       // 主色：深黑（排版感、高级）
+  secondary: "#9CA3AF",     // 辅助灰：中性灰（文本/次要元素）
+  accent: "#F4D35E",        // 点缀色：温暖黄（增加能量）
 
   // ---- Semantic Colors ----
-  success: "#10B981",       // 成功状态：与主色保持一致
-  warning: "#F59E0B",       // 警告状态：与accent保持一致
-  error: "#EF4444",         // 错误状态：红色
+  success: "#34A853",       // 成功：绿色
+  warning: "#F4B400",       // 警告：黄色
+  error: "#EA4335",         // 错误：红色
 
   // ---- Background & Surface ----
   background: "#FFFFFF",    // 页面背景：纯白
-  surface: "#F9FAFB",       // 卡片背景：微妙浅灰
+  surface: "#F8F8F8",       // 卡片背景：微妙灰
 
   // ---- Text ----
-  textPrimary: "#111827",   // 主要文字：深色
-  textSecondary: "#6B7280", // 次要文字：中性灰
+  textPrimary: "#111111",   // 主要文字
+  textSecondary: "#6B7280", // 次要文字
 
   // ---- Neutrals（层次感灰度系统）----
-  neutralLight: "#F9FAFB",  // 卡片背景（微妙灰度）
-  neutralDark: "#E5E7EB",   // 边框/分隔线
+  neutralLight: "#F9FAFB",
+  neutralDark: "#E5E7EB",
 
   // ---- Interactive States ----
   hover: {
-    brightness: 105,        // hover 亮度提升
-    shadow: 'shadow-md'     // hover 阴影等级
+    brightness: 105,
+    shadow: "shadow-md",
   },
   active: {
-    brightness: 95,         // active 亮度降低
-  }
+    brightness: 95,
+  },
 } as const
 
 // CSS 变量映射（用于 Tailwind 配置）
 export const cssVariables = {
-  '--primary': theme.primary,
-  '--secondary': theme.secondary,
-  '--accent': theme.accent,
-  '--neutral': theme.neutral,
-  '--success': theme.success,
-  '--warning': theme.warning,
-  '--error': theme.error,
-  '--background': theme.background,
-  '--surface': theme.surface,
-  '--text-primary': theme.textPrimary,
-  '--text-secondary': theme.textSecondary,
-  '--neutral-light': theme.neutralLight,
-  '--neutral-dark': theme.neutralDark,
+  "--primary": theme.primary,
+  "--secondary": theme.secondary,
+  "--accent": theme.accent,
+  "--success": theme.success,
+  "--warning": theme.warning,
+  "--error": theme.error,
+  "--background": theme.background,
+  "--surface": theme.surface,
+  "--text-primary": theme.textPrimary,
+  "--text-secondary": theme.textSecondary,
+  "--neutral-light": theme.neutralLight,
+  "--neutral-dark": theme.neutralDark,
 } as const
 
-// TypeScript 类型定义
 export type ThemeColors = keyof typeof theme
 export type CssVariables = keyof typeof cssVariables

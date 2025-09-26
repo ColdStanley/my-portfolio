@@ -8,9 +8,9 @@ function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       className={cn(
-        // Claude-UI.md 规范：背景白色，质感导向
-        "bg-white rounded-lg shadow-md hover:shadow-lg",
-        "border border-neutral-dark",
+        // Claude-UI.md 规范：背景surface，质感导向
+        "bg-[var(--surface)] rounded-lg shadow-md hover:shadow-lg",
+        "border border-[var(--neutral-dark)]",
         "transition duration-200",
         // 16px内边距 (p-4 = 16px)
         "p-4",

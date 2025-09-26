@@ -36,19 +36,20 @@
 }
 
 :root {
-  /* ✅ 默认 fallback 值，避免空变量 */
-  --primary: #000000; /* 默认黑色，将被项目作用域覆盖 */
-  --secondary: #666666;
-  --accent: #999999;
-  --success: #22C55E;
-  --warning: #EAB308;
-  --error: #EF4444;
-  --surface: #FFFFFF;
-  --text-primary: #111827;
-  --text-secondary: #6B7280;
-  --text-muted: #6B7280;
-  --neutral-light: #F8F9FA;
-  --neutral-dark: #E5E7EB;
+  /* ✅ 主站主题色 - 来自 theme.config.ts */
+  --primary: #111111; /* 黑色主色 */
+  --secondary: #9CA3AF; /* 辅助灰 */
+  --accent: #F4D35E; /* 温暖黄点缀 */
+  --success: #34A853; /* 成功绿 */
+  --warning: #F4B400; /* 警告黄 */
+  --error: #EA4335; /* 错误红 */
+  --surface: #F8F8F8; /* 卡片背景：微妙灰 */
+  --background: #FFFFFF; /* 页面背景：纯白 */
+  --text-primary: #111111; /* 主要文字 */
+  --text-secondary: #6B7280; /* 次要文字 */
+  --text-muted: #6B7280; /* 弱化文字 */
+  --neutral-light: #F9FAFB; /* 浅色背景 */
+  --neutral-dark: #E5E7EB; /* 边框分割线 */
 
   --radius: 0.625rem;
   --navbar-height: 96px;
