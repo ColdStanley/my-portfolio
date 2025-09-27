@@ -48,9 +48,9 @@ export default function ResumePreview() {
 
       {/* PDF Preview or Empty State */}
       {pdfPreviewUrl ? (
-        <div className="flex-1 px-6 py-4 overflow-hidden">
+        <div className="flex-1 px-2 py-2 overflow-hidden">
           <iframe
-            src={pdfPreviewUrl}
+            src={`${pdfPreviewUrl}#navpanes=0`}
             className="w-full h-full border border-neutral-light rounded-lg"
             title="PDF Preview"
           />
