@@ -22,6 +22,7 @@ export default function AICardStudioPage() {
   const [cardWidth, setCardWidth] = useState<'narrow' | 'normal' | 'wide'>('narrow')
   const userMenuRef = useRef<HTMLDivElement>(null)
   const { isLoading: workspaceLoading, canvases, saveError, actions } = useWorkspaceStore()
+  const { checkForUpdates, cancelCurrentRequest } = actions
   const { theme, actions: themeActions } = useThemeStore()
   const initializedRef = useRef(false)
   const visibilityRef = useRef(true) // Track page visibility
@@ -67,13 +68,13 @@ export default function AICardStudioPage() {
       if (visibilityRef.current) {
         // 🔧 页面可见时恢复 - 轻量检查更新
         if (user) {
-          actions.checkForUpdates(user.id).catch(error => {
+          checkForUpdates(user.id).catch(error => {
             console.warn('Update check failed:', error)
           })
         }
       } else {
         // 🚫 页面隐藏时取消当前请求
-        actions.cancelCurrentRequest()
+        cancelCurrentRequest()
       }
     }
 
@@ -81,7 +82,7 @@ export default function AICardStudioPage() {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [])
+  }, [user, checkForUpdates, cancelCurrentRequest])
 
   useEffect(() => {
     let mounted = true

@@ -25,7 +25,6 @@ interface WorkspaceState {
     updateColumns: (updater: (prev: Column[]) => Column[]) => void; // Helper for backward compatibility
     moveColumn: (columnId: string, direction: 'left' | 'right') => void;
     moveCard: (columnId: string, cardId: string, direction: 'up' | 'down') => void;
-    runColumnWorkflow: (columnId: string) => Promise<void>;
     addCanvas: () => void;
     deleteCanvas: (canvasId: string) => void;
     renameCanvas: (canvasId: string, newName: string) => void;
@@ -445,21 +444,34 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
     updateColumns: (updater) => {
       // Helper function for backward compatibility - updates active canvas columns
-      const { canvases, activeCanvasId } = get();
-      const activeCanvas = canvases.find(canvas => canvas.id === activeCanvasId);
-      if (!activeCanvas) return;
-      
-      const updatedColumns = updater(activeCanvas.columns);
-      
-      set((state) => ({
-        canvases: state.canvases.map(canvas => 
-          canvas.id === activeCanvasId 
+      const state = get();
+
+      if (state.canvases.length === 0) {
+        console.warn('updateColumns called without any canvases in state');
+        return;
+      }
+
+      let targetCanvasId = state.activeCanvasId;
+      let targetCanvas = state.canvases.find(canvas => canvas.id === targetCanvasId);
+
+      if (!targetCanvas) {
+        // Fallback to the first available canvas and make it active to avoid silent failures
+        targetCanvas = state.canvases[0];
+        targetCanvasId = targetCanvas.id;
+      }
+
+      const updatedColumns = updater(targetCanvas.columns);
+
+      set((prevState) => ({
+        canvases: prevState.canvases.map(canvas =>
+          canvas.id === targetCanvasId
             ? { ...canvas, columns: updatedColumns }
             : canvas
         ),
+        activeCanvasId: targetCanvasId,
         hasUnsavedChanges: true
       }));
-      
+
       // 🔧 状态变化后自动缓存
       get().actions.syncToCache();
     },
@@ -520,9 +532,6 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           })
         }))
       );
-    },
-    runColumnWorkflow: async (columnId: string) => {
-      console.warn('runColumnWorkflow function needs full implementation');
     },
     addCanvas: () => {
       set((state) => {

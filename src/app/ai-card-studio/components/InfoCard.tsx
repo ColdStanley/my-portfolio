@@ -31,7 +31,7 @@ function InfoCard({
   isColumnExecuting = false
 }: InfoCardProps) {
   const { canvases, actions } = useWorkspaceStore()
-  const { moveColumn, moveCard, updateColumns, updateCardTitle, updateCardDescription, deleteCard, updateCardLockStatus, setHasUnsavedChanges } = actions
+  const { moveColumn, moveCard, updateCanvases, updateColumns, updateCardTitle, updateCardDescription, deleteCard, updateCardLockStatus, setHasUnsavedChanges } = actions
   
   // Get current column and card data from Zustand store
   const currentColumn = canvases.flatMap(canvas => canvas.columns).find(col => col.id === columnId)
@@ -191,6 +191,25 @@ function InfoCard({
       setShowSettingsTooltip(false)
       deleteCard(columnId, cardId)
     }, 250) // Wait for animation to complete
+  }
+
+  const handleDeleteColumn = () => {
+    if (!activeCanvas) return
+    if (activeCanvas.columns.length <= 1) {
+      alert('至少需要保留一列，无法删除最后一列。')
+      return
+    }
+
+    const confirmed = window.confirm('确定要删除整个列吗？该列中的所有卡片都会被移除。')
+    if (!confirmed) return
+
+    updateCanvases(prev => prev.map(canvas =>
+      canvas.id === activeCanvas.id
+        ? { ...canvas, columns: canvas.columns.filter(col => col.id !== columnId) }
+        : canvas
+    ))
+
+    handleCloseSettingsTooltip()
   }
 
   // 🔧 Info卡片保存功能
@@ -921,6 +940,12 @@ function InfoCard({
           }
           headerActions={isTopCard ? (
             <div className="flex items-center gap-2">
+              <button
+                onClick={handleDeleteColumn}
+                className="px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 rounded text-sm font-medium transition-all duration-200"
+              >
+                Delete Entire Column
+              </button>
               <button
                 onClick={handleExportColumn}
                 className="px-3 py-1.5 bg-white border border-purple-200 lakers:border-lakers-300 anno:border-anno-300 cyberpunk:border-cyberpunk-300 text-purple-600 lakers:text-lakers-300 anno:text-anno-300 cyberpunk:text-cyberpunk-300 hover:bg-purple-50 lakers:hover:bg-lakers-300/20 anno:hover:bg-anno-300/20 cyberpunk:hover:bg-cyberpunk-300/20 rounded text-sm font-medium transition-all duration-200"
