@@ -471,13 +471,13 @@ function InfoCard({
   }
 
   return (
-    <div className="bg-gradient-to-br from-white/95 to-purple-50/30 dark:from-neutral-800/95 dark:to-purple-900/20 lakers:bg-gradient-to-br lakers:from-lakers-700/30 lakers:to-lakers-300/20 anno:bg-gradient-to-br anno:from-anno-800/30 anno:to-anno-300/20 cyberpunk:bg-gradient-to-br cyberpunk:from-cyberpunk-800/30 cyberpunk:to-cyberpunk-300/20 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 dark:shadow-purple-400/10 lakers:shadow-lakers-300/30 anno:shadow-anno-300/30 cyberpunk:shadow-cyberpunk-300/30 border border-white/50 dark:border-neutral-700/50 lakers:border-lakers-300/50 anno:border-anno-300/50 cyberpunk:border-cyberpunk-300/50 p-4 relative transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/30 dark:hover:shadow-purple-400/20 lakers:hover:shadow-lakers-300/40 anno:hover:shadow-anno-300/40 cyberpunk:hover:shadow-cyberpunk-300/40 hover:-translate-y-1 group">
+    <div className="bg-[var(--surface)] backdrop-blur-3xl rounded-xl shadow-md border border-[var(--neutral-mid)] p-4 relative transition-all duration-300 hover:shadow-lg hover:-translate-y-1 group">
       
       {/* Single Menu Button - Top Right */}
       <button
         ref={cardMenuButtonRef}
         onClick={handleCardMenuOpen}
-        className="absolute top-4 right-4 w-6 h-6 bg-white/80 dark:bg-neutral-700/80 lakers:bg-lakers-300/30 anno:bg-anno-700/30 cyberpunk:bg-cyberpunk-700/30 hover:bg-purple-50 dark:hover:bg-purple-900/50 lakers:hover:bg-lakers-300/50 anno:hover:bg-anno-300/50 cyberpunk:hover:bg-cyberpunk-300/50 rounded-full flex items-center justify-center text-gray-400 dark:text-neutral-400 lakers:text-lakers-200 anno:text-anno-200 cyberpunk:text-cyberpunk-200 hover:text-purple-600 dark:hover:text-purple-400 lakers:hover:text-lakers-300 anno:hover:text-anno-300 cyberpunk:hover:text-cyberpunk-300 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-400/20 lakers:hover:shadow-lakers-300/30 anno:hover:shadow-anno-300/30 cyberpunk:hover:shadow-cyberpunk-300/30 hover:scale-110 hover:-translate-y-0.5"
+        className="absolute top-4 right-4 w-6 h-6 bg-[var(--neutral-light)] hover:bg-[var(--accent)] rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--primary)] transition-all duration-200 z-10 hover:shadow-lg hover:scale-110 hover:-translate-y-0.5"
         title="Card actions"
         style={{ pointerEvents: 'auto' }}
       >
@@ -496,8 +496,8 @@ function InfoCard({
           />
           
           {/* Dropdown Menu */}
-          <div 
-            className={`fixed z-50 bg-white dark:bg-neutral-800 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-700 p-2 min-w-40 transform transition-all duration-200 ease-out ${
+          <div
+            className={`fixed z-50 bg-[var(--surface)] rounded-lg shadow-xl border border-[var(--neutral-mid)] p-2 min-w-40 transform transition-all duration-200 ease-out ${
               cardMenuVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
             }`}
             style={{
@@ -505,7 +505,7 @@ function InfoCard({
               right: window.innerWidth - cardMenuButtonRef.current.getBoundingClientRect().right
             }}
           >
-            <div className="absolute -top-1 right-4 w-2 h-2 bg-white dark:bg-neutral-800 border-l border-t border-gray-200 dark:border-neutral-700 transform rotate-45"></div>
+            <div className="absolute -top-1 right-4 w-2 h-2 bg-[var(--surface)] border-l border-t border-[var(--neutral-mid)] transform rotate-45"></div>
             
             <div className="flex flex-col gap-1">
               {/* Settings */}
@@ -514,7 +514,7 @@ function InfoCard({
                   handleCardMenuClose()
                   handleSettingsClick()
                 }}
-                className="px-3 py-2 text-sm text-gray-600 dark:text-neutral-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-md transition-all duration-150 text-left flex items-center gap-2"
+                className="px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium rounded-md transition-all duration-150 text-left flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -529,7 +529,7 @@ function InfoCard({
                   handleCardMenuClose()
                   handleLockClick()
                 }}
-                className="px-3 py-2 text-sm text-gray-600 dark:text-neutral-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-md transition-all duration-150 text-left flex items-center gap-2"
+                className="px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium rounded-md transition-all duration-150 text-left flex items-center gap-2"
               >
                 {isLocked ? (
                   <>
@@ -604,7 +604,7 @@ function InfoCard({
                   }
                 }}
                 disabled={!description?.trim() || isGeneratingPDF}
-                className="px-3 py-2 text-sm text-gray-600 dark:text-neutral-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-md transition-all duration-150 text-left flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium rounded-md transition-all duration-150 text-left flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isGeneratingPDF ? (
                   <>
@@ -630,7 +630,7 @@ function InfoCard({
                   handleCardMenuClose()
                   onInsertCard?.(columnId, cardId)
                 }}
-                className="px-3 py-2 text-sm text-gray-600 dark:text-neutral-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-md transition-all duration-150 text-left flex items-center gap-2"
+                className="px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium rounded-md transition-all duration-150 text-left flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -645,19 +645,19 @@ function InfoCard({
 
       {/* Lock Message - Temporary notification */}
       {showLockMessage && (
-        <div className="absolute top-14 right-4 bg-purple-600 text-white px-3 py-2 rounded-lg text-sm font-medium shadow-lg z-20 animate-pulse">
+        <div className="absolute top-14 right-4 bg-[var(--primary)] text-white px-3 py-2 rounded-lg text-sm font-medium shadow-lg z-20 animate-pulse">
           🔒 Card is locked - click unlock first
         </div>
       )}
 
-      <div className={isTopCard ? 'border-l-4 border-purple-500 lakers:border-lakers-300 anno:border-anno-300 cyberpunk:border-cyberpunk-300 pl-4' : ''}>
+      <div className={isTopCard ? 'border-l-4 border-[var(--primary)] pl-4' : ''}>
         <div className="flex items-start gap-2 mb-4">
           {/* Run All Cards Button - 仅在顶部Info Card且列中有AI工具卡片时显示 */}
           {onRunColumnWorkflow && (
             <button
               onClick={onRunColumnWorkflow}
               disabled={isColumnExecuting}
-              className="flex-shrink-0 w-7 h-7 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 lakers:bg-lakers-300 lakers:hover:bg-lakers-400 lakers:disabled:bg-lakers-700 anno:bg-anno-600 anno:hover:bg-anno-700 anno:disabled:bg-anno-800 cyberpunk:bg-cyberpunk-600 cyberpunk:hover:bg-cyberpunk-700 cyberpunk:disabled:bg-cyberpunk-800 disabled:cursor-not-allowed rounded-full shadow-md flex items-center justify-center text-white transition-all duration-200"
+              className="flex-shrink-0 w-7 h-7 bg-[var(--primary)] hover:brightness-105 disabled:opacity-50 disabled:cursor-not-allowed rounded-full shadow-md flex items-center justify-center text-white transition-all duration-200"
               title={isColumnExecuting ? "Workflow is running..." : "Run all AI tool cards in this column"}
             >
               {isColumnExecuting ? (
@@ -672,7 +672,7 @@ function InfoCard({
               )}
             </button>
           )}
-          <h2 className={`${isTopCard ? 'text-xl font-bold' : 'text-lg font-medium'} text-purple-600 dark:text-purple-400 lakers:text-lakers-300 anno:text-anno-300 cyberpunk:text-cyberpunk-300`}>
+          <h2 className={`${isTopCard ? 'text-xl font-bold' : 'text-lg font-medium'} text-[var(--primary)]`}>
             {title}
           </h2>
         </div>
@@ -683,7 +683,7 @@ function InfoCard({
         <button
           onClick={handleTriggerWorkflows}
           disabled={isTriggering}
-          className="px-3 py-1.5 text-sm bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300 lakers:bg-lakers-300 lakers:hover:bg-lakers-400 lakers:disabled:bg-lakers-700 anno:bg-anno-600 anno:hover:bg-anno-700 anno:disabled:bg-anno-800 cyberpunk:bg-cyberpunk-600 cyberpunk:hover:bg-cyberpunk-700 cyberpunk:disabled:bg-cyberpunk-800 text-white rounded-md font-medium transition-all duration-200 flex items-center gap-1.5 mb-4"
+          className="px-3 py-1.5 text-sm bg-[var(--primary)] hover:brightness-105 disabled:opacity-50 text-white rounded-md font-medium transition-all duration-200 flex items-center gap-1.5 mb-4"
         >
           {isTriggering ? (
             <>
@@ -699,7 +699,7 @@ function InfoCard({
         </button>
       )}
       
-      <div className="text-gray-600 dark:text-neutral-300 text-sm">
+      <div className="text-[var(--text-secondary)] text-sm">
         {description ? (
           <div className="prose prose-sm max-w-none">
             {isDescriptionExpanded ? (
@@ -708,26 +708,26 @@ function InfoCard({
                 <ReactMarkdown
                   remarkPlugins={[remarkBreaks, remarkGfm]}
                   components={{
-                    h1: ({node, ...props}) => <h1 className="text-lg font-bold text-gray-800 dark:text-neutral-200 mb-2" {...props} />,
-                    h2: ({node, ...props}) => <h2 className="text-base font-semibold text-gray-800 dark:text-neutral-200 mb-2" {...props} />,
-                    h3: ({node, ...props}) => <h3 className="text-sm font-medium text-gray-800 dark:text-neutral-200 mb-1" {...props} />,
-                    p: ({node, ...props}) => <p className="text-gray-600 dark:text-neutral-300 mb-2 leading-relaxed" {...props} />,
-                    ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2 text-gray-600 dark:text-neutral-300" {...props} />,
-                    ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-2 text-gray-600 dark:text-neutral-300" {...props} />,
+                    h1: ({node, ...props}) => <h1 className="text-lg font-bold text-[var(--text-primary)] mb-2" {...props} />,
+                    h2: ({node, ...props}) => <h2 className="text-base font-semibold text-[var(--text-primary)] mb-2" {...props} />,
+                    h3: ({node, ...props}) => <h3 className="text-sm font-medium text-[var(--text-primary)] mb-1" {...props} />,
+                    p: ({node, ...props}) => <p className="text-[var(--text-secondary)] mb-2 leading-relaxed" {...props} />,
+                    ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2 text-[var(--text-secondary)]" {...props} />,
+                    ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-2 text-[var(--text-secondary)]" {...props} />,
                     li: ({node, ...props}) => <li className="mb-1" {...props} />,
-                    strong: ({node, ...props}) => <strong className="font-semibold text-gray-800 dark:text-neutral-200" {...props} />,
+                    strong: ({node, ...props}) => <strong className="font-semibold text-[var(--text-primary)]" {...props} />,
                     em: ({node, ...props}) => <em className="italic" {...props} />,
                     code: ({node, inline, ...props}) => 
                       inline 
-                        ? <code className="bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 px-1 py-0.5 rounded text-xs font-mono" {...props} />
-                        : <code className="block bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre" {...props} />,
-                    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-300 dark:border-purple-600 lakers:border-lakers-300 anno:border-anno-300 cyberpunk:border-cyberpunk-300 pl-3 italic text-gray-600 dark:text-neutral-300 mb-2" {...props} />,
+                        ? <code className="bg-[var(--neutral-light)] text-[var(--text-primary)] px-1 py-0.5 rounded text-xs font-mono" {...props} />
+                        : <code className="block bg-[var(--neutral-light)] text-[var(--text-primary)] p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre" {...props} />,
+                    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-[var(--primary)] pl-3 italic text-[var(--text-secondary)] mb-2" {...props} />,
                     a: ({ href, children, ...props }) => (
-                      <a 
-                        href={href} 
-                        target="_blank" 
+                      <a
+                        href={href}
+                        target="_blank"
                         rel="noopener noreferrer"
-                        className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 underline"
+                        className="text-[var(--primary)] hover:brightness-110 underline"
                         {...props}
                       >
                         {children}
@@ -767,7 +767,7 @@ function InfoCard({
                             type="checkbox" 
                             checked={checked} 
                             disabled={disabled}
-                            className="mr-2 rounded border-gray-300 dark:border-neutral-600 text-purple-600 dark:text-purple-400 focus:ring-purple-500 dark:focus:ring-purple-400"
+                            className="mr-2 rounded border-[var(--neutral-mid)] text-[var(--primary)] focus:ring-[var(--primary)]"
                             {...props} 
                           />
                         );
@@ -789,7 +789,7 @@ function InfoCard({
                 </ReactMarkdown>
                 <button
                   onClick={() => setIsDescriptionExpanded(false)}
-                  className="inline text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium text-sm ml-1 transition-colors duration-200"
+                  className="inline text-[var(--primary)] hover:brightness-110 font-medium text-sm ml-1 transition-colors duration-200"
                 >
                   Show less
                 </button>
@@ -826,13 +826,13 @@ function InfoCard({
                         inline 
                           ? <code className="bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 px-1 py-0.5 rounded text-xs font-mono" {...props} />
                           : <code className="block bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre" {...props} />,
-                      blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-300 dark:border-purple-600 lakers:border-lakers-300 anno:border-anno-300 cyberpunk:border-cyberpunk-300 pl-3 italic text-gray-600 dark:text-neutral-300 mb-2" {...props} />,
+                      blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-[var(--primary)] pl-3 italic text-gray-600 dark:text-neutral-300 mb-2" {...props} />,
                       a: ({ href, children, ...props }) => (
                         <a 
                           href={href} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 underline transition-colors duration-200"
+                          className="text-[var(--primary)] hover:brightness-110 underline transition-colors duration-200"
                           {...props}
                         >
                           {children}
@@ -870,7 +870,7 @@ function InfoCard({
                 {description.length > 100 && (
                   <button
                     onClick={() => setIsDescriptionExpanded(true)}
-                    className="inline text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium text-sm ml-1 transition-colors duration-200 mt-1"
+                    className="inline text-[var(--primary)] hover:brightness-110 font-medium text-sm ml-1 transition-colors duration-200 mt-1"
                   >
                     more
                   </button>
@@ -948,13 +948,13 @@ function InfoCard({
               </button>
               <button
                 onClick={handleExportColumn}
-                className="px-3 py-1.5 bg-white border border-purple-200 lakers:border-lakers-300 anno:border-anno-300 cyberpunk:border-cyberpunk-300 text-purple-600 lakers:text-lakers-300 anno:text-anno-300 cyberpunk:text-cyberpunk-300 hover:bg-purple-50 lakers:hover:bg-lakers-300/20 anno:hover:bg-anno-300/20 cyberpunk:hover:bg-cyberpunk-300/20 rounded text-sm font-medium transition-all duration-200"
+                className="px-3 py-1.5 bg-[var(--surface)] border border-[var(--neutral-mid)] text-[var(--primary)] hover:bg-[var(--neutral-light)] rounded text-sm font-medium transition-all duration-200"
               >
                 Download Column
               </button>
               <button
                 onClick={handleShareToMarketplace}
-                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 lakers:bg-lakers-300 lakers:hover:bg-lakers-400 anno:bg-anno-600 anno:hover:bg-anno-700 cyberpunk:bg-cyberpunk-600 cyberpunk:hover:bg-cyberpunk-700 text-white rounded text-sm font-medium transition-all duration-200"
+                className="px-3 py-1.5 bg-[var(--primary)] hover:brightness-105 text-white rounded text-sm font-medium transition-all duration-200"
               >
                 Share to Marketplace
               </button>
@@ -977,7 +977,7 @@ function InfoCard({
                 setLocalTitle(newValue)
               }}
               placeholder="Enter card name..."
-              className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg text-sm text-gray-700 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-500 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg text-sm text-gray-700 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-500 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
             />
           </div>
 
@@ -988,7 +988,7 @@ function InfoCard({
               <button
                 ref={urlButtonRef}
                 onClick={handleUrlsTooltipOpen}
-                className="p-1 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-all duration-200"
+                className="p-1 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--neutral-light)] rounded transition-all duration-200"
                 title="Configure URLs"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1004,7 +1004,7 @@ function InfoCard({
                 setLocalDescription(newValue)
               }}
               placeholder="Enter description..."
-              className="w-full h-32 p-3 border border-gray-200 dark:border-neutral-700 rounded-lg text-sm text-gray-700 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-500 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+              className="w-full h-32 p-3 border border-gray-200 dark:border-neutral-700 rounded-lg text-sm text-gray-700 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-500 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent resize-none"
             />
           </div>
 
@@ -1055,13 +1055,13 @@ function InfoCard({
                 value={newUrl}
                 onChange={(e) => setNewUrl(e.target.value)}
                 placeholder="https://your-n8n-webhook-url"
-                className="flex-1 px-3 py-2 text-sm border border-gray-200 dark:border-neutral-700 rounded-lg text-gray-700 dark:text-neutral-200 bg-white dark:bg-neutral-900 placeholder-gray-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="flex-1 px-3 py-2 text-sm border border-gray-200 dark:border-neutral-700 rounded-lg text-gray-700 dark:text-neutral-200 bg-white dark:bg-neutral-900 placeholder-gray-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                 onKeyPress={(e) => e.key === 'Enter' && addUrl()}
               />
               <button
                 onClick={addUrl}
                 disabled={!newUrl.trim()}
-                className="px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 dark:disabled:bg-purple-700 lakers:bg-lakers-300 lakers:hover:bg-lakers-400 lakers:disabled:bg-lakers-700 anno:bg-anno-600 anno:hover:bg-anno-700 anno:disabled:bg-anno-800 cyberpunk:bg-cyberpunk-600 cyberpunk:hover:bg-cyberpunk-700 cyberpunk:disabled:bg-cyberpunk-800 text-white rounded-lg text-sm font-medium transition-colors"
+                className="px-3 py-2 bg-[var(--primary)] hover:brightness-105 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
               >
                 Add
               </button>

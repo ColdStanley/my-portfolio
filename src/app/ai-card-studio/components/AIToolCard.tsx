@@ -612,12 +612,12 @@ function AIToolCard({
   }
 
   return (
-    <div className="bg-gradient-to-br from-white/95 to-purple-50/30 dark:from-neutral-800/95 dark:to-purple-900/20 lakers:bg-gradient-to-br lakers:from-lakers-700/30 lakers:to-lakers-300/20 anno:bg-gradient-to-br anno:from-anno-800/30 anno:to-anno-300/20 cyberpunk:bg-gradient-to-br cyberpunk:from-cyberpunk-800/30 cyberpunk:to-cyberpunk-300/20 backdrop-blur-3xl rounded-xl shadow-sm shadow-purple-500/20 dark:shadow-purple-400/10 lakers:shadow-lakers-300/30 anno:shadow-anno-300/30 cyberpunk:shadow-cyberpunk-300/30 border border-white/50 dark:border-neutral-700/50 lakers:border-lakers-300/50 anno:border-anno-300/50 cyberpunk:border-cyberpunk-300/50 p-4 relative transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/30 dark:hover:shadow-purple-400/20 lakers:hover:shadow-lakers-300/40 anno:hover:shadow-anno-300/40 cyberpunk:hover:shadow-cyberpunk-300/40 hover:-translate-y-1 group">
+    <div className="bg-[var(--surface)] backdrop-blur-3xl rounded-xl shadow-md border border-[var(--neutral-mid)] p-4 relative transition-all duration-300 hover:shadow-lg hover:-translate-y-1 group">
       {/* Single Menu Button - Top Right */}
       <button
         ref={cardMenuButtonRef}
         onClick={handleCardMenuOpen}
-        className="absolute top-4 right-4 w-6 h-6 bg-white/80 dark:bg-neutral-700/80 lakers:bg-lakers-300/30 anno:bg-anno-700/30 cyberpunk:bg-cyberpunk-700/30 hover:bg-purple-50 dark:hover:bg-purple-900/50 lakers:hover:bg-lakers-300/50 anno:hover:bg-anno-300/50 cyberpunk:hover:bg-cyberpunk-300/50 rounded-full flex items-center justify-center text-gray-400 dark:text-neutral-400 lakers:text-lakers-200 anno:text-anno-200 cyberpunk:text-cyberpunk-200 hover:text-purple-600 dark:hover:text-purple-400 lakers:hover:text-lakers-300 anno:hover:text-anno-300 cyberpunk:hover:text-cyberpunk-300 transition-all duration-200 z-10 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-400/20 lakers:hover:shadow-lakers-300/30 anno:hover:shadow-anno-300/30 cyberpunk:hover:shadow-cyberpunk-300/30 hover:scale-110 hover:-translate-y-0.5"
+        className="absolute top-4 right-4 w-6 h-6 bg-[var(--neutral-light)] hover:bg-[var(--accent)] rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--primary)] transition-all duration-200 z-10 hover:shadow-lg hover:scale-110 hover:-translate-y-0.5"
         title="Card actions"
         style={{ pointerEvents: 'auto' }}
       >
@@ -654,7 +654,7 @@ function AIToolCard({
                   handleCardMenuClose()
                   handleSettingsClick()
                 }}
-                className="px-3 py-2 text-sm text-gray-600 dark:text-neutral-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-md transition-all duration-150 text-left flex items-center gap-2"
+                className="px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium rounded-md transition-all duration-150 text-left flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -669,7 +669,7 @@ function AIToolCard({
                   handleCardMenuClose()
                   handleLockClick()
                 }}
-                className="px-3 py-2 text-sm text-gray-600 dark:text-neutral-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-md transition-all duration-150 text-left flex items-center gap-2"
+                className="px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium rounded-md transition-all duration-150 text-left flex items-center gap-2"
               >
                 {isLocked ? (
                   <>
@@ -744,7 +744,7 @@ function AIToolCard({
                   }
                 }}
                 disabled={!generatedContent?.trim() || isGeneratingPDF}
-                className="px-3 py-2 text-sm text-gray-600 dark:text-neutral-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-md transition-all duration-150 text-left flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium rounded-md transition-all duration-150 text-left flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isGeneratingPDF ? (
                   <>
@@ -772,7 +772,7 @@ function AIToolCard({
                   updateCardGeneratedContent(cardId, '')
                 }}
                 disabled={!generatedContent?.trim()}
-                className="px-3 py-2 text-sm text-gray-600 dark:text-neutral-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-md transition-all duration-150 text-left flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium rounded-md transition-all duration-150 text-left flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -786,7 +786,7 @@ function AIToolCard({
                   handleCardMenuClose()
                   onInsertCard?.(columnId, cardId)
                 }}
-                className="px-3 py-2 text-sm text-gray-600 dark:text-neutral-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-md transition-all duration-150 text-left flex items-center gap-2"
+                className="px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium rounded-md transition-all duration-150 text-left flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -801,7 +801,7 @@ function AIToolCard({
 
       {/* Lock Message - Temporary notification */}
       {showLockMessage && (
-        <div className="absolute top-14 right-4 bg-purple-600 text-white px-3 py-2 rounded-lg text-sm font-medium shadow-lg z-20 animate-pulse">
+        <div className="absolute top-14 right-4 bg-[var(--primary)] text-white px-3 py-2 rounded-lg text-sm font-medium shadow-lg z-20 animate-pulse">
           🔒 Card is locked - click unlock first
         </div>
       )}
@@ -811,7 +811,7 @@ function AIToolCard({
         ref={generateButtonRef}
         onClick={() => handleGenerateClick()}
         disabled={isGenerating}
-        className="px-3 py-1.5 text-sm bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300 text-white rounded-md font-medium transition-all duration-200 flex items-center gap-1.5 mb-4"
+        className="px-3 py-1.5 text-sm bg-[var(--primary)] hover:bg-[var(--primary)] disabled:opacity-50 text-white rounded-md font-medium transition-all duration-200 flex items-center gap-1.5 mb-4"
       >
         {isGenerating && (
           <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -855,7 +855,7 @@ function AIToolCard({
         <div className="relative">
           {/* 加载指示器 - 仅在流式时显示 */}
           {isGenerating && isStreaming && (
-            <div className="absolute -top-2 -right-2 w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
+            <div className="absolute -top-2 -right-2 w-4 h-4 bg-[var(--primary)] rounded-full flex items-center justify-center">
               <svg className="w-2 h-2 animate-spin text-white" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 01 8-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 01 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
@@ -891,10 +891,10 @@ function AIToolCard({
             {/* 格式化中的渐变遮罩效果 */}
             {isFormatting && (
               <>
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-50/40 dark:via-purple-900/20 to-transparent animate-pulse">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--neutral-light)] to-transparent animate-pulse">
                 </div>
-                <div className="absolute top-2 right-2 flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400 bg-white/80 dark:bg-neutral-800/80 px-2 py-1 rounded-md shadow-sm">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"></div>
+                <div className="absolute top-2 right-2 flex items-center gap-1 text-xs text-[var(--primary)] bg-white/80 dark:bg-neutral-800/80 px-2 py-1 rounded-md shadow-sm">
+                  <div className="w-2 h-2 bg-[var(--primary)] rounded-full animate-bounce"></div>
                   <span>Formatting...</span>
                 </div>
                 
@@ -964,7 +964,7 @@ function AIToolCard({
                       <pre className="bg-gray-100 dark:bg-neutral-700 rounded-lg p-3 overflow-x-auto border border-gray-200 dark:border-neutral-600 my-3" {...props} />
                     ),
                     blockquote: ({node, ...props}) => (
-                      <blockquote className="border-l-4 border-purple-300 dark:border-purple-500 pl-3 italic text-gray-600 dark:text-neutral-400 mb-2" {...props} />
+                      <blockquote className="border-l-4 border-[var(--primary)] pl-3 italic text-gray-600 dark:text-neutral-400 mb-2" {...props} />
                     ),
                     strong: ({node, ...props}) => (
                       <strong className="font-semibold text-gray-800 dark:text-neutral-200" {...props} />
@@ -977,7 +977,7 @@ function AIToolCard({
                         href={href} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 underline"
+                        className="text-[var(--primary)] hover:brightness-110 underline"
                         {...props}
                       >
                         {children}
@@ -1017,7 +1017,7 @@ function AIToolCard({
                             type="checkbox" 
                             checked={checked} 
                             disabled={disabled}
-                            className="mr-2 rounded border-gray-300 dark:border-neutral-600 text-purple-600 focus:ring-purple-500"
+                            className="mr-2 rounded border-gray-300 dark:border-neutral-600 text-[var(--primary)] focus:ring-[var(--primary)]"
                             {...props} 
                           />
                         );
@@ -1036,7 +1036,7 @@ function AIToolCard({
                 </ReactMarkdown>
                 <button
                   onClick={() => setIsResponseExpanded(false)}
-                  className="inline text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium text-sm ml-1 transition-colors duration-200"
+                  className="inline text-[var(--primary)] hover:brightness-110 font-medium text-sm ml-1 transition-colors duration-200"
                 >
                   Show less
                 </button>
@@ -1082,7 +1082,7 @@ function AIToolCard({
                         <pre className="bg-gray-100 dark:bg-neutral-700 rounded-lg p-3 overflow-x-auto border border-gray-200 dark:border-neutral-600 my-3" {...props} />
                       ),
                       blockquote: ({node, ...props}) => (
-                        <blockquote className="border-l-4 border-purple-300 dark:border-purple-500 pl-3 italic text-gray-600 dark:text-neutral-400 mb-2" {...props} />
+                        <blockquote className="border-l-4 border-[var(--primary)] pl-3 italic text-gray-600 dark:text-neutral-400 mb-2" {...props} />
                       ),
                       strong: ({node, ...props}) => (
                         <strong className="font-semibold text-gray-800 dark:text-neutral-200" {...props} />
@@ -1095,7 +1095,7 @@ function AIToolCard({
                           href={href} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 underline transition-colors duration-200"
+                          className="text-[var(--primary)] hover:brightness-110 underline transition-colors duration-200"
                           {...props}
                         >
                           {children}
@@ -1138,7 +1138,7 @@ function AIToolCard({
                 {generatedContent.length > 100 && (
                   <button
                     onClick={() => setIsResponseExpanded(true)}
-                    className="inline text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium text-sm ml-1 transition-colors duration-200 mt-1"
+                    className="inline text-[var(--primary)] hover:brightness-110 font-medium text-sm ml-1 transition-colors duration-200 mt-1"
                   >
                     more
                   </button>
@@ -1175,7 +1175,7 @@ function AIToolCard({
                     handleGenerateClick(optionValue)
                     setShowOptionsTooltip(false)
                   }}
-                  className="px-3 py-1.5 text-sm text-gray-600 dark:text-neutral-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-md transition-all duration-150 text-left"
+                  className="px-3 py-1.5 text-sm text-gray-600 dark:text-neutral-300 hover:text-[var(--primary)] dark:hover:text-[var(--primary)] hover:bg-[var(--neutral-light)] rounded-md transition-all duration-150 text-left"
                 >
                   {optionValue}
                 </button>
@@ -1243,7 +1243,7 @@ function AIToolCard({
                 setLocalButtonName(newValue)
               }}
               placeholder="Enter button name..."
-              className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg text-sm text-gray-700 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-500 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg text-sm text-gray-700 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-500 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
             />
           </div>
 
@@ -1257,13 +1257,13 @@ function AIToolCard({
                   const newModel = e.target.value as 'deepseek' | 'openai'
                   setLocalAiModel(newModel)
                 }}
-                className="px-3 py-1 text-sm border border-gray-200 dark:border-neutral-700 rounded-md text-gray-700 dark:text-neutral-200 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="px-3 py-1 text-sm border border-gray-200 dark:border-neutral-700 rounded-md text-gray-700 dark:text-neutral-200 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
               >
                 <option value="deepseek">DeepSeek</option>
                 <option value="openai">OpenAI</option>
               </select>
             </div>
-            <div className="relative rounded-lg border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-transparent">
+            <div className="relative rounded-lg border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 focus-within:ring-2 focus-within:ring-[var(--primary)] focus-within:border-transparent">
               <textarea
                 ref={textareaRef}
                 value={localPromptText}
@@ -1271,7 +1271,7 @@ function AIToolCard({
                 onScroll={handlePromptScroll}
                 onKeyDown={handlePromptKeyDown}
                 placeholder="Enter your AI prompt here..."
-                className="relative z-10 w-full min-h-32 p-3 text-sm text-transparent caret-purple-600 placeholder-gray-400 dark:placeholder-neutral-500 bg-transparent focus:outline-none resize-none"
+                className="relative z-10 w-full min-h-32 p-3 text-sm text-transparent caret-[var(--primary)] placeholder-gray-400 dark:placeholder-neutral-500 bg-transparent focus:outline-none resize-none"
                 style={{
                   minHeight: '128px',
                   maxHeight: '256px',
@@ -1425,7 +1425,7 @@ function AIToolCard({
                         setLocalOptions(newOptions)
                       }}
                       placeholder="Enter option..."
-                      className="flex-1 px-2 py-1 text-sm border border-gray-200 dark:border-neutral-700 rounded text-gray-700 dark:text-neutral-200 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                      className="flex-1 px-2 py-1 text-sm border border-gray-200 dark:border-neutral-700 rounded text-gray-700 dark:text-neutral-200 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
                     />
                     <button
                       onClick={() => {
@@ -1443,7 +1443,7 @@ function AIToolCard({
                     const newOptions = [...localOptions, '']
                     setLocalOptions(newOptions)
                   }}
-                  className="w-full px-3 py-1 text-sm text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-700 rounded hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+                  className="w-full px-3 py-1 text-sm text-[var(--primary)] border border-[var(--neutral-mid)] rounded hover:bg-[var(--neutral-light)] transition-colors"
                 >
                   + Add Option
                 </button>
@@ -1545,7 +1545,7 @@ function renderPromptOverlay(text: string) {
 
     const baseClasses =
       'inline-flex items-center px-2 py-0.5 mr-1 mb-1 rounded-full text-[11px] font-semibold border'
-    const refClasses = 'bg-purple-100 border-purple-200 text-purple-700'
+    const refClasses = 'bg-[var(--accent)]/20 border-[var(--accent)] text-[var(--primary)]'
     const infoClasses = 'bg-blue-100 border-blue-200 text-blue-700'
     const optClasses = 'bg-amber-100 border-amber-200 text-amber-700'
 

@@ -295,7 +295,7 @@ export default function AICardStudioPage() {
         return (
           <div className="min-h-screen bg-white dark:bg-neutral-900 lakers:bg-gradient-to-br lakers:from-lakers-800 lakers:to-lakers-700 flex items-center justify-center">
             <div className="flex flex-col items-center gap-4">
-              <div className="w-8 h-8 border-2 border-purple-600 lakers:border-lakers-300 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-8 h-8 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
               <p className="text-gray-600 dark:text-neutral-400 lakers:text-lakers-300">Loading AI Card Studio...</p>
             </div>
           </div>
@@ -311,7 +311,7 @@ export default function AICardStudioPage() {
                 {/* User email button */}
                 <button
                   onClick={handleUserMenuToggle}
-                  className="px-3 py-2 text-xs text-gray-400 hover:text-purple-600 lakers:text-lakers-300 lakers:hover:text-lakers-400 anno:text-anno-300 anno:hover:text-anno-400 cyberpunk:text-cyberpunk-300 cyberpunk:hover:text-cyberpunk-400 hover:bg-purple-50/50 lakers:hover:bg-lakers-300/20 anno:hover:bg-anno-300/20 cyberpunk:hover:bg-cyberpunk-300/20 dark:text-neutral-500 dark:hover:text-purple-400 dark:hover:bg-purple-900/20 rounded-lg transition-all duration-200 flex items-center gap-2 transform hover:scale-105 active:scale-95"
+                  className="px-3 py-2 text-xs text-gray-400 hover:text-[var(--primary)] hover:bg-[var(--neutral-light)] dark:text-neutral-500 dark:hover:text-[var(--primary)] rounded-lg transition-all duration-200 flex items-center gap-2 transform hover:scale-105 active:scale-95"
                 >
                   {user.email}
                   <svg 
@@ -326,26 +326,26 @@ export default function AICardStudioPage() {
 
                 {/* Dropdown menu */}
                 {showUserMenu && (
-                  <div className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-neutral-800 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-700 p-3 space-y-2 animate-dropdown">
+                  <div className="absolute top-full right-0 mt-2 w-56 bg-[var(--surface)] rounded-lg shadow-xl border border-[var(--neutral-mid)] p-3 space-y-2 animate-dropdown">
                     {/* Card Width Selection */}
                     <div className="relative">
                       <button
                         onClick={handleCardWidthToggle}
-                        className="w-full px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20 rounded-md transition-all duration-150 text-left flex items-center"
+                        className="w-full px-3 py-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium rounded-md transition-all duration-150 text-left flex items-center"
                       >
                         <span>Card Width</span>
                       </button>
 
                       {showCardWidthMenu && (
-                        <div className="absolute top-0 right-full mr-2 z-50 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 dark:border-neutral-700/50 p-3 min-w-28 animate-dropdown" style={{ transformOrigin: 'top right' }}>
-                          <div className="absolute top-4 -right-1 w-2 h-2 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-md border-r border-b border-white/20 dark:border-neutral-700/50 transform rotate-45"></div>
+                        <div className="absolute top-0 right-full mr-2 z-50 bg-[var(--surface)] backdrop-blur-md rounded-xl shadow-xl border border-[var(--neutral-mid)] p-3 min-w-28 animate-dropdown" style={{ transformOrigin: 'top right' }}>
+                          <div className="absolute top-4 -right-1 w-2 h-2 bg-[var(--surface)] backdrop-blur-md border-r border-b border-[var(--neutral-mid)] transform rotate-45"></div>
                           <div className="flex flex-col gap-2 min-w-28">
                             <button
                               onClick={() => handleCardWidthSelect('narrow')}
                               className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
                                 cardWidth === 'narrow'
-                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20 shadow-sm'
-                                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
+                                  ? 'text-[var(--primary)] bg-[var(--accent)] shadow-sm'
+                                  : 'text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium'
                               }`}
                             >
                               Narrow
@@ -354,8 +354,8 @@ export default function AICardStudioPage() {
                               onClick={() => handleCardWidthSelect('normal')}
                               className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
                                 cardWidth === 'normal'
-                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20 shadow-sm'
-                                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
+                                  ? 'text-[var(--primary)] bg-[var(--accent)] shadow-sm'
+                                  : 'text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium'
                               }`}
                             >
                               Normal
@@ -364,8 +364,8 @@ export default function AICardStudioPage() {
                               onClick={() => handleCardWidthSelect('wide')}
                               className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
                                 cardWidth === 'wide'
-                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20 shadow-sm'
-                                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
+                                  ? 'text-[var(--primary)] bg-[var(--accent)] shadow-sm'
+                                  : 'text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium'
                               }`}
                             >
                               Wide
@@ -379,24 +379,24 @@ export default function AICardStudioPage() {
                     <div className="relative">
                       <button
                         onClick={handlePdfTemplateToggle}
-                        className="w-full px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20 rounded-md transition-all duration-150 text-left flex items-center"
+                        className="w-full px-3 py-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium rounded-md transition-all duration-150 text-left flex items-center"
                       >
                         <span>PDF Template</span>
                       </button>
                       
                       {/* PDF Template Submenu */}
                       {showPdfTemplateMenu && (
-                        <div className="absolute top-0 right-full mr-2 z-50 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 dark:border-neutral-700/50 p-3 animate-dropdown" style={{ transformOrigin: 'top right' }}>
+                        <div className="absolute top-0 right-full mr-2 z-50 bg-[var(--surface)] backdrop-blur-md rounded-xl shadow-xl border border-[var(--neutral-mid)] p-3 animate-dropdown" style={{ transformOrigin: 'top right' }}>
                           {/* Arrow pointing to button */}
-                          <div className="absolute top-4 -right-1 w-2 h-2 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-md border-r border-b border-white/20 dark:border-neutral-700/50 transform rotate-45"></div>
+                          <div className="absolute top-4 -right-1 w-2 h-2 bg-[var(--surface)] backdrop-blur-md border-r border-b border-[var(--neutral-mid)] transform rotate-45"></div>
                           
                           <div className="flex flex-col gap-2 min-w-28">
                             <button
                               onClick={() => handlePdfTemplateSelect('default')}
                               className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
                                 pdfTemplate === 'default' 
-                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20 shadow-sm' 
-                                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
+                                  ? 'text-[var(--primary)] bg-[var(--accent)] shadow-sm' 
+                                  : 'text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium'
                               }`}
                             >
                               Default
@@ -405,8 +405,8 @@ export default function AICardStudioPage() {
                               onClick={() => handlePdfTemplateSelect('resume')}
                               className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
                                 pdfTemplate === 'resume' 
-                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20 shadow-sm' 
-                                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
+                                  ? 'text-[var(--primary)] bg-[var(--accent)] shadow-sm' 
+                                  : 'text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium'
                               }`}
                             >
                               Resume
@@ -420,24 +420,24 @@ export default function AICardStudioPage() {
                     <div className="relative">
                       <button
                         onClick={handleThemeMenuToggle}
-                        className="w-full px-3 py-1.5 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20 rounded-md transition-all duration-150 text-left flex items-center"
+                        className="w-full px-3 py-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium rounded-md transition-all duration-150 text-left flex items-center"
                       >
                         <span>Theme</span>
                       </button>
                       
                       {/* Theme Submenu */}
                       {showThemeMenu && (
-                        <div className="absolute top-0 right-full mr-2 z-50 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 dark:border-neutral-700/50 p-3 animate-dropdown" style={{ transformOrigin: 'top right' }}>
+                        <div className="absolute top-0 right-full mr-2 z-50 bg-[var(--surface)] backdrop-blur-md rounded-xl shadow-xl border border-[var(--neutral-mid)] p-3 animate-dropdown" style={{ transformOrigin: 'top right' }}>
                           {/* Arrow pointing to button */}
-                          <div className="absolute top-4 -right-1 w-2 h-2 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-md border-r border-b border-white/20 dark:border-neutral-700/50 transform rotate-45"></div>
+                          <div className="absolute top-4 -right-1 w-2 h-2 bg-[var(--surface)] backdrop-blur-md border-r border-b border-[var(--neutral-mid)] transform rotate-45"></div>
                           
                           <div className="flex flex-col gap-2 min-w-28">
                             <button
                               onClick={() => handleThemeSelect('light')}
                               className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
                                 theme === 'light' 
-                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20 shadow-sm' 
-                                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
+                                  ? 'text-[var(--primary)] bg-[var(--accent)] shadow-sm' 
+                                  : 'text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium'
                               }`}
                             >
                               Light
@@ -446,8 +446,8 @@ export default function AICardStudioPage() {
                               onClick={() => handleThemeSelect('dark')}
                               className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
                                 theme === 'dark' 
-                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20 shadow-sm' 
-                                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
+                                  ? 'text-[var(--primary)] bg-[var(--accent)] shadow-sm' 
+                                  : 'text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium'
                               }`}
                             >
                               Dark
@@ -456,8 +456,8 @@ export default function AICardStudioPage() {
                               onClick={() => handleThemeSelect('lakers')}
                               className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
                                 theme === 'lakers' 
-                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20 shadow-sm' 
-                                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
+                                  ? 'text-[var(--primary)] bg-[var(--accent)] shadow-sm' 
+                                  : 'text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium'
                               }`}
                             >
                               Lakers
@@ -466,8 +466,8 @@ export default function AICardStudioPage() {
                               onClick={() => handleThemeSelect('anno')}
                               className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
                                 theme === 'anno' 
-                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20 shadow-sm' 
-                                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
+                                  ? 'text-[var(--primary)] bg-[var(--accent)] shadow-sm' 
+                                  : 'text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium'
                               }`}
                             >
                               Anno
@@ -496,8 +496,8 @@ export default function AICardStudioPage() {
                               onClick={() => handleThemeSelect('cyberpunk')}
                               className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
                                 theme === 'cyberpunk' 
-                                  ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20 shadow-sm' 
-                                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:text-neutral-300 dark:hover:text-purple-400 dark:hover:bg-purple-900/20'
+                                  ? 'text-[var(--primary)] bg-[var(--accent)] shadow-sm' 
+                                  : 'text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium'
                               }`}
                             >
                               Cyberpunk
@@ -512,7 +512,7 @@ export default function AICardStudioPage() {
                         handleCloseUserMenu()
                         handleSignOut()
                       }}
-                      className="w-full px-3 py-1.5 text-sm text-left text-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-900/20 rounded-md transition-all duration-150 flex items-center gap-2"
+                      className="w-full px-3 py-1.5 text-sm text-left text-[var(--primary)] hover:bg-[var(--neutral-light)] rounded-md transition-all duration-150 flex items-center gap-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

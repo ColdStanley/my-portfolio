@@ -24,19 +24,19 @@ export default function SettingsModal({
   headerActions
 }: SettingsModalProps) {
   return (
-    <div className={`bg-white dark:bg-neutral-800 rounded-xl shadow-2xl border border-gray-200 dark:border-neutral-700 p-6 w-full transform transition-all duration-300 ease-out ${
+    <div className={`bg-[var(--surface)] rounded-xl shadow-2xl border border-[var(--neutral-mid)] p-6 w-full transform transition-all duration-300 ease-out ${
       isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
     }`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div className="text-lg font-medium text-gray-800 dark:text-neutral-200">{title}</div>
+        <div className="text-lg font-medium text-[var(--text-primary)]">{title}</div>
         <div className="flex items-center gap-2">
           {headerActions && <div>{headerActions}</div>}
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 dark:hover:bg-neutral-700 rounded transition-colors"
+            className="p-1 hover:bg-[var(--neutral-light)] rounded transition-colors"
           >
-            <svg className="w-4 h-4 text-gray-600 dark:text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-[var(--text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -54,7 +54,7 @@ export default function SettingsModal({
         {onDelete && (
           <button
             onClick={onDelete}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all duration-200 hover:shadow-lg hover:scale-105 active:scale-95"
+            className="px-4 py-2 bg-[var(--primary)] hover:brightness-105 text-white rounded-lg font-medium transition-all duration-200 hover:shadow-lg hover:scale-105 active:scale-95"
           >
             Delete
           </button>
@@ -64,7 +64,7 @@ export default function SettingsModal({
         {onSave && (
           <div className="flex items-center gap-3">
             {saveSuccess && (
-              <div className="flex items-center gap-1 text-purple-600 dark:text-purple-400 lakers:text-lakers-300 anno:text-anno-300 cyberpunk:text-cyberpunk-300 text-sm font-medium">
+              <div className="flex items-center gap-1 text-[var(--primary)] text-sm font-medium">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
@@ -74,7 +74,7 @@ export default function SettingsModal({
             <button
               onClick={onSave}
               disabled={isSaving}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2 hover:shadow-lg hover:scale-105 active:scale-95"
+              className="px-4 py-2 bg-[var(--primary)] hover:brightness-105 disabled:opacity-50 text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2 hover:shadow-lg hover:scale-105 active:scale-95"
             >
               {isSaving ? (
                 <>

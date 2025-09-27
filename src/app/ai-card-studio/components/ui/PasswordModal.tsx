@@ -98,15 +98,15 @@ export default function PasswordModal({ mode, isOpen, onSuccess, onCancel }: Pas
     >
       <div
         ref={modalRef}
-        className={`bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-md relative z-[10000] transition-all duration-300 ease-out transform ${
+        className={`bg-[var(--surface)] rounded-xl shadow-2xl border border-[var(--neutral-mid)] w-full max-w-md relative z-[10000] transition-all duration-300 ease-out transform ${
           isVisible 
             ? 'opacity-100 scale-100 translate-y-0' 
             : 'opacity-0 scale-95 -translate-y-2'
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800">
+        <div className="flex items-center justify-between p-6 border-b border-[var(--neutral-mid)]">
+          <h3 className="text-lg font-semibold text-[var(--text-primary)]">
             {mode === 'set' ? 'Set Password' : 'Enter Password'}
           </h3>
           <button
@@ -166,13 +166,13 @@ export default function PasswordModal({ mode, isOpen, onSuccess, onCancel }: Pas
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-150"
+              className="px-4 py-2 text-sm text-gray-600 hover:text-[var(--text-primary)] hover:bg-gray-100 rounded-lg transition-all duration-150"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-6 py-2 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all duration-150"
+              className="px-6 py-2 text-sm bg-[var(--primary)] hover:brightness-105 text-white rounded-lg transition-all duration-150"
             >
               {mode === 'set' ? 'Set Password' : 'Unlock'}
             </button>

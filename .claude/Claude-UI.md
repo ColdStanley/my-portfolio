@@ -172,6 +172,22 @@ Textarea：继承 Input 样式，增加 min-h-[120px] resize-y
 
 微交互统一：transition duration-200
 
+菜单悬浮效果规范：
+
+- 下拉菜单项悬浮：bg-[var(--accent)] + hover:font-medium
+- 必须保持颜色一致性：与按钮本身悬浮颜色统一使用温暖黄
+- 过渡动画：transition-all duration-150
+- 禁止使用左侧边框等额外装饰
+- 适用范围：所有下拉菜单
+
+下拉框与模态框动画规范：
+
+- 下拉框淡入：opacity-0 → opacity-100 + scale-95 → scale-100
+- 模态框淡入：opacity-0 → opacity-100 + scale-95 → scale-100
+- 动画时长：duration-300 ease-out（进入），duration-250 ease-in（退出）
+- 背景遮罩：从 opacity-0 到适当透明度的渐变
+- 必须支持平滑的显示/隐藏状态切换
+
 质感主要来自：
 
 背景层次（白 + 浅灰）

@@ -346,8 +346,8 @@ export default function AICardStudio({ cardWidth = 'narrow' }: AICardStudioProps
   // 🔧 Use conditional rendering instead of conditional returns to maintain hook order
   if (isLoading || !isDataLoaded) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white dark:bg-neutral-900">
-        <div className="flex items-center gap-3 text-purple-600 dark:text-purple-400">
+      <div className="flex items-center justify-center min-h-screen bg-[var(--background)]">
+        <div className="flex items-center gap-3 text-[var(--primary)]">
           <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
@@ -387,23 +387,23 @@ export default function AICardStudio({ cardWidth = 'narrow' }: AICardStudioProps
         @keyframes pulse-urgent {
           0% {
             transform: scale(1);
-            box-shadow: 0 4px 14px -2px rgba(147, 51, 234, 0.4), 0 0 20px rgba(147, 51, 234, 0.2);
+            box-shadow: 0 4px 14px -2px rgba(244, 211, 94, 0.4), 0 0 20px rgba(244, 211, 94, 0.2);
           }
           25% {
             transform: scale(1.02);
-            box-shadow: 0 6px 20px -2px rgba(147, 51, 234, 0.5), 0 0 30px rgba(147, 51, 234, 0.3);
+            box-shadow: 0 6px 20px -2px rgba(244, 211, 94, 0.5), 0 0 30px rgba(244, 211, 94, 0.3);
           }
           50% {
             transform: scale(1.05);
-            box-shadow: 0 8px 25px -2px rgba(147, 51, 234, 0.6), 0 0 40px rgba(147, 51, 234, 0.4);
+            box-shadow: 0 8px 25px -2px rgba(244, 211, 94, 0.6), 0 0 40px rgba(244, 211, 94, 0.4);
           }
           75% {
             transform: scale(1.02);
-            box-shadow: 0 6px 20px -2px rgba(147, 51, 234, 0.5), 0 0 30px rgba(147, 51, 234, 0.3);
+            box-shadow: 0 6px 20px -2px rgba(244, 211, 94, 0.5), 0 0 30px rgba(244, 211, 94, 0.3);
           }
           100% {
             transform: scale(1);
-            box-shadow: 0 4px 14px -2px rgba(147, 51, 234, 0.4), 0 0 20px rgba(147, 51, 234, 0.2);
+            box-shadow: 0 4px 14px -2px rgba(244, 211, 94, 0.4), 0 0 20px rgba(244, 211, 94, 0.2);
           }
         }
         
@@ -418,14 +418,14 @@ export default function AICardStudio({ cardWidth = 'narrow' }: AICardStudioProps
       
       {/* Save Error Notification */}
       {saveError && (
-        <div className="fixed top-20 right-4 z-50 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
+        <div className="fixed top-20 right-4 z-50 bg-[var(--surface)] border border-[var(--error)] text-[var(--error)] px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span className="text-sm dark:text-red-300">{saveError}</span>
-          <button 
+          <span className="text-sm">{saveError}</span>
+          <button
             onClick={clearSaveError}
-            className="ml-2 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+            className="ml-2 text-[var(--error)] hover:brightness-110 transition-all duration-200"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -435,31 +435,31 @@ export default function AICardStudio({ cardWidth = 'narrow' }: AICardStudioProps
       )}
 
       {/* Full screen layout - optimized spacing */}
-      <div className="min-h-screen bg-white dark:bg-neutral-900 lakers:bg-gradient-to-br lakers:from-lakers-800 lakers:to-lakers-700 anno:bg-gradient-to-br anno:from-anno-900 anno:to-anno-800 cyberpunk:bg-gradient-to-br cyberpunk:from-cyberpunk-900 cyberpunk:to-cyberpunk-800 pt-16 px-6 pb-0">
+      <div className="min-h-screen bg-[var(--background)] pt-16 px-6 pb-0">
         <div className="max-w-full mx-auto">
           {/* Header Navigation Bar */}
           <div className="flex items-center justify-between mb-6">
             {/* Left side - Title */}
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 lakers:from-lakers-300 lakers:to-lakers-400 anno:from-anno-300 anno:to-anno-400 cyberpunk:from-cyberpunk-300 cyberpunk:to-cyberpunk-400 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold text-[var(--primary)]">
               AI Card Studio
             </h1>
             
             {/* Right side - All controls */}
             <div className="flex items-center gap-4">
               {/* Save Status Indicator */}
-              <div className="text-sm text-gray-500 dark:text-neutral-400 lakers:text-lakers-300 anno:text-anno-300 cyberpunk:text-cyberpunk-300">
+              <div className="text-sm text-[var(--text-secondary)]">
                 {isSaving ? (
                   <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 animate-spin text-purple-600 dark:text-purple-400 lakers:text-lakers-300 anno:text-anno-300 cyberpunk:text-cyberpunk-300" fill="none" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 animate-spin text-[var(--primary)]" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
                     </svg>
-                    <span className="text-purple-600 dark:text-purple-400 lakers:text-lakers-300 anno:text-anno-300 cyberpunk:text-cyberpunk-300">Saving...</span>
+                    <span className="text-[var(--primary)]">Saving...</span>
                   </div>
                 ) : hasUnsavedChanges ? (
-                  <span className="text-purple-600 dark:text-purple-400 lakers:text-lakers-300 anno:text-anno-300 cyberpunk:text-cyberpunk-300">Unsaved changes</span>
+                  <span className="text-[var(--primary)]">Unsaved changes</span>
                 ) : (
-                  <span className="text-purple-600 dark:text-purple-400 lakers:text-lakers-300 anno:text-anno-300 cyberpunk:text-cyberpunk-300">All saved</span>
+                  <span className="text-[var(--primary)]">All saved</span>
                 )}
               </div>
               
@@ -469,12 +469,12 @@ export default function AICardStudio({ cardWidth = 'narrow' }: AICardStudioProps
                 disabled={isSaving || !hasUnsavedChanges}
                 className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 relative ${
                   hasUnsavedChanges && !isSaving
-                    ? 'bg-purple-600 hover:bg-purple-700 lakers:bg-lakers-300 lakers:hover:bg-lakers-400 anno:bg-anno-600 anno:hover:bg-anno-700 cyberpunk:bg-cyberpunk-600 cyberpunk:hover:bg-cyberpunk-700 text-white shadow-lg hover:shadow-xl animate-pulse-urgent'
-                    : 'bg-gray-100 dark:bg-neutral-700 lakers:bg-lakers-700/50 anno:bg-anno-800/50 cyberpunk:bg-cyberpunk-800/50 text-gray-400 dark:text-neutral-500 lakers:text-lakers-200 anno:text-anno-200 cyberpunk:text-cyberpunk-200 cursor-not-allowed'
+                    ? 'bg-[var(--primary)] hover:brightness-105 text-white shadow-lg hover:shadow-xl animate-pulse-urgent'
+                    : 'bg-[var(--neutral-light)] text-[var(--text-secondary)] cursor-not-allowed'
                 }`}
                 style={{
                   ...(hasUnsavedChanges && !isSaving && {
-                    boxShadow: '0 4px 14px -2px rgba(147, 51, 234, 0.4), 0 0 20px rgba(147, 51, 234, 0.2)',
+                    boxShadow: 'var(--shadows-lg)',
                     animation: 'pulse-urgent 2s ease-in-out infinite'
                   })
                 }}
@@ -502,7 +502,7 @@ export default function AICardStudio({ cardWidth = 'narrow' }: AICardStudioProps
                 {/* Dropdown Trigger */}
                 <button
                   onClick={toggleDropdown}
-                  className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 lakers:bg-lakers-300/20 anno:bg-anno-700/20 cyberpunk:bg-cyberpunk-700/20 border border-purple-200 dark:border-purple-700 lakers:border-lakers-300 anno:border-anno-300 cyberpunk:border-cyberpunk-300 rounded-lg text-purple-600 dark:text-purple-400 lakers:text-lakers-300 anno:text-anno-300 cyberpunk:text-cyberpunk-300 font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 lakers:hover:bg-lakers-300/30 anno:hover:bg-anno-300/20 cyberpunk:hover:bg-cyberpunk-300/20 transition-all duration-200 min-w-[200px] justify-between"
+                  className="flex items-center gap-2 px-4 py-2 bg-[var(--surface)] border border-[var(--neutral-mid)] rounded-lg text-[var(--primary)] font-medium hover:bg-[var(--neutral-light)] hover:brightness-105 transition-all duration-200 min-w-[200px] justify-between"
                 >
                   <span>{activeCanvas?.name || (canvases.length > 0 ? canvases[0].name : 'Loading...')}</span>
                   <svg 
@@ -517,9 +517,9 @@ export default function AICardStudio({ cardWidth = 'narrow' }: AICardStudioProps
 
                 {/* Dropdown Menu */}
                 {dropdownOpen && (
-                  <div className="absolute top-full mt-2 left-0 z-50 bg-white dark:bg-neutral-800 lakers:bg-lakers-700 anno:bg-anno-800 cyberpunk:bg-cyberpunk-800 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-700 lakers:border-lakers-300/30 anno:border-anno-300/30 cyberpunk:border-cyberpunk-300/30 p-2 min-w-[200px] animate-dropdown" style={{ transformOrigin: 'top left' }}>
+                  <div className="absolute top-full mt-2 left-0 z-50 bg-[var(--surface)] rounded-lg shadow-xl border border-[var(--neutral-mid)] p-2 min-w-[200px] animate-dropdown" style={{ transformOrigin: 'top left' }}>
                     {/* Arrow pointing to button */}
-                    <div className="absolute -top-1 left-4 w-2 h-2 bg-white dark:bg-neutral-800 lakers:bg-lakers-700 anno:bg-anno-800 cyberpunk:bg-cyberpunk-800 border-l border-t border-gray-200 dark:border-neutral-700 lakers:border-lakers-300/30 anno:border-anno-300/30 cyberpunk:border-cyberpunk-300/30 transform rotate-45"></div>
+                    <div className="absolute -top-1 left-4 w-2 h-2 bg-[var(--surface)] border-l border-t border-[var(--neutral-mid)] transform rotate-45"></div>
                     
                     {/* Canvas List */}
                     {canvases.map((canvas) => (
@@ -527,9 +527,9 @@ export default function AICardStudio({ cardWidth = 'narrow' }: AICardStudioProps
                         key={canvas.id}
                         onClick={() => handleCanvasSwitch(canvas.id)}
                         className={`w-full px-3 py-2 text-sm rounded-md transition-all duration-150 text-left ${
-                          canvas.id === activeCanvasId 
-                            ? 'text-purple-600 dark:text-purple-400 lakers:text-lakers-300 anno:text-anno-300 cyberpunk:text-cyberpunk-300 bg-purple-50 dark:bg-purple-900/50 lakers:bg-lakers-300/30 anno:bg-anno-300/30 cyberpunk:bg-cyberpunk-300/30' 
-                            : 'text-gray-600 dark:text-neutral-300 lakers:text-lakers-300 anno:text-anno-300 cyberpunk:text-cyberpunk-300 hover:text-purple-600 dark:hover:text-purple-400 lakers:hover:text-lakers-300 anno:hover:text-anno-300 cyberpunk:hover:text-cyberpunk-300 hover:bg-purple-50 dark:hover:bg-purple-900/50 lakers:hover:bg-lakers-300/20 anno:hover:bg-anno-300/20 cyberpunk:hover:bg-cyberpunk-300/20'
+                          canvas.id === activeCanvasId
+                            ? 'text-[var(--primary)] bg-[var(--accent)]'
+                            : 'text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium'
                         }`}
                       >
                         {canvas.name}
@@ -537,12 +537,12 @@ export default function AICardStudio({ cardWidth = 'narrow' }: AICardStudioProps
                     ))}
                     
                     {/* Separator */}
-                    <hr className="my-2 border-gray-200 dark:border-neutral-700" />
+                    <hr className="my-2 border-[var(--neutral-mid)]" />
                     
                     {/* Management Options */}
                     <button
                       onClick={handleManageCanvases}
-                      className="w-full px-3 py-2 text-sm text-left text-gray-600 dark:text-neutral-300 lakers:text-lakers-300 anno:text-anno-300 cyberpunk:text-cyberpunk-300 hover:text-purple-600 dark:hover:text-purple-400 lakers:hover:text-lakers-300 anno:hover:text-anno-300 cyberpunk:hover:text-cyberpunk-300 hover:bg-purple-50 dark:hover:bg-purple-900/50 lakers:hover:bg-lakers-300/20 anno:hover:bg-anno-300/20 cyberpunk:hover:bg-cyberpunk-300/20 rounded-md transition-all duration-150 flex items-center gap-2"
+                      className="w-full px-3 py-2 text-sm text-left text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium rounded-md transition-all duration-150 flex items-center gap-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -557,7 +557,7 @@ export default function AICardStudio({ cardWidth = 'narrow' }: AICardStudioProps
               {/* Add Canvas Button */}
               <button
                 onClick={addCanvas}
-                className="w-10 h-10 bg-white dark:bg-neutral-800 lakers:bg-lakers-300/20 anno:bg-anno-700/20 cyberpunk:bg-cyberpunk-700/20 border border-purple-200 lakers:border-lakers-300 anno:border-anno-300 cyberpunk:border-cyberpunk-300 text-purple-600 dark:text-purple-400 lakers:text-lakers-300 anno:text-anno-300 cyberpunk:text-cyberpunk-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 lakers:hover:bg-lakers-300/30 anno:hover:bg-anno-300/20 cyberpunk:hover:bg-cyberpunk-300/20 rounded-lg flex items-center justify-center transition-all duration-200"
+                className="w-10 h-10 bg-[var(--surface)] border border-[var(--neutral-mid)] text-[var(--primary)] hover:bg-[var(--neutral-light)] hover:brightness-105 rounded-lg flex items-center justify-center transition-all duration-200"
                 title="Add new canvas"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -568,7 +568,7 @@ export default function AICardStudio({ cardWidth = 'narrow' }: AICardStudioProps
               {/* Marketplace Button */}
               <a
                 href="/ai-card-studio/marketplace"
-                className="px-4 py-2 bg-white dark:bg-neutral-800 lakers:bg-lakers-300/20 anno:bg-anno-700/20 cyberpunk:bg-cyberpunk-700/20 border border-purple-200 dark:border-purple-700 lakers:border-lakers-300 anno:border-anno-300 cyberpunk:border-cyberpunk-300 text-purple-600 dark:text-purple-400 lakers:text-lakers-300 anno:text-anno-300 cyberpunk:text-cyberpunk-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 lakers:hover:bg-lakers-300/30 anno:hover:bg-anno-300/20 cyberpunk:hover:bg-cyberpunk-300/20 rounded-lg font-medium transition-all duration-200 flex items-center gap-2"
+                className="px-4 py-2 bg-[var(--surface)] border border-[var(--neutral-mid)] text-[var(--primary)] hover:bg-[var(--neutral-light)] hover:brightness-105 rounded-lg font-medium transition-all duration-200 flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -603,7 +603,7 @@ export default function AICardStudio({ cardWidth = 'narrow' }: AICardStudioProps
                   requestAnimationFrame(animateScroll)
                 }
               }}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white dark:bg-neutral-800/90 backdrop-blur-md rounded-full shadow-lg flex items-center justify-center text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-700 transition-all duration-200"
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-[var(--surface)] backdrop-blur-md rounded-full shadow-lg flex items-center justify-center text-[var(--primary)] hover:bg-[var(--neutral-light)] hover:brightness-105 transition-all duration-200"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -635,7 +635,7 @@ export default function AICardStudio({ cardWidth = 'narrow' }: AICardStudioProps
                   requestAnimationFrame(animateScroll)
                 }
               }}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white dark:bg-neutral-800/90 backdrop-blur-md rounded-full shadow-lg flex items-center justify-center text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-700 transition-all duration-200"
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-[var(--surface)] backdrop-blur-md rounded-full shadow-lg flex items-center justify-center text-[var(--primary)] hover:bg-[var(--neutral-light)] hover:brightness-105 transition-all duration-200"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -681,7 +681,7 @@ export default function AICardStudio({ cardWidth = 'narrow' }: AICardStudioProps
                 <div className="grid grid-cols-2 gap-3 h-32">
                   <button
                     onClick={addNewColumn}
-                    className="h-full w-full border border-dashed border-gray-200 dark:border-neutral-700 rounded-xl flex items-center justify-center text-gray-300 hover:border-purple-400 hover:text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200"
+                    className="h-full w-full border border-dashed border-[var(--neutral-mid)] rounded-xl flex items-center justify-center text-[var(--text-secondary)] hover:border-[var(--primary)] hover:text-[var(--primary)] hover:bg-[var(--neutral-light)] transition-all duration-200"
                   >
                     <div className="flex flex-col items-center gap-2">
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -692,7 +692,7 @@ export default function AICardStudio({ cardWidth = 'narrow' }: AICardStudioProps
                   </button>
                   <button
                     onClick={handleImportClick}
-                    className="h-full w-full border border-dashed border-gray-200 dark:border-neutral-700 rounded-xl flex items-center justify-center text-gray-300 hover:border-purple-400 hover:text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200"
+                    className="h-full w-full border border-dashed border-[var(--neutral-mid)] rounded-xl flex items-center justify-center text-[var(--text-secondary)] hover:border-[var(--primary)] hover:text-[var(--primary)] hover:bg-[var(--neutral-light)] transition-all duration-200"
                   >
                     <div className="flex flex-col items-center gap-2">
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -725,16 +725,16 @@ export default function AICardStudio({ cardWidth = 'narrow' }: AICardStudioProps
             onClick={handleCloseCardTypeModal}
           />
           <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-            <div className={`bg-white dark:bg-neutral-800 rounded-xl shadow-2xl border border-gray-200 dark:border-neutral-700 p-6 max-w-md w-full mx-4 pointer-events-auto transform transition-all duration-300 ease-out ${
+            <div className={`bg-[var(--surface)] rounded-xl shadow-2xl border border-[var(--neutral-mid)] p-6 max-w-md w-full mx-4 pointer-events-auto transform transition-all duration-300 ease-out ${
               cardTypeModalVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
             }`}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-800 dark:text-neutral-200">Choose Card Type</h3>
+                <h3 className="text-lg font-medium text-[var(--text-primary)]">Choose Card Type</h3>
                 <button
                   onClick={handleCloseCardTypeModal}
-                  className="p-1 hover:bg-gray-100 rounded transition-colors"
+                  className="p-1 hover:bg-[var(--neutral-light)] rounded transition-colors"
                 >
-                  <svg className="w-4 h-4 text-gray-600 dark:text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-[var(--text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -743,18 +743,18 @@ export default function AICardStudio({ cardWidth = 'narrow' }: AICardStudioProps
               <div className="space-y-3">
                 <button
                   onClick={() => addCardToColumn(selectedColumnId, 'info', insertAfterCardId)}
-                  className="w-full p-4 text-left border border-gray-200 dark:border-neutral-700 rounded-lg hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20/50 transition-all duration-200"
+                  className="w-full p-4 text-left border border-[var(--neutral-mid)] rounded-lg hover:border-[var(--primary)] hover:bg-[var(--neutral-light)] transition-all duration-200"
                 >
-                  <h4 className="font-medium text-gray-800 dark:text-neutral-200">Info Card</h4>
-                  <p className="text-sm text-gray-600 dark:text-neutral-400 mt-1">Static information, instructions, or reference content</p>
+                  <h4 className="font-medium text-[var(--text-primary)]">Info Card</h4>
+                  <p className="text-sm text-[var(--text-secondary)] mt-1">Static information, instructions, or reference content</p>
                 </button>
-                
+
                 <button
                   onClick={() => addCardToColumn(selectedColumnId, 'aitool', insertAfterCardId)}
-                  className="w-full p-4 text-left border border-gray-200 dark:border-neutral-700 rounded-lg hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20/50 transition-all duration-200"
+                  className="w-full p-4 text-left border border-[var(--neutral-mid)] rounded-lg hover:border-[var(--primary)] hover:bg-[var(--neutral-light)] transition-all duration-200"
                 >
-                  <h4 className="font-medium text-gray-800 dark:text-neutral-200">AI Tool Card</h4>
-                  <p className="text-sm text-gray-600 dark:text-neutral-400 mt-1">Interactive AI-powered content generation</p>
+                  <h4 className="font-medium text-[var(--text-primary)]">AI Tool Card</h4>
+                  <p className="text-sm text-[var(--text-secondary)] mt-1">Interactive AI-powered content generation</p>
                 </button>
               </div>
             </div>
