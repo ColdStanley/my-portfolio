@@ -135,7 +135,7 @@ export default function AIReviewModal() {
         <div className="flex items-center justify-between">
           <div className="text-lg font-semibold text-text-primary">Preview & Export PDF</div>
           <Button
-            variant="primary"
+            variant="secondary"
             onClick={handleConfirm}
             disabled={isGeneratingPDF}
             className="px-3 py-1 text-xs"
@@ -153,7 +153,7 @@ export default function AIReviewModal() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 py-4 pb-6 space-y-6">
         {/* Work Experience */}
         <div className="space-y-2">
           <label className="text-sm font-semibold text-text-primary" htmlFor="work-experience">
@@ -166,7 +166,7 @@ export default function AIReviewModal() {
             value={editedWorkExperience}
             onChange={event => setEditedWorkExperience(event.target.value)}
             placeholder="AI-generated work experience will appear here..."
-            className="resize-none"
+            className="resize-none leading-relaxed"
           />
           <p className="text-xs text-text-muted">
             Review and edit the AI-generated experience content
@@ -185,7 +185,7 @@ export default function AIReviewModal() {
             value={editedPersonalInfoText}
             onChange={event => setEditedPersonalInfoText(event.target.value)}
             placeholder="Personal information JSON..."
-            className="font-mono resize-none"
+            className="font-mono resize-none leading-relaxed"
           />
           <p className="text-xs text-text-muted">
             Must be valid JSON format. Do not rename fields.

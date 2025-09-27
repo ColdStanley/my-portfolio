@@ -99,22 +99,42 @@ active: brightness-95
 
 5. 组件规范
 Buttons
-// Primary
-<Button variant="primary">
-  Primary Action
+
+按钮层级系统（CRITICAL）
+
+一级按钮（主要动作）
+- 用途：页面或功能模块的核心操作（如"提交"、"保存"、"开始"）
+- 样式：variant="primary" + 标准尺寸（text-sm + 适当padding）
+- 数量限制：每个功能模块最多1个一级按钮
+
+二级按钮（次要动作）
+- 用途：支持性操作、状态切换、导航（如"预览"、"下载"、"切换"）
+- 样式：variant="secondary" + 小尺寸（text-xs + px-3 py-1）
+- 应用场景：工作流程中的步骤按钮、功能面板的操作按钮
+
+// Primary（一级按钮）
+<Button variant="primary" size="md">
+  Customize Resume
 </Button>
 
-// Secondary
-<Button variant="secondary">
-  Secondary Action
+// Secondary（二级按钮）
+<Button variant="secondary" size="sm" className="text-xs px-3 py-1">
+  Confirm & Preview
 </Button>
-
 
 封装后的 class 规则：
 
 Primary: bg-[var(--primary)] text-white
 
 Secondary: border border-[var(--primary)] text-[var(--primary)]
+
+按钮层级约束
+
+禁止在同一视图区域使用多个一级按钮
+
+二级按钮必须保持视觉一致性（尺寸、间距、配色）
+
+状态按钮（如tabs）激活时可临时使用primary样式
 
 Cards
 <Card>

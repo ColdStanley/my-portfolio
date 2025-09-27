@@ -33,16 +33,15 @@ export default function ResumePreview() {
       <div className="px-6 py-4 border-b border-neutral-light">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-text-primary">Final PDF Preview</h2>
-          {pdfPreviewUrl && (
-            <Button
-              onClick={handleDownload}
-              variant="primary"
-              size="sm"
-              className="text-xs px-3 py-1"
-            >
-              Download PDF
-            </Button>
-          )}
+          <Button
+            onClick={handleDownload}
+            variant="secondary"
+            size="sm"
+            disabled={!pdfPreviewUrl}
+            className="text-xs px-3 py-1"
+          >
+            Download PDF
+          </Button>
         </div>
       </div>
 

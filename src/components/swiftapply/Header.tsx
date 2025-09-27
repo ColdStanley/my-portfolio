@@ -24,15 +24,15 @@ export default function Header() {
 
         {/* Usage Flow */}
         <div className="hidden lg:flex items-center gap-2 text-sm text-text-secondary">
-          <span className="px-2 py-1 bg-gray-200 rounded-md">Profile Setup</span>
+          <span className="px-2 py-1 bg-surface rounded-md">Profile Setup</span>
           →
-          <span className="px-2 py-1 bg-gray-200 rounded-md">Job Input</span>
+          <span className="px-2 py-1 bg-surface rounded-md">Job Input</span>
           →
-          <span className="px-2 py-1 bg-gray-200 rounded-md">Resume Customization</span>
+          <span className="px-2 py-1 bg-surface rounded-md">Resume Customization</span>
           →
-          <span className="px-2 py-1 bg-gray-200 rounded-md">Edit & Preview</span>
+          <span className="px-2 py-1 bg-surface rounded-md">Edit & Preview</span>
           →
-          <span className="px-2 py-1 bg-gray-200 rounded-md">Download PDF</span>
+          <span className="px-2 py-1 bg-surface rounded-md">Download PDF</span>
         </div>
 
         {/* Actions */}

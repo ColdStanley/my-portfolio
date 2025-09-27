@@ -71,31 +71,26 @@ export default function AIProgressPanel() {
           const data = stageOutputs[stage.key]
           const isActive = activeStage === stage.key
 
-          // Priority: Active + In Progress > Completed > Active + Other > Other statuses
-          const statusClass = isActive && data.status === 'in_progress'
-            ? 'bg-primary text-primary-foreground animate-pulse'
-            : isActive
-              ? 'bg-primary text-primary-foreground'
-              : data.status === 'completed'
-                ? 'bg-surface text-primary'
-                : data.status === 'error'
-                  ? 'bg-red-50 text-error'
-                  : 'bg-neutral-light text-text-secondary'
+          // Status indicator classes
+          let statusIndicator = ''
+          if (data.status === 'in_progress') {
+            statusIndicator = 'animate-pulse'
+          } else if (data.status === 'completed') {
+            statusIndicator = 'opacity-75'
+          } else if (data.status === 'error') {
+            statusIndicator = 'opacity-50'
+          }
 
           return (
-            <button
+            <Button
               key={stage.key}
               onClick={() => setAIStage(stage.key)}
-              className={`flex-1 rounded-t-lg px-3 py-2 text-xs font-semibold transition-all duration-300 ${
-                isActive
-                  ? 'bg-white text-primary shadow-md border-b-2 border-primary'
-                  : 'text-text-secondary hover:bg-neutral-light'
-              }`}
+              variant={isActive ? "primary" : "secondary"}
+              size="sm"
+              className={`flex-1 text-xs ${statusIndicator}`}
             >
-              <div className={`mx-auto w-max rounded-md px-3 py-1 ${statusClass}`}>
-                {stage.label}
-              </div>
-            </button>
+              {stage.label}
+            </Button>
           )
         })}
       </div>
@@ -106,7 +101,7 @@ export default function AIProgressPanel() {
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between border-t border-neutral-light px-6 py-4 text-xs text-gray-500">
+      <div className="flex items-center justify-between border-t border-neutral-light px-6 py-4 text-xs text-text-secondary">
         <div>
           <span>Status: {formatStageStatus(stageOutputs[activeStage].status)}</span>
           {stageOutputs[activeStage].duration != null && (
@@ -148,14 +143,14 @@ function renderStageContent(stage: any) {
   if (stage.status === 'in_progress' && stage.content) {
     return (
       <div className="space-y-2">
-        <div
-          ref={scrollRef}
-          className="bg-gray-50 rounded-lg p-4 h-96 overflow-y-auto"
-        >
-          <pre className="whitespace-pre-wrap text-sm text-text-primary font-mono leading-relaxed">
-            {stage.content}<span className="animate-pulse text-primary">▊</span>
-          </pre>
-        </div>
+        <Input
+          multiline
+          rows={12}
+          value={stage.content + (stage.status === 'in_progress' ? '▊' : '')}
+          readOnly
+          className="font-mono resize-none leading-relaxed"
+          containerClassName="h-96"
+        />
       </div>
     )
   }
@@ -204,9 +199,14 @@ function renderStageContent(stage: any) {
   // Show content
   if (stage.content) {
     return (
-      <div className="bg-neutral-light rounded-lg p-4 h-96 overflow-y-auto">
-        <pre className="whitespace-pre-wrap text-sm text-text-primary leading-relaxed">{stage.content}</pre>
-      </div>
+      <Input
+        multiline
+        rows={12}
+        value={stage.content}
+        readOnly
+        className="font-mono resize-none leading-relaxed"
+        containerClassName="h-96"
+      />
     )
   }
 

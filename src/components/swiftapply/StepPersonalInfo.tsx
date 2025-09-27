@@ -113,10 +113,10 @@ export default function StepPersonalInfo() {
       <div className="space-y-6">
         {/* Basic Information */}
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+          <h3 className="text-lg font-semibold text-text-primary mb-4">Basic Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-text-primary mb-1">
                 Full Name *
               </label>
               <Input
@@ -128,7 +128,7 @@ export default function StepPersonalInfo() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-text-primary mb-1">
                 Email *
               </label>
               <Input
@@ -140,7 +140,7 @@ export default function StepPersonalInfo() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-text-primary mb-1">
                 Phone
               </label>
               <Input
@@ -151,7 +151,7 @@ export default function StepPersonalInfo() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-text-primary mb-1">
                 Location
               </label>
               <Input
@@ -163,7 +163,7 @@ export default function StepPersonalInfo() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-text-primary mb-1">
                 LinkedIn
               </label>
               <Input
@@ -175,7 +175,7 @@ export default function StepPersonalInfo() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-text-primary mb-1">
                 Website
               </label>
               <Input
@@ -190,10 +190,10 @@ export default function StepPersonalInfo() {
 
         {/* Professional Summary */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-text-primary mb-1">
             Professional Summary
           </label>
-          <p className="text-xs text-gray-500 mb-2">One point per line</p>
+          <p className="text-xs text-text-secondary mb-2">One point per line</p>
           <Input
             multiline
             rows={3}
@@ -206,10 +206,10 @@ export default function StepPersonalInfo() {
         {/* Skills and Languages */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-primary mb-1">
               Technical Skills
             </label>
-            <p className="text-xs text-gray-500 mb-2">One skill per line</p>
+            <p className="text-xs text-text-secondary mb-2">One skill per line</p>
             <Input
               multiline
               rows={4}
@@ -223,10 +223,10 @@ Python"
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-primary mb-1">
               Languages
             </label>
-            <p className="text-xs text-gray-500 mb-2">One language per line</p>
+            <p className="text-xs text-text-secondary mb-2">One language per line</p>
             <Input
               multiline
               rows={4}
@@ -241,7 +241,7 @@ Spanish (Fluent)"
         {/* Education */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Education</h3>
+            <h3 className="text-lg font-semibold text-text-primary">Education</h3>
             <Button
               onClick={addEducation}
               variant="primary"
@@ -252,16 +252,16 @@ Spanish (Fluent)"
           </div>
 
           {formData.education.map((edu, index) => (
-            <div key={index} className="border border-gray-200 rounded-lg p-4 mb-4">
+            <div key={index} className="border border-neutral-mid rounded-lg p-4 mb-4">
               <div className="flex justify-between items-start mb-3">
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-text-primary">
                   Education {index + 1}
                 </span>
                 <Button
                   onClick={() => removeEducation(index)}
                   variant="ghost"
                   size="sm"
-                  className="text-error hover:text-red-700 text-sm"
+                  className="text-error hover:brightness-90 text-sm"
                 >
                   Remove
                 </Button>
@@ -269,7 +269,7 @@ Spanish (Fluent)"
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                  <label className="block text-xs font-medium text-text-secondary mb-1">
                     Degree
                   </label>
                   <Input
@@ -282,7 +282,7 @@ Spanish (Fluent)"
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                  <label className="block text-xs font-medium text-text-secondary mb-1">
                     Institution
                   </label>
                   <Input
@@ -295,7 +295,7 @@ Spanish (Fluent)"
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                  <label className="block text-xs font-medium text-text-secondary mb-1">
                     Year
                   </label>
                   <Input
@@ -308,7 +308,7 @@ Spanish (Fluent)"
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                  <label className="block text-xs font-medium text-text-secondary mb-1">
                     GPA (Optional)
                   </label>
                   <Input
@@ -326,10 +326,10 @@ Spanish (Fluent)"
 
         {/* Certifications */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-text-primary mb-1">
             Certifications
           </label>
-          <p className="text-xs text-gray-500 mb-2">One certification per line</p>
+          <p className="text-xs text-text-secondary mb-2">One certification per line</p>
           <Input
             multiline
             rows={3}
@@ -343,7 +343,7 @@ Google Cloud Professional"
         {/* Custom Modules */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Custom Sections</h3>
+            <h3 className="text-lg font-semibold text-text-primary">Custom Sections</h3>
             <Button
               onClick={addCustomModule}
               variant="primary"
@@ -354,16 +354,16 @@ Google Cloud Professional"
           </div>
 
           {formData.customModules.map((module, index) => (
-            <div key={module.id} className="border border-gray-200 rounded-lg p-4 mb-4">
+            <div key={module.id} className="border border-neutral-mid rounded-lg p-4 mb-4">
               <div className="flex justify-between items-start mb-3">
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-text-primary">
                   Section {index + 1}
                 </span>
                 <Button
                   onClick={() => removeCustomModule(index)}
                   variant="ghost"
                   size="sm"
-                  className="text-error hover:text-red-700 text-sm"
+                  className="text-error hover:brightness-90 text-sm"
                 >
                   Remove
                 </Button>
@@ -371,7 +371,7 @@ Google Cloud Professional"
 
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                  <label className="block text-xs font-medium text-text-secondary mb-1">
                     Section Title
                   </label>
                   <Input
@@ -384,10 +384,10 @@ Google Cloud Professional"
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                  <label className="block text-xs font-medium text-text-secondary mb-1">
                     Content
                   </label>
-                  <p className="text-xs text-gray-500 mb-2">One item per line</p>
+                  <p className="text-xs text-text-secondary mb-2">One item per line</p>
                   <Input
                     multiline
                     rows={3}
@@ -436,9 +436,9 @@ Google Cloud Professional"
 
       {/* Error Messages */}
       {errors.length > 0 && (
-        <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <h4 className="text-sm font-medium text-red-800 mb-2">Please fix the following errors:</h4>
-          <ul className="list-disc list-inside text-sm text-red-700 space-y-1">
+        <div className="mt-6 p-4 bg-error/5 border border-error/20 rounded-lg">
+          <h4 className="text-sm font-medium text-error mb-2">Please fix the following errors:</h4>
+          <ul className="list-disc list-inside text-sm text-error space-y-1">
             {errors.map((error, index) => (
               <li key={index}>{error}</li>
             ))}
@@ -447,7 +447,7 @@ Google Cloud Professional"
       )}
 
       {/* Actions */}
-      <div className="flex justify-end mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200">
+      <div className="flex justify-end mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-neutral-mid">
         <Button
           onClick={handleSaveAndContinue}
           variant="primary"

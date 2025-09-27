@@ -8,6 +8,3 @@
 
 /* Theme systems */
 @import '../styles/themes/index.css';
-
-/* Project-specific themes */
-@import '../styles/projects/swiftapply.css';
