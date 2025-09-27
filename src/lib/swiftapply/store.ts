@@ -81,6 +81,9 @@ interface SwiftApplyState {
   // AI Generation State
   ai: AIGenerationState
 
+  // PDF Preview State
+  pdfPreviewUrl: string | null
+
   // Actions
   setPersonalInfo: (pi: PersonalInfo) => void
   setTemplates: (t: ExperienceTemplate[]) => void
@@ -103,6 +106,9 @@ interface SwiftApplyState {
   updateAIStageData: (stage: AIStageKey, data: Partial<AIStageData>) => void
   setAIGeneratedContent: (content: any) => void
   resetAIState: () => void
+
+  // PDF Preview actions
+  setPdfPreviewUrl: (url: string | null) => void
 }
 
 // Initial AI state
@@ -128,6 +134,7 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
   isSettingsOpen: false,
   settingsStep: 1,
   ai: getInitialAIState(),
+  pdfPreviewUrl: null,
 
   // Core setters
   setPersonalInfo: (personalInfo) => {
@@ -394,5 +401,10 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
     set(state => ({
       ai: getInitialAIState()
     }))
+  },
+
+  // PDF Preview actions
+  setPdfPreviewUrl: (url) => {
+    set({ pdfPreviewUrl: url })
   }
 }))

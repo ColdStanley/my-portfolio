@@ -30,7 +30,9 @@ export default function Header() {
           →
           <span className="px-2 py-1 bg-gray-200 rounded-md">Resume Customization</span>
           →
-          <span className="px-2 py-1 bg-gray-200 rounded-md">PDF Export</span>
+          <span className="px-2 py-1 bg-gray-200 rounded-md">Edit & Preview</span>
+          →
+          <span className="px-2 py-1 bg-gray-200 rounded-md">Download PDF</span>
         </div>
 
         {/* Actions */}

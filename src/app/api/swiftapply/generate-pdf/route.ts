@@ -318,24 +318,24 @@ function generateComprehensiveHTML(data: SwiftApplyPDFRequest): string {
     </div>
   </div>
 
-  ${(validSummary.length > 0 || validTechnicalSkills.length > 0 || validLanguages.length > 0) ? `
-  <!-- Summary and Skills - Two Column -->
+  ${validSummary.length > 0 ? `
+  <!-- Professional Summary - Full Width -->
+  <div class="section no-break">
+    <h2>Professional Summary</h2>
+    <div class="summary">
+      <ul>
+        ${validSummary.map(item => `<li>${item}</li>`).join('')}
+      </ul>
+    </div>
+  </div>
+  ` : ''}
+
+  ${(validTechnicalSkills.length > 0 || validEducation.length > 0 || validCertificates.length > 0 || validLanguages.length > 0) ? `
+  <!-- Skills Left, Education/Certificates/Languages Right -->
   <div class="grid-2">
     <div class="section no-break">
-      ${validSummary.length > 0 ? `
-        <h2>Professional Summary</h2>
-        <div class="summary">
-          <ul>
-            ${validSummary.map(item => `<li>${item}</li>`).join('')}
-          </ul>
-        </div>
-      ` : ''}
-    </div>
-
-    <div class="section no-break">
-      ${(validTechnicalSkills.length > 0 || validLanguages.length > 0) ? `
+      ${validTechnicalSkills.length > 0 ? `
         <h2>Skills</h2>
-        ${validTechnicalSkills.length > 0 ? `
         <div class="skills-content">
           ${(() => {
             const skillsPerLine = 5;
@@ -346,30 +346,9 @@ function generateComprehensiveHTML(data: SwiftApplyPDFRequest): string {
             return lines.map(line => `<div class="skills-line">${line}</div>`).join('');
           })()}
         </div>
-        ` : ''}
-        ${validLanguages.length > 0 ? `
-        <div style="margin-top: 8px;">
-          <h3 style="font-size: 10pt; font-weight: 600; margin-bottom: 4px; color: #111;">Languages</h3>
-          <div class="skills-content">
-            ${(() => {
-              const skillsPerLine = 5;
-              const lines = [];
-              for (let i = 0; i < validLanguages.length; i += skillsPerLine) {
-                lines.push(validLanguages.slice(i, i + skillsPerLine).join(' · '));
-              }
-              return lines.map(line => `<div class="skills-line">${line}</div>`).join('');
-            })()}
-          </div>
-        </div>
-        ` : ''}
       ` : ''}
     </div>
-  </div>
-  ` : ''}
 
-  ${(validEducation.length > 0 || validCertificates.length > 0) ? `
-  <!-- Education and Certifications - Two Column -->
-  <div class="grid-2">
     <div class="section no-break">
       ${validEducation.length > 0 ? `
         <h2>Education</h2>
@@ -382,12 +361,24 @@ function generateComprehensiveHTML(data: SwiftApplyPDFRequest): string {
           </div>
         `).join('')}
       ` : ''}
-    </div>
 
-    <div class="section no-break">
       ${validCertificates.length > 0 ? `
-        <h2>Certifications</h2>
+        <h2 style="margin-top: ${validEducation.length > 0 ? '16px' : '0'};">Certifications</h2>
         ${validCertificates.map(cert => `<div class="cert-item">${cert}</div>`).join('')}
+      ` : ''}
+
+      ${validLanguages.length > 0 ? `
+        <h2 style="margin-top: ${(validEducation.length > 0 || validCertificates.length > 0) ? '16px' : '0'};">Languages</h2>
+        <div class="skills-content">
+          ${(() => {
+            const skillsPerLine = 3;
+            const lines = [];
+            for (let i = 0; i < validLanguages.length; i += skillsPerLine) {
+              lines.push(validLanguages.slice(i, i + skillsPerLine).join(' · '));
+            }
+            return lines.map(line => `<div class="skills-line">${line}</div>`).join('');
+          })()}
+        </div>
       ` : ''}
     </div>
   </div>
@@ -418,51 +409,118 @@ function generateComprehensiveHTML(data: SwiftApplyPDFRequest): string {
 </html>`
 }
 
-// Helper function to format professional work experience (exactly matching JD2CV Full)
+// Helper function to format professional work experience (enhanced for AI-generated content)
 function formatProfessionalExperience(workExperience: string): string {
   if (!workExperience) return ''
 
-  // Split by double newlines to get experience blocks
-  const experienceBlocks = workExperience.split('\n\n').filter(block => block.trim())
+  // Clean up the text and normalize line breaks
+  const cleanedText = workExperience
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .trim()
 
-  return experienceBlocks.map(block => {
+  // Split by patterns that indicate new experience blocks
+  // Look for patterns like "Company Name", "Role at Company", or numbered/lettered sections
+  const experienceBlocks = cleanedText
+    .split(/\n\s*\n+/)  // Split by double+ newlines
+    .filter(block => block.trim())
+    .map(block => block.trim())
+
+  return experienceBlocks.map((block, index) => {
     const lines = block.split('\n').filter(line => line.trim())
     if (lines.length === 0) return ''
 
-    // First line is the header (company | role | time)
-    const headerLine = lines[0].trim()
-    const contentLines = lines.slice(1)
+    // Try to identify header line (usually the first substantial line)
+    let headerLine = lines[0].trim()
+    let contentLines = lines.slice(1)
 
-    // Parse header: try different formats
+    // Enhanced header parsing for AI-generated content
     let company = '', role = '', time = ''
 
+    // Check for common AI-generated patterns
     if (headerLine.includes(' | ')) {
       // Format: Company | Role | Time
       const parts = headerLine.split(' | ').map(p => p.trim())
-      company = parts[0] || 'Unknown Company'
+      company = parts[0] || 'Company'
       role = parts[1] || ''
       time = parts[2] || ''
     } else if (headerLine.includes(' · ')) {
       // Format: Company · Role · Time
       const parts = headerLine.split(' · ').map(p => p.trim())
-      company = parts[0] || 'Unknown Company'
+      company = parts[0] || 'Company'
       role = parts[1] || ''
       time = parts[2] || ''
     } else if (headerLine.includes(' – ')) {
       // Format: Company – Role or Role – Company
       const parts = headerLine.split(' – ').map(p => p.trim())
-      company = parts[0] || 'Unknown Company'
+      company = parts[0] || 'Company'
       role = parts[1] || ''
+    } else if (headerLine.includes(' at ')) {
+      // Format: "Role at Company" or "Position at Company (Time)"
+      const atMatch = headerLine.match(/^(.+?)\s+at\s+(.+?)(?:\s*\((.+?)\))?$/i)
+      if (atMatch) {
+        role = atMatch[1].trim()
+        company = atMatch[2].trim()
+        time = atMatch[3]?.trim() || ''
+      } else {
+        role = headerLine
+        company = `Experience ${index + 1}`
+      }
+    } else if (headerLine.includes(' - ')) {
+      // Format: Company - Role or Role - Company
+      const parts = headerLine.split(' - ').map(p => p.trim())
+      // Heuristic: if first part contains common company words, treat as company
+      if (parts[0].match(/\b(Inc|LLC|Corp|Company|Ltd|Group|Technologies|Tech|Solutions|Systems)\b/i)) {
+        company = parts[0]
+        role = parts[1] || ''
+      } else {
+        role = parts[0]
+        company = parts[1] || `Experience ${index + 1}`
+      }
     } else {
-      // Single line, treat as role
+      // No clear delimiter - use as role, generate generic company name
       role = headerLine
-      company = 'Company'
+      company = `Experience ${index + 1}`
     }
 
-    // Process bullet points
-    const bullets = contentLines.map(line => {
-      return line.replace(/^[•·\-\*]\s*/, '').trim()
-    }).filter(line => line.length > 0)
+    // Enhanced bullet point processing for AI content
+    const bullets = []
+
+    // Check if content lines start with numbered points (1., 2., etc.)
+    const numberedPattern = /^\d+\.\s*/
+    // Check if content lines start with bullet characters
+    const bulletPattern = /^[•·\-\*]\s*/
+
+    for (const line of contentLines) {
+      const trimmedLine = line.trim()
+      if (!trimmedLine) continue
+
+      // Remove numbering or bullet points and clean up
+      let cleanLine = trimmedLine
+        .replace(numberedPattern, '')
+        .replace(bulletPattern, '')
+        .trim()
+
+      // Skip very short lines (likely formatting artifacts)
+      if (cleanLine.length < 10) continue
+
+      bullets.push(cleanLine)
+    }
+
+    // If no bullets found in content lines, but we have a multi-line block,
+    // treat the entire content as one experience description
+    if (bullets.length === 0 && contentLines.length > 0) {
+      const fullContent = contentLines.join(' ').trim()
+      if (fullContent.length > 10) {
+        bullets.push(fullContent)
+      }
+    }
+
+    // Ensure we have meaningful content
+    if (bullets.length === 0 && lines.length === 1) {
+      // Single line case - might be a brief description
+      bullets.push('Professional experience and responsibilities')
+    }
 
     return `
     <div class="exp">
