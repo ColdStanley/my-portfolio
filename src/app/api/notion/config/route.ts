@@ -1,25 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { promises as fs } from 'fs'
-import path from 'path'
+import { createClient } from '@supabase/supabase-js'
 
-// Configuration storage directory
-const CONFIG_DIR = path.join(process.cwd(), 'data', 'notion-configs')
-
-// Ensure config directory exists
-async function ensureConfigDir() {
-  try {
-    await fs.access(CONFIG_DIR)
-  } catch {
-    await fs.mkdir(CONFIG_DIR, { recursive: true })
-  }
-}
-
-// Helper function to get config file path
-function getConfigPath(key: string) {
-  // Sanitize the key to be filesystem-safe
-  const sanitizedKey = key.replace(/[^a-zA-Z0-9-]/g, '')
-  return path.join(CONFIG_DIR, `${sanitizedKey}.json`)
-}
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 // GET: Retrieve configuration
 export async function GET(request: NextRequest) {
@@ -35,24 +20,37 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const key = `${city.toLowerCase()}-${name.toLowerCase().replace(/\s+/g, '')}`
-    const configPath = getConfigPath(key)
+    const { data, error } = await supabase
+      .from('notion_configs')
+      .select('*')
+      .eq('city', city)
+      .eq('name', name)
+      .single()
 
-    try {
-      const configData = await fs.readFile(configPath, 'utf-8')
-      const config = JSON.parse(configData)
-
-      return NextResponse.json({
-        success: true,
-        config
-      })
-    } catch (error) {
-      // Config file doesn't exist
-      return NextResponse.json({
-        success: false,
-        error: 'Configuration not found'
-      }, { status: 404 })
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No rows found
+        return NextResponse.json({
+          success: false,
+          error: 'Configuration not found'
+        }, { status: 404 })
+      }
+      throw error
     }
+
+    const config = {
+      city: data.city,
+      name: data.name,
+      apiKey: data.api_key,
+      databaseId: data.database_id,
+      theme: data.theme,
+      updatedAt: data.updated_at
+    }
+
+    return NextResponse.json({
+      success: true,
+      config
+    })
   } catch (error) {
     console.error('Error retrieving config:', error)
     return NextResponse.json(
@@ -75,21 +73,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    await ensureConfigDir()
+    const { data, error } = await supabase
+      .from('notion_configs')
+      .upsert({
+        city,
+        name,
+        api_key: apiKey,
+        database_id: databaseId,
+        theme: theme || 'pink',
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single()
 
-    const key = `${city.toLowerCase()}-${name.toLowerCase().replace(/\s+/g, '')}`
-    const configPath = getConfigPath(key)
-
-    const config = {
-      city,
-      name,
-      apiKey,
-      databaseId,
-      theme: theme || 'pink',
-      updatedAt: new Date().toISOString()
+    if (error) {
+      throw error
     }
 
-    await fs.writeFile(configPath, JSON.stringify(config, null, 2))
+    const key = `${city.toLowerCase()}-${name.toLowerCase().replace(/\s+/g, '')}`
 
     return NextResponse.json({
       success: true,
@@ -119,21 +120,20 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const key = `${city.toLowerCase()}-${name.toLowerCase().replace(/\s+/g, '')}`
-    const configPath = getConfigPath(key)
+    const { error } = await supabase
+      .from('notion_configs')
+      .delete()
+      .eq('city', city)
+      .eq('name', name)
 
-    try {
-      await fs.unlink(configPath)
-      return NextResponse.json({
-        success: true,
-        message: 'Configuration deleted successfully'
-      })
-    } catch (error) {
-      return NextResponse.json({
-        success: false,
-        error: 'Configuration not found'
-      }, { status: 404 })
+    if (error) {
+      throw error
     }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Configuration deleted successfully'
+    })
   } catch (error) {
     console.error('Error deleting config:', error)
     return NextResponse.json(
