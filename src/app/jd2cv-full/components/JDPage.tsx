@@ -3,15 +3,11 @@ import { createPortal } from 'react-dom'
 import { JDRecord, CreateJDRequest, APPLICATION_STAGES } from '@/shared/types'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import { useJDFilterStore } from '@/store/useJDFilterStore'
-import { useBatchAutoCVStore } from '@/store/useBatchAutoCVStore'
 import { useBatchSelectionStore } from '@/store/useBatchSelectionStore'
 import InlineEditField from './InlineEditField'
 import AddJDPopover from './AddJDPopover'
 import ViewJDTooltip from './ViewJDTooltip'
-import DeleteTooltip from './DeleteTooltip'
-import CommentTooltip from './CommentTooltip'
 import CommentInlineEdit from './CommentInlineEdit'
-import EnhancedBatchProgressModal from './EnhancedBatchProgressModal'
 import AppliedStatsFloatingButton from './AppliedStatsFloatingButton'
 import LightningButtonV2 from './LightningButtonV2'
 import LangChainButtonV2 from './LangChainButtonV2'
@@ -29,7 +25,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
   const [loading, setLoading] = useState(true)
   const [showAddPopover, setShowAddPopover] = useState(false)
   const [viewingJD, setViewingJD] = useState<JDRecord | null>(null)
-  const [deleteJD, setDeleteJD] = useState<JDRecord | null>(null)
   const [deleteButtonRef, setDeleteButtonRef] = useState<HTMLElement | null>(null)
   const [searchInput, setSearchInput] = useState('')
   
@@ -39,24 +34,12 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
   // Global Personal Info state
   const [showPersonalInfoTooltip, setShowPersonalInfoTooltip] = useState(false)
   
-  // Auto CV automation states
-  const [finalCVState, setFinalCVState] = useState({
-    isProcessing: false,
-    progress: 0,
-    currentStep: '',
-    processingJDId: null as string | null
-  })
-  const [showProgressTooltip, setShowProgressTooltip] = useState(false)
-  const [showBatchProgressModal, setShowBatchProgressModal] = useState(false)
   
   // Workspace store for Select functionality
-  const { selectedJD, setSelectedJD } = useWorkspaceStore()
   
   // Global filter store
   const { filters, sortOrder, handleFilterChange, handleSortChange, clearFilters } = useJDFilterStore()
 
-  // Batch Auto CV store
-  const { isProcessing: isBatchProcessing } = useBatchAutoCVStore()
   
   // Batch selection store
   const { 
@@ -137,220 +120,11 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
     }
   }
 
-  const handleDeleteJD = async (jd: JDRecord) => {
-    try {
-      // Find the JD card element
-      const jdCard = document.getElementById(`jd-card-${jd.id}`)
-      
-      if (jdCard) {
-        // Simple, elegant shrink animation
-        jdCard.style.transition = 'all 250ms ease-out'
-        jdCard.style.transform = 'scale(0)'
-        jdCard.style.opacity = '0'
-        
-        // Wait for animation to complete before actual deletion
-        setTimeout(async () => {
-          const response = await fetch(`/api/jds/${jd.id}?user_id=${user.id}`, {
-            method: 'DELETE'
-          })
-
-          const result = await response.json()
-          if (result.success) {
-            setJds(prev => prev.filter(j => j.id !== jd.id))
-            setDeleteJD(null)
-          } else {
-            // Restore card if deletion failed
-            jdCard.style.opacity = '1'
-            jdCard.style.transform = 'scale(1)'
-            throw new Error(result.error || 'Delete failed')
-          }
-        }, 1400)
-      } else {
-        // Fallback: direct deletion without animation
-        const response = await fetch(`/api/jds/${jd.id}?user_id=${user.id}`, {
-          method: 'DELETE'
-        })
-
-        const result = await response.json()
-        if (result.success) {
-          setJds(prev => prev.filter(j => j.id !== jd.id))
-          setDeleteJD(null)
-        } else {
-          throw new Error(result.error || 'Delete failed')
-        }
-      }
-    } catch (error) {
-      console.error('Error deleting JD:', error)
-      alert('Failed to delete JD. Please try again.')
-    }
-  }
 
   const handleClearCVFile = async (id: string, field: 'cv_pdf_url' | 'cv_pdf_filename') => {
     await handleUpdateField(id, field, '')
   }
 
-  const handleSelectForWorkspace = (jd: JDRecord, e?: React.MouseEvent) => {
-    e?.stopPropagation() // Prevent any parent click handlers
-    const button = e?.target as HTMLElement
-    const actualButton = button?.closest('button') as HTMLElement
-    
-    if (selectedJD?.id === jd.id) {
-      // Removing from workspace - reverse flying animation
-      setSelectedJD(null)
-      
-      if (actualButton) {
-        const buttonRect = actualButton.getBoundingClientRect()
-        const tabElement = document.getElementById('tab-workspace')
-        
-        if (tabElement) {
-          const tabRect = tabElement.getBoundingClientRect()
-          
-          // Create flying clone starting from tab position
-          const clone = actualButton.cloneNode(true) as HTMLElement
-          clone.style.position = 'fixed'
-          clone.style.zIndex = '9999'
-          clone.style.pointerEvents = 'none'
-          clone.style.left = `${tabRect.left + tabRect.width / 2 - buttonRect.width / 2}px`
-          clone.style.top = `${tabRect.top + tabRect.height / 2 - buttonRect.height / 2}px`
-          clone.style.width = `${buttonRect.width}px`
-          clone.style.height = `${buttonRect.height}px`
-          clone.style.transform = 'scale(0.3) rotate(0deg)'
-          clone.style.opacity = '0.3'
-          clone.style.boxShadow = '0 8px 25px rgba(139, 92, 246, 0.6), 0 4px 15px rgba(0, 0, 0, 0.3)'
-          clone.style.borderRadius = '8px'
-          clone.style.transition = 'all 1400ms cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-          
-          // Update button text to show "Next Step" in clone
-          const textSpan = clone.querySelector('span')
-          if (textSpan) {
-            textSpan.textContent = 'Next Step'
-          }
-          
-          document.body.appendChild(clone)
-          
-          // Start continuous rotation animation (reverse direction)
-          let rotationAngle = 0
-          const rotationInterval = setInterval(() => {
-            rotationAngle -= 8 // Reverse rotation
-            if (clone.parentNode) {
-              const currentTransform = clone.style.transform
-              const scaleMatch = currentTransform.match(/scale\(([^)]+)\)/)
-              const currentScale = scaleMatch ? scaleMatch[1] : '1'
-              clone.style.transform = `scale(${currentScale}) rotate(${rotationAngle}deg)`
-            }
-          }, 16) // 60fps smooth rotation
-          
-          // Animate back to button position
-          setTimeout(() => {
-            clone.style.left = `${buttonRect.left}px`
-            clone.style.top = `${buttonRect.top}px`
-            clone.style.width = `${buttonRect.width}px`
-            clone.style.height = `${buttonRect.height}px`
-            const currentRotation = rotationAngle
-            clone.style.transform = `scale(1) rotate(${currentRotation}deg)`
-            clone.style.opacity = '0.95'
-            clone.style.boxShadow = '0 20px 60px rgba(139, 92, 246, 0.4), 0 8px 30px rgba(0, 0, 0, 0.2)'
-          }, 50)
-          
-          // Final fade out phase
-          setTimeout(() => {
-            clone.style.opacity = '0'
-            const currentRotation = rotationAngle
-            clone.style.transform = `scale(0.02) rotate(${currentRotation}deg)`
-          }, 1000)
-          
-          // Clean up rotation interval
-          setTimeout(() => {
-            clearInterval(rotationInterval)
-          }, 1400)
-          
-          // Clean up
-          setTimeout(() => {
-            if (clone.parentNode) {
-              clone.parentNode.removeChild(clone)
-            }
-          }, 1400)
-        }
-      }
-    } else {
-      // Adding to workspace - original flying animation
-      setSelectedJD(jd)
-      
-      if (actualButton) {
-        const buttonRect = actualButton.getBoundingClientRect()
-        const tabElement = document.getElementById('tab-workspace')
-        
-        if (tabElement) {
-          // Create flying clone of the button only (not the whole card)
-          const clone = actualButton.cloneNode(true) as HTMLElement
-          clone.style.position = 'fixed'
-          clone.style.zIndex = '9999'
-          clone.style.pointerEvents = 'none'
-          clone.style.left = `${buttonRect.left}px`
-          clone.style.top = `${buttonRect.top}px`
-          clone.style.width = `${buttonRect.width}px`
-          clone.style.height = `${buttonRect.height}px`
-          clone.style.transform = 'scale(1) rotate(0deg)'
-          clone.style.opacity = '0.95'
-          clone.style.boxShadow = '0 20px 60px rgba(139, 92, 246, 0.4), 0 8px 30px rgba(0, 0, 0, 0.2)'
-          clone.style.borderRadius = '8px'
-          clone.style.transition = 'all 1400ms cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-          
-          // Update button text to show "In Workspace" in clone
-          const textSpan = clone.querySelector('span')
-          if (textSpan) {
-            textSpan.textContent = 'In Workspace'
-          }
-          
-          document.body.appendChild(clone)
-          
-          // Start continuous rotation animation
-          let rotationAngle = 0
-          const rotationInterval = setInterval(() => {
-            rotationAngle += 8
-            if (clone.parentNode) {
-              const currentTransform = clone.style.transform
-              const scaleMatch = currentTransform.match(/scale\(([^)]+)\)/)
-              const currentScale = scaleMatch ? scaleMatch[1] : '1'
-              clone.style.transform = `scale(${currentScale}) rotate(${rotationAngle}deg)`
-            }
-          }, 16) // 60fps smooth rotation
-          
-          // Enhanced animation to tab
-          const tabRect = tabElement.getBoundingClientRect()
-          setTimeout(() => {
-            clone.style.left = `${tabRect.left + tabRect.width / 2 - buttonRect.width / 2}px`
-            clone.style.top = `${tabRect.top + tabRect.height / 2 - buttonRect.height / 2}px`
-            clone.style.width = `${buttonRect.width}px`
-            clone.style.height = `${buttonRect.height}px`
-            const currentRotation = rotationAngle
-            clone.style.transform = `scale(0.3) rotate(${currentRotation}deg)`
-            clone.style.opacity = '0.3'
-            clone.style.boxShadow = '0 8px 25px rgba(139, 92, 246, 0.6), 0 4px 15px rgba(0, 0, 0, 0.3)'
-          }, 50)
-          
-          // Final fade out phase
-          setTimeout(() => {
-            clone.style.opacity = '0'
-            const currentRotation = rotationAngle
-            clone.style.transform = `scale(0.02) rotate(${currentRotation}deg)`
-          }, 1000)
-          
-          // Clean up rotation interval
-          setTimeout(() => {
-            clearInterval(rotationInterval)
-          }, 1400)
-          
-          // Clean up
-          setTimeout(() => {
-            if (clone.parentNode) {
-              clone.parentNode.removeChild(clone)
-            }
-          }, 1400)
-        }
-      }
-    }
-  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString()
@@ -437,112 +211,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
 
   // Filter and sort functions now come from useJDFilterStore
 
-  // Handle Auto CV automation
-  const handleFinalCV = async (jd: JDRecord, e: React.MouseEvent) => {
-    e.stopPropagation()
-    
-    // If already processing, show tooltip
-    if (finalCVState.isProcessing) {
-      setShowProgressTooltip(true)
-      return
-    }
 
-    // Check prerequisites
-    const pdfSetupData = localStorage.getItem(`oneclick-pdf-data-${user.id}`)
-    if (!pdfSetupData) {
-      alert('Please configure PDF Setup first in the Workspace tab before using Auto CV automation.')
-      return
-    }
-
-    // Start automation
-    setFinalCVState({
-      isProcessing: true,
-      progress: 0,
-      currentStep: 'Starting...',
-      processingJDId: jd.id
-    })
-    setShowProgressTooltip(true)
-
-    try {
-      // Step 1: Analyze JD (20%)
-      await step1_AnalyzeJD(jd)
-      
-      // Step 2: Import Starred Experiences (40%)
-      const starredExperiences = await step2_ImportStarred()
-      
-      // Step 3: Batch Optimize (60%)
-      const optimizedData = await step3_BatchOptimize(starredExperiences, jd)
-      
-      // Step 4: Batch Send to PDF (80%)
-      const pdfModules = await step4_BatchSendToPDF(optimizedData)
-      
-      // Step 5: Generate PDF (100%)
-      await step5_GeneratePDF(pdfModules, jd)
-      
-      // Workflow completed successfully
-      
-      // Reset state
-      setFinalCVState({
-        isProcessing: false,
-        progress: 100,
-        currentStep: 'Completed',
-        processingJDId: null
-      })
-      
-      // Close tooltip and reset progress after a moment
-      setTimeout(() => {
-        setShowProgressTooltip(false)
-        setFinalCVState(prev => ({ ...prev, progress: 0, currentStep: '' }))
-      }, 2000)
-      
-    } catch (error: any) {
-      console.error('❌ [Final CV] Workflow failed:', error)
-      alert(`Auto CV automation failed: ${error.message || 'Unknown error'}`)
-      
-      // Reset state and close tooltip
-      setFinalCVState({
-        isProcessing: false,
-        progress: 0,
-        currentStep: '',
-        processingJDId: null
-      })
-      setShowProgressTooltip(false)
-    }
-  }
-
-  // Cancel workflow
-  const handleCancelWorkflow = () => {
-    setFinalCVState({
-      isProcessing: false,
-      progress: 0,
-      currentStep: '',
-      processingJDId: null
-    })
-    setShowProgressTooltip(false)
-  }
-
-  // Step 1: Analyze JD
-  const step1_AnalyzeJD = async (jd: JDRecord) => {
-    setFinalCVState(prev => ({ ...prev, progress: 5, currentStep: 'Analyzing JD...' }))
-    
-    const response = await fetch('/api/jd2cv-full/analyze-jd', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jdId: jd.id,
-        userId: user.id
-      })
-    })
-    
-    if (!response.ok) {
-      throw new Error('Failed to analyze JD')
-    }
-    
-    const result = await response.json()
-    setFinalCVState(prev => ({ ...prev, progress: 20 }))
-    
-    return result
-  }
 
   // Parse time and extract end year for sorting
   const getEndYear = (timeString: string | null): number => {
@@ -601,145 +270,8 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
     return starredExperiences
   }
 
-  // Step 3: Batch Optimize
-  const step3_BatchOptimize = async (experiences: any[], jd: JDRecord) => {
-    setFinalCVState(prev => ({ ...prev, progress: 45, currentStep: 'Optimizing...' }))
-    
-    const optimizedData: any = {}
-    
-    for (let i = 0; i < experiences.length; i++) {
-      const experience = experiences[i]
-      
-      // Update progress within this step
-      const stepProgress = 40 + ((i + 1) / experiences.length) * 20
-      setFinalCVState(prev => ({ ...prev, progress: stepProgress }))
-      
-      const response = await fetch('/api/jd2cv-full/optimize-cv', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          experienceId: experience.id,
-          jdKeywords: jd.keywords_from_sentences,
-          userId: user.id
-        })
-      })
-      
-      if (!response.ok) {
-        throw new Error(`Failed to optimize experience: ${experience.title}`)
-      }
-      
-      const result = await response.json()
-      optimizedData[experience.id] = {
-        originalExperience: experience,  // 添加完整的experience对象
-        optimizedContent: result.data.optimizedContent,
-        userKeywords: result.data.jdKeywords || [],
-        isGenerated: true,
-        isGenerating: false
-      }
-    }
-    
-    setFinalCVState(prev => ({ ...prev, progress: 60 }))
-    
-    return { experiences, optimizedData }
-  }
 
-  // Step 4: Batch Send to PDF
-  const step4_BatchSendToPDF = async ({ experiences, optimizedData }: any) => {
-    setFinalCVState(prev => ({ ...prev, progress: 65, currentStep: 'Preparing PDF...' }))
-    
-    const pdfModules = []
-    
-    for (let i = 0; i < experiences.length; i++) {
-      const experience = experiences[i]
-      const optimization = optimizedData[experience.id]
-      
-      // Update progress within this step
-      const stepProgress = 60 + ((i + 1) / experiences.length) * 20
-      setFinalCVState(prev => ({ ...prev, progress: stepProgress }))
-      
-      const draft = {
-        id: `${experience.id}-optimized-${Date.now()}`,
-        title: generateModuleTitle(experience.company, experience.title, experience.time),
-        items: extractBullets(optimization.optimizedContent),
-        sourceType: 'optimized' as const,
-        sourceIds: {
-          experienceId: experience.id,
-          optimizationId: `${experience.id}-opt`
-        },
-        // Preserve company information for PDF generation
-        company: experience.company || 'Unknown Company'
-      }
-      
-      pdfModules.push(draft)
-    }
-    
-    setFinalCVState(prev => ({ ...prev, progress: 80 }))
-    
-    return pdfModules
-  }
 
-  // Step 5: Generate PDF
-  const step5_GeneratePDF = async (pdfModules: any[], jd: JDRecord) => {
-    setFinalCVState(prev => ({ ...prev, progress: 85, currentStep: 'Generating PDF...' }))
-    
-    // Get PDF config
-    const storedConfig = localStorage.getItem(`oneclick-pdf-data-${user.id}`)
-    if (!storedConfig) {
-      throw new Error('PDF configuration not found')
-    }
-    
-    const config = JSON.parse(storedConfig)
-    
-    // Prepare experience modules for PDF
-    const experienceModules = pdfModules.map(module => ({
-      id: module.sourceIds?.experienceId || module.id,
-      title: module.title,
-      company: module.company || 'Unknown Company',
-      content: module.items.join('\n• '),
-      isOptimized: module.sourceType === 'optimized'
-    }))
-    
-    setFinalCVState(prev => ({ ...prev, progress: 90 }))
-    
-    // Call PDF generation API
-    const response = await fetch('/api/jd2cv-full/generate-pdf', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        config,
-        experienceModules,
-        jdId: jd.id,
-        userId: user.id
-      })
-    })
-    
-    setFinalCVState(prev => ({ ...prev, progress: 95 }))
-    
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Failed to generate PDF')
-    }
-    
-    // Download PDF
-    const blob = await response.blob()
-    // Create filename with JD info
-    const safeName = (config.personalInfo.fullName || 'CV').replace(/[^a-zA-Z0-9\s]/g, '')
-    const safeCompany = (jd.company || 'Company').replace(/[^a-zA-Z0-9\s]/g, '')
-    const safeTitle = (jd.title || 'Position').replace(/[^a-zA-Z0-9\s]/g, '')
-    const fileName = `${safeName} - ${safeCompany} - ${safeTitle}.pdf`
-
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.style.display = 'none'
-    a.href = url
-    a.download = fileName
-    document.body.appendChild(a)
-    a.click()
-    window.URL.revokeObjectURL(url)
-    document.body.removeChild(a)
-    
-    setFinalCVState(prev => ({ ...prev, progress: 100 }))
-  }
 
   // PDF Section Component
   function PDFSection({ jd, onUpdate }: { jd: any, onUpdate: (id: string, field: string, value: string) => void }) {
@@ -857,155 +389,8 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
     )
   }
 
-  // Handle Batch Auto CV automation - 新增批量处理函数
-  const handleBatchAutoCV = async () => {
-    if (selectedJDIds.size === 0 || isBatchProcessing) return
 
-    // Show batch progress modal
-    setShowBatchProgressModal(true)
 
-    const { startBatchProcess, updateProgress, completeJD, failJD, resetState } = useBatchAutoCVStore.getState()
-
-    try {
-      // 获取PDF配置
-      const pdfSetupData = localStorage.getItem(`oneclick-pdf-data-${user.id}`)
-      if (!pdfSetupData) {
-        alert('Please configure PDF Setup first in the Workspace tab before using Batch Auto CV.')
-        return
-      }
-
-      const config = JSON.parse(pdfSetupData)
-      
-      // 获取starred experiences IDs
-      const getStarredIds = () => {
-        const starred = localStorage.getItem('starred-experiences')
-        if (!starred) return []
-        const starredObj = JSON.parse(starred)
-        return Object.keys(starredObj).filter(id => starredObj[id])
-      }
-
-      const starredIds = getStarredIds()
-      if (starredIds.length === 0) {
-        alert('No starred experiences found. Please star some experiences first in the CV tab.')
-        return
-      }
-
-      // 开始批量处理
-      const selectedJDsArray = Array.from(selectedJDIds)
-      startBatchProcess(selectedJDsArray)
-      
-      // 获取选中的JD记录
-      const selectedJDs = jds.filter(jd => selectedJDIds.has(jd.id))
-      
-      // 逐个处理JD，复制现有Auto CV的逐步处理方式
-      for (let i = 0; i < selectedJDs.length; i++) {
-        const jd = selectedJDs[i]
-        const currentProgress = (i / selectedJDs.length) * 100
-        
-        try {
-          // 更新当前处理的JD
-          updateProgress({
-            currentJDIndex: i,
-            currentJD: jd,
-            currentStep: `Processing ${jd.title}...`,
-            progress: currentProgress
-          })
-          
-          // 调用单个JD的Auto CV API，复制现有Auto CV逻辑
-          await processSingleJD(jd, starredIds, config)
-          
-          // 标记完成
-          completeJD(jd.id)
-          
-        } catch (error: any) {
-          console.error(`Failed to process JD ${jd.id}:`, error)
-          failJD(jd, error.message)
-        }
-      }
-      
-      // 最终完成状态
-      updateProgress({
-        currentStep: `Batch processing completed!`,
-        progress: 100
-      })
-
-      // 3秒后重置状态
-      setTimeout(() => {
-        resetState()
-        clearSelection() // 清除选择
-      }, 3000)
-
-    } catch (error: any) {
-      console.error('❌ [Batch Auto CV] Error:', error)
-      alert(`Batch Auto CV failed: ${error.message}`)
-      resetState()
-    }
-  }
-
-  // 批量专用的JD分析函数 - 不更新单个Auto CV状态
-  const batchStep1_AnalyzeJD = async (jd: JDRecord) => {
-    try {
-      const response = await fetch('/api/jd2cv-full/analyze-jd', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jdId: jd.id,
-          userId: user.id
-        })
-      })
-      
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('❌ Analyze JD API error:', {
-          status: response.status,
-          statusText: response.statusText,
-          errorText: errorText.substring(0, 200) // 只显示前200字符
-        })
-        throw new Error(`API Error ${response.status}: ${response.statusText}`)
-      }
-      
-      const contentType = response.headers.get('content-type')
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text()
-        console.error('❌ Non-JSON response:', {
-          contentType,
-          bodyPreview: text.substring(0, 200)
-        })
-        throw new Error('API returned non-JSON response')
-      }
-      
-      const result = await response.json()
-      return result
-    } catch (error: any) {
-      console.error('❌ batchStep1_AnalyzeJD error:', error)
-      throw new Error(`Failed to analyze JD "${jd.title}": ${error.message}`)
-    }
-  }
-
-  // 批量处理单个JD - 完全复制现有Auto CV的逻辑
-  const processSingleJD = async (jd: JDRecord, starredIds: string[], config: any) => {
-    // Step 1: Analyze JD (批量版本，不更新单个状态)
-    await batchStep1_AnalyzeJD(jd)
-    
-    // Step 2: Import Starred Experiences  
-    const allExperiences = await fetchAllExperiences()
-    const starredExperiences = allExperiences
-      .filter((exp: any) => starredIds.includes(exp.id))
-      .sort((a: any, b: any) => {
-        const endYearA = getEndYear(a.time)
-        const endYearB = getEndYear(b.time)
-        return endYearB - endYearA
-      })
-    
-    // Step 3: Batch Optimize
-    const optimizedData = await step3_BatchOptimize(starredExperiences, jd)
-    
-    // Step 4: Batch Send to PDF
-    const pdfModules = await step4_BatchSendToPDF(optimizedData)
-    
-    // Step 5: Generate PDF
-    await step5_GeneratePDF(pdfModules, jd)
-  }
 
   // 获取所有experiences的辅助函数
   const fetchAllExperiences = async () => {
@@ -1343,25 +728,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
             </div>
             <div className="flex gap-3">
               <button
-                onClick={() => handleBatchAutoCV()}
-                disabled={isBatchProcessing}
-                className="px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300 text-white rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2"
-              >
-                {isBatchProcessing ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b border-white"></div>
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                    Batch Auto CV
-                  </>
-                )}
-              </button>
-              <button
                 onClick={() => {
                   // TODO: 添加批量删除功能
                   if (confirm(`Are you sure you want to delete ${getSelectedCount()} selected JDs?`)) {
@@ -1458,52 +824,9 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                             />
                           </div>
                         ) : (
-                          <button
-                            onClick={(e) => handleSelectForWorkspace(jd, e)}
-                            className={`w-full flex-1 rounded-lg font-medium text-xs transition-all duration-300 inline-flex items-center justify-center ${
-                              selectedJD?.id === jd.id
-                                ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-lg scale-105'
-                                : 'bg-gray-100 hover:bg-purple-50 text-gray-600 hover:text-purple-600 border border-gray-200 hover:border-purple-300'
-                            }`}
-                            title={selectedJD?.id === jd.id ? 'Selected for Workspace' : 'Select for Workspace'}
-                          >
-                            {selectedJD?.id === jd.id ? (
-                              <span className="text-xs font-medium">In Workspace</span>
-                            ) : (
-                              <span className="text-xs font-medium">Next Step</span>
-                            )}
-                          </button>
+                          <div className="w-full flex-1"></div>
                         )}
                         
-                        {/* Final CV Button - Bottom Half */}
-                        <button
-                          onClick={(e) => handleFinalCV(jd, e)}
-                          disabled={finalCVState.isProcessing && finalCVState.processingJDId !== jd.id}
-                          className={`w-full flex-1 rounded-lg font-medium text-xs transition-all duration-300 inline-flex items-center justify-center relative overflow-hidden ${
-                            finalCVState.isProcessing && finalCVState.processingJDId === jd.id
-                              ? 'bg-purple-500 hover:bg-purple-600 text-white'
-                              : finalCVState.isProcessing && finalCVState.processingJDId !== jd.id
-                              ? 'bg-gray-400 cursor-not-allowed text-white'
-                              : 'bg-purple-600 hover:bg-purple-700 text-white'
-                          }`}
-                          title={
-                            finalCVState.isProcessing && finalCVState.processingJDId === jd.id
-                              ? 'View Progress'
-                              : finalCVState.isProcessing && finalCVState.processingJDId !== jd.id
-                              ? 'Another JD is being processed...'
-                              : 'Generate Auto CV automatically'
-                          }
-                        >
-                          {/* Button Content */}
-                          <span className="relative z-10">
-                            {finalCVState.isProcessing && finalCVState.processingJDId === jd.id
-                              ? 'View'
-                              : finalCVState.isProcessing && finalCVState.processingJDId !== jd.id
-                              ? 'Wait'
-                              : 'Auto CV'
-                            }
-                          </span>
-                        </button>
                       </div>
                     </div>
 
@@ -1655,18 +978,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                               <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/>
                             </svg>
                           </button>
-                          <button
-                            onClick={(e) => {
-                              setDeleteButtonRef(e.currentTarget)
-                              setDeleteJD(jd)
-                            }}
-                            className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors border border-transparent"
-                            title="Delete JD"
-                          >
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                            </svg>
-                          </button>
                         </div>
                         
                         {/* Second Actions Row - V2 buttons */}
@@ -1761,40 +1072,8 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
         />
       )}
 
-      {/* Delete Confirmation Tooltip */}
-      {deleteJD && (
-        <DeleteTooltip
-          isOpen={true}
-          onClose={() => {
-            setDeleteJD(null)
-            setDeleteButtonRef(null)
-          }}
-          onConfirm={() => handleDeleteJD(deleteJD)}
-          title={`${deleteJD.title} at ${deleteJD.company}`}
-          triggerElement={deleteButtonRef}
-        />
-      )}
 
-      {/* Auto CV Progress Tooltip */}
-      {showProgressTooltip && (
-        <ProgressTooltip
-          isOpen={showProgressTooltip}
-          onClose={handleCancelWorkflow}
-          currentStep={finalCVState.currentStep}
-          isProcessing={finalCVState.isProcessing}
-        />
-      )}
 
-      {/* Enhanced Batch Progress Modal */}
-      <EnhancedBatchProgressModal
-        isOpen={showBatchProgressModal}
-        onClose={() => {
-          setShowBatchProgressModal(false)
-          if (!isBatchProcessing) {
-            useBatchAutoCVStore.getState().resetState()
-          }
-        }}
-      />
 
       {/* Global Personal Info Tooltip */}
       <PersonalInfoTooltipV2 
@@ -1808,139 +1087,3 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
   )
 }
 
-// Progress Tooltip Component
-interface ProgressTooltipProps {
-  isOpen: boolean
-  onClose: () => void
-  currentStep: string
-  isProcessing: boolean
-}
-
-function ProgressTooltip({ isOpen, onClose, currentStep, isProcessing }: ProgressTooltipProps) {
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  if (!mounted) return null
-
-  const steps = [
-    { key: 'Starting...', label: 'Starting workflow', icon: '○' },
-    { key: 'Analyzing JD...', label: 'Analyzing job description', icon: '○' },
-    { key: 'Importing starred...', label: 'Importing starred experiences', icon: '○' },
-    { key: 'Optimizing...', label: 'Optimizing content with AI', icon: '○' },
-    { key: 'Preparing PDF...', label: 'Preparing PDF modules', icon: '○' },
-    { key: 'Generating PDF...', label: 'Generating final PDF', icon: '○' },
-    { key: 'Completed', label: 'Workflow completed', icon: '○' }
-  ]
-
-  const getCurrentStepIndex = () => {
-    const index = steps.findIndex(step => step.key === currentStep)
-    return index === -1 ? 0 : index
-  }
-
-  const currentStepIndex = getCurrentStepIndex()
-
-  const getStepStatus = (stepIndex: number) => {
-    if (stepIndex < currentStepIndex) return 'completed'
-    if (stepIndex === currentStepIndex && isProcessing) return 'current'
-    if (stepIndex === currentStepIndex && !isProcessing && currentStep === 'Completed') return 'completed'
-    return 'pending'
-  }
-
-  return createPortal(
-    <div 
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm transition-all duration-300 ${
-        isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-      }`}
-      onClick={onClose}
-    >
-      <div 
-        className={`bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 max-w-md w-full mx-4 transform transition-all duration-300 ${
-          isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'
-        }`}
-        style={{
-          boxShadow: '0 20px 60px rgba(139, 92, 246, 0.15), 0 8px 30px rgba(0, 0, 0, 0.1)'
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100/50">
-          <h3 className="text-lg font-semibold text-gray-800">Workflow Progress</h3>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-gray-100/80 hover:bg-red-100 text-gray-500 hover:text-red-500 transition-all duration-200 flex items-center justify-center group"
-          >
-            <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Steps */}
-        <div className="p-6 space-y-4">
-          {steps.map((step, index) => {
-            const status = getStepStatus(index)
-            return (
-              <div key={step.key} className="flex items-center gap-4">
-                {/* Step Indicator */}
-                <div className="flex-shrink-0 relative">
-                  {status === 'completed' ? (
-                    <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center shadow-lg transform transition-all duration-300">
-                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                  ) : status === 'current' ? (
-                    <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center shadow-lg">
-                      <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-                    </div>
-                  ) : (
-                    <div className="w-8 h-8 rounded-full border-2 border-gray-300 bg-gray-50"></div>
-                  )}
-                  
-                  {/* Connecting Line */}
-                  {index < steps.length - 1 && (
-                    <div className={`absolute top-8 left-1/2 w-0.5 h-6 transform -translate-x-1/2 transition-colors duration-300 ${
-                      status === 'completed' ? 'bg-purple-300' : 'bg-gray-200'
-                    }`}></div>
-                  )}
-                </div>
-
-                {/* Step Label */}
-                <div className="flex-1 min-w-0">
-                  <p className={`font-medium transition-colors duration-300 ${
-                    status === 'current' ? 'text-purple-700' : 
-                    status === 'completed' ? 'text-gray-700' : 'text-gray-400'
-                  }`}>
-                    {step.label}
-                  </p>
-                  {status === 'current' && (
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="flex space-x-1">
-                        <div className="w-1 h-1 bg-purple-500 rounded-full animate-bounce"></div>
-                        <div className="w-1 h-1 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                        <div className="w-1 h-1 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                      </div>
-                      <span className="text-xs text-purple-600">Processing...</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 pb-6">
-          <div className="bg-purple-50/80 rounded-lg p-4 border border-purple-100">
-            <p className="text-sm text-purple-700 font-medium">Please wait and do not interrupt the process</p>
-            <p className="text-xs text-purple-600 mt-1">The workflow will complete automatically</p>
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body
-  )
-}

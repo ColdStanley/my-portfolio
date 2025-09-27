@@ -65,7 +65,7 @@ const defaultConfig: PDFConfig = {
 
 export default function PDFSetupModal({ isOpen, onClose, onSave }: PDFSetupModalProps) {
   const { user } = useAuthStore()
-  const { selectedExperiences, optimizedExperiences } = useWorkspaceStore()
+  const { selectedExperiences } = useWorkspaceStore()
   
   const [config, setConfig] = useState<PDFConfig>(defaultConfig)
 
@@ -565,14 +565,11 @@ export default function PDFSetupModal({ isOpen, onClose, onSave }: PDFSetupModal
                     <div key={exp.id} className="flex items-center gap-2">
                       <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
                       <span>{exp.company} - {exp.title}</span>
-                      {optimizedExperiences[exp.id]?.isGenerated && (
-                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Optimized</span>
-                      )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <p>No experiences selected in workspace</p>
+                <p>No experiences selected</p>
               )}
             </div>
           </div>
