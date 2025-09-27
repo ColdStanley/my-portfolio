@@ -49,6 +49,27 @@ export default function SwiftApplyClient() {
     return () => clearTimeout(timeoutId)
   }, [isGenerating, generatedContent, showProgressPanel])
 
+  // Auto-scroll to AIReviewModal when AI generation completes
+  useEffect(() => {
+    if (generatedContent && !isGenerating && !showProgressPanel) {
+      const timeoutId = setTimeout(() => {
+        if (scrollContainerRef.current) {
+          // Calculate position to show AIReviewModal (3rd panel)
+          // Panel 1: JDEditor, Panel 2: AIProgressPanel (hidden), Panel 3: AIReviewModal
+          const panel1Width = 500 // JDEditor width
+          const panel2Width = 0   // AIProgressPanel is hidden when complete
+          const scrollPosition = panel1Width + panel2Width + 32 // Add gap padding
+
+          scrollContainerRef.current.scrollTo({
+            left: scrollPosition,
+            behavior: 'smooth'
+          })
+        }
+      }, 300) // Small delay to ensure DOM updates
+      return () => clearTimeout(timeoutId)
+    }
+  }, [generatedContent, isGenerating, showProgressPanel])
+
   const scrollTo = (direction: 'left' | 'right') => {
     if (!scrollContainerRef.current) return
     const scrollAmount = scrollContainerRef.current.clientWidth * 0.8
@@ -106,19 +127,15 @@ export default function SwiftApplyClient() {
             <JDEditor />
           </div>
 
-          {/* Panel 2 - AI Progress Panel (visible during processing and after completion) */}
-          {(isGenerating || showProgressPanel || generatedContent) && (
-            <div className="w-[400px] lg:w-[500px] flex-shrink-0 flex flex-col">
-              <AIProgressPanel />
-            </div>
-          )}
+          {/* Panel 2 - AI Progress Panel */}
+          <div className="w-[400px] lg:w-[500px] flex-shrink-0 flex flex-col">
+            <AIProgressPanel />
+          </div>
 
-          {/* Panel 3 - AI Review Panel (visible when AI is complete for editing and download) */}
-          {generatedContent && (
-            <div className="w-[600px] lg:w-[700px] flex-shrink-0 flex flex-col">
-              <AIReviewModal />
-            </div>
-          )}
+          {/* Panel 3 - AI Review Panel */}
+          <div className="w-[600px] lg:w-[700px] flex-shrink-0 flex flex-col">
+            <AIReviewModal />
+          </div>
 
           {/* Panel 4 - Resume Preview */}
           <div className="w-[500px] lg:w-[600px] flex-shrink-0 flex flex-col">

@@ -16,44 +16,34 @@ export default function AIProgressPanel() {
     setAIStage
   } = useSwiftApplyStore()
 
-  const handleClose = () => {
-    resetAIState()
-  }
-
   return (
-    <div className="bg-white rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl h-full flex flex-col border border-neutral-dark">
+    <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 h-full flex flex-col border border-neutral-dark">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-        <div>
-          <div className="text-lg font-semibold text-gray-800">AI Processing</div>
-          <div className="text-xs text-gray-500">3-stage intelligent generation</div>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="px-6 py-4 border-b border-neutral-light">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-800">AI Processing</h2>
           {isGenerating && (
             <span className="text-xs text-primary animate-pulse">Processing…</span>
           )}
-          <button
-            onClick={handleClose}
-            className="h-8 w-8 rounded-full text-gray-400 hover:bg-gray-100 flex items-center justify-center"
-            title="Close"
-          >
-            ×
-          </button>
         </div>
       </div>
 
       {/* Stage Tabs */}
-      <div className="flex gap-2 border-b border-gray-200 px-4 pt-4">
+      <div className="flex gap-2 border-b border-neutral-light px-6 py-4">
         {STAGE_CONFIG.map(stage => {
           const data = stageOutputs[stage.key]
           const isActive = activeStage === stage.key
-          const statusClass = data.status === 'completed'
-            ? 'bg-primary text-primary-foreground'
-            : data.status === 'in_progress'
-              ? 'bg-surface text-primary'
-              : data.status === 'error'
-                ? 'bg-red-50 text-error'
-                : 'bg-neutral-light text-text-secondary'
+
+          // Priority: Active + In Progress > Completed > Active + Other > Other statuses
+          const statusClass = isActive && data.status === 'in_progress'
+            ? 'bg-primary text-primary-foreground animate-pulse'
+            : isActive
+              ? 'bg-primary text-primary-foreground'
+              : data.status === 'completed'
+                ? 'bg-surface text-primary'
+                : data.status === 'error'
+                  ? 'bg-red-50 text-error'
+                  : 'bg-neutral-light text-text-secondary'
 
           return (
             <button
@@ -79,7 +69,7 @@ export default function AIProgressPanel() {
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between border-t border-gray-200 px-6 py-3 text-xs text-gray-500">
+      <div className="flex items-center justify-between border-t border-neutral-light px-6 py-4 text-xs text-gray-500">
         <div>
           <span>Status: {formatStageStatus(stageOutputs[activeStage].status)}</span>
           {stageOutputs[activeStage].duration != null && (
@@ -110,7 +100,7 @@ function renderStageContent(stage: any) {
   }, [stage.content, stage.status])
 
   if (stage.status === 'pending') {
-    return <div className="text-text-secondary">Waiting for execution…</div>
+    return <div className="h-96"></div>
   }
 
   if (stage.status === 'error') {
@@ -121,10 +111,6 @@ function renderStageContent(stage: any) {
   if (stage.status === 'in_progress' && stage.content) {
     return (
       <div className="space-y-2">
-        <div className="text-sm text-primary font-medium flex items-center gap-2">
-          <div className="animate-spin w-4 h-4 border-2 border-neutral-light border-t-primary rounded-full"></div>
-          AI Processing...
-        </div>
         <div
           ref={scrollRef}
           className="bg-gray-50 rounded-lg p-4 h-96 overflow-y-auto"

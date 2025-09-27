@@ -9,7 +9,7 @@ export default function ResumePreview() {
 
   if (!personalInfo) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-full flex flex-col">
+      <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 h-full flex flex-col border border-neutral-dark">
         <div className="p-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-text-primary">Resume Preview</h2>
         </div>
@@ -41,16 +41,11 @@ export default function ResumePreview() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-full flex flex-col">
+    <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 h-full flex flex-col border border-neutral-dark">
       {/* Header */}
       <div className="p-4 border-b border-gray-100">
-        <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-text-primary">Resume Preview</h2>
-          <div className="text-sm text-text-secondary">
-            {personalInfo.format} Format
-          </div>
         </div>
-      </div>
 
       {/* PDF-style Preview */}
       <div className="flex-1 p-4 overflow-auto">

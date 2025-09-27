@@ -34,14 +34,14 @@ export default function JDEditor() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-[var(--neutral-dark)] h-full flex flex-col">
+    <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 h-full flex flex-col border border-neutral-dark">
       {/* Header */}
-      <div className="p-4 border-b border-neutral-light">
+      <div className="px-6 py-4 border-b border-neutral-light">
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">Job Description</h2>
       </div>
 
       {/* Job Title Input */}
-      <div className="px-4 py-4 border-b border-neutral-light flex items-center gap-3">
+      <div className="px-6 py-4 border-b border-neutral-light flex items-center gap-3">
         <label className="text-sm font-medium text-[var(--text-primary)] whitespace-nowrap">
           Job Title
         </label>
@@ -56,8 +56,8 @@ export default function JDEditor() {
       </div>
 
       {/* Job Description Textarea */}
-      <div className="flex-1 min-h-0 flex flex-col px-4 pb-2">
-        <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
+      <div className="flex-1 min-h-0 flex flex-col px-6 py-4">
+        <label className="block text-sm font-medium text-[var(--text-primary)] mb-3">
           Job Description
         </label>
         <Input
@@ -72,7 +72,7 @@ export default function JDEditor() {
       </div>
 
       {/* Footer Stats */}
-      <div className="p-4 border-t border-neutral-light bg-surface/50">
+      <div className="px-6 py-4 border-t border-neutral-light bg-surface/50">
         <div className="flex items-center justify-between text-xs text-text-secondary">
           <span>
             Title: {jobTitle.length} chars

@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { CLASSIFIER_PROMPT, EXPERIENCE_GENERATOR_PROMPT, REVIEWER_PROMPT } from '@/lib/swiftapply/prompts'
+import { fetchPromptFromNotion } from '@/app/api/jd2cv-full/langchain-generate/utils/promptFetcher'
 import { invokeSwiftApplyStream, parseAIJsonResponse } from '@/lib/swiftapply/aiService'
 
 export async function POST(request: NextRequest) {
@@ -40,7 +40,8 @@ export async function POST(request: NextRequest) {
               case 'classifier':
                 // Extract target roles from templates to create constraint list
                 const roleTypesList = templates?.map((t: any) => t.targetRole).filter(Boolean).join(', ') || 'Software Engineer'
-                prompt = CLASSIFIER_PROMPT
+                const classifierPromptTemplate = await fetchPromptFromNotion('SwiftApply', 'Classifier', 'SwiftApplyStreamAPI')
+                prompt = classifierPromptTemplate
                   .replace('{jd_title}', jd.title)
                   .replace('{jd_content}', jd.description)
                   .replace('{roleTypesList}', roleTypesList)
@@ -60,7 +61,8 @@ export async function POST(request: NextRequest) {
                 }
 
                 const templateContent = `${matchingTemplate.title}:\n${matchingTemplate.content.join('\n')}`
-                prompt = EXPERIENCE_GENERATOR_PROMPT
+                const experiencePromptTemplate = await fetchPromptFromNotion('SwiftApply', 'Experience Generator', 'SwiftApplyStreamAPI')
+                prompt = experiencePromptTemplate
                   .replace('{role_type}', roleType || '')
                   .replace('{keywords}', classifierData.keywords?.join(', ') || '')
                   .replace('{insights}', classifierData.insights?.join(', ') || '')
@@ -74,7 +76,8 @@ export async function POST(request: NextRequest) {
                   throw new Error('Missing stage data for reviewer stage')
                 }
                 const reviewerRoleType = classifierDataForReview.role_type || classifierDataForReview.roleType
-                prompt = REVIEWER_PROMPT
+                const reviewerPromptTemplate = await fetchPromptFromNotion('SwiftApply', 'Reviewer', 'SwiftApplyStreamAPI')
+                prompt = reviewerPromptTemplate
                   .replace('{role_type}', reviewerRoleType || '')
                   .replace('{keywords}', classifierDataForReview.keywords?.join(', ') || '')
                   .replace('{insights}', classifierDataForReview.insights?.join(', ') || '')

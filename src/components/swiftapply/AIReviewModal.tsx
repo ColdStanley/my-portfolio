@@ -20,6 +20,55 @@ export default function AIReviewModal() {
   const [error, setError] = useState<string | null>(null)
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
 
+  // Show empty state if no generated content
+  if (!generatedContent) {
+    return (
+      <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 h-full flex flex-col border border-neutral-dark">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-neutral-light">
+          <div className="flex items-center justify-between">
+            <div className="text-lg font-semibold text-text-primary">Review & Download</div>
+            <div className="text-xs text-text-secondary">Edit the content below before downloading your PDF</div>
+          </div>
+        </div>
+
+        {/* Empty Content */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-text-primary">
+              AI-Generated Work Experience
+            </label>
+            <div className="border border-neutral-light rounded-lg p-4 h-[300px] bg-neutral-light/30"></div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-text-primary">
+              Personal Information (JSON)
+            </label>
+            <div className="border border-neutral-light rounded-lg p-4 h-[200px] bg-neutral-light/30"></div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-neutral-light bg-surface/50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 text-xs text-text-secondary">
+              <span>Status: Waiting</span>
+              <span>AI Processing Required</span>
+            </div>
+            <Button
+              variant="primary"
+              disabled={true}
+              className="px-4 py-1 text-sm opacity-50"
+            >
+              Confirm & Download PDF
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const handleConfirm = async () => {
     setError(null)
 
@@ -109,28 +158,15 @@ export default function AIReviewModal() {
     }
   }
 
-  const handleCancel = () => {
-    // Keep panels visible - only close if user explicitly wants to clear everything
-    // resetAIState()
-  }
 
   return (
     <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 h-full flex flex-col border border-neutral-dark">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-neutral-dark px-6 py-4">
-        <div>
+      <div className="px-6 py-4 border-b border-neutral-light">
+        <div className="flex items-center justify-between">
           <div className="text-lg font-semibold text-text-primary">Review & Download</div>
           <div className="text-xs text-text-secondary">Edit the content below before downloading your PDF</div>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleCancel}
-          className="h-8 w-8 p-0"
-          aria-label="Close review dialog"
-        >
-          ×
-        </Button>
       </div>
 
       {/* Content */}
@@ -182,25 +218,21 @@ export default function AIReviewModal() {
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between border-t border-neutral-dark px-6 py-4">
-        <span className="text-sm text-text-secondary">Review your AI-generated resume content before downloading</span>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="secondary"
-            onClick={handleCancel}
-            disabled={isGeneratingPDF}
-          >
-            Cancel
-          </Button>
+      <div className="px-6 py-4 border-t border-neutral-light bg-surface/50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4 text-xs text-text-secondary">
+            <span>Status: Ready</span>
+            <span>Content Generated</span>
+          </div>
           <Button
             variant="primary"
             onClick={handleConfirm}
             disabled={isGeneratingPDF}
-            className="px-6"
+            className="px-4 py-1 text-sm"
           >
             {isGeneratingPDF ? (
               <div className="flex items-center gap-2">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
                 Generating PDF...
               </div>
             ) : (

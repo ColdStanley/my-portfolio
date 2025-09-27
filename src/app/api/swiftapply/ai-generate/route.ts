@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { CLASSIFIER_PROMPT, EXPERIENCE_GENERATOR_PROMPT, REVIEWER_PROMPT } from '@/lib/swiftapply/prompts'
+import { fetchPromptFromNotion } from '@/app/api/jd2cv-full/langchain-generate/utils/promptFetcher'
 
 // Mock AI processing - in real implementation, this would call actual AI APIs
 async function mockAICall(prompt: string, delay: number = 2000): Promise<any> {
@@ -96,13 +96,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Stage 1: Classifier
-    const classifierPrompt = CLASSIFIER_PROMPT.replace('{jd_content}', jd.description)
+    const classifierPromptTemplate = await fetchPromptFromNotion('SwiftApply', 'Classifier', 'SwiftApplyAPI')
+    const classifierPrompt = classifierPromptTemplate.replace('{jd_content}', jd.description)
     console.log('🎯 Running Classifier Agent...')
     const classifierResult = await mockAICall(classifierPrompt, 3000)
 
     // Stage 2: Experience Generator
     const templatesText = templates.map((t: any) => `${t.title}:\n${t.content.join('\n')}`).join('\n\n')
-    const experiencePrompt = EXPERIENCE_GENERATOR_PROMPT
+    const experiencePromptTemplate = await fetchPromptFromNotion('SwiftApply', 'Experience Generator', 'SwiftApplyAPI')
+    const experiencePrompt = experiencePromptTemplate
       .replace('{role_type}', classifierResult.roleType)
       .replace('{keywords}', classifierResult.keywords.join(', '))
       .replace('{jd_content}', jd.description)
@@ -113,7 +115,8 @@ export async function POST(request: NextRequest) {
     const experienceResult = await mockAICall(experiencePrompt, 4000)
 
     // Stage 3: Reviewer
-    const reviewerPrompt = REVIEWER_PROMPT
+    const reviewerPromptTemplate = await fetchPromptFromNotion('SwiftApply', 'Reviewer', 'SwiftApplyAPI')
+    const reviewerPrompt = reviewerPromptTemplate
       .replace('{role_type}', classifierResult.roleType)
       .replace('{keywords}', classifierResult.keywords.join(', '))
       .replace('{work_experience}', experienceResult)
