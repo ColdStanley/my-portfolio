@@ -48,28 +48,55 @@ export default function WebsitePage() {
       return
     }
 
-    // Store in localStorage
-    const userKey = `${city.toLowerCase()}-${name.toLowerCase().replace(/\s+/g, '')}`
-    localStorage.setItem(`notion-${userKey}`, JSON.stringify({
-      apiKey: notionApiKey,
-      databaseId,
-      city,
-      name,
-      theme: selectedTheme
-    }))
+    try {
+      // Save to server
+      const response = await fetch('/api/notion/config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          city,
+          name,
+          apiKey: notionApiKey,
+          databaseId,
+          theme: selectedTheme
+        })
+      })
 
-    // Generate share URL
-    const citySlug = city.toLowerCase().replace(/\s+/g, '')
-    const nameSlug = name.toLowerCase().replace(/\s+/g, '')
-    const baseUrl = window.location.origin
-    const shareLink = `${baseUrl}/notion2web/${citySlug}/${nameSlug}?apiKey=${encodeURIComponent(notionApiKey)}&dbId=${databaseId}&theme=${selectedTheme}`
+      const result = await response.json()
 
-    setShareUrl(shareLink)
-    setShowShareUrl(true)
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to save configuration')
+      }
 
-    setTimeout(() => {
-      router.push(`/notion2web/${citySlug}/${nameSlug}`)
-    }, 800)
+      // Store in localStorage as backup
+      const userKey = `${city.toLowerCase()}-${name.toLowerCase().replace(/\s+/g, '')}`
+      localStorage.setItem(`notion-${userKey}`, JSON.stringify({
+        apiKey: notionApiKey,
+        databaseId,
+        city,
+        name,
+        theme: selectedTheme
+      }))
+
+      // Generate clean share URL (no sensitive parameters)
+      const citySlug = city.toLowerCase().replace(/\s+/g, '')
+      const nameSlug = name.toLowerCase().replace(/\s+/g, '')
+      const baseUrl = window.location.origin
+      const shareLink = `${baseUrl}/notion2web/${citySlug}/${nameSlug}`
+
+      setShareUrl(shareLink)
+      setShowShareUrl(true)
+
+      setTimeout(() => {
+        router.push(`/notion2web/${citySlug}/${nameSlug}`)
+      }, 800)
+    } catch (error) {
+      console.error('Error saving configuration:', error)
+      alert('Failed to save configuration: ' + (error as Error).message)
+      setIsSubmitting(false)
+    }
   }
 
   return (

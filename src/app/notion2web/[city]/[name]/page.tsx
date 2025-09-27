@@ -65,57 +65,80 @@ export default function UserWebsitePage() {
   }
 
   useEffect(() => {
-    const userKey = `${params.city}-${params.name}`
+    const loadConfig = async () => {
+      const userKey = `${params.city}-${params.name}`
 
-    // First try to get config from URL parameters
-    const urlParams = new URLSearchParams(window.location.search)
-    const apiKey = urlParams.get('apiKey')
-    const dbId = urlParams.get('dbId')
-    const theme = urlParams.get('theme')
+      // First try to get config from URL parameters (for backward compatibility)
+      const urlParams = new URLSearchParams(window.location.search)
+      const apiKey = urlParams.get('apiKey')
+      const dbId = urlParams.get('dbId')
+      const theme = urlParams.get('theme')
 
-    if (apiKey && dbId) {
-      // Check if we have existing config in localStorage first
-      const existingConfig = localStorage.getItem(`notion-${userKey}`)
-      let originalName = params.name as string
-      let originalCity = params.city as string
+      if (apiKey && dbId) {
+        // Check if we have existing config in localStorage first
+        const existingConfig = localStorage.getItem(`notion-${userKey}`)
+        let originalName = params.name as string
+        let originalCity = params.city as string
 
-      if (existingConfig) {
-        const parsed = JSON.parse(existingConfig)
-        originalName = parsed.name || params.name as string
-        originalCity = parsed.city || params.city as string
+        if (existingConfig) {
+          const parsed = JSON.parse(existingConfig)
+          originalName = parsed.name || params.name as string
+          originalCity = parsed.city || params.city as string
+        }
+
+        // Use URL parameters with preserved original names
+        const configFromUrl = {
+          apiKey,
+          databaseId: dbId,
+          city: originalCity,
+          name: originalName,
+          theme: theme || 'pink'
+        }
+
+        // Save to localStorage for future use
+        localStorage.setItem(`notion-${userKey}`, JSON.stringify(configFromUrl))
+
+        // Clean URL parameters for security
+        const cleanUrl = window.location.pathname
+        window.history.replaceState({}, document.title, cleanUrl)
+
+        setUserConfig(configFromUrl)
+        fetchNotionData(configFromUrl)
+        return
       }
 
-      // Use URL parameters with preserved original names
-      const configFromUrl = {
-        apiKey,
-        databaseId: dbId,
-        city: originalCity,
-        name: originalName,
-        theme: theme || 'pink'
+      // Try to get config from server
+      try {
+        const response = await fetch(`/api/notion/config?city=${encodeURIComponent(params.city as string)}&name=${encodeURIComponent(params.name as string)}`)
+        const result = await response.json()
+
+        if (result.success && result.config) {
+          const serverConfig = result.config
+
+          // Save to localStorage as backup
+          localStorage.setItem(`notion-${userKey}`, JSON.stringify(serverConfig))
+
+          setUserConfig(serverConfig)
+          fetchNotionData(serverConfig)
+          return
+        }
+      } catch (error) {
+        console.error('Error loading config from server:', error)
       }
 
-      // Save to localStorage for future use
-      localStorage.setItem(`notion-${userKey}`, JSON.stringify(configFromUrl))
+      // Fallback to localStorage
+      const config = localStorage.getItem(`notion-${userKey}`)
+      if (!config) {
+        window.location.href = '/notion2web'
+        return
+      }
 
-      // Clean URL parameters for security
-      const cleanUrl = window.location.pathname
-      window.history.replaceState({}, document.title, cleanUrl)
-
-      setUserConfig(configFromUrl)
-      fetchNotionData(configFromUrl)
-      return
+      const parsedConfig = JSON.parse(config)
+      setUserConfig(parsedConfig)
+      fetchNotionData(parsedConfig)
     }
 
-    // Fallback to localStorage
-    const config = localStorage.getItem(`notion-${userKey}`)
-    if (!config) {
-      window.location.href = '/notion2web'
-      return
-    }
-
-    const parsedConfig = JSON.parse(config)
-    setUserConfig(parsedConfig)
-    fetchNotionData(parsedConfig)
+    loadConfig()
   }, [params])
 
   // Handle click outside theme menu
