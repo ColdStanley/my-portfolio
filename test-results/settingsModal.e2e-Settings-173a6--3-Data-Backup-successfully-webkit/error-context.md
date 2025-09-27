@@ -1,0 +1,185 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - img [ref=e7]
+          - heading "SwiftApply" [level=1] [ref=e9]
+        - generic [ref=e10]:
+          - generic [ref=e11]: Profile Setup
+          - text: →
+          - generic [ref=e12]: Job Input
+          - text: →
+          - generic [ref=e13]: Resume Customization
+          - text: →
+          - generic [ref=e14]: Edit & Preview
+          - text: →
+          - generic [ref=e15]: Download PDF
+        - button "Open Settings" [ref=e17]:
+          - img [ref=e18]
+    - button [ref=e21]:
+      - img [ref=e22]
+    - main [ref=e24]:
+      - generic [ref=e25]:
+        - generic [ref=e27]:
+          - heading "Job Description" [level=2] [ref=e29]
+          - generic [ref=e30]:
+            - generic [ref=e31]: Job Title
+            - textbox "Job Title Input" [ref=e33]
+          - generic [ref=e34]:
+            - generic [ref=e35]: Job Description
+            - textbox "Job Description Input" [ref=e37]
+          - generic [ref=e39]:
+            - generic [ref=e40]: "Title: 0 chars"
+            - generic [ref=e41]: "Description: 0 chars"
+            - generic [ref=e42]: 0 words
+        - generic [ref=e44]:
+          - button "Customize Resume" [ref=e47]
+          - generic [ref=e48]:
+            - button "Analysis" [ref=e49]
+            - button "Generation" [ref=e50]
+            - button "Review" [ref=e51]
+          - generic [ref=e56]: "Status: Pending"
+        - generic [ref=e58]:
+          - generic [ref=e60]:
+            - generic [ref=e61]: Edit & Preview
+            - button "Confirm & Preview" [disabled] [ref=e62]
+          - generic [ref=e63]:
+            - generic [ref=e65]: Customized Work Experience
+            - generic [ref=e68]: Personal Information (JSON)
+        - generic [ref=e71]:
+          - generic [ref=e73]:
+            - heading "Final PDF Preview" [level=2] [ref=e74]
+            - button "Download PDF" [disabled] [ref=e75]
+          - generic [ref=e77]:
+            - img [ref=e79]
+            - heading "No PDF Preview" [level=3] [ref=e81]
+            - paragraph [ref=e82]: Click "Confirm & Preview" to generate the final PDF preview
+    - dialog "Setup Your Resume" [ref=e84]:
+      - generic [ref=e85]:
+        - generic [ref=e86]:
+          - heading "Setup Your Resume" [level=2] [ref=e87]
+          - paragraph [ref=e88]: Step 1 of 3
+        - button "Close settings" [ref=e89]:
+          - img [ref=e90]
+      - generic [ref=e93]:
+        - button "1 Personal Info" [ref=e94]:
+          - generic [ref=e95]: "1"
+          - generic [ref=e96]: Personal Info
+        - button "2 Templates" [ref=e98]:
+          - generic [ref=e99]: "2"
+          - generic [ref=e100]: Templates
+        - button "3 Data Backup" [ref=e102]:
+          - generic [ref=e103]: "3"
+          - generic [ref=e104]: Data Backup
+      - generic [ref=e106]:
+        - generic [ref=e108]:
+          - generic [ref=e109]:
+            - generic [ref=e110]:
+              - heading "Basic Information" [level=3] [ref=e111]
+              - generic [ref=e112]:
+                - generic [ref=e113]:
+                  - generic [ref=e114]: Full Name *
+                  - textbox [ref=e116]
+                - generic [ref=e117]:
+                  - generic [ref=e118]: Email *
+                  - textbox [ref=e120]
+                - generic [ref=e121]:
+                  - generic [ref=e122]: Phone
+                  - textbox [ref=e124]
+                - generic [ref=e125]:
+                  - generic [ref=e126]: Location
+                  - textbox "City, State/Country" [ref=e128]
+                - generic [ref=e129]:
+                  - generic [ref=e130]: LinkedIn
+                  - textbox "linkedin.com/in/username" [ref=e132]
+                - generic [ref=e133]:
+                  - generic [ref=e134]: Website
+                  - textbox "https://yourwebsite.com" [ref=e136]
+            - generic [ref=e137]:
+              - generic [ref=e138]: Professional Summary
+              - paragraph [ref=e139]: One point per line
+              - textbox "• Experienced software developer with 5+ years..." [ref=e141]
+            - generic [ref=e142]:
+              - generic [ref=e143]:
+                - generic [ref=e144]: Technical Skills
+                - paragraph [ref=e145]: One skill per line
+                - textbox "JavaScript React Node.js Python" [ref=e147]
+              - generic [ref=e148]:
+                - generic [ref=e149]: Languages
+                - paragraph [ref=e150]: One language per line
+                - textbox "English (Native) Spanish (Fluent)" [ref=e152]
+            - generic [ref=e154]:
+              - heading "Education" [level=3] [ref=e155]
+              - button "Add Education" [ref=e156]
+            - generic [ref=e157]:
+              - generic [ref=e158]: Certifications
+              - paragraph [ref=e159]: One certification per line
+              - textbox "AWS Certified Solutions Architect Google Cloud Professional" [ref=e161]
+            - generic [ref=e163]:
+              - heading "Custom Sections" [level=3] [ref=e164]
+              - button "Add Section" [ref=e165]
+            - generic [ref=e166]:
+              - generic [ref=e167]: Resume Format
+              - generic [ref=e168]:
+                - generic [ref=e169]:
+                  - radio "A4 (210 × 297 mm)" [checked] [ref=e170]
+                  - text: A4 (210 × 297 mm)
+                - generic [ref=e171]:
+                  - radio "Letter (8.5 × 11 in)" [ref=e172]
+                  - text: Letter (8.5 × 11 in)
+          - button "Save & Continue" [ref=e174]
+        - generic [ref=e176]:
+          - generic [ref=e177]:
+            - heading "Experience Templates" [level=3] [ref=e178]
+            - paragraph [ref=e179]: Create reusable experience templates that you can tailor for different job applications.
+            - generic [ref=e180]:
+              - generic [ref=e181]:
+                - img [ref=e183]
+                - heading "No templates yet" [level=4] [ref=e185]
+                - paragraph [ref=e186]: Create your first experience template to get started
+              - button "Add New Template" [ref=e187]:
+                - generic [ref=e188]:
+                  - img [ref=e189]
+                  - text: Add New Template
+          - generic [ref=e191]:
+            - button "← Back" [ref=e192]
+            - button "Save & Close" [ref=e193]
+        - generic [ref=e196]:
+          - generic [ref=e197]:
+            - heading "Data Backup & Restore" [level=3] [ref=e198]
+            - paragraph [ref=e199]: Export your personal information and templates to backup file, or import from previous backup.
+          - generic [ref=e200]:
+            - heading "Current Data Overview" [level=4] [ref=e201]
+            - paragraph [ref=e202]: No data to export
+          - generic [ref=e203]:
+            - heading "Export Data" [level=4] [ref=e204]
+            - paragraph [ref=e205]: Download your personal information and templates as a JSON backup file.
+            - button "Export Backup File" [disabled] [ref=e206]
+          - generic [ref=e207]:
+            - heading "Import Data" [level=4] [ref=e208]
+            - paragraph [ref=e209]: Restore your data from a previous backup file. This will replace your current data.
+            - button "Select Backup File" [ref=e211]
+          - generic [ref=e212]:
+            - heading "Usage Instructions" [level=5] [ref=e213]
+            - list [ref=e214]:
+              - listitem [ref=e215]: Backup files contain only your personal information and experience templates
+              - listitem [ref=e216]: Job titles and descriptions are not included (they change for each application)
+              - listitem [ref=e217]: You can use backup files across different environments (localhost, production)
+              - listitem [ref=e218]: Import will overwrite your current data - export first if you want to keep it
+  - region "Notifications alt+T"
+  - alert [ref=e219]
+  - button "Open Next.js Dev Tools" [ref=e225] [cursor=pointer]:
+    - img [ref=e226] [cursor=pointer]
+  - generic [ref=e234]:
+    - generic [ref=e235]:
+      - heading "We use cookies" [level=3] [ref=e236]
+      - paragraph [ref=e237]: We use cookies to enhance your browsing experience, serve personalized content, and analyze our traffic. By clicking "Accept All", you consent to our use of cookies.
+    - generic [ref=e238]:
+      - button "Customize" [ref=e239]
+      - button "Reject All" [ref=e240]
+      - button "Accept All" [ref=e241]
+```

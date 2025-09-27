@@ -3,6 +3,7 @@
 import { useSwiftApplyStore } from '@/lib/swiftapply/store'
 import StepPersonalInfo from './StepPersonalInfo'
 import StepTemplates from './StepTemplates'
+import StepDataManagement from './StepDataManagement'
 import Button from '@/components/ui/button'
 
 export default function SettingsModal() {
@@ -23,7 +24,7 @@ export default function SettingsModal() {
               Setup Your Resume
             </h2>
             <p className="text-xs sm:text-sm text-text-secondary mt-1">
-              Step {settingsStep} of 2
+              Step {settingsStep} of 3
             </p>
           </div>
 
@@ -42,7 +43,7 @@ export default function SettingsModal() {
 
         {/* Step Navigation */}
         <div className="px-4 sm:px-6 py-4 bg-surface border-b border-neutral-light">
-          <div className="flex items-center justify-center space-x-8">
+          <div className="flex items-center justify-center space-x-6">
             {/* Step 1: Personal Info */}
             <button
               onClick={() => openSettings(1)}
@@ -63,7 +64,7 @@ export default function SettingsModal() {
             </button>
 
             {/* Connector Line */}
-            <div className="w-16 h-0.5 bg-neutral-light"></div>
+            <div className="w-12 h-0.5 bg-neutral-light"></div>
 
             {/* Step 2: Templates */}
             <button
@@ -83,6 +84,28 @@ export default function SettingsModal() {
               </div>
               <span className="font-medium">Templates</span>
             </button>
+
+            {/* Connector Line */}
+            <div className="w-12 h-0.5 bg-neutral-light"></div>
+
+            {/* Step 3: Data Management */}
+            <button
+              onClick={() => openSettings(3)}
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ${
+                settingsStep === 3
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'text-text-secondary hover:text-primary hover:bg-surface'
+              }`}
+            >
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                settingsStep === 3
+                  ? 'bg-white text-primary'
+                  : 'bg-neutral-light text-text-secondary'
+              }`}>
+                3
+              </div>
+              <span className="font-medium">Data Backup</span>
+            </button>
           </div>
         </div>
 
@@ -91,18 +114,23 @@ export default function SettingsModal() {
           <div
             className="flex transition-transform duration-500 ease-out"
             style={{
-              transform: `translateX(-${(settingsStep - 1) * 50}%)`,
-              width: '200%'
+              transform: `translateX(-${(settingsStep - 1) * 33.333}%)`,
+              width: '300%'
             }}
           >
             {/* Step 1: Personal Info */}
-            <div className="w-1/2 flex-shrink-0">
+            <div className="w-1/3 flex-shrink-0">
               <StepPersonalInfo />
             </div>
 
             {/* Step 2: Templates */}
-            <div className="w-1/2 flex-shrink-0">
+            <div className="w-1/3 flex-shrink-0">
               <StepTemplates />
+            </div>
+
+            {/* Step 3: Data Management */}
+            <div className="w-1/3 flex-shrink-0">
+              <StepDataManagement />
             </div>
           </div>
         </div>

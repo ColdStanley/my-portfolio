@@ -1,0 +1,35 @@
+{
+  "personalInfo": {
+    "fullName": "Imported User",
+    "email": "imported@example.com",
+    "phone": "+1234567890",
+    "location": "Test City",
+    "linkedin": "",
+    "website": "",
+    "summary": [
+      "Imported summary"
+    ],
+    "technicalSkills": [
+      "JavaScript"
+    ],
+    "languages": [
+      "English"
+    ],
+    "education": [],
+    "certificates": [],
+    "customModules": [],
+    "format": "A4"
+  },
+  "templates": [
+    {
+      "id": "1",
+      "title": "Imported Template",
+      "targetRole": "Test Role",
+      "content": [
+        "Imported experience"
+      ]
+    }
+  ],
+  "exportDate": "2025-09-27T22:10:46.899Z",
+  "version": "1.0"
+}

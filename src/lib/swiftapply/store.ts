@@ -76,7 +76,7 @@ interface SwiftApplyState {
 
   // UI State
   isSettingsOpen: boolean
-  settingsStep: 1 | 2
+  settingsStep: 1 | 2 | 3
 
   // AI Generation State
   ai: AIGenerationState
@@ -89,7 +89,7 @@ interface SwiftApplyState {
   setTemplates: (t: ExperienceTemplate[]) => void
   setJobTitle: (v: string) => void
   setJobDescription: (v: string) => void
-  openSettings: (step?: 1 | 2) => void
+  openSettings: (step?: 1 | 2 | 3) => void
   closeSettings: () => void
   initializeFromStorage: () => void
   hasStoredData: () => boolean
