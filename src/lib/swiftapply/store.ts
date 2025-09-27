@@ -88,7 +88,6 @@ interface SwiftApplyState {
   setJobDescription: (v: string) => void
   openSettings: (step?: 1 | 2) => void
   closeSettings: () => void
-  clearAll: () => void
   initializeFromStorage: () => void
   hasStoredData: () => boolean
 
@@ -160,14 +159,6 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
     set({ isSettingsOpen: false })
   },
 
-  clearAll: () => {
-    set({
-      jobTitle: '',
-      jobDescription: ''
-    })
-    localStorage.removeItem('swiftapply-job-title')
-    localStorage.removeItem('swiftapply-job-description')
-  },
 
   initializeFromStorage: () => {
     const personalInfo = loadFromStorage<PersonalInfo>('jd2cv-v2-personal-info')

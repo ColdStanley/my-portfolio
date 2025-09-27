@@ -1,48 +1,11 @@
 'use client'
 
-import { useState } from 'react'
 import { useSwiftApplyStore } from '@/lib/swiftapply/store'
 import Button from '@/components/ui/button'
-import ConfirmDialog from './ConfirmDialog'
 
 export default function Header() {
-  const { openSettings, clearAll } = useSwiftApplyStore()
-  const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const { openSettings } = useSwiftApplyStore()
 
-  const handleClearAll = () => {
-    setShowClearConfirm(true)
-  }
-
-  const confirmClearAll = () => {
-    clearAll()
-  }
-
-  const handleGenerateCV = () => {
-    const { personalInfo, templates, jobTitle, jobDescription, startAIGeneration } = useSwiftApplyStore.getState()
-
-    if (!personalInfo) {
-      alert('Please configure your personal information first')
-      return
-    }
-
-    if (!jobTitle.trim()) {
-      alert('Please enter a job title first')
-      return
-    }
-
-    if (!jobDescription.trim()) {
-      alert('Please enter a job description first')
-      return
-    }
-
-    if (templates.length === 0) {
-      alert('Please create at least one experience template')
-      return
-    }
-
-    // Start AI generation
-    startAIGeneration()
-  }
 
   return (
     <header className="h-16 bg-white border-b border-neutral-dark shadow-sm">
@@ -59,56 +22,19 @@ export default function Header() {
           </h1>
         </div>
 
+        {/* Usage Flow */}
+        <div className="hidden lg:flex items-center gap-2 text-sm text-text-secondary">
+          <span className="px-2 py-1 bg-gray-200 rounded-md">Profile Setup</span>
+          →
+          <span className="px-2 py-1 bg-gray-200 rounded-md">Job Input</span>
+          →
+          <span className="px-2 py-1 bg-gray-200 rounded-md">Resume Customization</span>
+          →
+          <span className="px-2 py-1 bg-gray-200 rounded-md">PDF Export</span>
+        </div>
+
         {/* Actions */}
         <div className="flex items-center gap-2 lg:gap-3">
-          {/* Clear All */}
-          <Button
-            onClick={handleClearAll}
-            variant="ghost"
-            size="sm"
-            className="hidden sm:block text-text-secondary hover:text-error"
-            title="Clear all data"
-          >
-            Clear All
-          </Button>
-          {/* Mobile Clear All */}
-          <Button
-            onClick={handleClearAll}
-            variant="ghost"
-            size="sm"
-            className="sm:hidden text-text-secondary hover:text-error p-2"
-            title="Clear all data"
-            aria-label="Clear all data"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </Button>
-
-          {/* Generate CV Button (AI Enabled) - Desktop */}
-          <Button
-            onClick={handleGenerateCV}
-            variant="primary"
-            size="sm"
-            className="hidden sm:block"
-            title="Generate AI-powered resume"
-          >
-            Generate CV
-          </Button>
-
-          {/* Generate CV Button (AI Enabled) - Mobile */}
-          <Button
-            onClick={handleGenerateCV}
-            variant="primary"
-            size="sm"
-            className="sm:hidden p-2"
-            title="Generate AI-powered resume"
-            aria-label="Generate AI-powered resume"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-            </svg>
-          </Button>
 
           {/* Settings Button */}
           <Button
@@ -127,17 +53,6 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Confirm Dialog */}
-      <ConfirmDialog
-        isOpen={showClearConfirm}
-        onClose={() => setShowClearConfirm(false)}
-        onConfirm={confirmClearAll}
-        title="Clear All Data"
-        message="This will permanently delete all your personal information, experience templates, and job description. This action cannot be undone."
-        confirmText="Clear All"
-        cancelText="Cancel"
-        type="danger"
-      />
     </header>
   )
 }

@@ -123,22 +123,22 @@ export default function SwiftApplyClient() {
 
         <div className="flex gap-6 h-full min-w-full">
           {/* Panel 1 - JD Editor */}
-          <div className="w-[400px] lg:w-[500px] flex-shrink-0 flex flex-col">
+          <div className="w-[400px] lg:w-[500px] h-full flex-shrink-0 flex flex-col">
             <JDEditor />
           </div>
 
           {/* Panel 2 - AI Progress Panel */}
-          <div className="w-[400px] lg:w-[500px] flex-shrink-0 flex flex-col">
+          <div className="w-[400px] lg:w-[500px] h-full flex-shrink-0 flex flex-col">
             <AIProgressPanel />
           </div>
 
           {/* Panel 3 - AI Review Panel */}
-          <div className="w-[600px] lg:w-[700px] flex-shrink-0 flex flex-col">
+          <div className="w-[600px] lg:w-[700px] h-full flex-shrink-0 flex flex-col">
             <AIReviewModal />
           </div>
 
           {/* Panel 4 - Resume Preview */}
-          <div className="w-[500px] lg:w-[600px] flex-shrink-0 flex flex-col">
+          <div className="w-[500px] lg:w-[600px] h-full flex-shrink-0 flex flex-col">
             <ResumePreview />
           </div>
         </div>

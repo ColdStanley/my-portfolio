@@ -2,11 +2,12 @@
 
 import { useSwiftApplyStore, type AIStageKey } from '@/lib/swiftapply/store'
 import { useEffect, useRef } from 'react'
+import Button from '@/components/ui/button'
 
 const STAGE_CONFIG = [
-  { key: 'classifier', label: 'Analysis', icon: '🎯' },
-  { key: 'experience', label: 'Generation', icon: '💼' },
-  { key: 'reviewer', label: 'Review', icon: '🔍' }
+  { key: 'classifier', label: 'Analysis' },
+  { key: 'experience', label: 'Generation' },
+  { key: 'reviewer', label: 'Review' }
 ] as const
 
 export default function AIProgressPanel() {
@@ -16,12 +17,48 @@ export default function AIProgressPanel() {
     setAIStage
   } = useSwiftApplyStore()
 
+  const handleCustomizeResume = () => {
+    const { personalInfo, templates, jobTitle, jobDescription, startAIGeneration } = useSwiftApplyStore.getState()
+
+    if (!personalInfo) {
+      alert('Please configure your personal information first')
+      return
+    }
+
+    if (!jobTitle.trim()) {
+      alert('Please enter a job title first')
+      return
+    }
+
+    if (!jobDescription.trim()) {
+      alert('Please enter a job description first')
+      return
+    }
+
+    if (templates.length === 0) {
+      alert('Please create at least one experience template')
+      return
+    }
+
+    // Start AI generation
+    startAIGeneration()
+  }
+
   return (
     <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 h-full flex flex-col border border-neutral-dark">
       {/* Header */}
       <div className="px-6 py-4 border-b border-neutral-light">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-800">AI Processing</h2>
+          <Button
+            onClick={handleCustomizeResume}
+            variant="primary"
+            size="sm"
+            disabled={isGenerating}
+            className="text-sm font-semibold px-2 py-1"
+            title="Generate AI-powered resume"
+          >
+            {isGenerating ? 'Processing...' : 'Customize Resume'}
+          </Button>
           {isGenerating && (
             <span className="text-xs text-primary animate-pulse">Processing…</span>
           )}
@@ -55,8 +92,8 @@ export default function AIProgressPanel() {
                   : 'text-text-secondary hover:bg-neutral-light'
               }`}
             >
-              <div className={`mx-auto w-max rounded-full px-3 py-1 ${statusClass}`}>
-                {stage.icon} {stage.label}
+              <div className={`mx-auto w-max rounded-md px-3 py-1 ${statusClass}`}>
+                {stage.label}
               </div>
             </button>
           )

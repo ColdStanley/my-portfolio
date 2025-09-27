@@ -25,15 +25,15 @@ export default function AIReviewModal() {
     return (
       <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 h-full flex flex-col border border-neutral-dark">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-neutral-light">
+        <div className="p-4 border-b border-neutral-light">
           <div className="flex items-center justify-between">
-            <div className="text-lg font-semibold text-text-primary">Review & Download</div>
+            <div className="text-lg font-semibold text-text-primary">Preview & Export PDF</div>
             <div className="text-xs text-text-secondary">Edit the content below before downloading your PDF</div>
           </div>
         </div>
 
         {/* Empty Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
           <div className="space-y-2">
             <label className="text-sm font-semibold text-text-primary">
               AI-Generated Work Experience
@@ -50,11 +50,11 @@ export default function AIReviewModal() {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-neutral-light bg-surface/50">
+        <div className="p-4 border-t border-neutral-light bg-surface/50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4 text-xs text-text-secondary">
               <span>Status: Waiting</span>
-              <span>AI Processing Required</span>
+              <span>Resume Generation Required</span>
             </div>
             <Button
               variant="primary"
@@ -162,15 +162,15 @@ export default function AIReviewModal() {
   return (
     <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 h-full flex flex-col border border-neutral-dark">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-neutral-light">
+      <div className="p-4 border-b border-neutral-light">
         <div className="flex items-center justify-between">
-          <div className="text-lg font-semibold text-text-primary">Review & Download</div>
+          <div className="text-lg font-semibold text-text-primary">Preview & Export PDF</div>
           <div className="text-xs text-text-secondary">Edit the content below before downloading your PDF</div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
         {/* Work Experience */}
         <div className="space-y-2">
           <label className="text-sm font-semibold text-text-primary" htmlFor="work-experience">
@@ -218,7 +218,7 @@ export default function AIReviewModal() {
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-4 border-t border-neutral-light bg-surface/50">
+      <div className="p-4 border-t border-neutral-light bg-surface/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 text-xs text-text-secondary">
             <span>Status: Ready</span>
@@ -228,7 +228,7 @@ export default function AIReviewModal() {
             variant="primary"
             onClick={handleConfirm}
             disabled={isGeneratingPDF}
-            className="px-4 py-1 text-sm"
+            className="px-3 py-1 text-xs"
           >
             {isGeneratingPDF ? (
               <div className="flex items-center gap-2">
