@@ -23,8 +23,8 @@ function AIToolCard({
   autoOpenSettings = false,
   onInsertCard
 }: AIToolCardProps) {
-  const { canvases, actions } = useWorkspaceStore()
-  const { moveCard, updateCardButtonName, updateCardPromptText, updateCardOptions, updateCardAiModel, updateCardGeneratedContent, updateCardGeneratingState, deleteCard, updateCardLockStatus, setHasUnsavedChanges } = actions
+  const { canvases, autoRunState, actions } = useWorkspaceStore()
+  const { moveCard, updateCardButtonName, updateCardPromptText, updateCardOptions, updateCardAiModel, updateCardGeneratedContent, updateCardGeneratingState, deleteCard, updateCardLockStatus, setHasUnsavedChanges, completeColumnWorkflowStep } = actions
   
   // Get current card data from Zustand store
   const currentColumn = canvases.flatMap(canvas => canvas.columns).find(col => col.id === columnId)
@@ -109,6 +109,7 @@ function AIToolCard({
   const [showCardMenu, setShowCardMenu] = useState(false)
   const [cardMenuVisible, setCardMenuVisible] = useState(false)
   const cardMenuButtonRef = useRef<HTMLButtonElement>(null)
+  const lastAutoRunTokenRef = useRef<number | null>(null)
   
   // Streaming state - tracks if we've started receiving data
   const [isStreaming, setIsStreaming] = useState(false)
@@ -228,18 +229,9 @@ function AIToolCard({
       return
     }
 
-    if (event.key === 'Backspace') {
-      if (!selectionCoversWholeToken) {
-        event.preventDefault()
-        textarea.setSelectionRange(intersecting.start, intersecting.end)
-        setLocalPromptText(prev => prev.slice(0, intersecting.start) + prev.slice(intersecting.end))
-        setTimeout(() => textarea.setSelectionRange(intersecting.start, intersecting.start), 0)
-      }
-      return
-    }
-
-    if (event.key === 'Delete') {
-      if (!selectionCoversWholeToken) {
+    if (event.key === 'Backspace' || event.key === 'Delete') {
+      const shouldForceDelete = !selectionCoversWholeToken || intersecting.type === 'option'
+      if (shouldForceDelete) {
         event.preventDefault()
         textarea.setSelectionRange(intersecting.start, intersecting.end)
         setLocalPromptText(prev => prev.slice(0, intersecting.start) + prev.slice(intersecting.end))
@@ -610,6 +602,51 @@ function AIToolCard({
     setOptionsManageTooltipVisible(false)
     setTimeout(() => setShowOptionsManageTooltip(false), 250)
   }
+
+  useEffect(() => {
+    if (!autoRunState) return
+    if (autoRunState.columnId !== columnId) return
+    const queue = autoRunState.queue
+    if (!queue || queue.length === 0) return
+
+    const currentCardId = queue[autoRunState.currentIndex]
+    if (currentCardId !== cardId) return
+
+    if (lastAutoRunTokenRef.current === autoRunState.token) {
+      return
+    }
+    lastAutoRunTokenRef.current = autoRunState.token
+
+    const run = async () => {
+      const promptSource = (textareaRef.current?.value ?? '').trim() || (currentCard?.promptText ?? '').trim()
+
+      if (!promptSource) {
+        updateCardGeneratedContent(cardId, '⚠️ Skipped: Prompt is empty.')
+        completeColumnWorkflowStep(autoRunState.columnId, cardId)
+        return
+      }
+
+      const optionList = (currentCard?.options ?? []).filter(opt => opt && opt.trim().length > 0)
+      const selectedOption = optionList.length > 0 ? optionList[0] : undefined
+
+      if ((currentCard?.options?.length ?? 0) > 0 && !selectedOption) {
+        updateCardGeneratedContent(cardId, '⚠️ Skipped: No option selected for auto-run.')
+        completeColumnWorkflowStep(autoRunState.columnId, cardId)
+        return
+      }
+
+      try {
+        await handleGenerateClick(selectedOption)
+      } catch (error) {
+        console.error('Auto-run generation error:', error)
+      } finally {
+        completeColumnWorkflowStep(autoRunState.columnId, cardId)
+      }
+    }
+
+    run()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRunState, cardId, columnId, currentCard?.options, currentCard?.promptText])
 
   return (
     <div className="bg-[var(--surface)] backdrop-blur-3xl rounded-xl shadow-md border border-[var(--neutral-mid)] p-4 relative transition-all duration-300 hover:shadow-lg hover:-translate-y-1 group">

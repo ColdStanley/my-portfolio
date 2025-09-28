@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../../../lib/supabaseClient';
 import { Column, Canvas } from '../types';
-import { resolveReferences, generateUniqueCanvasName } from '../utils/cardUtils';
+import { generateUniqueCanvasName } from '../utils/cardUtils';
 import type { User } from '@supabase/supabase-js'
 
 interface WorkspaceState {
@@ -14,6 +14,12 @@ interface WorkspaceState {
   columnExecutionStatus: { [columnId: string]: boolean }; // Track column execution status
   currentAbortController: AbortController | null; // 管理请求取消
   hasUnsavedChanges: boolean; // 全局保存状态
+  autoRunState: {
+    columnId: string;
+    queue: string[];
+    currentIndex: number;
+    token: number;
+  } | null;
   actions: {
     cancelCurrentRequest: () => void;
     cleanAllAIReplies: () => Promise<void>;
@@ -25,6 +31,8 @@ interface WorkspaceState {
     updateColumns: (updater: (prev: Column[]) => Column[]) => void; // Helper for backward compatibility
     moveColumn: (columnId: string, direction: 'left' | 'right') => void;
     moveCard: (columnId: string, cardId: string, direction: 'up' | 'down') => void;
+    runColumnWorkflow: (columnId: string) => void;
+    completeColumnWorkflowStep: (columnId: string, cardId: string) => void;
     addCanvas: () => void;
     deleteCanvas: (canvasId: string) => void;
     renameCanvas: (canvasId: string, newName: string) => void;
@@ -135,6 +143,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   columnExecutionStatus: {},
   currentAbortController: null,
   hasUnsavedChanges: false,
+  autoRunState: null,
 
   actions: {
     setUser: (user) => set({ user }),
@@ -532,6 +541,98 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           })
         }))
       );
+    },
+    runColumnWorkflow: (columnId: string) => {
+      const state = get();
+      if (state.columnExecutionStatus[columnId]) {
+        console.warn(`Column ${columnId} is already running.`);
+        return;
+      }
+
+      if (state.autoRunState) {
+        console.warn('Another column workflow is currently running.');
+        return;
+      }
+
+      const activeCanvas = state.canvases.find(canvas =>
+        canvas.columns.some(col => col.id === columnId)
+      );
+
+      const targetColumn = activeCanvas?.columns.find(col => col.id === columnId);
+      if (!targetColumn) {
+        console.warn(`Column ${columnId} not found.`);
+        return;
+      }
+
+      const aitoolCardIds = targetColumn.cards
+        .filter(card => card.type === 'aitool')
+        .map(card => card.id);
+
+      if (aitoolCardIds.length === 0) {
+        console.warn(`Column ${columnId} has no AI Tool cards to run.`);
+        return;
+      }
+
+      set(prev => ({
+        columnExecutionStatus: {
+          ...prev.columnExecutionStatus,
+          [columnId]: true
+        },
+        autoRunState: {
+          columnId,
+          queue: aitoolCardIds,
+          currentIndex: 0,
+          token: Date.now()
+        }
+      }));
+    },
+    completeColumnWorkflowStep: (columnId: string, cardId: string) => {
+      const state = get();
+      const current = state.autoRunState;
+      if (!current || current.columnId !== columnId) {
+        return;
+      }
+
+      const queue = current.queue;
+      if (queue.length === 0) {
+        set(prev => {
+          const nextStatus = { ...prev.columnExecutionStatus };
+          delete nextStatus[columnId];
+          return {
+            autoRunState: null,
+            columnExecutionStatus: nextStatus
+          };
+        });
+        return;
+      }
+
+      const currentIndex = queue[current.currentIndex] === cardId
+        ? current.currentIndex
+        : queue.indexOf(cardId) !== -1
+          ? queue.indexOf(cardId)
+          : current.currentIndex;
+
+      const nextIndex = currentIndex + 1;
+
+      if (nextIndex >= queue.length) {
+        set(prev => {
+          const nextStatus = { ...prev.columnExecutionStatus };
+          delete nextStatus[columnId];
+          return {
+            columnExecutionStatus: nextStatus,
+            autoRunState: null
+          };
+        });
+      } else {
+        set(prev => ({
+          autoRunState: {
+            columnId,
+            queue,
+            currentIndex: nextIndex,
+            token: Date.now()
+          }
+        }));
+      }
     },
     addCanvas: () => {
       set((state) => {

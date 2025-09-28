@@ -17,7 +17,7 @@ interface AICardStudioProps {
 
 export default function AICardStudio({ cardWidth = 'narrow' }: AICardStudioProps) {
   const { canvases, activeCanvasId, isLoading, saveError, columnExecutionStatus, hasUnsavedChanges, actions } = useWorkspaceStore()
-  const { updateColumns, updateCanvases, clearSaveError, saveWorkspace, addCanvas, setActiveCanvas, setHasUnsavedChanges } = actions
+  const { updateColumns, updateCanvases, clearSaveError, saveWorkspace, runColumnWorkflow, addCanvas, setActiveCanvas, setHasUnsavedChanges } = actions
   const { isAdmin } = useAdminAuth()
   const router = useRouter()
   
@@ -671,6 +671,7 @@ export default function AICardStudio({ cardWidth = 'narrow' }: AICardStudioProps
                     column={column}
                     onAddCard={handleAddCard}
                     onInsertCard={handleAddCard}
+                    onRunColumnWorkflow={runColumnWorkflow}
                     isColumnExecuting={columnExecutionStatus[column.id] || false}
                   />
                 </div>
