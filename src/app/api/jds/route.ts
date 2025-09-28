@@ -5,11 +5,12 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const supabase = createClient(supabaseUrl, supabaseKey)
 
-// GET /api/jds - List all JDs for user
+// GET /api/jds - List all JDs for user or get stage options
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('user_id')
+    const getStageOptions = searchParams.get('get_stage_options')
 
     if (!userId) {
       return NextResponse.json(
@@ -18,6 +19,37 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Handle stage options request
+    if (getStageOptions === 'true') {
+      const { data, error } = await supabase
+        .from('jd_records')
+        .select('application_stage')
+        .eq('user_id', userId)
+        .not('application_stage', 'is', null)
+        .neq('application_stage', '')
+
+      if (error) {
+        console.error('Supabase error:', error)
+        return NextResponse.json(
+          { error: 'Failed to fetch stage options' },
+          { status: 500 }
+        )
+      }
+
+      // Extract unique stage values and ensure we have the standard options
+      const uniqueStages = [...new Set(data.map(item => item.application_stage))]
+      const standardStages = ['Raw JD', 'Applied']
+      const stageOptions = standardStages.filter(stage =>
+        uniqueStages.includes(stage) || standardStages.includes(stage)
+      )
+
+      return NextResponse.json({
+        success: true,
+        stage_options: stageOptions.length > 0 ? stageOptions : standardStages
+      })
+    }
+
+    // Handle regular JD list request
     const { data, error } = await supabase
       .from('jd_records')
       .select('*')
@@ -32,8 +64,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       data
     })
   } catch (error: any) {
@@ -49,7 +81,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { user_id, title, company, full_job_description, application_stage, role_group, firm_type, comment, match_score } = body
+    const { user_id, title, company, full_job_description, application_stage, comment, match_score } = body
 
     if (!user_id || !title || !company) {
       return NextResponse.json(
@@ -66,8 +98,6 @@ export async function POST(request: NextRequest) {
         company,
         full_job_description: full_job_description || '',
         application_stage: application_stage || null,
-        role_group: role_group || '',
-        firm_type: firm_type || '',
         comment: comment || '',
         match_score: Math.max(0, match_score || 0)
       }])

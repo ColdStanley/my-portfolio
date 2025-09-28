@@ -6,21 +6,21 @@ interface AddJDPopoverProps {
   onClose: () => void
   onSave: (data: CreateJDRequest) => Promise<void>
   userId: string
+  stageOptions?: string[]
 }
 
 export default function AddJDPopover({
   isOpen,
   onClose,
   onSave,
-  userId
+  userId,
+  stageOptions = ['Raw JD', 'Applied']
 }: AddJDPopoverProps) {
   const [formData, setFormData] = useState<CreateJDRequest>({
     title: '',
     company: '',
     full_job_description: '',
-    application_stage: '',
-    role_group: '',
-    firm_type: '',
+    application_stage: 'Raw JD',
     comment: '',
     match_score: 3
   })
@@ -35,9 +35,7 @@ export default function AddJDPopover({
         title: '',
         company: '',
         full_job_description: '',
-        application_stage: '',
-        role_group: '',
-        firm_type: '',
+        application_stage: 'Raw JD',
         comment: '',
         match_score: 3
       })
@@ -164,33 +162,22 @@ export default function AddJDPopover({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Application Stage</label>
-                <input
-                  type="text"
-                  value={formData.application_stage}
-                  onChange={(e) => setFormData(prev => ({ ...prev, application_stage: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="e.g. Applied, Interview"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Role Group</label>
-                <input
-                  type="text"
-                  value={formData.role_group}
-                  onChange={(e) => setFormData(prev => ({ ...prev, role_group: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="e.g. Engineering"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Firm Type</label>
-                <input
-                  type="text"
-                  value={formData.firm_type}
-                  onChange={(e) => setFormData(prev => ({ ...prev, firm_type: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="e.g. Startup, Enterprise"
-                />
+                <div className="relative">
+                  <select
+                    value={formData.application_stage}
+                    onChange={(e) => setFormData(prev => ({ ...prev, application_stage: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 appearance-none cursor-pointer"
+                  >
+                    {stageOptions.map(stage => (
+                      <option key={stage} value={stage}>{stage}</option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Match Score</label>

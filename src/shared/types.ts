@@ -48,8 +48,6 @@ export interface JDRecord {
 
   // Classification tags
   application_stage?: string
-  role_group?: string
-  firm_type?: string
   comment?: string
 
   // CV related
@@ -63,8 +61,6 @@ export interface CreateJDRequest {
   company: string
   full_job_description?: string
   application_stage?: string
-  role_group?: string
-  firm_type?: string
   comment?: string
   match_score?: number // 1-5 range, defaults to 3
 }
@@ -76,9 +72,6 @@ export interface UpdateJDRequest extends Partial<CreateJDRequest> {
 // JD2CV workflow stage options
 export const APPLICATION_STAGES = [
   'Raw JD',
-  'Key Words',
-  'CV Contents',
-  'CV Layout',
   'Applied'
 ] as const
 
@@ -93,7 +86,6 @@ export interface ExperienceRecord {
   title: string
   experience: string
   keywords: string[]
-  role_group: string | null
   work_or_project: string | null
   time: string | null
   comment: string | null

@@ -37,7 +37,6 @@ export async function POST(request: NextRequest) {
         title: experienceData.title,
         experience: experienceData.experience,
         keywords: experienceData.keywords || [],
-        role_group: experienceData.role_group || null,
         work_or_project: experienceData.work_or_project || null,
         time: experienceData.time || null,
         comment: experienceData.comment || null

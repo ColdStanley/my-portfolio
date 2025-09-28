@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom'
 import { JDRecord, CreateJDRequest, APPLICATION_STAGES } from '@/shared/types'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import { useJDFilterStore } from '@/store/useJDFilterStore'
-import { useBatchSelectionStore } from '@/store/useBatchSelectionStore'
 import InlineEditField from './InlineEditField'
 import AddJDPopover from './AddJDPopover'
 import ViewJDTooltip from './ViewJDTooltip'
@@ -27,10 +26,11 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
   const [viewingJD, setViewingJD] = useState<JDRecord | null>(null)
   const [deleteButtonRef, setDeleteButtonRef] = useState<HTMLElement | null>(null)
   const [searchInput, setSearchInput] = useState('')
-  
+  const [stageOptions, setStageOptions] = useState<string[]>(['Raw JD', 'Applied'])
+
   // JD Transfer states for visual feedback
   const [transferredJDs, setTransferredJDs] = useState<Set<string>>(new Set())
-  
+
   // Global Personal Info state
   const [showPersonalInfoTooltip, setShowPersonalInfoTooltip] = useState(false)
   
@@ -40,21 +40,11 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
   // Global filter store
   const { filters, sortOrder, handleFilterChange, handleSortChange, clearFilters } = useJDFilterStore()
 
-  
-  // Batch selection store
-  const { 
-    selectedJDIds, 
-    batchMode, 
-    setBatchMode, 
-    toggleJDSelection, 
-    selectAllJDs,
-    clearSelection,
-    getSelectedCount 
-  } = useBatchSelectionStore()
 
-  // Load JDs on mount (manual refresh only)
+  // Load JDs and stage options on mount
   useEffect(() => {
     loadJDs()
+    loadStageOptions()
   }, [user.id])
 
   const loadJDs = async () => {
@@ -62,7 +52,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
       setLoading(true)
       const response = await fetch(`/api/jds?user_id=${user.id}`)
       const result = await response.json()
-      
+
       if (result.success) {
         setJds(result.data)
       } else {
@@ -72,6 +62,19 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
       console.error('Error loading JDs:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadStageOptions = async () => {
+    try {
+      const response = await fetch(`/api/jds?user_id=${user.id}&get_stage_options=true`)
+      const result = await response.json()
+
+      if (result.success && result.stage_options) {
+        setStageOptions(result.stage_options)
+      }
+    } catch (error) {
+      console.error('Error loading stage options:', error)
     }
   }
 
@@ -135,13 +138,11 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
     const values = jds.map(jd => {
       switch(field) {
         case 'stage': return jd.application_stage || null
-        case 'role': return jd.role_group || null
-        case 'firm': return jd.firm_type || null
         case 'score': return jd.match_score?.toString() || null
         default: return null
       }
     }).filter(value => value !== null && value !== '')
-    
+
     return [...new Set(values)].sort()
   }
 
@@ -151,8 +152,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
       // Existing filters
       const passesExistingFilters = (
         (!filters.stage || (filters.stage === 'null' ? !jd.application_stage : jd.application_stage === filters.stage)) &&
-        (!filters.role || jd.role_group === filters.role) &&
-        (!filters.firm || jd.firm_type === filters.firm) &&
         (!filters.score || jd.match_score?.toString() === filters.score)
       )
 
@@ -454,8 +453,8 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
             <p className="text-sm text-gray-600 mt-1">
               {(() => {
                 const filteredCount = getFilteredAndSortedJDs().length
-                const hasFilters = filters.stage || filters.role || filters.firm || filters.score || filters.time || filters.searchTerm || sortOrder
-                return hasFilters 
+                const hasFilters = filters.stage || filters.score || filters.time || filters.searchTerm || sortOrder
+                return hasFilters
                   ? `${filteredCount} of ${jds.length} job descriptions`
                   : `${jds.length} job descriptions`
               })()}
@@ -465,8 +464,8 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
           {/* Toolbar */}
           <div className="flex gap-3 flex-wrap">
             {(() => {
-              const hasFilters = filters.stage || filters.role || filters.firm || filters.score || filters.time || sortOrder
-              
+              const hasFilters = filters.stage || filters.score || filters.time || sortOrder
+
               return (
                 <>
                   <button
@@ -477,61 +476,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                       <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
                     </svg>
                     Add
-                  </button>
-
-                  {/* Batch Mode Toggle */}
-                  <button
-                    onClick={() => {
-                      setBatchMode(!batchMode)
-                      if (batchMode) {
-                        clearSelection()
-                      }
-                    }}
-                    className={`w-32 px-6 py-2 rounded-lg font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-2 ${
-                      batchMode
-                        ? 'bg-purple-500 hover:bg-purple-600 text-white'
-                        : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-                    </svg>
-                    {batchMode ? 'Exit' : 'Batch'}
-                  </button>
-
-                  {/* Select All - Always present, disabled when not in batch mode */}
-                  <button
-                    onClick={() => {
-                      const allIds = getFilteredAndSortedJDs().map(jd => jd.id)
-                      selectAllJDs(allIds)
-                    }}
-                    disabled={!batchMode}
-                    className={`w-32 px-6 py-2 rounded-lg font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-2 ${
-                      batchMode
-                        ? 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    Select All
-                  </button>
-
-                  {/* Clear Selection - Always present, disabled when not in batch mode */}
-                  <button
-                    onClick={() => clearSelection()}
-                    disabled={!batchMode || getSelectedCount() === 0}
-                    className={`w-32 px-6 py-2 rounded-lg font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-2 ${
-                      batchMode && getSelectedCount() > 0
-                        ? 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                    Clear
                   </button>
 
                   {/* Global Personal Info Button */}
@@ -568,43 +512,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                 </div>
               </div>
 
-              {/* Role Filter */}
-              <div className="relative">
-                <select
-                  value={filters.role}
-                  onChange={(e) => handleFilterChange('role', e.target.value)}
-                  className="w-32 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 appearance-none cursor-pointer"
-                >
-                  <option value="">All Roles</option>
-                  {getUniqueValues('role').map(role => (
-                    <option key={role} value={role}>{role}</option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-
-              {/* Firm Filter */}
-              <div className="relative">
-                <select
-                  value={filters.firm}
-                  onChange={(e) => handleFilterChange('firm', e.target.value)}
-                  className="w-32 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 appearance-none cursor-pointer"
-                >
-                  <option value="">All Firms</option>
-                  {getUniqueValues('firm').map(firm => (
-                    <option key={firm} value={firm}>{firm}</option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
 
               {/* Score Filter */}
               <div className="relative">
@@ -718,36 +625,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
         </div>
       </div>
 
-      {/* Batch Toolbar - Only show when batch mode is active and JDs are selected */}
-      {batchMode && getSelectedCount() > 0 && (
-        <div className="bg-purple-50/80 backdrop-blur-sm border border-purple-200 rounded-xl shadow-lg p-4 mb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-medium text-purple-700">
-                {getSelectedCount()} JD{getSelectedCount() > 1 ? 's' : ''} selected
-              </span>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  // TODO: 添加批量删除功能
-                  if (confirm(`Are you sure you want to delete ${getSelectedCount()} selected JDs?`)) {
-                    // handleBatchDelete()
-                    // Batch delete not implemented yet
-                  }
-                }}
-                disabled={isBatchProcessing}
-                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 text-gray-700 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                Delete Selected
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
 
       {/* JD List */}
@@ -807,32 +684,9 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                 {/* Optimized 2-Row Layout */}
                 <div className="p-4 relative">
                   <div className="flex items-start">
-                    
-                    {/* 0-8%: Select & Final CV Buttons */}
-                    <div className="w-[8%] flex-shrink-0">
-                      <div className="flex flex-col gap-1 h-[4.5rem]">
-                        {/* Batch Mode Checkbox or Select Button */}
-                        {batchMode ? (
-                          <div className="w-full flex-1 flex items-center justify-center">
-                            <input
-                              type="checkbox"
-                              checked={selectedJDIds.has(jd.id)}
-                              onChange={(e) => {
-                                e.stopPropagation()
-                                toggleJDSelection(jd.id)
-                              }}
-                              className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2"
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-full flex-1"></div>
-                        )}
-                        
-                      </div>
-                    </div>
 
-                    {/* 8-35%: Title & Company */}
-                    <div className="w-[27%] px-3">
+                    {/* 0-35%: Title & Company */}
+                    <div className="w-[35%] px-3">
                       <div className="flex flex-col justify-between h-[4.5rem]">
                         <input
                           type="text"
@@ -861,21 +715,18 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                       </div>
                     </div>
 
-                    {/* 35-85%: Meta Fields - Label Row + Input Row */}
-                    <div className="w-[50%] px-2">
+                    {/* 35-80%: Meta Fields - Label Row + Input Row */}
+                    <div className="w-[45%] px-2">
                       <div className="flex flex-col justify-between h-[4.5rem]">
                         {/* Labels Row - align with Title */}
-                        <div className="grid grid-cols-4 gap-2 h-9 items-center">
+                        <div className="grid grid-cols-2 gap-2 h-9 items-center">
                           <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Stage</label>
-                          <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Role</label>
-                          <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Firm</label>
                           <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Score</label>
                         </div>
                         {/* Input Row - align with Company */}
-                        <div className="grid grid-cols-4 gap-2 h-9">
+                        <div className="grid grid-cols-2 gap-2 h-9">
                           <div className="relative">
-                            <input
-                              type="text"
+                            <select
                               value={jd.application_stage || ''}
                               onChange={(e) => {
                                 handleUpdateField(jd.id, 'application_stage', e.target.value)
@@ -890,34 +741,19 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                                   }
                                 }
                               }}
-                              className="w-full h-9 px-3 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                              placeholder="Not Set"
-                            />
+                              className="w-full h-9 px-3 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 appearance-none cursor-pointer"
+                            >
+                              <option value="">Not Set</option>
+                              {stageOptions.map(stage => (
+                                <option key={stage} value={stage}>{stage}</option>
+                              ))}
+                            </select>
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </div>
                           </div>
-                          <input
-                            type="text"
-                            value={jd.role_group || ''}
-                            onChange={(e) => {
-                              // Optimistic update
-                              const newJds = jds.map(j => j.id === jd.id ? {...j, role_group: e.target.value} : j)
-                              setJds(newJds)
-                            }}
-                            onBlur={(e) => handleUpdateField(jd.id, 'role_group', e.target.value)}
-                            placeholder="Type..."
-                            className="w-full h-9 px-3 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                          />
-                          <input
-                            type="text"
-                            value={jd.firm_type || ''}
-                            onChange={(e) => {
-                              // Optimistic update
-                              const newJds = jds.map(j => j.id === jd.id ? {...j, firm_type: e.target.value} : j)
-                              setJds(newJds)
-                            }}
-                            onBlur={(e) => handleUpdateField(jd.id, 'firm_type', e.target.value)}
-                            placeholder="Type..."
-                            className="w-full h-9 px-3 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                          />
                           <input
                             type="number"
                             min="1"
@@ -941,8 +777,8 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                       </div>
                     </div>
 
-                    {/* 85-100%: Actions & Created */}
-                    <div className="w-[15%] flex flex-col items-end">
+                    {/* 80-100%: Actions & Created */}
+                    <div className="w-[20%] flex flex-col items-end">
                       <div className="flex flex-col justify-between h-[6.5rem] items-end">
                         {/* First Actions Row - Original 3 buttons */}
                         <div className="flex items-center gap-1 h-9">
@@ -1060,6 +896,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
         onClose={() => setShowAddPopover(false)}
         onSave={handleCreateJD}
         userId={user.id}
+        stageOptions={stageOptions}
       />
 
       {/* View JD Tooltip */}
