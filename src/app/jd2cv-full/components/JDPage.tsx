@@ -156,9 +156,10 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
         (!filters.score || jd.match_score?.toString() === filters.score)
       )
 
-      // Search term filter for comment
-      const passesSearchFilter = !filters.searchTerm || 
-        (jd.comment && jd.comment.toLowerCase().includes(filters.searchTerm.toLowerCase()))
+      // Search term filter for comment and company
+      const passesSearchFilter = !filters.searchTerm ||
+        (jd.comment && jd.comment.toLowerCase().includes(filters.searchTerm.toLowerCase())) ||
+        (jd.company && jd.company.toLowerCase().includes(filters.searchTerm.toLowerCase()))
 
       const passesAllFilters = passesExistingFilters && passesSearchFilter
 
@@ -649,7 +650,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="Search comments..."
+                      placeholder="Search companies, comments..."
                       value={searchInput}
                       onChange={(e) => setSearchInput(e.target.value)}
                       onKeyDown={(e) => {
