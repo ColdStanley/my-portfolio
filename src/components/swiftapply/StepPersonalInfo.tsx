@@ -277,7 +277,6 @@ Spanish (Fluent)"
                     value={edu.degree}
                     onChange={(e) => handleEducationChange(index, 'degree', e.target.value)}
                     placeholder="Bachelor of Science in Computer Science"
-                    className="text-sm"
                   />
                 </div>
 
@@ -290,7 +289,6 @@ Spanish (Fluent)"
                     value={edu.institution}
                     onChange={(e) => handleEducationChange(index, 'institution', e.target.value)}
                     placeholder="University Name"
-                    className="text-sm"
                   />
                 </div>
 
@@ -303,7 +301,6 @@ Spanish (Fluent)"
                     value={edu.year}
                     onChange={(e) => handleEducationChange(index, 'year', e.target.value)}
                     placeholder="2020"
-                    className="text-sm"
                   />
                 </div>
 
@@ -316,7 +313,6 @@ Spanish (Fluent)"
                     value={edu.gpa || ''}
                     onChange={(e) => handleEducationChange(index, 'gpa', e.target.value)}
                     placeholder="3.8"
-                    className="text-sm"
                   />
                 </div>
               </div>
@@ -379,7 +375,6 @@ Google Cloud Professional"
                     value={module.title}
                     onChange={(e) => handleCustomModuleChange(index, 'title', e.target.value)}
                     placeholder="Projects, Publications, Awards, etc."
-                    className="text-sm"
                   />
                 </div>
 
@@ -394,7 +389,6 @@ Google Cloud Professional"
                     value={arrayToMultiline(module.content)}
                     onChange={(e) => handleCustomModuleChange(index, 'content', e.target.value)}
                     placeholder="• Built a web application that serves 10,000+ users..."
-                    className="text-sm"
                   />
                 </div>
               </div>

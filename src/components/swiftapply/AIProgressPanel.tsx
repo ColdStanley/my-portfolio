@@ -142,14 +142,13 @@ function renderStageContent(stage: any) {
   // Show streaming content for in-progress stages
   if (stage.status === 'in_progress' && stage.content) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-2 flex-1 flex flex-col">
         <Input
           multiline
-          rows={12}
           value={stage.content + (stage.status === 'in_progress' ? '▊' : '')}
           readOnly
-          className="font-mono resize-none leading-relaxed"
-          containerClassName="h-96"
+          className="font-mono resize-none leading-relaxed flex-1"
+          containerClassName="flex-1"
         />
       </div>
     )
@@ -201,11 +200,10 @@ function renderStageContent(stage: any) {
     return (
       <Input
         multiline
-        rows={12}
         value={stage.content}
         readOnly
-        className="font-mono resize-none leading-relaxed"
-        containerClassName="h-96"
+        className="font-mono resize-none leading-relaxed flex-1"
+        containerClassName="flex-1"
       />
     )
   }

@@ -162,15 +162,12 @@ export default function AIReviewModal() {
           <Input
             id="work-experience"
             multiline
-            rows={12}
+            rows={16}
             value={editedWorkExperience}
             onChange={event => setEditedWorkExperience(event.target.value)}
             placeholder="AI-generated work experience will appear here..."
             className="resize-none leading-relaxed"
           />
-          <p className="text-xs text-text-muted">
-            Review and edit the AI-generated experience content
-          </p>
         </div>
 
         {/* Personal Info */}
@@ -181,15 +178,12 @@ export default function AIReviewModal() {
           <Input
             id="personal-info"
             multiline
-            rows={12}
+            rows={16}
             value={editedPersonalInfoText}
             onChange={event => setEditedPersonalInfoText(event.target.value)}
             placeholder="Personal information JSON..."
             className="font-mono resize-none leading-relaxed"
           />
-          <p className="text-xs text-text-muted">
-            Must be valid JSON format. Do not rename fields.
-          </p>
         </div>
 
         {/* Error Display */}

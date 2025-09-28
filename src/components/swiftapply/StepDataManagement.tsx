@@ -119,7 +119,7 @@ export default function StepDataManagement() {
 
   return (
     <div className="p-4 sm:p-6 max-h-[70vh] sm:max-h-[75vh] overflow-y-auto">
-      <div className="space-y-8">
+      <div className="space-y-4">
         {/* Header */}
         <div>
           <h3 className="text-lg font-semibold text-text-primary mb-2">Data Backup & Restore</h3>
@@ -153,31 +153,31 @@ export default function StepDataManagement() {
         </div>
 
         {/* Export Section */}
-        <div className="space-y-4">
+        <div className="space-y-2">
           <h4 className="text-sm font-semibold text-text-primary">Export Data</h4>
-          <p className="text-xs text-text-secondary">
-            Download your personal information and templates as a JSON backup file.
-          </p>
-
-          <Button
-            onClick={handleExport}
-            variant="secondary"
-            size="sm"
-            disabled={summary.isEmpty}
-            className="text-xs px-3 py-1"
-          >
-            Export Backup File
-          </Button>
+          <div className="flex items-center gap-3">
+            <p className="text-xs text-text-secondary flex-1">
+              Download your personal information and templates as a JSON backup file.
+            </p>
+            <Button
+              onClick={handleExport}
+              variant="secondary"
+              size="sm"
+              disabled={summary.isEmpty}
+              className="text-xs px-3 py-1 shrink-0"
+            >
+              Export Backup File
+            </Button>
+          </div>
         </div>
 
         {/* Import Section */}
-        <div className="space-y-4">
+        <div className="space-y-2">
           <h4 className="text-sm font-semibold text-text-primary">Import Data</h4>
-          <p className="text-xs text-text-secondary">
-            Restore your data from a previous backup file. This will replace your current data.
-          </p>
-
           <div className="flex items-center gap-3">
+            <p className="text-xs text-text-secondary flex-1">
+              Restore your data from a previous backup file. This will replace your current data.
+            </p>
             <input
               ref={fileInputRef}
               type="file"
@@ -190,7 +190,7 @@ export default function StepDataManagement() {
               onClick={() => fileInputRef.current?.click()}
               variant="secondary"
               size="sm"
-              className="text-xs px-3 py-1"
+              className="text-xs px-3 py-1 shrink-0"
             >
               Select Backup File
             </Button>

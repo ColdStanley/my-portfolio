@@ -28,7 +28,7 @@ export default function JDEditor() {
     debouncedUpdateTitle(value)
   }
 
-  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = e.target.value
     debouncedUpdateDescription(value)
   }
@@ -41,8 +41,8 @@ export default function JDEditor() {
       </div>
 
       {/* Job Title Input */}
-      <div className="px-6 py-4 border-b border-neutral-light flex items-center gap-3">
-        <label className="text-sm font-medium text-text-primary whitespace-nowrap">
+      <div className="px-6 py-2.5 border-b border-neutral-light flex items-center gap-3">
+        <label className="text-sm font-semibold text-text-primary whitespace-nowrap">
           Job Title
         </label>
         <Input
@@ -57,16 +57,16 @@ export default function JDEditor() {
 
       {/* Job Description Textarea */}
       <div className="flex-1 min-h-0 flex flex-col px-6 py-4">
-        <label className="block text-sm font-medium text-text-primary mb-3">
+        <label className="block text-sm font-semibold text-text-primary mb-3">
           Job Description
         </label>
         <Input
           multiline
-          rows={12}
-          defaultValue={jobDescription}
+          value={jobDescription}
           onChange={handleDescriptionChange}
           placeholder="Paste the full job description here..."
-          className="resize-none leading-relaxed"
+          className="resize-none leading-relaxed flex-1"
+          containerClassName="flex-1"
           aria-label="Job Description Input"
         />
       </div>
