@@ -1,14 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY
 
-const deepseek = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY,
-  baseURL: 'https://api.deepseek.com'
-})
+type Provider = 'openai' | 'deepseek'
+
+const MODEL_BY_PROVIDER: Record<Provider, string> = {
+  openai: 'gpt-4',
+  deepseek: 'deepseek-chat'
+}
+
+function createClient(provider: Provider): OpenAI | null {
+  if (provider === 'openai') {
+    if (!OPENAI_API_KEY) return null
+    return new OpenAI({ apiKey: OPENAI_API_KEY })
+  }
+
+  if (!DEEPSEEK_API_KEY) return null
+  return new OpenAI({
+    apiKey: DEEPSEEK_API_KEY,
+    baseURL: 'https://api.deepseek.com'
+  })
+}
+
+function resolveProvider(preferred: Provider): { client: OpenAI; provider: Provider } | null {
+  const searchOrder: Provider[] = preferred === 'openai' ? ['openai', 'deepseek'] : ['deepseek', 'openai']
+
+  for (const provider of searchOrder) {
+    const client = createClient(provider)
+    if (client) {
+      return { client, provider }
+    }
+  }
+
+  return null
+}
 
 interface PersonalInfo {
   fullName: string
@@ -133,9 +160,17 @@ export async function POST(request: NextRequest) {
       tailoredExperience
     )
 
-    // Select AI model
-    const aiClient = aiModel === 'openai' ? openai : deepseek
-    const modelName = aiModel === 'openai' ? 'gpt-4' : 'deepseek-chat'
+    const resolved = resolveProvider(aiModel === 'openai' ? 'openai' : 'deepseek')
+
+    if (!resolved) {
+      return NextResponse.json({
+        success: false,
+        error: 'AI configuration missing. Set DEEPSEEK_API_KEY or OPENAI_API_KEY to enable cover letter generation.'
+      }, { status: 500 })
+    }
+
+    const { client: aiClient, provider } = resolved
+    const modelName = MODEL_BY_PROVIDER[provider]
 
     // Generate cover letter
     const completion = await aiClient.chat.completions.create({

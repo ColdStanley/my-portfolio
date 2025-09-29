@@ -126,12 +126,12 @@ export default function CoverLetterEditor() {
                 <span>{error}</span>
               </div>
               <Button
-                onClick={handleGenerateCoverLetter}
+                onClick={content ? handleConfirmAndPreview : handleGenerateCoverLetter}
                 variant="ghost"
                 size="sm"
                 className="mt-2 text-error hover:text-error"
               >
-                Retry
+                {content ? 'Try Preview Again' : 'Retry' }
               </Button>
             </div>
           )}

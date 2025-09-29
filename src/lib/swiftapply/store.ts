@@ -171,7 +171,7 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
   // Core setters
   setPersonalInfo: (personalInfo) => {
     set({ personalInfo })
-    saveToStorage('jd2cv-v2-personal-info', personalInfo)
+    saveToStorage('swiftapply-personal-info', personalInfo)
   },
 
   setTemplates: (templates) => {
@@ -200,7 +200,7 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
 
 
   initializeFromStorage: () => {
-    const personalInfo = loadFromStorage<PersonalInfo>('jd2cv-v2-personal-info')
+    const personalInfo = loadFromStorage<PersonalInfo>('swiftapply-personal-info')
     const templates = loadFromStorage<ExperienceTemplate[]>('swiftapply-templates') || []
     const jobTitle = loadFromStorage<string>('swiftapply-job-title') || ''
     const jobDescription = loadFromStorage<string>('swiftapply-job-description') || ''
@@ -214,7 +214,7 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
   },
 
   hasStoredData: () => {
-    const personalInfo = loadFromStorage<PersonalInfo>('jd2cv-v2-personal-info')
+    const personalInfo = loadFromStorage<PersonalInfo>('swiftapply-personal-info')
     const templates = loadFromStorage<ExperienceTemplate[]>('swiftapply-templates')
 
     // 有任一数据存在就认为是已有数据
@@ -462,13 +462,20 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
         })
       })
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+      let result: any = null
+
+      try {
+        result = await response.json()
+      } catch (jsonError) {
+        result = null
       }
 
-      const result = await response.json()
+      if (!response.ok) {
+        const message = result?.error || `HTTP error! status: ${response.status}`
+        throw new Error(message)
+      }
 
-      if (result.success && result.coverLetter) {
+      if (result?.success && result.coverLetter) {
         set(state => ({
           coverLetter: {
             ...state.coverLetter,
@@ -478,7 +485,7 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
           }
         }))
       } else {
-        throw new Error(result.error || 'Failed to generate cover letter')
+        throw new Error(result?.error || 'Failed to generate cover letter')
       }
     } catch (error: any) {
       set(state => ({
@@ -525,7 +532,8 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
       coverLetter: {
         ...state.coverLetter,
         isGeneratingPDF: true,
-        error: null
+        error: null,
+        pdfPreviewUrl: null
       }
     }))
 
@@ -544,7 +552,17 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        let message = `HTTP error! status: ${response.status}`
+        try {
+          const errorBody = await response.json()
+          if (errorBody?.error) {
+            message = errorBody.error
+          }
+        } catch (jsonError) {
+          // ignore JSON parse errors for binary responses
+        }
+
+        throw new Error(message)
       }
 
       // Get PDF preview URL from response header
