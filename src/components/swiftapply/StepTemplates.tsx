@@ -99,18 +99,19 @@ export default function StepTemplates() {
   }
 
   return (
-    <div className="p-4 sm:p-6 max-h-[70vh] sm:max-h-[75vh] overflow-y-auto">
-      <div>
-        <h3 className="text-lg font-semibold text-text-primary mb-2">
-          Experience Templates
-        </h3>
-        <p className="text-sm text-text-secondary mb-6">
-          Create reusable experience templates that you can tailor for different job applications.
-        </p>
+    <div className="flex h-full min-h-0 flex-col p-4 sm:p-6 max-h-[70vh] sm:max-h-[75vh]">
+      <div className="flex-1 overflow-y-auto min-h-0">
+        <div>
+          <h3 className="text-lg font-semibold text-text-primary mb-2">
+            Experience Templates
+          </h3>
+          <p className="text-sm text-text-secondary mb-6">
+            Create reusable experience templates that you can tailor for different job applications.
+          </p>
 
-        {/* Templates List */}
-        <div className="space-y-4">
-          {templates.map((template) => {
+          {/* Templates List */}
+          <div className="space-y-4">
+            {templates.map((template) => {
             const isExpanded = expandedId === template.id
 
             return (
@@ -232,37 +233,38 @@ export default function StepTemplates() {
                 )}
               </Card>
             )
-          })}
+            })}
 
-          {/* Empty State */}
-          {templates.length === 0 && (
-            <div className="text-center py-12 text-text-secondary">
-              <div className="w-16 h-16 bg-neutral-light rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
+            {/* Empty State */}
+            {templates.length === 0 && (
+              <div className="text-center py-12 text-text-secondary">
+                <div className="w-16 h-16 bg-neutral-light rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h4 className="text-lg font-medium text-text-primary mb-2">
+                  No templates yet
+                </h4>
+                <p className="text-sm text-text-secondary mb-4">
+                  Create your first experience template to get started
+                </p>
               </div>
-              <h4 className="text-lg font-medium text-text-primary mb-2">
-                No templates yet
-              </h4>
-              <p className="text-sm text-text-secondary mb-4">
-                Create your first experience template to get started
-              </p>
-            </div>
-          )}
+            )}
 
-          {/* Add Template Button */}
-          <button
-            onClick={handleAddTemplate}
-            className="w-full p-4 border-2 border-dashed border-neutral-dark hover:border-primary rounded-lg text-text-secondary hover:text-primary transition-colors duration-200 group"
-          >
-            <div className="flex items-center justify-center gap-2">
-              <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Add New Template
-            </div>
-          </button>
+            {/* Add Template Button */}
+            <button
+              onClick={handleAddTemplate}
+              className="w-full p-4 border-2 border-dashed border-neutral-dark hover:border-primary rounded-lg text-text-secondary hover:text-primary transition-colors duration-200 group"
+            >
+              <div className="flex items-center justify-center gap-2">
+                <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Add New Template
+              </div>
+            </button>
+          </div>
         </div>
       </div>
 

@@ -67,6 +67,15 @@ export interface AIGenerationState {
   error: string | null
 }
 
+export interface CoverLetterState {
+  isGenerating: boolean
+  isGeneratingPDF: boolean
+  content: string | null
+  streamingContent: string | null
+  pdfPreviewUrl: string | null
+  error: string | null
+}
+
 interface SwiftApplyState {
   // Data
   personalInfo: PersonalInfo | null
@@ -80,6 +89,9 @@ interface SwiftApplyState {
 
   // AI Generation State
   ai: AIGenerationState
+
+  // Cover Letter State
+  coverLetter: CoverLetterState
 
   // PDF Preview State
   pdfPreviewUrl: string | null
@@ -107,6 +119,15 @@ interface SwiftApplyState {
   setAIGeneratedContent: (content: any) => void
   resetAIState: () => void
 
+  // Cover Letter actions
+  startCoverLetterGeneration: () => void
+  setCoverLetterContent: (content: string) => void
+  setCoverLetterStreamingContent: (content: string) => void
+  setCoverLetterError: (error: string | null) => void
+  generateCoverLetterPDF: (content: string) => void
+  setCoverLetterPdfPreviewUrl: (url: string | null) => void
+  resetCoverLetterState: () => void
+
   // PDF Preview actions
   setPdfPreviewUrl: (url: string | null) => void
 }
@@ -125,6 +146,16 @@ const getInitialAIState = (): AIGenerationState => ({
   error: null
 })
 
+// Initial Cover Letter state
+const getInitialCoverLetterState = (): CoverLetterState => ({
+  isGenerating: false,
+  isGeneratingPDF: false,
+  content: null,
+  streamingContent: null,
+  pdfPreviewUrl: null,
+  error: null
+})
+
 export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
   // Initial state
   personalInfo: null,
@@ -134,6 +165,7 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
   isSettingsOpen: false,
   settingsStep: 1,
   ai: getInitialAIState(),
+  coverLetter: getInitialCoverLetterState(),
   pdfPreviewUrl: null,
 
   // Core setters
@@ -400,6 +432,170 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
   resetAIState: () => {
     set(state => ({
       ai: getInitialAIState()
+    }))
+  },
+
+  // Cover Letter actions
+  startCoverLetterGeneration: async () => {
+    const state = get()
+
+    set(state => ({
+      coverLetter: {
+        ...state.coverLetter,
+        isGenerating: true,
+        error: null
+      }
+    }))
+
+    try {
+      const response = await fetch('/api/swiftapply/generate-cover-letter', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          personalInfo: state.personalInfo,
+          jobTitle: state.jobTitle,
+          jobDescription: state.jobDescription,
+          tailoredExperience: state.ai.generatedContent?.workExperience || '',
+          aiModel: 'deepseek'
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result = await response.json()
+
+      if (result.success && result.coverLetter) {
+        set(state => ({
+          coverLetter: {
+            ...state.coverLetter,
+            isGenerating: false,
+            content: result.coverLetter,
+            error: null
+          }
+        }))
+      } else {
+        throw new Error(result.error || 'Failed to generate cover letter')
+      }
+    } catch (error: any) {
+      set(state => ({
+        coverLetter: {
+          ...state.coverLetter,
+          isGenerating: false,
+          error: error.message || 'Failed to generate cover letter'
+        }
+      }))
+    }
+  },
+
+  setCoverLetterContent: (content) => {
+    set(state => ({
+      coverLetter: {
+        ...state.coverLetter,
+        content
+      }
+    }))
+  },
+
+  setCoverLetterStreamingContent: (content) => {
+    set(state => ({
+      coverLetter: {
+        ...state.coverLetter,
+        streamingContent: content
+      }
+    }))
+  },
+
+  setCoverLetterError: (error) => {
+    set(state => ({
+      coverLetter: {
+        ...state.coverLetter,
+        error
+      }
+    }))
+  },
+
+  generateCoverLetterPDF: async (content) => {
+    const state = get()
+
+    set(state => ({
+      coverLetter: {
+        ...state.coverLetter,
+        isGeneratingPDF: true,
+        error: null
+      }
+    }))
+
+    try {
+      const response = await fetch('/api/swiftapply/generate-cover-letter-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          coverLetterContent: content,
+          personalInfo: state.personalInfo,
+          jobTitle: state.jobTitle,
+          format: state.personalInfo?.format || 'A4'
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      // Get PDF preview URL from response header
+      const previewUrl = response.headers.get('X-PDF-Preview-URL')
+
+      if (previewUrl) {
+        set(state => ({
+          coverLetter: {
+            ...state.coverLetter,
+            isGeneratingPDF: false,
+            pdfPreviewUrl: previewUrl,
+            error: null
+          }
+        }))
+      } else {
+        // Fallback: create blob URL from response
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+
+        set(state => ({
+          coverLetter: {
+            ...state.coverLetter,
+            isGeneratingPDF: false,
+            pdfPreviewUrl: url,
+            error: null
+          }
+        }))
+      }
+    } catch (error: any) {
+      set(state => ({
+        coverLetter: {
+          ...state.coverLetter,
+          isGeneratingPDF: false,
+          error: error.message || 'Failed to generate PDF'
+        }
+      }))
+    }
+  },
+
+  setCoverLetterPdfPreviewUrl: (url) => {
+    set(state => ({
+      coverLetter: {
+        ...state.coverLetter,
+        pdfPreviewUrl: url
+      }
+    }))
+  },
+
+  resetCoverLetterState: () => {
+    set(state => ({
+      coverLetter: getInitialCoverLetterState()
     }))
   },
 

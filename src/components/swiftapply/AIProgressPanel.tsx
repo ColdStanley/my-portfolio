@@ -3,6 +3,7 @@
 import { useSwiftApplyStore, type AIStageKey } from '@/lib/swiftapply/store'
 import { useEffect, useRef } from 'react'
 import Button from '@/components/ui/button'
+import Input from '@/components/ui/input'
 
 const STAGE_CONFIG = [
   { key: 'classifier', label: 'Analysis' },
@@ -47,8 +48,63 @@ export default function AIProgressPanel() {
   return (
     <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 h-full flex flex-col border border-neutral-dark">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-neutral-light">
-        <div className="flex items-center justify-between">
+      <div className="px-6 py-4 border-b border-neutral-light h-12 flex items-center">
+        <h2 className="text-lg font-semibold text-text-primary">Resume Customizer</h2>
+      </div>
+
+      {/* Stage Tabs */}
+      <div className="px-6 py-2.5 border-b border-neutral-light flex items-center gap-3 h-16">
+        <div className="flex gap-2 flex-1">
+          {STAGE_CONFIG.map(stage => {
+            const data = stageOutputs[stage.key]
+            const isActive = activeStage === stage.key
+
+            // Status indicator classes
+            let statusIndicator = ''
+            if (data.status === 'in_progress') {
+              statusIndicator = 'animate-pulse'
+            } else if (data.status === 'completed') {
+              statusIndicator = 'opacity-75'
+            } else if (data.status === 'error') {
+              statusIndicator = 'opacity-50'
+            }
+
+            return (
+              <Button
+                key={stage.key}
+                onClick={() => setAIStage(stage.key)}
+                variant={isActive ? "primary" : "secondary"}
+                size="sm"
+                className={`flex-1 text-xs ${statusIndicator}`}
+              >
+                {stage.label}
+              </Button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Stage Content */}
+      <div className="flex-1 min-h-0 flex flex-col px-6 py-4">
+        <div className="flex-1 min-h-0">
+          {renderStageContent(stageOutputs[activeStage])}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="px-6 py-4 border-t border-neutral-light bg-surface/50 h-12 flex items-center">
+        <div className="flex items-center justify-between text-xs text-text-secondary w-full">
+          <div>
+            <span>Status: {formatStageStatus(stageOutputs[activeStage].status)}</span>
+            {stageOutputs[activeStage].duration != null && (
+              <span className="ml-2">Duration: {formatDuration(stageOutputs[activeStage].duration)}</span>
+            )}
+            {stageOutputs[activeStage].tokens && (
+              <span className="ml-2">
+                Tokens P:{stageOutputs[activeStage].tokens?.prompt} / C:{stageOutputs[activeStage].tokens?.completion}
+              </span>
+            )}
+          </div>
           <Button
             onClick={handleCustomizeResume}
             variant="primary"
@@ -59,61 +115,6 @@ export default function AIProgressPanel() {
           >
             {isGenerating ? 'Processing...' : 'Customize Resume'}
           </Button>
-          {isGenerating && (
-            <span className="text-xs text-primary animate-pulse">Processing…</span>
-          )}
-        </div>
-      </div>
-
-      {/* Stage Tabs */}
-      <div className="flex gap-2 border-b border-neutral-light px-6 py-4">
-        {STAGE_CONFIG.map(stage => {
-          const data = stageOutputs[stage.key]
-          const isActive = activeStage === stage.key
-
-          // Status indicator classes
-          let statusIndicator = ''
-          if (data.status === 'in_progress') {
-            statusIndicator = 'animate-pulse'
-          } else if (data.status === 'completed') {
-            statusIndicator = 'opacity-75'
-          } else if (data.status === 'error') {
-            statusIndicator = 'opacity-50'
-          }
-
-          return (
-            <Button
-              key={stage.key}
-              onClick={() => setAIStage(stage.key)}
-              variant={isActive ? "primary" : "secondary"}
-              size="sm"
-              className={`flex-1 text-xs ${statusIndicator}`}
-            >
-              {stage.label}
-            </Button>
-          )
-        })}
-      </div>
-
-      {/* Stage Content */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
-        {renderStageContent(stageOutputs[activeStage])}
-      </div>
-
-      {/* Footer */}
-      <div className="flex items-center justify-between border-t border-neutral-light px-6 py-4 text-xs text-text-secondary">
-        <div>
-          <span>Status: {formatStageStatus(stageOutputs[activeStage].status)}</span>
-          {stageOutputs[activeStage].duration != null && (
-            <span className="ml-2">Duration: {formatDuration(stageOutputs[activeStage].duration)}</span>
-          )}
-        </div>
-        <div>
-          {stageOutputs[activeStage].tokens && (
-            <span>
-              Tokens P:{stageOutputs[activeStage].tokens?.prompt} / C:{stageOutputs[activeStage].tokens?.completion}
-            </span>
-          )}
         </div>
       </div>
     </div>
@@ -132,7 +133,7 @@ function renderStageContent(stage: any) {
   }, [stage.content, stage.status])
 
   if (stage.status === 'pending') {
-    return <div className="h-96"></div>
+    return <div className="h-full"></div>
   }
 
   if (stage.status === 'error') {
@@ -142,22 +143,20 @@ function renderStageContent(stage: any) {
   // Show streaming content for in-progress stages
   if (stage.status === 'in_progress' && stage.content) {
     return (
-      <div className="space-y-2 flex-1 flex flex-col">
-        <Input
-          multiline
-          value={stage.content + (stage.status === 'in_progress' ? '▊' : '')}
-          readOnly
-          className="font-mono resize-none leading-relaxed flex-1"
-          containerClassName="flex-1"
-        />
-      </div>
+      <Input
+        multiline
+        value={stage.content + (stage.status === 'in_progress' ? '▊' : '')}
+        readOnly
+        className="font-mono resize-none leading-relaxed flex-1"
+        containerClassName="flex-1"
+      />
     )
   }
 
   // Show classifier insights
   if (stage.roleType || stage.insights || stage.keywords) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 overflow-y-auto flex-1">
         {stage.roleType && (
           <div>
             <div className="text-sm font-semibold text-primary mb-2">Role Classification</div>
@@ -208,7 +207,7 @@ function renderStageContent(stage: any) {
     )
   }
 
-  return <div className="text-text-secondary">No content available</div>
+  return <div className="flex items-center justify-center h-full text-text-secondary">No content available</div>
 }
 
 function formatStageStatus(status: string) {

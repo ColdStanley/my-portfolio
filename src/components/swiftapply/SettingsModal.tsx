@@ -12,7 +12,7 @@ export default function SettingsModal() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/50">
       <div
-        className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden"
+        className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col"
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
@@ -110,27 +110,33 @@ export default function SettingsModal() {
         </div>
 
         {/* Step Content */}
-        <div className="relative overflow-hidden">
+        <div className="relative flex-1 overflow-hidden min-h-0">
           <div
-            className="flex transition-transform duration-500 ease-out"
+            className="flex h-full transition-transform duration-500 ease-out"
             style={{
               transform: `translateX(-${(settingsStep - 1) * 33.333}%)`,
               width: '300%'
             }}
           >
             {/* Step 1: Personal Info */}
-            <div className="w-1/3 flex-shrink-0">
-              <StepPersonalInfo />
+            <div className="w-1/3 flex-shrink-0 h-full">
+              <div className="h-full min-h-0">
+                <StepPersonalInfo />
+              </div>
             </div>
 
             {/* Step 2: Templates */}
-            <div className="w-1/3 flex-shrink-0">
-              <StepTemplates />
+            <div className="w-1/3 flex-shrink-0 h-full">
+              <div className="h-full min-h-0">
+                <StepTemplates />
+              </div>
             </div>
 
             {/* Step 3: Data Management */}
-            <div className="w-1/3 flex-shrink-0">
-              <StepDataManagement />
+            <div className="w-1/3 flex-shrink-0 h-full">
+              <div className="h-full min-h-0">
+                <StepDataManagement />
+              </div>
             </div>
           </div>
         </div>

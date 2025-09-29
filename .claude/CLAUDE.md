@@ -46,6 +46,8 @@ API 错误处理、全局错误边界
 
 所有 fetch 请求必须走封装的 API 客户端，不允许直接写 fetch()
 
+简洁优先：避免过度工程化，优先选择简单直接的解决方案
+
 5. UI & 设计规范
 
 统一框架 + 差异化风格：所有项目遵循相同的 Design System，全站只允许一个 theme.config.ts 定义品牌色
@@ -89,6 +91,8 @@ Code Splitting、Lazy loading 必须使用
 
 Logging & Monitoring 必须遵循统一接口，避免散落式 console.log
 
+避免过度优化：仅在确有性能问题时才添加复杂的优化机制（如防抖、缓存等）
+
 9. 测试与质量保证
 
 单元测试：Vitest + Testing Library
@@ -119,3 +123,4 @@ pnpm test:e2e
 ❌ 禁止绕过封装组件直接写 UI
 ❌ 禁止 any 类型
 ❌ 禁止手动 fetch，必须走封装的 API 客户端
+❌ 禁止过度工程化（如不必要的防抖、复杂状态管理、过度抽象）

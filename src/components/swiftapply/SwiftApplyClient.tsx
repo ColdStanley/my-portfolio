@@ -8,6 +8,8 @@ import ResumePreview from '@/components/swiftapply/ResumePreview'
 import SettingsModal from '@/components/swiftapply/SettingsModal'
 import AIProgressPanel from '@/components/swiftapply/AIProgressPanel'
 import AIReviewModal from '@/components/swiftapply/AIReviewModal'
+import CoverLetterEditor from '@/components/swiftapply/CoverLetterEditor'
+import CoverLetterPreview from '@/components/swiftapply/CoverLetterPreview'
 
 export default function SwiftApplyClient() {
   const {
@@ -133,13 +135,23 @@ export default function SwiftApplyClient() {
           </div>
 
           {/* Panel 3 - AI Review Panel */}
-          <div className="w-[600px] lg:w-[700px] h-full flex-shrink-0 flex flex-col">
+          <div className="w-[400px] lg:w-[500px] h-full flex-shrink-0 flex flex-col">
             <AIReviewModal />
           </div>
 
           {/* Panel 4 - Resume Preview */}
-          <div className="w-[500px] lg:w-[600px] h-full flex-shrink-0 flex flex-col">
+          <div className="w-[400px] lg:w-[500px] h-full flex-shrink-0 flex flex-col">
             <ResumePreview />
+          </div>
+
+          {/* Panel 5 - Cover Letter Editor */}
+          <div className="w-[400px] lg:w-[500px] h-full flex-shrink-0 flex flex-col">
+            <CoverLetterEditor />
+          </div>
+
+          {/* Panel 6 - Cover Letter Preview */}
+          <div className="w-[400px] lg:w-[500px] h-full flex-shrink-0 flex flex-col">
+            <CoverLetterPreview />
           </div>
         </div>
       </main>

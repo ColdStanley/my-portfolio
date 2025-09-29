@@ -109,12 +109,13 @@ export default function StepPersonalInfo() {
   }
 
   return (
-    <div className="p-4 sm:p-6 max-h-[70vh] sm:max-h-[75vh] overflow-y-auto">
-      <div className="space-y-6">
-        {/* Basic Information */}
-        <div>
-          <h3 className="text-lg font-semibold text-text-primary mb-4">Basic Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="flex h-full min-h-0 flex-col p-4 sm:p-6 max-h-[70vh] sm:max-h-[75vh]">
+      <div className="flex-1 overflow-y-auto min-h-0">
+        <div className="space-y-6 pb-6">
+          {/* Basic Information */}
+          <div>
+            <h3 className="text-lg font-semibold text-text-primary mb-4">Basic Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-text-primary mb-1">
                 Full Name *
@@ -426,19 +427,19 @@ Google Cloud Professional"
             </label>
           </div>
         </div>
-      </div>
 
-      {/* Error Messages */}
-      {errors.length > 0 && (
-        <div className="mt-6 p-4 bg-error/5 border border-error/20 rounded-lg">
-          <h4 className="text-sm font-medium text-error mb-2">Please fix the following errors:</h4>
-          <ul className="list-disc list-inside text-sm text-error space-y-1">
-            {errors.map((error, index) => (
-              <li key={index}>{error}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+        {/* Error Messages */}
+        {errors.length > 0 && (
+          <div className="mt-6 p-4 bg-error/5 border border-error/20 rounded-lg">
+            <h4 className="text-sm font-medium text-error mb-2">Please fix the following errors:</h4>
+            <ul className="list-disc list-inside text-sm text-error space-y-1">
+              {errors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
 
       {/* Actions */}
       <div className="flex justify-end mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-neutral-mid">
@@ -450,6 +451,7 @@ Google Cloud Professional"
           Save & Continue
         </Button>
       </div>
+    </div>
     </div>
   )
 }

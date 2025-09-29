@@ -30,8 +30,8 @@ export default function ResumePreview() {
   return (
     <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 h-full flex flex-col border border-neutral-dark">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-neutral-light">
-        <div className="flex items-center justify-between">
+      <div className="px-6 py-4 border-b border-neutral-light h-12 flex items-center">
+        <div className="flex items-center justify-between w-full">
           <h2 className="text-lg font-semibold text-text-primary">Final PDF Preview</h2>
           <Button
             onClick={handleDownload}
@@ -55,19 +55,8 @@ export default function ResumePreview() {
           />
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center px-6 py-4">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-neutral-light rounded-lg flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-text-secondary" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm3 1h6v4H7V5zm0 6h6v2H7v-2z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-text-primary mb-2">
-              No PDF Preview
-            </h3>
-            <p className="text-text-secondary text-sm">
-              Click "Confirm & Preview" to generate the final PDF preview
-            </p>
+        <div className="flex-1 px-6 py-4">
+          <div className="h-full bg-neutral-light/30 rounded-lg border border-neutral-light">
           </div>
         </div>
       )}

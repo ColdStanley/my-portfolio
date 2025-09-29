@@ -35,9 +35,23 @@ export default function AIReviewModal() {
     return (
       <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 h-full flex flex-col border border-neutral-dark">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-neutral-light">
-          <div className="flex items-center justify-between">
-            <div className="text-lg font-semibold text-text-primary">Edit & Preview</div>
+        <div className="px-6 py-4 border-b border-neutral-light h-12 flex items-center">
+          <h2 className="text-lg font-semibold text-text-primary">Edit & Preview</h2>
+        </div>
+
+        {/* Second Section */}
+        <div className="px-6 py-2.5 border-b border-neutral-light flex items-center gap-3 h-16">
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 min-h-0 flex flex-col px-6 py-4">
+          <div className="flex-1 min-h-0 bg-neutral-light/30 rounded-lg border border-neutral-light">
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-neutral-light bg-surface/50 h-12 flex items-center">
+          <div className="flex items-center justify-end text-xs text-text-secondary w-full">
             <Button
               variant="primary"
               disabled={true}
@@ -47,24 +61,6 @@ export default function AIReviewModal() {
             </Button>
           </div>
         </div>
-
-        {/* Empty Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-text-primary">
-              Customized Work Experience
-            </label>
-            <div className="border border-neutral-light rounded-lg p-4 h-[300px] bg-neutral-light/30"></div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-text-primary">
-              Personal Information (JSON)
-            </label>
-            <div className="border border-neutral-light rounded-lg p-4 h-[200px] bg-neutral-light/30"></div>
-          </div>
-        </div>
-
       </div>
     )
   }
@@ -131,9 +127,61 @@ export default function AIReviewModal() {
   return (
     <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 h-full flex flex-col border border-neutral-dark">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-neutral-light">
-        <div className="flex items-center justify-between">
-          <div className="text-lg font-semibold text-text-primary">Preview & Export PDF</div>
+      <div className="px-6 py-4 border-b border-neutral-light h-12 flex items-center">
+        <h2 className="text-lg font-semibold text-text-primary">Edit & Preview</h2>
+      </div>
+
+      {/* Second Section */}
+      <div className="px-6 py-2.5 border-b border-neutral-light flex items-center gap-3 h-16">
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 min-h-0 flex flex-col px-6 py-4">
+        <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto">
+          {/* Work Experience */}
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-text-primary" htmlFor="work-experience">
+              AI-Generated Work Experience
+            </label>
+            <Input
+              id="work-experience"
+              multiline
+              rows={8}
+              value={editedWorkExperience}
+              onChange={event => setEditedWorkExperience(event.target.value)}
+              placeholder="AI-generated work experience will appear here..."
+              className="resize-none leading-relaxed"
+            />
+          </div>
+
+          {/* Personal Info */}
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-text-primary" htmlFor="personal-info">
+              Personal Information (JSON)
+            </label>
+            <Input
+              id="personal-info"
+              multiline
+              rows={8}
+              value={editedPersonalInfoText}
+              onChange={event => setEditedPersonalInfoText(event.target.value)}
+              placeholder="Personal information JSON..."
+              className="font-mono resize-none leading-relaxed"
+            />
+          </div>
+
+          {/* Error Display */}
+          {error && (
+            <div className="rounded-lg border border-error/20 bg-error/5 px-3 py-2 text-sm text-error">
+              {error}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="px-6 py-4 border-t border-neutral-light bg-surface/50 h-12 flex items-center">
+        <div className="flex items-center justify-end text-xs text-text-secondary w-full">
           <Button
             variant="secondary"
             onClick={handleConfirm}
@@ -151,49 +199,6 @@ export default function AIReviewModal() {
           </Button>
         </div>
       </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 pb-6 space-y-6">
-        {/* Work Experience */}
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-text-primary" htmlFor="work-experience">
-            AI-Generated Work Experience
-          </label>
-          <Input
-            id="work-experience"
-            multiline
-            rows={16}
-            value={editedWorkExperience}
-            onChange={event => setEditedWorkExperience(event.target.value)}
-            placeholder="AI-generated work experience will appear here..."
-            className="resize-none leading-relaxed"
-          />
-        </div>
-
-        {/* Personal Info */}
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-text-primary" htmlFor="personal-info">
-            Personal Information (JSON)
-          </label>
-          <Input
-            id="personal-info"
-            multiline
-            rows={16}
-            value={editedPersonalInfoText}
-            onChange={event => setEditedPersonalInfoText(event.target.value)}
-            placeholder="Personal information JSON..."
-            className="font-mono resize-none leading-relaxed"
-          />
-        </div>
-
-        {/* Error Display */}
-        {error && (
-          <div className="rounded-lg border border-error/20 bg-error/5 px-3 py-2 text-sm text-error">
-            {error}
-          </div>
-        )}
-      </div>
-
     </div>
   )
 }
