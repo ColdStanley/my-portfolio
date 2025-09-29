@@ -86,9 +86,7 @@ export default function AIProgressPanel() {
 
       {/* Stage Content */}
       <div className="flex-1 min-h-0 flex flex-col px-6 py-4">
-        <div className="flex-1 min-h-0">
-          {renderStageContent(stageOutputs[activeStage])}
-        </div>
+        {renderStageContent(stageOutputs[activeStage])}
       </div>
 
       {/* Footer */}
