@@ -29,7 +29,7 @@ export default function CoverLetterEditor() {
     if (streamRef.current && isGenerating) {
       streamRef.current.scrollTop = streamRef.current.scrollHeight
     }
-  }, [content, isGenerating])
+  }, [streamingContent, isGenerating])
 
   const canGenerate = () => {
     return personalInfo &&
@@ -73,10 +73,16 @@ export default function CoverLetterEditor() {
 
       {/* Second Section - Streaming Display */}
       <div className="px-6 py-2.5 border-b border-neutral-light h-16 flex items-center">
-        {isGenerating && (
-          <div className="flex-1 bg-surface border border-neutral-light rounded-lg p-2 overflow-hidden">
-            <div className="text-xs text-text-secondary line-clamp-2 leading-tight">
-              {(streamingContent || '') + '▊'}
+        {(isGenerating || content) && (
+          <div
+            ref={streamRef}
+            className="flex-1 bg-surface border border-neutral-light rounded-lg p-2 overflow-y-auto h-10"
+          >
+            <div className="text-xs text-text-secondary leading-tight whitespace-pre-wrap">
+              {isGenerating
+                ? (streamingContent || '') + '▊'
+                : content || ''
+              }
             </div>
           </div>
         )}
