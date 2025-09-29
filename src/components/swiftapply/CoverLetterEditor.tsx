@@ -55,8 +55,17 @@ export default function CoverLetterEditor() {
   return (
     <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 h-full flex flex-col border border-neutral-dark">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-neutral-light h-12 flex items-center">
+      <div className="px-6 py-4 border-b border-neutral-light h-12 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-text-primary">Cover Letter Editor</h2>
+        <Button
+          onClick={handleConfirmAndPreview}
+          variant="primary"
+          size="sm"
+          disabled={!content || isGenerating}
+          className="text-xs px-3 py-1"
+        >
+          Confirm & Preview
+        </Button>
       </div>
 
       {/* Second Section - Generation Controls */}
@@ -142,21 +151,10 @@ export default function CoverLetterEditor() {
 
       {/* Footer */}
       <div className="px-6 py-4 border-t border-neutral-light bg-surface/50 h-12 flex items-center">
-        <div className="flex items-center justify-between text-xs text-text-secondary w-full">
-          <div>
-            <span>Status: {isGenerating ? 'Generating' : content ? 'Ready for preview' : 'Waiting to generate'}</span>
-            <span className="ml-2">Content: {editedContent.length} chars</span>
-            <span className="ml-2">{editedContent.trim().split(/\s+/).filter(word => word.length > 0).length} words</span>
-          </div>
-          <Button
-            onClick={handleConfirmAndPreview}
-            variant="primary"
-            size="sm"
-            disabled={!content || isGenerating}
-            className="text-xs px-3 py-1"
-          >
-            Confirm & Preview
-          </Button>
+        <div className="flex items-center text-xs text-text-secondary w-full">
+          <span>Status: {isGenerating ? 'Generating' : content ? 'Ready for preview' : 'Waiting to generate'}</span>
+          <span className="ml-2">Content: {editedContent.length} chars</span>
+          <span className="ml-2">{editedContent.trim().split(/\s+/).filter(word => word.length > 0).length} words</span>
         </div>
       </div>
     </div>

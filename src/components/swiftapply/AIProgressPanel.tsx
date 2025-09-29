@@ -48,8 +48,18 @@ export default function AIProgressPanel() {
   return (
     <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 h-full flex flex-col border border-neutral-dark">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-neutral-light h-12 flex items-center">
+      <div className="px-6 py-4 border-b border-neutral-light h-12 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-text-primary">Resume Customizer</h2>
+        <Button
+          onClick={handleCustomizeResume}
+          variant="primary"
+          size="sm"
+          disabled={isGenerating}
+          className="text-xs px-3 py-1"
+          title="Generate AI-powered resume"
+        >
+          {isGenerating ? 'Processing...' : 'Customize Resume'}
+        </Button>
       </div>
 
       {/* Stage Tabs */}
@@ -91,28 +101,16 @@ export default function AIProgressPanel() {
 
       {/* Footer */}
       <div className="px-6 py-4 border-t border-neutral-light bg-surface/50 h-12 flex items-center">
-        <div className="flex items-center justify-between text-xs text-text-secondary w-full">
-          <div>
-            <span>Status: {formatStageStatus(stageOutputs[activeStage].status)}</span>
-            {stageOutputs[activeStage].duration != null && (
-              <span className="ml-2">Duration: {formatDuration(stageOutputs[activeStage].duration)}</span>
-            )}
-            {stageOutputs[activeStage].tokens && (
-              <span className="ml-2">
-                Tokens P:{stageOutputs[activeStage].tokens?.prompt} / C:{stageOutputs[activeStage].tokens?.completion}
-              </span>
-            )}
-          </div>
-          <Button
-            onClick={handleCustomizeResume}
-            variant="primary"
-            size="sm"
-            disabled={isGenerating}
-            className="text-sm font-semibold px-2 py-1"
-            title="Generate AI-powered resume"
-          >
-            {isGenerating ? 'Processing...' : 'Customize Resume'}
-          </Button>
+        <div className="flex items-center text-xs text-text-secondary w-full">
+          <span>Status: {formatStageStatus(stageOutputs[activeStage].status)}</span>
+          {stageOutputs[activeStage].duration != null && (
+            <span className="ml-2">Duration: {formatDuration(stageOutputs[activeStage].duration)}</span>
+          )}
+          {stageOutputs[activeStage].tokens && (
+            <span className="ml-2">
+              Tokens P:{stageOutputs[activeStage].tokens?.prompt} / C:{stageOutputs[activeStage].tokens?.completion}
+            </span>
+          )}
         </div>
       </div>
     </div>

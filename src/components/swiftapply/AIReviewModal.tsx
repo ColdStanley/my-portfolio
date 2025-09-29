@@ -35,8 +35,15 @@ export default function AIReviewModal() {
     return (
       <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 h-full flex flex-col border border-neutral-dark">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-neutral-light h-12 flex items-center">
+        <div className="px-6 py-4 border-b border-neutral-light h-12 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-text-primary">Edit & Preview</h2>
+          <Button
+            variant="primary"
+            disabled={true}
+            className="px-3 py-1 text-xs opacity-50"
+          >
+            Confirm & Preview
+          </Button>
         </div>
 
         {/* Second Section */}
@@ -51,15 +58,6 @@ export default function AIReviewModal() {
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-neutral-light bg-surface/50 h-12 flex items-center">
-          <div className="flex items-center justify-end text-xs text-text-secondary w-full">
-            <Button
-              variant="primary"
-              disabled={true}
-              className="px-3 py-1 text-xs opacity-50"
-            >
-              Confirm & Preview
-            </Button>
-          </div>
         </div>
       </div>
     )
@@ -127,8 +125,23 @@ export default function AIReviewModal() {
   return (
     <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 h-full flex flex-col border border-neutral-dark">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-neutral-light h-12 flex items-center">
+      <div className="px-6 py-4 border-b border-neutral-light h-12 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-text-primary">Edit & Preview</h2>
+        <Button
+          variant="secondary"
+          onClick={handleConfirm}
+          disabled={isGeneratingPDF}
+          className="px-3 py-1 text-xs"
+        >
+          {isGeneratingPDF ? (
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+              Generating Preview...
+            </div>
+          ) : (
+            'Confirm & Preview'
+          )}
+        </Button>
       </div>
 
       {/* Second Section */}
@@ -181,23 +194,6 @@ export default function AIReviewModal() {
 
       {/* Footer */}
       <div className="px-6 py-4 border-t border-neutral-light bg-surface/50 h-12 flex items-center">
-        <div className="flex items-center justify-end text-xs text-text-secondary w-full">
-          <Button
-            variant="secondary"
-            onClick={handleConfirm}
-            disabled={isGeneratingPDF}
-            className="px-3 py-1 text-xs"
-          >
-            {isGeneratingPDF ? (
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                Generating Preview...
-              </div>
-            ) : (
-              'Confirm & Preview'
-            )}
-          </Button>
-        </div>
       </div>
     </div>
   )
