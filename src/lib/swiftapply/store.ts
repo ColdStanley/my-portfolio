@@ -443,7 +443,8 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
       coverLetter: {
         ...state.coverLetter,
         isGenerating: true,
-        error: null
+        error: null,
+        streamingContent: ''
       }
     }))
 
@@ -462,36 +463,115 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
         })
       })
 
-      let result: any = null
-
-      try {
-        result = await response.json()
-      } catch (jsonError) {
-        result = null
-      }
-
       if (!response.ok) {
-        const message = result?.error || `HTTP error! status: ${response.status}`
+        let message = `HTTP error! status: ${response.status}`
+        try {
+          const errorBody = await response.json()
+          if (errorBody?.error) {
+            message = errorBody.error
+          }
+        } catch (jsonError) {
+          // ignore JSON parse errors for non-JSON responses
+        }
+
         throw new Error(message)
       }
 
-      if (result?.success && result.coverLetter) {
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+
+      if (!reader) {
+        throw new Error('No response stream available')
+      }
+
+      let buffer = ''
+      let fullContent = ''
+      let finalContent = ''
+
+      const updateStreaming = (content: string) => {
         set(state => ({
           coverLetter: {
             ...state.coverLetter,
-            isGenerating: false,
-            content: result.coverLetter,
-            error: null
+            streamingContent: content
           }
         }))
-      } else {
-        throw new Error(result?.error || 'Failed to generate cover letter')
       }
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+
+        const events = buffer.split('\n\n')
+        buffer = events.pop() || ''
+
+        for (const event of events) {
+          const trimmed = event.trim()
+          if (!trimmed.startsWith('data:')) continue
+
+          const jsonString = trimmed.replace(/^data:\s*/, '')
+
+          try {
+            const data = JSON.parse(jsonString)
+
+            if (data.type === 'content_chunk') {
+              fullContent = data.fullContent || fullContent + (data.chunk || '')
+              updateStreaming(fullContent)
+            } else if (data.type === 'complete') {
+              finalContent = (data.coverLetter || fullContent || '').trim()
+            } else if (data.type === 'error') {
+              throw new Error(data.error || 'Failed to generate cover letter')
+            }
+          } catch (parseError) {
+            // ignore malformed events
+          }
+        }
+      }
+
+      if (buffer.trim()) {
+        const trimmed = buffer.trim()
+        if (trimmed.startsWith('data:')) {
+          try {
+            const data = JSON.parse(trimmed.replace(/^data:\s*/, ''))
+            if (data.type === 'complete') {
+              finalContent = (data.coverLetter || fullContent || '').trim()
+            } else if (data.type === 'content_chunk') {
+              fullContent = data.fullContent || fullContent + (data.chunk || '')
+              updateStreaming(fullContent)
+            } else if (data.type === 'error') {
+              throw new Error(data.error || 'Failed to generate cover letter')
+            }
+          } catch (parseError) {
+            // ignore leftover parse errors
+          }
+        }
+      }
+
+      if (!finalContent) {
+        finalContent = fullContent.trim()
+      }
+
+      if (!finalContent) {
+        throw new Error('Cover letter generation returned empty content')
+      }
+
+      set(state => ({
+        coverLetter: {
+          ...state.coverLetter,
+          isGenerating: false,
+          content: finalContent,
+          streamingContent: null,
+          error: null
+        }
+      }))
+
     } catch (error: any) {
       set(state => ({
         coverLetter: {
           ...state.coverLetter,
           isGenerating: false,
+          streamingContent: null,
           error: error.message || 'Failed to generate cover letter'
         }
       }))

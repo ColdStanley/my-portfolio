@@ -1,0 +1,97 @@
+{
+  "personalInfo": {
+    "fullName": "David Brown",
+    "email": "david.brown@example.com",
+    "phone": "1234567890",
+    "location": "Toronto, Canada",
+    "linkedin": "https://www.linkedin.com/in/davidbrown",
+    "website": "https://www.davidbrown.dev",
+    "summary": [
+      "Motivated professional with experience in solution delivery and project coordination.",
+      "Comfortable working in small teams and supporting cross-functional collaboration.",
+      "Focused on steady improvement, but with room to grow in leadership and impact."
+    ],
+    "technicalSkills": [
+      "Web Development – basic experience with Next.js, Tailwind CSS, and Supabase.",
+      "Familiarity with API integration and simple automation workflows.",
+      "Exposure to SQL databases and cloud deployment pipelines."
+    ],
+    "languages": [
+      "English",
+      "French - Basic"
+    ],
+    "education": [
+      {
+        "degree": "Bachelor of Information Technology",
+        "institution": "Example University",
+        "year": "2017 - 2021",
+        "gpa": "B"
+      }
+    ],
+    "certificates": [
+      "Google: Foundations of Project Management",
+      "Coursera: Introduction to Cloud Computing"
+    ],
+    "customModules": [
+      {
+        "id": "2000000000001",
+        "title": "Small Demo Project – Team Collaboration Tool",
+        "content": [
+          "Built a simple web tool to help a study group track tasks and deadlines.",
+          "Focused on practicing teamwork and version control with GitHub."
+        ]
+      },
+      {
+        "id": "2000000000002",
+        "title": "Capstone Project – Course Scheduling App",
+        "content": [
+          "Developed a basic scheduling application as a university capstone project.",
+          "Learned fundamentals of frontend design and database connections."
+        ]
+      }
+    ],
+    "format": "A4"
+  },
+  "templates": [
+    {
+      "title": "Solution Manager",
+      "targetRole": "Solution Manager",
+      "content": [
+        "Worked with a small client team to adapt an existing software solution, focusing on minor customization rather than full-scale delivery.",
+        "Participated in solution design sessions but mainly supported documentation and testing activities.",
+        "Assisted senior colleagues in preparing slide decks and basic proposals for internal reviews."
+      ],
+      "id": "2000000000101"
+    },
+    {
+      "title": "Project Manager",
+      "targetRole": "Project Manager",
+      "content": [
+        "Coordinated schedules for a student-led project, ensuring weekly tasks were tracked though deadlines sometimes slipped.",
+        "Handled communication between two small groups, but had limited decision-making authority.",
+        "Helped write meeting notes and basic project updates for supervisors."
+      ],
+      "id": "2000000000102"
+    },
+    {
+      "title": "Technical Account Manager",
+      "targetRole": "Technical Account Manager",
+      "content": [
+        "Responded to basic technical questions from users, escalating complex issues to senior engineers.",
+        "Supported account updates by drafting draft responses and maintaining spreadsheets of client data.",
+        "Shadowed experienced account managers to learn about handling client escalations."
+      ],
+      "id": "2000000000103"
+    },
+    {
+      "title": "New Experience Template",
+      "targetRole": "Software Engineer",
+      "content": [
+        "• Add your experience bullet points here..."
+      ],
+      "id": "1759091718058"
+    }
+  ],
+  "exportDate": "2025-09-29T02:37:40.662Z",
+  "version": "1.0"
+}

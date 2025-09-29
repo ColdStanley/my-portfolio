@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
+import { invokeSwiftApplyStream } from '@/lib/swiftapply/aiService'
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY
+const hasOpenAI = Boolean(process.env.OPENAI_API_KEY)
+const hasDeepseek = Boolean(process.env.DEEPSEEK_API_KEY)
 
 type Provider = 'openai' | 'deepseek'
 
@@ -11,26 +11,14 @@ const MODEL_BY_PROVIDER: Record<Provider, string> = {
   deepseek: 'deepseek-chat'
 }
 
-function createClient(provider: Provider): OpenAI | null {
-  if (provider === 'openai') {
-    if (!OPENAI_API_KEY) return null
-    return new OpenAI({ apiKey: OPENAI_API_KEY })
-  }
-
-  if (!DEEPSEEK_API_KEY) return null
-  return new OpenAI({
-    apiKey: DEEPSEEK_API_KEY,
-    baseURL: 'https://api.deepseek.com'
-  })
-}
-
-function resolveProvider(preferred: Provider): { client: OpenAI; provider: Provider } | null {
-  const searchOrder: Provider[] = preferred === 'openai' ? ['openai', 'deepseek'] : ['deepseek', 'openai']
+function resolveProvider(preferred: Provider): Provider | null {
+  const searchOrder: Provider[] = preferred === 'openai'
+    ? ['openai', 'deepseek']
+    : ['deepseek', 'openai']
 
   for (const provider of searchOrder) {
-    const client = createClient(provider)
-    if (client) {
-      return { client, provider }
+    if ((provider === 'openai' && hasOpenAI) || (provider === 'deepseek' && hasDeepseek)) {
+      return provider
     }
   }
 
@@ -160,71 +148,94 @@ export async function POST(request: NextRequest) {
       tailoredExperience
     )
 
-    const resolved = resolveProvider(aiModel === 'openai' ? 'openai' : 'deepseek')
+    const resolvedProvider = resolveProvider(aiModel === 'openai' ? 'openai' : 'deepseek')
 
-    if (!resolved) {
+    if (!resolvedProvider) {
       return NextResponse.json({
         success: false,
         error: 'AI configuration missing. Set DEEPSEEK_API_KEY or OPENAI_API_KEY to enable cover letter generation.'
       }, { status: 500 })
     }
 
-    const { client: aiClient, provider } = resolved
+    const provider = resolvedProvider
     const modelName = MODEL_BY_PROVIDER[provider]
+    const temperature = provider === 'openai' ? 0.7 : 0.2
 
-    // Generate cover letter
-    const completion = await aiClient.chat.completions.create({
-      model: modelName,
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a professional resume and cover letter writer. Generate high-quality, personalized cover letters that effectively match candidates with job requirements.'
-        },
-        {
-          role: 'user',
-          content: processedPrompt
+    const encoder = new TextEncoder()
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        const send = (payload: any) => {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`))
         }
-      ],
-      temperature: 0.7,
-      max_tokens: 800
+
+        try {
+          let streamedContent = ''
+
+          const response = await invokeSwiftApplyStream(
+            processedPrompt,
+            (chunk) => {
+              if (!chunk) return
+              streamedContent += chunk
+              send({
+                type: 'content_chunk',
+                chunk,
+                fullContent: streamedContent
+              })
+            },
+            temperature,
+            1200,
+            provider
+          )
+
+          const finalContent = (response.content || streamedContent || '').trim()
+
+          if (!streamedContent && finalContent) {
+            send({
+              type: 'content_chunk',
+              chunk: finalContent,
+              fullContent: finalContent
+            })
+          }
+
+          if (!finalContent) {
+            throw new Error('No content generated from AI model')
+          }
+
+          send({
+            type: 'complete',
+            coverLetter: finalContent,
+            provider,
+            model: modelName,
+            tokens: response.tokens
+          })
+
+        } catch (error) {
+          console.error('Cover Letter generation error:', error)
+          send({
+            type: 'error',
+            error: (error as Error).message || 'Failed to generate cover letter'
+          })
+        } finally {
+          send({ type: 'done' })
+          controller.close()
+        }
+      }
     })
 
-    const coverLetter = completion.choices[0]?.message?.content
-
-    if (!coverLetter) {
-      throw new Error('No content generated from AI model')
-    }
-
-    return NextResponse.json({
-      success: true,
-      coverLetter: coverLetter.trim(),
-      usage: {
-        tokens: completion.usage?.total_tokens || 0,
-        model: modelName
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive'
       }
     })
 
   } catch (error: any) {
     console.error('Cover Letter generation error:', error)
-
-    // Handle specific API errors
-    if (error.code === 'insufficient_quota') {
-      return NextResponse.json({
-        success: false,
-        error: 'API quota exceeded. Please try again later or contact support.'
-      }, { status: 429 })
-    }
-
-    if (error.code === 'model_not_found') {
-      return NextResponse.json({
-        success: false,
-        error: 'AI model temporarily unavailable. Please try with a different model.'
-      }, { status: 503 })
-    }
-
     return NextResponse.json({
       success: false,
-      error: error.message || 'Failed to generate cover letter'
+      error: error?.message || 'Failed to generate cover letter'
     }, { status: 500 })
   }
 }

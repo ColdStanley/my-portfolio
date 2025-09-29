@@ -265,16 +265,11 @@ export async function POST(request: NextRequest) {
 
     await browser.close()
 
-    // Create blob URL for preview
-    const base64 = pdfBuffer.toString('base64')
-    const dataUrl = `data:application/pdf;base64,${base64}`
-
     return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `inline; filename="${personalInfo.fullName.replace(/[^a-z0-9]/gi, '_')}_CoverLetter.pdf"`,
-        'X-PDF-Preview-URL': dataUrl
+        'Content-Disposition': `inline; filename="${personalInfo.fullName.replace(/[^a-z0-9]/gi, '_')}_CoverLetter.pdf"`
       }
     })
 

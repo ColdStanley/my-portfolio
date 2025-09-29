@@ -203,7 +203,7 @@ function renderStageContent(stage: any) {
     )
   }
 
-  return <div className="flex items-center justify-center h-full text-text-secondary">No content available</div>
+  return <div className="h-full"></div>
 }
 
 function formatStageStatus(status: string) {
