@@ -119,7 +119,7 @@ export default function StepDataManagement() {
 
   return (
     <div className="p-4 sm:p-6 max-h-[70vh] sm:max-h-[75vh] overflow-y-auto">
-      <div className="space-y-4">
+      <div className="space-y-4 pb-28 sm:pb-32">
         {/* Header */}
         <div>
           <h3 className="text-lg font-semibold text-text-primary mb-2">Data Backup & Restore</h3>

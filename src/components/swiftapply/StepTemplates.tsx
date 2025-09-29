@@ -101,7 +101,7 @@ export default function StepTemplates() {
   return (
     <div className="flex h-full min-h-0 flex-col p-4 sm:p-6 max-h-[70vh] sm:max-h-[75vh]">
       <div className="flex-1 overflow-y-auto min-h-0">
-        <div>
+        <div className="pb-28 sm:pb-32">
           <h3 className="text-lg font-semibold text-text-primary mb-2">
             Experience Templates
           </h3>

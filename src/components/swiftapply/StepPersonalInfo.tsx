@@ -111,7 +111,7 @@ export default function StepPersonalInfo() {
   return (
     <div className="flex h-full min-h-0 flex-col p-4 sm:p-6 max-h-[70vh] sm:max-h-[75vh]">
       <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="space-y-6 pb-6">
+        <div className="space-y-6 pb-28 sm:pb-32">
           {/* Basic Information */}
           <div>
             <h3 className="text-lg font-semibold text-text-primary mb-4">Basic Information</h3>
@@ -397,59 +397,65 @@ Google Cloud Professional"
           ))}
         </div>
 
-        {/* Format Selection */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Resume Format
-          </label>
-          <div className="flex gap-4">
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="format"
-                value="A4"
-                checked={formData.format === 'A4'}
-                onChange={(e) => handleChange('format', e.target.value as 'A4' | 'Letter')}
-                className="mr-2 text-primary focus:ring-primary"
-              />
-              A4 (210 × 297 mm)
+        {/* Format Selection and Actions Row */}
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Left: Format Selection */}
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Resume Format
             </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="format"
-                value="Letter"
-                checked={formData.format === 'Letter'}
-                onChange={(e) => handleChange('format', e.target.value as 'A4' | 'Letter')}
-                className="mr-2 text-primary focus:ring-primary"
-              />
-              Letter (8.5 × 11 in)
-            </label>
+            <div className="flex gap-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="format"
+                  value="A4"
+                  checked={formData.format === 'A4'}
+                  onChange={(e) => handleChange('format', e.target.value as 'A4' | 'Letter')}
+                  className="mr-2 text-primary focus:ring-primary"
+                />
+                A4 (210 × 297 mm)
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="format"
+                  value="Letter"
+                  checked={formData.format === 'Letter'}
+                  onChange={(e) => handleChange('format', e.target.value as 'A4' | 'Letter')}
+                  className="mr-2 text-primary focus:ring-primary"
+                />
+                Letter (8.5 × 11 in)
+              </label>
+            </div>
+          </div>
+
+          {/* Right: Error Messages and Actions */}
+          <div className="flex-1 space-y-4">
+            {/* Error Messages */}
+            {errors.length > 0 && (
+              <div className="p-4 bg-error/5 border border-error/20 rounded-lg">
+                <h4 className="text-sm font-medium text-error mb-2">Please fix the following errors:</h4>
+                <ul className="list-disc list-inside text-sm text-error space-y-1">
+                  {errors.map((error, index) => (
+                    <li key={index}>{error}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex justify-end pt-4 border-t border-neutral-mid">
+              <Button
+                onClick={handleSaveAndContinue}
+                variant="primary"
+                size="md"
+              >
+                Save & Continue
+              </Button>
+            </div>
           </div>
         </div>
-
-        {/* Error Messages */}
-        {errors.length > 0 && (
-          <div className="mt-6 p-4 bg-error/5 border border-error/20 rounded-lg">
-            <h4 className="text-sm font-medium text-error mb-2">Please fix the following errors:</h4>
-            <ul className="list-disc list-inside text-sm text-error space-y-1">
-              {errors.map((error, index) => (
-                <li key={index}>{error}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-
-      {/* Actions */}
-      <div className="flex justify-end mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-neutral-mid">
-        <Button
-          onClick={handleSaveAndContinue}
-          variant="primary"
-          size="md"
-        >
-          Save & Continue
-        </Button>
       </div>
     </div>
     </div>
