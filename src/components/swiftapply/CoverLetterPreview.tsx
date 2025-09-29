@@ -34,7 +34,7 @@ export default function CoverLetterPreview() {
       {/* Header */}
       <div className="px-6 py-4 border-b border-neutral-light h-12 flex items-center">
         <div className="flex items-center justify-between w-full">
-          <h2 className="text-lg font-semibold text-text-primary">Cover Letter Preview</h2>
+          <h2 className="text-lg font-semibold text-text-primary">Cover Letter Download</h2>
           <Button
             onClick={handleDownload}
             variant="secondary"

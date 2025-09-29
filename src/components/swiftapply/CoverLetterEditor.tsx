@@ -56,7 +56,7 @@ export default function CoverLetterEditor() {
     <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 h-full flex flex-col border border-neutral-dark">
       {/* Header */}
       <div className="px-6 py-4 border-b border-neutral-light h-12 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-text-primary">Cover Letter Editor</h2>
+        <h2 className="text-lg font-semibold text-text-primary">Cover Letter Customizer & Editor</h2>
         <Button
           onClick={handleGenerateCoverLetter}
           variant="primary"

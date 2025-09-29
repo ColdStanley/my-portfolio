@@ -28,11 +28,9 @@ export default function Header() {
           →
           <span className="px-2 py-1 bg-surface rounded-md">Job Input</span>
           →
-          <span className="px-2 py-1 bg-surface rounded-md">Resume Customization</span>
+          <span className="px-2 py-1 bg-surface rounded-md">Resume (Customization, Edit, PDF Download)</span>
           →
-          <span className="px-2 py-1 bg-surface rounded-md">Edit & Preview</span>
-          →
-          <span className="px-2 py-1 bg-surface rounded-md">Download PDF</span>
+          <span className="px-2 py-1 bg-surface rounded-md">Cover Letter (Customization, Edit, PDF Download)</span>
         </div>
 
         {/* Actions */}
