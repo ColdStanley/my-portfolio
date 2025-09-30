@@ -38,8 +38,7 @@ export async function POST(request: NextRequest) {
         application_stage: jdData.application_stage || null,
         role_group: jdData.role_group || null,
         firm_type: jdData.firm_type || null,
-        comment: jdData.comment || null,
-        match_score: jdData.match_score || 3
+        comment: jdData.comment || null
       }])
       .select()
       .single()
@@ -143,7 +142,6 @@ export async function PUT(request: NextRequest) {
         role_group: jdData.role_group || '',
         firm_type: jdData.firm_type || '',
         comment: jdData.comment || '',
-        match_score: Math.max(1, jdData.match_score || 1),
         cv_pdf_url: jdData.cv_pdf_url || '',
         cv_pdf_filename: jdData.cv_pdf_filename || '',
         updated_at: new Date().toISOString()

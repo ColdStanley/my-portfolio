@@ -181,7 +181,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
     const values = jds.map(jd => {
       switch(field) {
         case 'stage': return jd.application_stage || null
-        case 'score': return jd.match_score?.toString() || null
         default: return null
       }
     }).filter(value => value !== null && value !== '')
@@ -194,8 +193,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
     let filteredJDs = jds.filter(jd => {
       // Existing filters
       const passesExistingFilters = (
-        (!filters.stage || (filters.stage === 'null' ? !jd.application_stage : jd.application_stage === filters.stage)) &&
-        (!filters.score || jd.match_score?.toString() === filters.score)
+        (!filters.stage || (filters.stage === 'null' ? !jd.application_stage : jd.application_stage === filters.stage))
       )
 
       // Search term filter for comment and company
@@ -239,15 +237,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
           return passesAllFilters
       }
     })
-
-    // Apply sorting by score
-    if (sortOrder) {
-      filteredJDs.sort((a, b) => {
-        const scoreA = a.match_score || 0
-        const scoreB = b.match_score || 0
-        return sortOrder === 'asc' ? scoreA - scoreB : scoreB - scoreA
-      })
-    }
 
     return filteredJDs
   }
@@ -469,7 +458,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
             <p className="text-sm text-gray-600 mt-1">
               {(() => {
                 const filteredCount = getFilteredAndSortedJDs().length
-                const hasFilters = filters.stage || filters.score || filters.time || filters.searchTerm || sortOrder
+                const hasFilters = filters.stage || filters.time || filters.searchTerm
                 return hasFilters
                   ? `${filteredCount} of ${jds.length} job descriptions`
                   : `${jds.length} job descriptions`
@@ -480,7 +469,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
           {/* Toolbar */}
           <div className="flex gap-3 flex-wrap">
             {(() => {
-              const hasFilters = filters.stage || filters.score || filters.time || sortOrder
+              const hasFilters = filters.stage || filters.time
 
               return (
                 <>
@@ -519,26 +508,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                   <option value="null">Not Set</option>
                   {getUniqueValues('stage').map(stage => (
                     <option key={stage} value={stage}>{stage}</option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-
-
-              {/* Score Filter */}
-              <div className="relative">
-                <select
-                  value={filters.score}
-                  onChange={(e) => handleFilterChange('score', e.target.value)}
-                  className="w-32 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 appearance-none cursor-pointer"
-                >
-                  <option value="">All Scores</option>
-                  {getUniqueValues('score').map(score => (
-                    <option key={score} value={score}>{score}★</option>
                   ))}
                 </select>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
@@ -597,27 +566,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                       </button>
                     )}
                   </div>
-
-                  {/* Sort Button */}
-                  <button
-                    onClick={handleSortChange}
-                    className={`w-32 px-6 py-2 rounded-lg font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-2 ${
-                      sortOrder 
-                        ? 'bg-purple-500 hover:bg-purple-600 text-white' 
-                        : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      {sortOrder === 'asc' ? (
-                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                      ) : sortOrder === 'desc' ? (
-                        <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
-                      ) : (
-                        <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 8a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 12a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
-                      )}
-                    </svg>
-                    {sortOrder === 'asc' ? 'Score ↑' : sortOrder === 'desc' ? 'Score ↓' : 'Sort'}
-                  </button>
 
                   {/* Clear Filters Button - Fixed Position */}
                   <button
@@ -730,17 +678,16 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                       </div>
                     </div>
 
-                    {/* 35-80%: Meta Fields - Label Row + Input Row */}
+                    {/* 35-80%: Meta Fields - Stage Only */}
                     <div className="w-[45%] px-2">
                       <div className="flex flex-col justify-between h-[4.5rem]">
-                        {/* Labels Row - align with Title */}
-                        <div className="grid grid-cols-2 gap-2 h-9 items-center">
+                        {/* Label Row - align with Title */}
+                        <div className="h-9 flex items-center">
                           <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Stage</label>
-                          <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Score</label>
                         </div>
                         {/* Input Row - align with Company */}
-                        <div className="grid grid-cols-2 gap-2 h-9">
-                          <div className="relative">
+                        <div className="h-9">
+                          <div className="relative w-1/2">
                             <select
                               value={jd.application_stage || ''}
                               onChange={(e) => {
@@ -769,25 +716,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                               </svg>
                             </div>
                           </div>
-                          <input
-                            type="number"
-                            min="1"
-                            max="5"
-                            step="0.5"
-                            value={jd.match_score || 3}
-                            onChange={(e) => {
-                              const numValue = Math.max(1, Math.min(5, Math.round(Number(e.target.value) * 2) / 2))
-                              // Optimistic update
-                              const newJds = jds.map(j => j.id === jd.id ? {...j, match_score: numValue} : j)
-                              setJds(newJds)
-                            }}
-                            onBlur={(e) => {
-                              const numValue = Math.max(1, Math.min(5, Math.round(Number(e.target.value) * 2) / 2))
-                              handleUpdateField(jd.id, 'match_score', numValue)
-                            }}
-                            placeholder="3"
-                            className="w-full h-9 px-3 text-sm font-bold text-gray-700 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                          />
                         </div>
                       </div>
                     </div>

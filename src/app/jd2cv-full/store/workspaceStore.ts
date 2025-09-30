@@ -10,7 +10,6 @@ interface JDRecord {
   role_group: string
   firm_type: string
   comment: string
-  match_score: number
   user_id: string
   created_at: string
 }

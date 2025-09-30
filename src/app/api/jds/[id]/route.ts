@@ -34,11 +34,6 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       updated_at: new Date().toISOString()
     }
 
-    // Validate match_score if present
-    if (field === 'match_score') {
-      updateData.match_score = Math.max(0, Number(value) || 0)
-    }
-
     console.log('About to update with data:', updateData)
     console.log('Update conditions:', { id, user_id })
 

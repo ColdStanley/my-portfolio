@@ -43,7 +43,6 @@ export interface JDRecord {
 
   // Analysis results
   jd_key_sentences?: string
-  match_score: number // 1-5 range, required
 
   // Classification tags
   application_stage?: string
@@ -61,7 +60,6 @@ export interface CreateJDRequest {
   full_job_description?: string
   application_stage?: string
   comment?: string
-  match_score?: number // 1-5 range, defaults to 3
 }
 
 export interface UpdateJDRequest extends Partial<CreateJDRequest> {

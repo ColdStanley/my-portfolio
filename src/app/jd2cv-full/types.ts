@@ -12,7 +12,6 @@ export interface JDRecord {
 
   // Analysis results
   jd_key_sentences?: string
-  match_score?: number
 
   // Classification tags
   application_stage?: string
@@ -34,7 +33,6 @@ export interface CreateJDRequest {
   role_group?: string
   firm_type?: string
   comment?: string
-  match_score?: number
 }
 
 export interface UpdateJDRequest extends Partial<CreateJDRequest> {

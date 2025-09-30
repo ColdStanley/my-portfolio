@@ -28,8 +28,7 @@ export async function POST(request: NextRequest) {
         application_stage: 'JD2CV 2.0 Generated',
         role_group: '',
         firm_type: '',
-        comment: 'Generated via JD2CV 2.0 AI Agent',
-        match_score: 0
+        comment: 'Generated via JD2CV 2.0 AI Agent'
       }])
       .select()
       .single()

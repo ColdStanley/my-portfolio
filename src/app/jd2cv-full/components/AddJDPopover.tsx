@@ -21,8 +21,7 @@ export default function AddJDPopover({
     company: '',
     full_job_description: '',
     application_stage: 'Raw JD',
-    comment: '',
-    match_score: 3
+    comment: ''
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -36,8 +35,7 @@ export default function AddJDPopover({
         company: '',
         full_job_description: '',
         application_stage: 'Raw JD',
-        comment: '',
-        match_score: 3
+        comment: ''
       })
       setError(null)
     }
@@ -159,7 +157,7 @@ export default function AddJDPopover({
           {/* Metadata */}
           <div className="bg-white/70 backdrop-blur-sm rounded-lg shadow-md p-4">
             <h3 className="text-sm font-semibold text-gray-800 mb-4">Metadata</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Application Stage</label>
                 <div className="relative">
@@ -180,31 +178,15 @@ export default function AddJDPopover({
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Match Score</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="5"
-                  step="0.5"
-                  value={formData.match_score}
-                  onChange={(e) => {
-                    const numValue = Math.max(1, Math.min(5, Math.round(Number(e.target.value) * 2) / 2))
-                    setFormData(prev => ({ ...prev, match_score: numValue }))
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="3"
+                <label className="block text-sm font-medium text-gray-700 mb-2">Comment</label>
+                <textarea
+                  value={formData.comment}
+                  onChange={(e) => setFormData(prev => ({ ...prev, comment: e.target.value }))}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-y"
+                  placeholder="Additional notes..."
                 />
               </div>
-            </div>
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Comment</label>
-              <textarea
-                value={formData.comment}
-                onChange={(e) => setFormData(prev => ({ ...prev, comment: e.target.value }))}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-y"
-                placeholder="Additional notes..."
-              />
             </div>
           </div>
 

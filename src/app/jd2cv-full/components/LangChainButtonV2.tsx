@@ -17,8 +17,6 @@ interface LangChainButtonV2Props {
   onPDFUploaded?: () => void
 }
 
-const PANEL_POSITION_STORAGE_KEY = 'resumeProgressPanelPosition'
-const PANEL_PIN_STORAGE_KEY = 'resumeProgressPanelPinned'
 const DOCK_POSITION_STORAGE_KEY = 'resumeProgressDockPosition'
 
 type TaskStatus = 'pending' | 'running' | 'completed' | 'error'
@@ -47,12 +45,6 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
   const [isDockDragging, setIsDockDragging] = useState(false)
   const dockDragOffsetRef = useRef({ x: 0, y: 0 })
   const dockRef = useRef<HTMLDivElement | null>(null)
-  const [panelPosition, setPanelPosition] = useState({ x: 24, y: 92 })
-  const [isPanelPinned, setIsPanelPinned] = useState(false)
-  const [isPanelMinimized, setIsPanelMinimized] = useState(false)
-  const [isPanelDragging, setIsPanelDragging] = useState(false)
-  const panelDragOffsetRef = useRef({ x: 0, y: 0 })
-  const panelPointerIdRef = useRef<number | null>(null)
   const panelRef = useRef<HTMLDivElement | null>(null)
   const dockPointerIdRef = useRef<number | null>(null)
   const { completeStage, markError, updateStage } = useStageHelpers(setStageOutputs)
@@ -85,20 +77,7 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
     if (typeof window === 'undefined') return
     let dockPositionFound = false
     try {
-      const storedPanelPosition = localStorage.getItem(PANEL_POSITION_STORAGE_KEY)
-      const storedPanelPinned = localStorage.getItem(PANEL_PIN_STORAGE_KEY)
       const storedDockPosition = localStorage.getItem(DOCK_POSITION_STORAGE_KEY)
-
-      if (storedPanelPosition) {
-        const parsed = JSON.parse(storedPanelPosition)
-        if (isValidPosition(parsed)) {
-          setPanelPosition(clampPositionToViewport(parsed, { width: 520, height: 260 }))
-        }
-      }
-
-      if (storedPanelPinned) {
-        setIsPanelPinned(storedPanelPinned === 'true')
-      }
 
       if (storedDockPosition) {
         const parsedDock = JSON.parse(storedDockPosition)
@@ -108,7 +87,7 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
         }
       }
     } catch (storageError) {
-      console.warn('Resume progress panel storage error:', storageError)
+      console.warn('Resume progress dock storage error:', storageError)
     }
 
     if (!dockPositionFound) {
@@ -126,17 +105,6 @@ export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }:
     if (!dockInitialized) return
     localStorage.setItem(DOCK_POSITION_STORAGE_KEY, JSON.stringify(dockPosition))
   }, [dockInitialized, dockPosition])
-
-  useEffect(() => {
-    if (!isPanelPinned) return
-    if (typeof window === 'undefined') return
-    localStorage.setItem(PANEL_POSITION_STORAGE_KEY, JSON.stringify(panelPosition))
-  }, [panelPosition, isPanelPinned])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    localStorage.setItem(PANEL_PIN_STORAGE_KEY, String(isPanelPinned))
-  }, [isPanelPinned])
 
   const resetStageOutputs = () => {
     const initial = createInitialStageState()
@@ -444,9 +412,6 @@ const runPostGenerationSteps = async (
       if (showPanel) {
         setShowPanel(false)
       }
-      if (isPanelMinimized) {
-        setIsPanelMinimized(false)
-      }
       return
     }
 
@@ -458,37 +423,7 @@ const runPostGenerationSteps = async (
     setCurrentTaskId(fallbackTask.id)
     setStageOutputs(cloneStageState(fallbackTask.stageOutputs))
     setActiveStage(fallbackTask.activeStage)
-  }, [tasks, currentTaskId, showPanel, isPanelMinimized])
-
-  useEffect(() => {
-    if (!isPanelDragging) return
-
-    const handlePointerMove = (event: PointerEvent) => {
-      if (panelPointerIdRef.current !== event.pointerId) return
-      const targetElement = showPanel ? panelRef.current : null
-      const dimensions = getElementDimensions(targetElement, { width: 520, height: 260 })
-      setPanelPosition(prev => clampPositionToViewport({
-        x: event.clientX - panelDragOffsetRef.current.x,
-        y: event.clientY - panelDragOffsetRef.current.y
-      }, dimensions))
-    }
-
-    const handlePointerUp = (event: PointerEvent) => {
-      if (panelPointerIdRef.current !== event.pointerId) return
-      panelPointerIdRef.current = null
-      setIsPanelDragging(false)
-    }
-
-    window.addEventListener('pointermove', handlePointerMove)
-    window.addEventListener('pointerup', handlePointerUp)
-    window.addEventListener('pointercancel', handlePointerUp)
-
-    return () => {
-      window.removeEventListener('pointermove', handlePointerMove)
-      window.removeEventListener('pointerup', handlePointerUp)
-      window.removeEventListener('pointercancel', handlePointerUp)
-    }
-  }, [isPanelDragging, showPanel])
+  }, [tasks, currentTaskId, showPanel])
 
   useEffect(() => {
     if (!isDockDragging) return
@@ -565,7 +500,6 @@ const runPostGenerationSteps = async (
     })
     setActiveStage('classifier')
     setShowPanel(true)
-    setIsPanelMinimized(false)
     setIsDockOpen(true)
 
     let workflowFinished = false
@@ -601,17 +535,6 @@ const runPostGenerationSteps = async (
     }
   }
 
-  const handlePanelPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
-    if (event.pointerType === 'mouse' && event.button !== 0) return
-    event.preventDefault()
-    panelPointerIdRef.current = event.pointerId
-    panelDragOffsetRef.current = {
-      x: event.clientX - panelPosition.x,
-      y: event.clientY - panelPosition.y
-    }
-    setIsPanelDragging(true)
-  }
-
   const handleDockPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return
     event.preventDefault()
@@ -623,24 +546,20 @@ const runPostGenerationSteps = async (
     setIsDockDragging(true)
   }
 
-  const handlePanelMinimize = () => {
-    setIsPanelMinimized(true)
-    setShowPanel(false)
-  }
-
-  const togglePanelPinned = () => {
-    setIsPanelPinned(prev => !prev)
-  }
-
   const openTaskDetails = (taskId: string) => {
     const targetTask = tasks.find(task => task.id === taskId)
     if (!targetTask) return
+
+    // Toggle: if clicking the same task, close the panel; otherwise switch to new task
+    if (currentTaskId === taskId && showPanel) {
+      setShowPanel(false)
+      return
+    }
+
     setCurrentTaskId(taskId)
     setStageOutputs(cloneStageState(targetTask.stageOutputs))
     setActiveStage(targetTask.activeStage)
-    setIsPanelMinimized(false)
     setShowPanel(true)
-    setIsDockOpen(false)
   }
 
   const openManualReview = (resumeResult: any, basePersonalInfo: any) => {
@@ -783,17 +702,17 @@ const runPostGenerationSteps = async (
             </div>
           )}
 
-          {showPanel && (
+          {showPanel && currentTaskId && (
             <div
               ref={panelRef}
-              className={`fixed z-[90] w-[520px] rounded-2xl border border-purple-100 bg-white/95 shadow-2xl backdrop-blur origin-top animate-panelFadeIn transition-transform duration-500 ease-out ${isPanelDragging ? 'cursor-grabbing' : 'cursor-default'}`}
-              style={{ top: panelPosition.y, left: panelPosition.x }}
+              className="fixed z-[96] w-[520px] rounded-2xl border border-purple-100 bg-white/95 shadow-2xl backdrop-blur origin-top-left animate-panelFadeIn transition-all duration-300 ease-out"
+              style={{
+                top: dockPosition.y,
+                left: dockPosition.x + 340
+              }}
             >
               <div className="flex items-center justify-between px-4 py-3 border-b border-purple-100/60">
-                <div
-                  className={`cursor-${isPanelDragging ? 'grabbing' : 'grab'} select-none`}
-                  onPointerDown={handlePanelPointerDown}
-                >
+                <div>
                   <div className="text-sm font-semibold text-purple-700">Resume Progress</div>
                   <div className="text-xs text-slate-500">Track each step as it happens</div>
                 </div>
@@ -807,29 +726,6 @@ const runPostGenerationSteps = async (
                       Review & Download
                     </button>
                   )}
-                  <button
-                    onClick={handlePanelMinimize}
-                    className="h-7 w-7 rounded-full text-slate-500 hover:bg-slate-100 flex items-center justify-center"
-                    title="Minimize"
-                  >
-                    ▁
-                  </button>
-                  <button
-                    onClick={togglePanelPinned}
-                    className={`h-7 w-7 rounded-full flex items-center justify-center ${isPanelPinned ? 'text-purple-600 bg-purple-50 border border-purple-200' : 'text-slate-500 hover:bg-slate-100'}`}
-                    title={isPanelPinned ? 'Unpin position' : 'Pin position'}
-                  >
-                    📌
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowPanel(false)
-                      setIsPanelMinimized(false)
-                    }}
-                    className="h-7 w-7 rounded-full text-slate-500 hover:bg-slate-100 flex items-center justify-center"
-                    >
-                    ×
-                  </button>
                 </div>
               </div>
 

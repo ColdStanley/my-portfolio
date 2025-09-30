@@ -241,7 +241,6 @@ function JDLibraryContent({ user, activeSubTab, setActiveSubTab }: { user: any, 
     role_group: '',
     firm_type: '',
     comment: '',
-    match_score: 3,
     cv_pdf_url: '',
     cv_pdf_filename: ''
   })
@@ -314,7 +313,6 @@ function JDLibraryContent({ user, activeSubTab, setActiveSubTab }: { user: any, 
       role_group: '',
       firm_type: '',
       comment: '',
-      match_score: 3,
       cv_pdf_url: '',
       cv_pdf_filename: ''
     })
@@ -348,38 +346,6 @@ function JDLibraryContent({ user, activeSubTab, setActiveSubTab }: { user: any, 
     }
   }, [activeSubTab, recordsLoaded, loadingRecords])
 
-  // Update JD Score function
-  const updateJDScore = async (recordId: string, newScore: number) => {
-    try {
-      const response = await fetch('/api/jd2cv-full/supabase', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          record_id: recordId,
-          user_id: user.id,
-          match_score: newScore
-        })
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to update score')
-      }
-
-      // Update local state
-      setSavedRecords(prev => 
-        prev.map(record => 
-          record.id === recordId 
-            ? { ...record, match_score: newScore }
-            : record
-        )
-      )
-    } catch (error: any) {
-      console.error('Update score error:', error)
-      alert(`Failed to update score: ${error.message}`)
-    }
-  }
 
   const loadRecord = (record: any) => {
     setJdData({
@@ -392,9 +358,6 @@ function JDLibraryContent({ user, activeSubTab, setActiveSubTab }: { user: any, 
       role_group: record.role_group || '',
       firm_type: record.firm_type || '',
       comment: record.comment || '',
-      match_score: record.match_score 
-        ? (record.match_score > 10 ? Math.round(record.match_score / 20 * 2) / 2 : record.match_score) // Convert old 0-100 to 1-5
-        : 3,
       cv_pdf_url: record.cv_pdf_url || '',
       cv_pdf_filename: record.cv_pdf_filename || ''
     })
@@ -419,7 +382,6 @@ function JDLibraryContent({ user, activeSubTab, setActiveSubTab }: { user: any, 
         savedRecords={savedRecords}
         loadingRecords={loadingRecords}
         loadRecord={loadRecord}
-        updateJDScore={updateJDScore}
       />}
     </>
   )
@@ -523,22 +485,6 @@ function CreateJDContent({
             onChange={(e) => handleInputChange('comment', e.target.value)}
             className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
           />
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Score:</span>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                onClick={() => handleInputChange('match_score', star)}
-                className={`text-xl transition-colors ${
-                  star <= jdData.match_score
-                    ? 'text-purple-500'
-                    : 'text-gray-300'
-                }`}
-              >
-                ★
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -569,8 +515,7 @@ function CreateJDContent({
 function LibraryJDContent({
   savedRecords,
   loadingRecords,
-  loadRecord,
-  updateJDScore
+  loadRecord
 }: any) {
   const { selectedJD, setSelectedJD } = useWorkspaceStore()
 
@@ -708,16 +653,9 @@ function LibraryJDContent({
                       </span>
                     )}
                   </div>
-                  
-                  {/* Score: 81% - 90% */}
-                  <div className="absolute left-[81%] w-[9%]">
-                    <span className="text-gray-500 text-xs block text-center">
-                      {record.match_score || 3}/5
-                    </span>
-                  </div>
-                  
-                  {/* Date: 90% - 100% */}
-                  <div className="absolute left-[90%] w-[10%]">
+
+                  {/* Date: 81% - 100% */}
+                  <div className="absolute left-[81%] w-[19%]">
                     {record.created_at && (
                       <span className="text-gray-400 text-xs block text-center truncate">
                         {new Date(record.created_at).toLocaleDateString()}

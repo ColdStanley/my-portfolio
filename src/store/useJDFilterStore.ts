@@ -4,7 +4,6 @@ interface JDFilters {
   stage: string
   role: string
   firm: string
-  score: string
   time: string
   comment: string
   searchTerm: string
@@ -27,7 +26,6 @@ export const useJDFilterStore = create<JDFilterStore>((set, get) => ({
     stage: '',
     role: '',
     firm: '',
-    score: '',
     time: '',
     comment: '',
     searchTerm: ''
@@ -65,7 +63,6 @@ export const useJDFilterStore = create<JDFilterStore>((set, get) => ({
       stage: '',
       role: '',
       firm: '',
-      score: '',
       time: '',
       comment: '',
       searchTerm: ''

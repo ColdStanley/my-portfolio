@@ -114,8 +114,7 @@ export async function POST(request: NextRequest) {
       application_stage: null,
       role_group: null,
       firm_type: null,
-      comment: original_url || null,
-      match_score: 3
+      comment: original_url || null
     }
 
     const { data, error } = await supabase

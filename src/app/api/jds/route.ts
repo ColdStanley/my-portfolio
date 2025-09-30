@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { user_id, title, company, full_job_description, application_stage, comment, match_score } = body
+    const { user_id, title, company, full_job_description, application_stage, comment } = body
 
     if (!user_id || !title || !company) {
       return NextResponse.json(
@@ -98,8 +98,7 @@ export async function POST(request: NextRequest) {
         company,
         full_job_description: full_job_description || '',
         application_stage: application_stage || null,
-        comment: comment || '',
-        match_score: Math.max(0, match_score || 0)
+        comment: comment || ''
       }])
       .select()
       .single()
