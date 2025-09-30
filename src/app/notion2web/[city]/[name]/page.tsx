@@ -108,7 +108,7 @@ export default function UserWebsitePage() {
         return
       }
 
-      // Try to get config from server
+      // Try to get config from server (no localStorage fallback)
       try {
         console.log('Attempting to load config from server for:', params.city, params.name)
         const response = await fetch(`/api/notion/config?city=${encodeURIComponent(params.city as string)}&name=${encodeURIComponent(params.name as string)}`)
@@ -120,7 +120,7 @@ export default function UserWebsitePage() {
           const serverConfig = result.config
           console.log('Successfully loaded config from server:', serverConfig)
 
-          // Save to localStorage as backup
+          // Save to localStorage as backup for theme persistence
           localStorage.setItem(`notion-${userKey}`, JSON.stringify(serverConfig))
 
           setUserConfig(serverConfig)
@@ -133,20 +133,10 @@ export default function UserWebsitePage() {
         console.error('Error loading config from server:', error)
       }
 
-      // Fallback to localStorage
-      console.log('Falling back to localStorage')
-      const config = localStorage.getItem(`notion-${userKey}`)
-      if (!config) {
-        console.log('No config found in localStorage, showing error')
-        setConfigError(true)
-        setLoading(false)
-        return
-      }
-
-      const parsedConfig = JSON.parse(config)
-      console.log('Loaded config from localStorage:', parsedConfig)
-      setUserConfig(parsedConfig)
-      fetchNotionData(parsedConfig)
+      // No fallback - if server fails, show error
+      console.log('Server config load failed, showing error')
+      setConfigError(true)
+      setLoading(false)
     }
 
     loadConfig()
