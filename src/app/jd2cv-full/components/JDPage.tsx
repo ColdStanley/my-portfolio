@@ -31,6 +31,9 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
   // JD Transfer states for visual feedback
   const [transferredJDs, setTransferredJDs] = useState<Set<string>>(new Set())
 
+  // Deleting states for fade out animation
+  const [deletingJDs, setDeletingJDs] = useState<Set<string>>(new Set())
+
   // Global Personal Info state
   const [showPersonalInfoTooltip, setShowPersonalInfoTooltip] = useState(false)
   
@@ -96,7 +99,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
 
   const handleUpdateField = async (id: string, field: string, value: string | number) => {
     // Optimistic update
-    setJds(prev => prev.map(jd => 
+    setJds(prev => prev.map(jd =>
       jd.id === id ? { ...jd, [field]: value } : jd
     ))
 
@@ -120,6 +123,46 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
       console.error('Request details:', { id, field, value, user_id: user.id })
       loadJDs()
       throw error
+    }
+  }
+
+  const handleDeleteJD = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this JD record? This action cannot be undone.')) {
+      return
+    }
+
+    // Start fade out animation
+    setDeletingJDs(prev => new Set(prev).add(id))
+
+    try {
+      const response = await fetch(`/api/jds/${id}?user_id=${user.id}`, {
+        method: 'DELETE'
+      })
+
+      const result = await response.json()
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to delete JD record')
+      }
+
+      // Wait for fade out animation (300ms) then remove from local state
+      setTimeout(() => {
+        setJds(prev => prev.filter(jd => jd.id !== id))
+        setDeletingJDs(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(id)
+          return newSet
+        })
+      }, 300)
+
+    } catch (error: any) {
+      // Remove from deleting state if error occurs
+      setDeletingJDs(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(id)
+        return newSet
+      })
+      console.error('Delete error:', error)
+      alert(`Failed to delete JD record: ${error.message}`)
     }
   }
 
@@ -401,33 +444,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
     return result.data || []
   }
 
-  const parseKeywords = (keywordsString?: string) => {
-    if (!keywordsString) return []
-    
-    try {
-      // Try to parse as JSON array first
-      const parsed = JSON.parse(keywordsString)
-      if (Array.isArray(parsed)) {
-        return parsed
-      }
-    } catch {
-      // If JSON parsing fails, split by common delimiters
-      return keywordsString.split(/[,;|\n]/).map(k => k.trim()).filter(k => k)
-    }
-    
-    return []
-  }
-
-  const groupKeywords = (keywords: string[]) => {
-    const groups: string[][] = []
-    const itemsPerGroup = Math.ceil(keywords.length / 3) || 1
-    
-    for (let i = 0; i < keywords.length; i += itemsPerGroup) {
-      groups.push(keywords.slice(i, i + itemsPerGroup))
-    }
-    
-    return groups
-  }
 
   // 隐藏局部loading当全局loading时
   if (loading && !globalLoading) {
@@ -676,11 +692,10 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
         return (
           <div className="grid grid-cols-1 gap-4 transition-all duration-300 ease-in-out">
             {filteredJDs.map((jd) => {
-            const keywords = parseKeywords(jd.keywords_from_sentences)
-            const keywordGroups = groupKeywords(keywords)
-            
             return (
-              <div key={jd.id} id={`jd-card-${jd.id}`} className="jd-card bg-white/90 backdrop-blur-md rounded-xl shadow-xl overflow-hidden transition-all duration-300 ease-in-out">
+              <div key={jd.id} id={`jd-card-${jd.id}`} className={`jd-card bg-white/90 backdrop-blur-md rounded-xl shadow-xl overflow-hidden transition-all duration-300 ease-in-out ${
+                deletingJDs.has(jd.id) ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'
+              }`}>
                 {/* Optimized 2-Row Layout */}
                 <div className="p-4 relative">
                   <div className="flex items-start">
@@ -780,7 +795,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                     {/* 80-100%: Actions & Created */}
                     <div className="w-[20%] flex flex-col items-end">
                       <div className="flex flex-col justify-between h-[6.5rem] items-end">
-                        {/* First Actions Row - Original 3 buttons */}
+                        {/* First Actions Row - 3 buttons */}
                         <div className="flex items-center gap-1 h-9">
                           <button
                             onClick={() => {
@@ -815,15 +830,25 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                               <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/>
                             </svg>
                           </button>
+                          <button
+                            onClick={() => handleDeleteJD(jd.id)}
+                            className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors border border-transparent"
+                            title="Delete JD"
+                          >
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clipRule="evenodd" />
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                            </svg>
+                          </button>
                         </div>
-                        
+
                         {/* Second Actions Row - V2 buttons */}
                         <div className="flex items-center justify-end gap-1 h-9">
                           <LangChainButtonV2 jd={jd} />
                           <LightningButtonV2 jd={jd} />
                           <CoverLetterButtonV2 jd={jd} />
                         </div>
-                        
+
                         {/* Created Row - at bottom */}
                         <div className="text-[10px] text-gray-400 text-right h-6 flex items-center">
                           Created: {formatDate(jd.created_at)}
@@ -856,33 +881,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                   </div>
                 </div>
 
-                {/* Keywords Area - Compact 3x4 Layout */}
-                <div className="bg-gradient-to-r from-gray-50/60 via-purple-50/30 to-gray-50/60 border-t border-gray-200/50 px-4 py-2.5">
-                  {keywords.length > 0 ? (
-                    <div className="grid grid-cols-3 gap-2.5">
-                      {keywordGroups.map((group, groupIndex) => (
-                        <div key={groupIndex} className="bg-white/60 backdrop-blur-sm rounded-md p-2 border border-gray-100/60 shadow-sm">
-                          <div className="space-y-0.5 max-h-20 overflow-hidden">
-                            {group.slice(0, 4).map((keyword, keywordIndex) => (
-                              <div key={keywordIndex} className="text-xs text-gray-600 bg-gray-100/70 rounded-sm px-1.5 py-0.5 font-medium leading-tight truncate">
-                                {keyword}
-                              </div>
-                            ))}
-                            {group.length > 4 && (
-                              <div className="text-xs text-gray-400 italic px-1.5 py-0.5">
-                                +{group.length - 4} more
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-2">
-                      <p className="text-gray-400 text-xs font-medium">No keywords available</p>
-                    </div>
-                  )}
-                </div>
               </div>
             )
           })}

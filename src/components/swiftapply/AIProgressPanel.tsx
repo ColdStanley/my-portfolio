@@ -119,11 +119,12 @@ export default function AIProgressPanel() {
 
 // Helper functions
 function renderStageContent(stage: any) {
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLTextAreaElement>(null)
 
-  // Auto-scroll to bottom when content updates
+  // Auto-scroll to bottom when streaming content updates
   useEffect(() => {
-    if (scrollRef.current && stage.status === 'in_progress') {
+    if (!scrollRef.current) return
+    if (stage.status === 'in_progress' || stage.status === 'completed') {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [stage.content, stage.status])
@@ -140,6 +141,7 @@ function renderStageContent(stage: any) {
   if (stage.status === 'in_progress' && stage.content) {
     return (
       <Input
+        ref={scrollRef}
         multiline
         value={stage.content + (stage.status === 'in_progress' ? '▊' : '')}
         readOnly
@@ -194,6 +196,7 @@ function renderStageContent(stage: any) {
   if (stage.content) {
     return (
       <Input
+        ref={scrollRef}
         multiline
         value={stage.content}
         readOnly

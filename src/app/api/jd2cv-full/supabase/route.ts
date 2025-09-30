@@ -139,7 +139,6 @@ export async function PUT(request: NextRequest) {
         company: jdData.company,
         full_job_description: jdData.full_job_description || '',
         jd_key_sentences: jdData.jd_key_sentences || '',
-        keywords_from_sentences: jdData.keywords_from_sentences || '',
         application_stage: jdData.application_stage || '',
         role_group: jdData.role_group || '',
         firm_type: jdData.firm_type || '',

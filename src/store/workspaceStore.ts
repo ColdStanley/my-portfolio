@@ -241,8 +241,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       set({ selectedJD: latestJD })
       
       // Check if JD analysis is still valid
-      if (latestJD.jd_key_sentences !== selectedJD.jd_key_sentences || 
-          latestJD.keywords_from_sentences !== selectedJD.keywords_from_sentences) {
+      if (latestJD.jd_key_sentences !== selectedJD.jd_key_sentences) {
         // JD analysis changed, reset optimization results
         get().resetOptimizedExperiences()
       }

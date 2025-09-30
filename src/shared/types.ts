@@ -43,7 +43,6 @@ export interface JDRecord {
 
   // Analysis results
   jd_key_sentences?: string
-  keywords_from_sentences?: string
   match_score: number // 1-5 range, required
 
   // Classification tags

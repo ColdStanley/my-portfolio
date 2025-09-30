@@ -6,7 +6,6 @@ interface JDRecord {
   company: string
   full_job_description: string
   jd_key_sentences: string
-  keywords_from_sentences: string
   application_stage: string
   role_group: string
   firm_type: string

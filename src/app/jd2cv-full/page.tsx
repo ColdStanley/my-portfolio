@@ -415,7 +415,7 @@ function JDLibraryContent({ user, activeSubTab, setActiveSubTab }: { user: any, 
         handleClear={handleClear}
       />}
       
-      {activeSubTab === 1 && <LibraryJDContent 
+      {activeSubTab === 1 && <LibraryJDContent
         savedRecords={savedRecords}
         loadingRecords={loadingRecords}
         loadRecord={loadRecord}
@@ -566,11 +566,11 @@ function CreateJDContent({
 }
 
 // Library JD Content Component
-function LibraryJDContent({ 
-  savedRecords, 
-  loadingRecords, 
+function LibraryJDContent({
+  savedRecords,
+  loadingRecords,
   loadRecord,
-  updateJDScore 
+  updateJDScore
 }: any) {
   const { selectedJD, setSelectedJD } = useWorkspaceStore()
 
@@ -584,40 +584,6 @@ function LibraryJDContent({
     }
   }
 
-  const handleDeleteJD = async (recordId: string) => {
-    if (!confirm('Are you sure you want to delete this JD record? This action cannot be undone.')) {
-      return
-    }
-
-    try {
-      const response = await fetch('/api/jd2cv-full/jd-records', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: recordId,
-          user_id: user?.id
-        })
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to delete JD record')
-      }
-
-      // Refresh the records list
-      await loadSavedRecords()
-      
-      // Clear selected JD if it was deleted
-      if (selectedJD?.id === recordId) {
-        setSelectedJD(null)
-      }
-
-    } catch (error) {
-      console.error('Error deleting JD record:', error)
-      alert('Failed to delete JD record. Please try again.')
-    }
-  }
   if (loadingRecords) {
     return (
       <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6">
@@ -823,16 +789,6 @@ function LibraryJDContent({
                   Edit
                 </button>
 
-                <button
-                  onClick={() => handleDeleteJD(record.id)}
-                  className="w-full px-2 py-1 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-xs font-medium whitespace-nowrap flex items-center justify-center gap-1 transition-colors"
-                >
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clipRule="evenodd" />
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                  Delete
-                </button>
               </div>
             </div>
           )

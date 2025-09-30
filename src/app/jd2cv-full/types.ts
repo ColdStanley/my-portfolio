@@ -12,7 +12,6 @@ export interface JDRecord {
 
   // Analysis results
   jd_key_sentences?: string
-  keywords_from_sentences?: string
   match_score?: number
 
   // Classification tags
