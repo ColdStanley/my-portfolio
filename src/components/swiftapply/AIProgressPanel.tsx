@@ -15,10 +15,12 @@ export default function AIProgressPanel() {
   const {
     ai: { activeStage, stageOutputs, isGenerating },
     resetAIState,
-    setAIStage
+    setAIStage,
+    openSignUpModal,
+    openUpgradeModal
   } = useSwiftApplyStore()
 
-  const handleCustomizeResume = () => {
+  const handleCustomizeResume = async () => {
     const { personalInfo, templates, jobTitle, jobDescription, startAIGeneration } = useSwiftApplyStore.getState()
 
     if (!personalInfo) {
@@ -38,6 +40,36 @@ export default function AIProgressPanel() {
 
     if (templates.length === 0) {
       alert('Please create at least one experience template')
+      return
+    }
+
+    // Check quota before starting AI generation
+    try {
+      const deviceId = localStorage.getItem('swiftapply-device-id') || crypto.randomUUID()
+      localStorage.setItem('swiftapply-device-id', deviceId)
+
+      const response = await fetch('/api/swiftapply-quota/use', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ device_id: deviceId })
+      })
+
+      const result = await response.json()
+
+      if (!result.success) {
+        // Show appropriate modal based on user type
+        if (result.user_type === 'guest') {
+          openSignUpModal()
+        } else if (result.user_type === 'free') {
+          openUpgradeModal()
+        } else {
+          alert(result.message || 'Quota limit reached. Please try again later.')
+        }
+        return
+      }
+    } catch (error) {
+      console.error('Quota check failed:', error)
+      alert('Quota check failed. Please try again later.')
       return
     }
 

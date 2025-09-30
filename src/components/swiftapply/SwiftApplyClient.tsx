@@ -6,6 +6,8 @@ import Header from '@/components/swiftapply/Header'
 import JDEditor from '@/components/swiftapply/JDEditor'
 import ResumePreview from '@/components/swiftapply/ResumePreview'
 import SettingsModal from '@/components/swiftapply/SettingsModal'
+import SignUpModal from '@/components/swiftapply/SignUpModal'
+import UpgradeModal from '@/components/swiftapply/UpgradeModal'
 import AIProgressPanel from '@/components/swiftapply/AIProgressPanel'
 import AIReviewModal from '@/components/swiftapply/AIReviewModal'
 import CoverLetterEditor from '@/components/swiftapply/CoverLetterEditor'
@@ -15,6 +17,8 @@ export default function SwiftApplyClient() {
   const {
     personalInfo,
     isSettingsOpen,
+    isSignUpModalOpen,
+    isUpgradeModalOpen,
     openSettings,
     initializeFromStorage,
     hasStoredData,
@@ -158,6 +162,12 @@ export default function SwiftApplyClient() {
 
       {/* Settings Modal */}
       {isSettingsOpen && <SettingsModal />}
+
+      {/* Sign Up Modal */}
+      {isSignUpModalOpen && <SignUpModal />}
+
+      {/* Upgrade Modal */}
+      {isUpgradeModalOpen && <UpgradeModal />}
     </div>
   )
 }

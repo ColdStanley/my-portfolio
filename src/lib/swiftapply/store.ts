@@ -86,6 +86,8 @@ interface SwiftApplyState {
   // UI State
   isSettingsOpen: boolean
   settingsStep: 1 | 2 | 3
+  isSignUpModalOpen: boolean
+  isUpgradeModalOpen: boolean
 
   // AI Generation State
   ai: AIGenerationState
@@ -103,6 +105,10 @@ interface SwiftApplyState {
   setJobDescription: (v: string) => void
   openSettings: (step?: 1 | 2 | 3) => void
   closeSettings: () => void
+  openSignUpModal: () => void
+  closeSignUpModal: () => void
+  openUpgradeModal: () => void
+  closeUpgradeModal: () => void
   initializeFromStorage: () => void
   hasStoredData: () => boolean
 
@@ -164,6 +170,8 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
   jobDescription: '',
   isSettingsOpen: false,
   settingsStep: 1,
+  isSignUpModalOpen: false,
+  isUpgradeModalOpen: false,
   ai: getInitialAIState(),
   coverLetter: getInitialCoverLetterState(),
   pdfPreviewUrl: null,
@@ -198,6 +206,21 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
     set({ isSettingsOpen: false })
   },
 
+  openSignUpModal: () => {
+    set({ isSignUpModalOpen: true })
+  },
+
+  closeSignUpModal: () => {
+    set({ isSignUpModalOpen: false })
+  },
+
+  openUpgradeModal: () => {
+    set({ isUpgradeModalOpen: true })
+  },
+
+  closeUpgradeModal: () => {
+    set({ isUpgradeModalOpen: false })
+  },
 
   initializeFromStorage: () => {
     const personalInfo = loadFromStorage<PersonalInfo>('swiftapply-personal-info')
