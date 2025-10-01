@@ -28,9 +28,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
   const [searchInput, setSearchInput] = useState('')
   const [stageOptions, setStageOptions] = useState<string[]>(['Raw JD', 'Applied'])
 
-  // JD Transfer states for visual feedback
-  const [transferredJDs, setTransferredJDs] = useState<Set<string>>(new Set())
-
   // Deleting states for fade out animation
   const [deletingJDs, setDeletingJDs] = useState<Set<string>>(new Set())
 
@@ -644,167 +641,135 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
               <div key={jd.id} id={`jd-card-${jd.id}`} className={`jd-card bg-white/90 backdrop-blur-md rounded-xl shadow-xl overflow-hidden transition-all duration-300 ease-in-out ${
                 deletingJDs.has(jd.id) ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'
               }`}>
-                {/* Optimized 2-Row Layout */}
-                <div className="p-4 relative">
-                  <div className="flex items-start">
-
-                    {/* 0-35%: Title & Company */}
-                    <div className="w-[35%] px-3">
-                      <div className="flex flex-col justify-between h-[4.5rem]">
+                {/* New 2-Block Layout */}
+                <div className="p-6 relative">
+                  {/* Block 1: Title & Company + 6 Buttons */}
+                  <div className="flex items-start gap-4">
+                    {/* Left 50%: Title & Company */}
+                    <div className="w-1/2">
+                      <div className="flex flex-col gap-2">
+                        {/* Title */}
                         <input
                           type="text"
                           value={jd.title}
                           onChange={(e) => {
-                            // Optimistic update
                             const newJds = jds.map(j => j.id === jd.id ? {...j, title: e.target.value} : j)
                             setJds(newJds)
                           }}
                           onBlur={(e) => handleUpdateField(jd.id, 'title', e.target.value)}
                           placeholder="Job title..."
-                          className="w-full h-9 px-3 text-base font-bold text-gray-900 bg-transparent border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent hover:border-gray-200"
+                          className="w-full h-10 px-3 text-lg font-bold text-gray-900 bg-transparent border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent hover:border-gray-200 transition-colors"
                         />
+                        {/* Company */}
                         <input
                           type="text"
                           value={jd.company}
                           onChange={(e) => {
-                            // Optimistic update
                             const newJds = jds.map(j => j.id === jd.id ? {...j, company: e.target.value} : j)
                             setJds(newJds)
                           }}
                           onBlur={(e) => handleUpdateField(jd.id, 'company', e.target.value)}
                           placeholder="Company name..."
-                          className="w-full h-9 px-3 text-sm font-medium text-gray-600 bg-transparent border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent hover:border-gray-200"
+                          className="w-full h-8 px-3 text-sm font-medium text-gray-600 bg-transparent border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent hover:border-gray-200 transition-colors"
                         />
                       </div>
                     </div>
 
-                    {/* 35-80%: Meta Fields - Stage Only */}
-                    <div className="w-[45%] px-2">
-                      <div className="flex flex-col justify-between h-[4.5rem]">
-                        {/* Label Row - align with Title */}
-                        <div className="h-9 flex items-center">
-                          <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">Stage</label>
-                        </div>
-                        {/* Input Row - align with Company */}
-                        <div className="h-9">
-                          <div className="relative w-1/2">
-                            <select
-                              value={jd.application_stage || ''}
-                              onChange={(e) => {
-                                handleUpdateField(jd.id, 'application_stage', e.target.value)
-                                // Flash success effect
-                                if (e.target.value) {
-                                  const card = e.target.closest('.jd-card')
-                                  if (card) {
-                                    card.classList.add('bg-green-50', 'border-green-300')
-                                    setTimeout(() => {
-                                      card.classList.remove('bg-green-50', 'border-green-300')
-                                    }, 800)
-                                  }
-                                }
-                              }}
-                              className="w-full h-9 px-3 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 appearance-none cursor-pointer"
-                            >
-                              <option value="">Not Set</option>
-                              {stageOptions.map(stage => (
-                                <option key={stage} value={stage}>{stage}</option>
-                              ))}
-                            </select>
-                            <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                              </svg>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 80-100%: Actions & Created */}
-                    <div className="w-[20%] flex flex-col items-end">
-                      <div className="flex flex-col justify-between h-[6.5rem] items-end">
-                        {/* First Actions Row - 3 buttons */}
-                        <div className="flex items-center gap-1 h-9">
-                          <button
-                            onClick={() => {
-                              // Save JD data to localStorage for JD2CV 2.0
-                              localStorage.setItem('jd2cv-transfer', JSON.stringify({
-                                title: jd.title,
-                                company: jd.company,
-                                description: jd.full_job_description || ''
-                              }))
-                              // Add visual feedback - mark as transferred
-                              setTransferredJDs(prev => new Set(prev).add(jd.id))
-                              // No page navigation - user manually goes to JD2CV 2.0
-                            }}
-                            className={`p-2 rounded transition-colors border border-transparent ${
-                              transferredJDs.has(jd.id)
-                                ? 'text-purple-600 bg-purple-100 hover:bg-purple-200'
-                                : 'text-gray-400 hover:text-purple-600 hover:bg-purple-50'
-                            }`}
-                            title={transferredJDs.has(jd.id) ? "Data ready for JD2CV 2.0" : "Generate with AI (JD2CV 2.0)"}
-                          >
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M13 10V3L4 14h7v7l9-11h-7z" clipRule="evenodd" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => setViewingJD(jd)}
-                            className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors border border-transparent"
-                            title="View JD"
-                          >
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
-                              <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/>
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleDeleteJD(jd.id)}
-                            className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors border border-transparent"
-                            title="Delete JD"
-                          >
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clipRule="evenodd" />
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                            </svg>
-                          </button>
-                        </div>
-
-                        {/* Second Actions Row - V2 buttons */}
-                        <div className="flex items-center justify-end gap-1 h-9">
+                    {/* Right 50%: 6 Buttons (3x2 Grid) */}
+                    <div className="w-1/2">
+                      <div className="flex flex-col gap-2">
+                        {/* Row 1: AI Buttons */}
+                        <div className="grid grid-cols-3 gap-2">
                           <LangChainButtonV2 jd={jd} />
                           <LightningButtonV2 jd={jd} />
                           <CoverLetterButtonV2 jd={jd} />
                         </div>
-
-                        {/* Created Row - at bottom */}
-                        <div className="text-[10px] text-gray-400 text-right h-6 flex items-center">
-                          Created: {formatDate(jd.created_at)}
+                        {/* Row 2: Management Buttons */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => setViewingJD(jd)}
+                            className="w-full h-8 px-3 text-sm font-medium bg-white text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-colors"
+                            title="View JD"
+                          >
+                            View
+                          </button>
+                          <button
+                            onClick={() => handleDeleteJD(jd.id)}
+                            className="w-full h-8 px-3 text-sm font-medium bg-white text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-colors"
+                            title="Delete JD"
+                          >
+                            Delete
+                          </button>
                         </div>
                       </div>
                     </div>
                   </div>
-                  
-                  {/* Comment Row (73%) + PDF Row (27%) */}
-                  <div className="mt-3 flex gap-3 items-center">
-                    {/* Comment Section - 73% */}
-                    <div className="w-[73%] min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500 font-medium flex-shrink-0">Comment:</span>
-                        <div className="bg-gray-50/80 rounded-lg px-3 py-2 flex-1 min-w-0 overflow-hidden">
-                          <div className="break-words overflow-wrap-anywhere word-break-break-word">
-                            <CommentInlineEdit
-                              value={jd.comment || ''}
-                              onSave={(value) => handleUpdateField(jd.id, 'comment', value)}
-                            />
+
+                  {/* Block 2: Comment & PDF + Stage & Created */}
+                  <div className="flex items-start gap-4 mt-4">
+                    {/* Left 70%: Comment & PDF */}
+                    <div className="w-[70%]">
+                      <div className="flex flex-col gap-2">
+                        {/* Comment Row */}
+                        <div className="flex items-center min-h-[36px]">
+                          <span className="w-20 text-xs text-gray-500 font-medium flex-shrink-0">Comment:</span>
+                          <div className="flex-1 bg-gray-50/80 rounded-lg px-3 py-2 min-h-[36px] flex items-center">
+                            <div className="break-words overflow-wrap-anywhere word-break-break-word w-full">
+                              <CommentInlineEdit
+                                value={jd.comment || ''}
+                                onSave={(value) => handleUpdateField(jd.id, 'comment', value)}
+                              />
+                            </div>
                           </div>
                         </div>
+                        {/* PDF Row (conditional) */}
+                        {jd.cv_pdf_url && (
+                          <div className="flex items-center h-9">
+                            <span className="w-20 text-xs text-gray-500 font-medium flex-shrink-0">PDF:</span>
+                            <div className="flex-1">
+                              <PDFSection jd={jd} onUpdate={handleUpdateField} />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {/* PDF Section - 27% */}
-                    <div className="w-[27%] flex justify-end">
-                      <PDFSection jd={jd} onUpdate={handleUpdateField} />
+                    {/* Right 30%: Stage & Created */}
+                    <div className="w-[30%]">
+                      <div className="flex flex-col gap-2">
+                        {/* Stage Row */}
+                        <div className="flex items-center h-9">
+                          <span className="w-16 text-xs text-gray-500 font-medium flex-shrink-0">Stage:</span>
+                          <select
+                            value={jd.application_stage || ''}
+                            onChange={(e) => {
+                              handleUpdateField(jd.id, 'application_stage', e.target.value)
+                              if (e.target.value) {
+                                const card = e.target.closest('.jd-card')
+                                if (card) {
+                                  card.classList.add('bg-green-50', 'border-green-300')
+                                  setTimeout(() => {
+                                    card.classList.remove('bg-green-50', 'border-green-300')
+                                  }, 800)
+                                }
+                              }
+                            }}
+                            className="flex-1 h-9 px-3 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 cursor-pointer transition-colors"
+                          >
+                            <option value="">Not Set</option>
+                            {stageOptions.map(stage => (
+                              <option key={stage} value={stage}>{stage}</option>
+                            ))}
+                          </select>
+                        </div>
+                        {/* Created Row */}
+                        <div className="flex items-center h-9">
+                          <span className="w-16 text-xs text-gray-500 font-medium flex-shrink-0">Created:</span>
+                          <span className="flex-1 text-xs text-gray-600 truncate">
+                            {formatDate(jd.created_at)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

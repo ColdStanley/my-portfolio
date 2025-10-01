@@ -626,18 +626,10 @@ const runPostGenerationSteps = async (
         <button
           onClick={handleGenerate}
           disabled={isGenerating}
-          className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors disabled:cursor-not-allowed border border-gray-200 hover:border-purple-300"
+          className="w-full h-10 px-3 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
           title="Create a Complete Resume with AI"
         >
-          {isGenerating ? (
-            <div className="w-4 h-4 flex items-center justify-center text-xs font-mono text-purple-600">
-              {countdown}
-            </div>
-          ) : (
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clipRule="evenodd" />
-            </svg>
-          )}
+          {isGenerating ? `${countdown}s` : 'LangChain'}
         </button>
       </div>
       {portalReady && portalRef.current && createPortal(

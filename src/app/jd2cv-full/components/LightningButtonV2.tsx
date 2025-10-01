@@ -215,20 +215,10 @@ export default function LightningButtonV2({ jd, className = '', onPDFUploaded }:
       <button
         onClick={handleGenerate}
         disabled={isGenerating}
-        className={`p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors disabled:cursor-not-allowed border border-gray-200 hover:border-purple-300 ${
-          hasBeenClicked ? 'ring-2 ring-purple-300/30 ring-inset' : ''
-        }`}
+        className="w-full h-10 px-3 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
         title="Generate Resume PDF V2"
       >
-        {isGenerating ? (
-          <div className="w-4 h-4 flex items-center justify-center text-xs font-mono text-purple-600">
-            {countdown}
-          </div>
-        ) : (
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M13 10V3L4 14h7v7l9-11h-7z" clipRule="evenodd" />
-          </svg>
-        )}
+        {isGenerating ? `${countdown}s` : 'Lightning'}
       </button>
 
     </div>

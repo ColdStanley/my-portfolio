@@ -198,22 +198,10 @@ Based on the above information, generate a professional cover letter for this po
       <button
         onClick={handleClick}
         disabled={!canGenerate || isGenerating}
-        className={`p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors disabled:cursor-not-allowed disabled:opacity-60 border border-gray-200 hover:border-purple-300 ${
-          hasBeenClicked ? 'ring-2 ring-purple-300/30 ring-inset' : ''
-        }`}
+        className="w-full h-10 px-3 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
         title={canGenerate ? "Generate Cover Letter PDF V2" : "Generate Resume first to unlock Cover Letter"}
       >
-        {isGenerating ? (
-          <div className="animate-spin w-4 h-4">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </div>
-        ) : (
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clipRule="evenodd" />
-          </svg>
-        )}
+        {isGenerating ? 'Loading...' : 'Cover'}
       </button>
 
       {/* Tooltip Portal - Cover Letter Generator */}
