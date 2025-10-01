@@ -196,8 +196,8 @@ export default function SimpleQuiz() {
         </div>
         
         {stats && (
-          <div className="bg-purple-50 rounded-lg p-4 mb-4">
-            <div className="text-2xl font-bold text-purple-600 mb-1">
+          <div className="bg-neutral-light rounded-lg p-4 mb-4">
+            <div className="text-2xl font-bold text-primary mb-1">
               {stats.percentage}%
             </div>
             <div className="text-sm text-gray-600">
@@ -212,7 +212,7 @@ export default function SimpleQuiz() {
         <div className="flex gap-2 justify-center">
           <button
             onClick={() => quizManager.restart()}
-            className="px-4 py-2 bg-white hover:bg-gray-50 text-purple-600 border border-purple-200 rounded-lg font-medium"
+            className="px-4 py-2 bg-white hover:bg-gray-50 text-primary border border-neutral-mid rounded-lg font-medium"
           >
             Try Again
           </button>
@@ -270,7 +270,7 @@ export default function SimpleQuiz() {
               onChange={(e) => setCurrentAnswer(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Type what you hear..."
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               autoFocus
             />
             
@@ -287,12 +287,12 @@ export default function SimpleQuiz() {
           {feedback && (
             <div className={`mt-4 p-4 rounded-lg transition-all duration-500 transform ${
               feedback.type === 'correct' 
-                ? 'bg-gradient-to-r from-purple-50 to-purple-100 border-l-4 border-purple-500'
-                : 'bg-gradient-to-r from-purple-50 to-red-50 border-l-4 border-red-400'
+                ? 'bg-gradient-to-r from-neutral-light to-purple-100 border-l-4 border-primary'
+                : 'bg-gradient-to-r from-neutral-light to-red-50 border-l-4 border-red-400'
             } animate-pulse`}>
               <div className="flex items-center gap-2">
                 {feedback.type === 'correct' ? (
-                  <svg className="w-6 h-6 text-purple-600 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-6 h-6 text-primary animate-bounce" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
                   </svg>
                 ) : (
@@ -302,12 +302,12 @@ export default function SimpleQuiz() {
                 )}
                 
                 <div className="flex-1">
-                  <p className={`font-medium ${feedback.type === 'correct' ? 'text-purple-700' : 'text-red-700'}`}>
+                  <p className={`font-medium ${feedback.type === 'correct' ? 'text-text-primary' : 'text-red-700'}`}>
                     {feedback.type === 'correct' ? 'Correct!' : 'Incorrect!'}
                   </p>
                   {feedback.correctAnswer && (
                     <p className="text-sm text-gray-600 mt-1">
-                      Correct answer: <span className="font-medium text-purple-600">{feedback.correctAnswer}</span>
+                      Correct answer: <span className="font-medium text-primary">{feedback.correctAnswer}</span>
                     </p>
                   )}
                 </div>

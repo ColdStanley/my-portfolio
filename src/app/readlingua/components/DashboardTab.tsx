@@ -69,7 +69,7 @@ export default function DashboardTab() {
   }
 
   return (
-    <div className="min-h-screen md:min-h-0 md:bg-gradient-to-br md:from-slate-50 md:via-white md:to-purple-50/30">
+    <div className="min-h-screen md:min-h-0 md:bg-gradient-to-br md:from-slate-50 md:via-white md:to-neutral-light/30">
       {/* Desktop Header */}
       <div className="hidden md:block px-6 py-6 bg-white/90 backdrop-blur-md shadow-lg"
         style={{
@@ -192,7 +192,7 @@ export default function DashboardTab() {
             <div className="p-6 h-full flex flex-col">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/>
                   </svg>
                   <span className="hidden md:inline">Browse</span>
@@ -202,14 +202,14 @@ export default function DashboardTab() {
                   <button
                     onClick={loadArticles}
                     disabled={isLoading}
-                    className="p-1.5 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50"
+                    className="p-1.5 text-gray-500 hover:text-primary hover:bg-neutral-light rounded-lg transition-colors disabled:opacity-50"
                     title="Refresh articles"
                   >
                     <svg className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                   </button>
-                  <div className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                  <div className="px-3 py-1 bg-neutral-light text-text-primary rounded-full text-xs font-medium">
                     {filteredArticles.length}
                   </div>
                 </div>
@@ -219,7 +219,7 @@ export default function DashboardTab() {
                 {isLoading ? (
                   <div className="flex items-center justify-center h-32">
                     <div className="flex flex-col items-center gap-2">
-                      <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                       <span className="text-sm text-gray-500">Loading articles...</span>
                     </div>
                   </div>
@@ -242,7 +242,7 @@ export default function DashboardTab() {
           >
             <div className="p-6">
               <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-                <svg className="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd"/>
                 </svg>
                 Add New

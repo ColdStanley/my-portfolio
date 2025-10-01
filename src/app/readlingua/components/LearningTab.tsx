@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useState, memo, useCallback } from 'react'
+import { toast } from 'sonner'
 import { useReadLinguaStore } from '../store/useReadLinguaStore'
 import { queryApi } from '../utils/apiClient'
 import { supabase } from '../utils/supabaseClient'
@@ -106,7 +107,7 @@ const LearningTab = memo(() => {
       } else {
         const errorData = await response.json()
         console.error('Failed to get audio:', errorData.error)
-        alert(errorData.error || 'Failed to generate pronunciation')
+        toast.error(errorData.error || 'Failed to generate pronunciation')
         setIsPlaying(false)
       }
     } catch (error) {
@@ -167,7 +168,7 @@ const LearningTab = memo(() => {
           </p>
           <button
             onClick={() => useReadLinguaStore.getState().setActiveTab('dashboard')}
-            className="w-32 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium whitespace-nowrap flex items-center gap-2 mx-auto"
+            className="w-32 px-4 py-2 bg-primary hover:bg-primary hover:brightness-110 text-white rounded-lg font-medium whitespace-nowrap flex items-center gap-2 mx-auto"
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd"/>
@@ -180,7 +181,7 @@ const LearningTab = memo(() => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-neutral-light/30">
       {/* Desktop-only floating components */}
       <div className="hidden md:block">
         {/* Ask AI Search Box - Bottom Right */}

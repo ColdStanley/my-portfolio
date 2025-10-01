@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { useReadLinguaStore } from '../store/useReadLinguaStore'
 import { articleApi } from '../utils/apiClient'
 import { supabase } from '../utils/supabaseClient'
@@ -84,10 +85,10 @@ export default function UploadForm({ defaultNativeLanguage = 'chinese', defaultS
         native_language: 'chinese'
       })
       
-      alert('Article saved successfully!')
+      toast.success('Article saved successfully!')
     } catch (error) {
       console.error('❌ Error saving article:', error)
-      alert(`Failed to save article: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      toast.error(`Failed to save article: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsSubmitting(false)
     }
@@ -106,7 +107,7 @@ export default function UploadForm({ defaultNativeLanguage = 'chinese', defaultS
             id="title"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
             placeholder="Enter article title..."
             required
           />
@@ -135,7 +136,7 @@ export default function UploadForm({ defaultNativeLanguage = 'chinese', defaultS
                   native_language: newNativeLanguage
                 })
               }}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
             >
               {LANGUAGE_OPTIONS.source.map(lang => (
                 <option key={lang.value} value={lang.value}>{lang.label}</option>
@@ -150,7 +151,7 @@ export default function UploadForm({ defaultNativeLanguage = 'chinese', defaultS
               id="native_language"
               value={formData.native_language}
               onChange={(e) => setFormData({ ...formData, native_language: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
             >
               {getAvailableNativeLanguages(formData.source_language).map(lang => (
                 <option key={lang.value} value={lang.value}>{lang.label}</option>
@@ -169,7 +170,7 @@ export default function UploadForm({ defaultNativeLanguage = 'chinese', defaultS
             value={formData.content}
             onChange={(e) => setFormData({ ...formData, content: e.target.value })}
             rows={12}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 resize-none"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary resize-none"
             placeholder="Paste your article content here..."
             required
           />
@@ -180,7 +181,7 @@ export default function UploadForm({ defaultNativeLanguage = 'chinese', defaultS
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-40 px-6 py-3 bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300 text-white rounded-lg font-medium whitespace-nowrap flex items-center gap-2 justify-center"
+            className="w-40 px-6 py-3 bg-primary hover:bg-primary hover:brightness-110 disabled:bg-purple-300 text-white rounded-lg font-medium whitespace-nowrap flex items-center gap-2 justify-center"
           >
             {isSubmitting ? (
               <>

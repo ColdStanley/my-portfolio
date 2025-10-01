@@ -16,7 +16,7 @@ export default function ModelSelector() {
           onClick={() => setSelectedAiModel('deepseek')}
           className={`px-3 py-1 text-sm font-medium rounded-l-lg whitespace-nowrap flex items-center gap-1 ${
             selectedAiModel === 'deepseek'
-              ? 'bg-purple-500 text-white'
+              ? 'bg-primary text-white'
               : 'text-gray-600 hover:bg-gray-50'
           }`}
         >
@@ -29,7 +29,7 @@ export default function ModelSelector() {
           onClick={() => setSelectedAiModel('openai')}
           className={`px-3 py-1 text-sm font-medium rounded-r-lg whitespace-nowrap flex items-center gap-1 ${
             selectedAiModel === 'openai'
-              ? 'bg-purple-500 text-white'
+              ? 'bg-primary text-white'
               : 'text-gray-600 hover:bg-gray-50'
           }`}
         >

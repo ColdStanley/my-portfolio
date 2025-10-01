@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, memo, useCallback, useEffect } from 'react'
+import { toast } from 'sonner'
 import { createPortal } from 'react-dom'
 import { useReadLinguaStore } from '../store/useReadLinguaStore'
 
@@ -105,7 +106,7 @@ const TextSelectionToolbar = memo<TextSelectionToolbarProps>(({
   
   const tooltipContent = (
     <div
-      className={`fixed z-[9999] bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-purple-200/50 p-3 w-[120px] transition-all duration-200 ease-out ${
+      className={`fixed z-[9999] bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-neutral-mid/50 p-3 w-[120px] transition-all duration-200 ease-out ${
         isVisible 
           ? 'opacity-100 scale-100 translate-y-0' 
           : 'opacity-0 scale-95 translate-y-2'
@@ -124,27 +125,27 @@ const TextSelectionToolbar = memo<TextSelectionToolbarProps>(({
         <button
           onClick={() => handleQueryType('quick')}
           disabled={isSubmitting}
-          className="w-full px-3 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md font-medium text-xs shadow-sm hover:shadow-md transition-all duration-200"
+          className="w-full px-3 py-2 bg-gradient-to-r from-primary to-primary hover:brightness-110  disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md font-medium text-xs shadow-sm hover:shadow-md transition-all duration-200"
         >
           Quick
         </button>
         <button
           onClick={() => handleQueryType('standard')}
           disabled={isSubmitting}
-          className="w-full px-3 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md font-medium text-xs shadow-sm hover:shadow-md transition-all duration-200"
+          className="w-full px-3 py-2 bg-gradient-to-r from-primary to-primary hover:brightness-110  disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md font-medium text-xs shadow-sm hover:shadow-md transition-all duration-200"
         >
           Standard
         </button>
         <button
           onClick={() => handleQueryType('deep')}
           disabled={isSubmitting}
-          className="w-full px-3 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md font-medium text-xs shadow-sm hover:shadow-md transition-all duration-200"
+          className="w-full px-3 py-2 bg-gradient-to-r from-primary to-primary hover:brightness-110  disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md font-medium text-xs shadow-sm hover:shadow-md transition-all duration-200"
         >
           Deep
         </button>
         <button
           onClick={() => handleQueryType('copy')}
-          className="w-full px-3 py-2 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-purple-600 rounded-md font-medium text-xs border border-purple-200 shadow-sm hover:shadow-md transition-all duration-200"
+          className="w-full px-3 py-2 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-primary rounded-md font-medium text-xs border border-neutral-mid shadow-sm hover:shadow-md transition-all duration-200"
         >
           Copy
         </button>
@@ -192,13 +193,13 @@ const TextSelectionToolbar = memo<TextSelectionToolbarProps>(({
                 await audio.play()
               } else {
                 const errorData = await response.json()
-                alert(errorData.error || 'Failed to generate pronunciation')
+                toast.error(errorData.error || 'Failed to generate pronunciation')
               }
             } catch (error) {
               // Silent fail
             }
           }}
-          className="absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-full flex items-center justify-center transition-all duration-150 shadow-sm hover:scale-110 hover:shadow-md"
+          className="absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-to-r from-primary to-primary hover:brightness-110  text-white rounded-full flex items-center justify-center transition-all duration-150 shadow-sm hover:scale-110 hover:shadow-md"
           title="Play pronunciation"
         >
           <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">

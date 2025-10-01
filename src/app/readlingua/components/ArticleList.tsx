@@ -37,7 +37,7 @@ export default function ArticleList({ articles, onArticleSelect }: ArticleListPr
         <div
           key={article.id}
           onClick={() => onArticleSelect(article)}
-          className="p-4 cursor-pointer transition-all duration-200 rounded-lg hover:bg-purple-50"
+          className="p-4 cursor-pointer transition-all duration-200 rounded-lg hover:bg-neutral-light"
           style={{
             boxShadow: '0 2px 8px rgba(139, 92, 246, 0.08), 0 1px 4px rgba(139, 92, 246, 0.05)',
           }}
@@ -58,7 +58,7 @@ export default function ArticleList({ articles, onArticleSelect }: ArticleListPr
           </div>
           
           <div className="flex items-center gap-3 text-sm text-gray-600 mb-2">
-            <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">
+            <span className="px-2 py-1 bg-neutral-light text-text-primary rounded text-xs font-medium">
               {LANGUAGE_LABELS[article.source_language] || article.source_language}
             </span>
             <span>→</span>

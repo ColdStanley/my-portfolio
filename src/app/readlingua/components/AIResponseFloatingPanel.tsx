@@ -169,10 +169,10 @@ export default function AIResponseFloatingPanel({
   const getQueryTypeColor = (type: string) => {
     const colors = {
       copy: 'bg-gray-100 text-gray-700',
-      quick: 'bg-purple-100 text-purple-700',
+      quick: 'bg-neutral-light text-text-primary',
       standard: 'bg-purple-200 text-purple-800',
       deep: 'bg-purple-300 text-purple-900',
-      ask_ai: 'bg-purple-500 text-white'
+      ask_ai: 'bg-primary text-white'
     }
     return colors[type as keyof typeof colors] || 'bg-gray-100 text-gray-700'
   }
@@ -221,7 +221,7 @@ export default function AIResponseFloatingPanel({
                 <button
                   onClick={() => onPlayPronunciation(selectedText)}
                   disabled={isPlaying}
-                  className="w-5 h-5 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-full flex items-center justify-center transition-colors disabled:opacity-50 mt-1 ml-1 flex-shrink-0"
+                  className="w-5 h-5 text-gray-500 hover:text-primary hover:bg-neutral-light rounded-full flex items-center justify-center transition-colors disabled:opacity-50 mt-1 ml-1 flex-shrink-0"
                   title="Play pronunciation"
                 >
                   {isPlaying ? (
@@ -269,7 +269,7 @@ export default function AIResponseFloatingPanel({
           ) : !aiResponse && isLoading ? (
             /* Initial Loading State - Only show when no content yet */
             <div className="flex flex-col items-center justify-center h-full text-gray-500">
-              <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-3"></div>
               <p className="text-sm">AI is thinking...</p>
               <p className="text-xs text-gray-400 mt-1">Generating response</p>
             </div>
@@ -293,13 +293,13 @@ export default function AIResponseFloatingPanel({
               
               {/* Streaming Indicator - Show typing effect when still loading */}
               {isLoading && (
-                <div className="flex items-center gap-1 mt-3 text-purple-500">
+                <div className="flex items-center gap-1 mt-3 text-primary">
                   <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
                   </div>
-                  <span className="text-xs text-purple-600 ml-1">AI is writing...</span>
+                  <span className="text-xs text-primary ml-1">AI is writing...</span>
                 </div>
               )}
             </>

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, memo, useCallback } from 'react'
+import { toast } from 'sonner'
 import AIResponseFloatingPanel from './AIResponseFloatingPanel'
 import { useReadLinguaStore } from '../store/useReadLinguaStore'
 import type { AITooltip } from '../store/useReadLinguaStore'
@@ -122,7 +123,7 @@ export default function MultipleAITooltips() {
       } else {
         const errorData = await response.json()
         console.error('Failed to get audio:', errorData.error)
-        alert(errorData.error || 'Failed to generate pronunciation')
+        toast.error(errorData.error || 'Failed to generate pronunciation')
         setIsPlaying(false)
       }
     } catch (error) {

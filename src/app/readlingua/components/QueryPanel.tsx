@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { marked } from 'marked'
 import { useReadLinguaStore } from '../store/useReadLinguaStore'
 import { queryApi } from '../utils/apiClient'
@@ -98,7 +99,7 @@ export default function QueryPanel() {
       
     } catch (error) {
       console.error('Error deleting query:', error)
-      alert('Failed to delete query. Please try again.')
+      toast.error('Failed to delete query. Please try again.')
     } finally {
       setDeleteMode(null)
     }
@@ -144,10 +145,10 @@ export default function QueryPanel() {
   const getQueryTypeColor = (type: string) => {
     const colors = {
       copy: 'bg-gray-100 text-gray-700',
-      quick: 'bg-purple-100 text-purple-700',
+      quick: 'bg-neutral-light text-text-primary',
       standard: 'bg-purple-200 text-purple-800',
       deep: 'bg-purple-300 text-purple-900',
-      ask_ai: 'bg-purple-500 text-white'
+      ask_ai: 'bg-primary text-white'
     }
     return colors[type as keyof typeof colors] || 'bg-gray-100 text-gray-700'
   }
@@ -243,7 +244,7 @@ export default function QueryPanel() {
       } else {
         const errorData = await response.json()
         console.error('Failed to get audio:', errorData.error)
-        alert(errorData.error || 'Failed to generate pronunciation')
+        toast.error(errorData.error || 'Failed to generate pronunciation')
         setIsPlaying(false)
       }
     } catch (error) {
@@ -333,20 +334,20 @@ export default function QueryPanel() {
               onClick={() => handleTabChange(tab.id)}
               className={`relative flex-1 px-3 py-3 text-sm font-medium transition-all duration-300 ease-in-out ${
                 activeTab === tab.id
-                  ? 'text-purple-600 bg-purple-50'
-                  : 'text-gray-600 hover:text-purple-500 hover:bg-purple-25'
+                  ? 'text-primary bg-neutral-light'
+                  : 'text-gray-600 hover:text-primary hover:bg-purple-25'
               }`}
             >
               <div className="flex items-center justify-center gap-1 relative">
                 <span className="truncate">{tab.label}</span>
                 {/* Number Badge */}
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                   {tab.count}
                 </div>
               </div>
               {/* Active Tab Indicator */}
               {activeTab === tab.id && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-600 transition-all duration-300 ease-in-out"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary hover:brightness-110 transition-all duration-300 ease-in-out"></div>
               )}
             </button>
           ))}
@@ -361,8 +362,8 @@ export default function QueryPanel() {
                 onClick={() => handleTabChange(tab.id)}
                 className={`relative flex-shrink-0 px-4 py-2 text-xs font-medium rounded-full transition-all duration-300 whitespace-nowrap flex items-center gap-1 ${
                   activeTab === tab.id
-                    ? 'text-white bg-purple-500 shadow-md'
-                    : 'text-gray-600 bg-white hover:text-purple-500 hover:bg-purple-50'
+                    ? 'text-white bg-primary shadow-md'
+                    : 'text-gray-600 bg-white hover:text-primary hover:bg-neutral-light'
                 }`}
               >
                 <span>{tab.label}</span>
@@ -370,7 +371,7 @@ export default function QueryPanel() {
                 <div className={`min-w-[16px] h-4 text-[10px] font-bold rounded-full flex items-center justify-center ${
                   activeTab === tab.id 
                     ? 'bg-white/20 text-white' 
-                    : 'bg-purple-500 text-white'
+                    : 'bg-primary text-white'
                 }`}>
                   {tab.count}
                 </div>
@@ -416,7 +417,7 @@ export default function QueryPanel() {
                 onTouchCancel={handleLongPressEnd}
                 className={`relative px-3 py-1.5 rounded-full text-sm cursor-pointer transition-all duration-200 select-none ${
                   selectedQuery?.id === query.id
-                    ? 'bg-purple-600 text-white shadow-lg'
+                    ? 'bg-primary hover:brightness-110 text-white shadow-lg'
                     : `${getQueryTypeColor(query.query_type)} hover:shadow-md hover:scale-105`
                 } ${
                   deleteMode === query.id ? 'animate-pulse' : ''
@@ -436,7 +437,7 @@ export default function QueryPanel() {
                         handlePlayPronunciation(query.selected_text!)
                       }}
                       disabled={isPlaying}
-                      className="w-4 h-4 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-full flex items-center justify-center transition-colors disabled:opacity-50 flex-shrink-0"
+                      className="w-4 h-4 text-gray-500 hover:text-primary hover:bg-neutral-light rounded-full flex items-center justify-center transition-colors disabled:opacity-50 flex-shrink-0"
                       title="Play pronunciation"
                     >
                       {isPlaying ? (
@@ -512,7 +513,7 @@ export default function QueryPanel() {
                       <button
                         onClick={() => handlePlayPronunciation(selectedQuery.selected_text!)}
                         disabled={isPlaying}
-                        className="w-5 h-5 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-full flex items-center justify-center transition-colors disabled:opacity-50 mt-1 ml-1 flex-shrink-0"
+                        className="w-5 h-5 text-gray-500 hover:text-primary hover:bg-neutral-light rounded-full flex items-center justify-center transition-colors disabled:opacity-50 mt-1 ml-1 flex-shrink-0"
                         title="Play pronunciation"
                       >
                         {isPlaying ? (
@@ -544,7 +545,7 @@ export default function QueryPanel() {
             </div>
             
             {selectedQuery.user_question && (
-              <div className="text-sm text-purple-700 italic mt-2">
+              <div className="text-sm text-text-primary italic mt-2">
                 Q: {selectedQuery.user_question}
               </div>
             )}
@@ -561,7 +562,7 @@ export default function QueryPanel() {
             {!selectedQuery.ai_response ? (
               /* Loading State */
               <div className="flex flex-col items-center justify-center h-32 text-gray-500">
-                <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-3"></div>
                 <p className="text-sm">AI is analyzing...</p>
                 <p className="text-xs text-gray-400 mt-1">Please wait, AI is generating response</p>
               </div>
@@ -677,7 +678,7 @@ export default function QueryPanel() {
             {/* Add to Email Button - Always show */}
             <button
               onClick={handleAddToEmail}
-              className="px-4 py-2 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-purple-600 border-t border-purple-200 font-medium text-sm transition-all duration-200 whitespace-nowrap"
+              className="px-4 py-2 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-primary border-t border-neutral-mid font-medium text-sm transition-all duration-200 whitespace-nowrap"
               title="Add selected text to email collection"
             >
               Add to Email

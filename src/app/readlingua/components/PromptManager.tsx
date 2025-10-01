@@ -55,7 +55,7 @@ export default function PromptManager() {
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-5/6 flex flex-col">
         {/* Header */}
-        <div className="p-4 border-b border-gray-200 bg-purple-50">
+        <div className="p-4 border-b border-gray-200 bg-neutral-light">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">Prompt Manager</h2>
             <button
@@ -85,7 +85,7 @@ export default function PromptManager() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleEdit(type)}
-                        className="w-16 px-2 py-1 bg-purple-500 hover:bg-purple-600 text-white rounded font-medium whitespace-nowrap flex items-center gap-1 text-sm"
+                        className="w-16 px-2 py-1 bg-primary hover:bg-primary hover:brightness-110 text-white rounded font-medium whitespace-nowrap flex items-center gap-1 text-sm"
                       >
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
@@ -114,13 +114,13 @@ export default function PromptManager() {
                     <textarea
                       value={tempValue}
                       onChange={(e) => setTempValue(e.target.value)}
-                      className="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 text-sm font-mono"
+                      className="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary text-sm font-mono"
                       placeholder="Enter your custom prompt..."
                     />
                     <div className="flex gap-2">
                       <button
                         onClick={handleSave}
-                        className="w-20 px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white rounded font-medium whitespace-nowrap flex items-center gap-1 text-sm"
+                        className="w-20 px-3 py-1 bg-primary hover:bg-primary hover:brightness-110 text-white rounded font-medium whitespace-nowrap flex items-center gap-1 text-sm"
                       >
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
@@ -156,7 +156,7 @@ export default function PromptManager() {
           <div className="grid grid-cols-2 gap-3 text-xs">
             {Object.entries(PLACEHOLDER_INFO).map(([placeholder, description]) => (
               <div key={placeholder} className="flex items-center gap-2">
-                <code className="px-2 py-1 bg-purple-100 text-purple-700 rounded font-mono">
+                <code className="px-2 py-1 bg-neutral-light text-text-primary rounded font-mono">
                   {placeholder}
                 </code>
                 <span className="text-gray-600">{description}</span>
