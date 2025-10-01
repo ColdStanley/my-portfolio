@@ -109,7 +109,6 @@ OUTLOOK_REDIRECT_URI=https://your-project.vercel.app/auth/callback
 ### 2. 功能模块测试
 
 - **JD2CV**: `/job-application`
-- **IELTS Speaking**: `/new-ielts-speaking`
 - **Feelink**: `/feelink`
 - **French Notes**: `/frenotes`
 - **English Reading**: `/english-reading`

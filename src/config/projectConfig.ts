@@ -7,7 +7,6 @@ export const PROJECT_CONFIG = {
   // 主要产品映射
   PRODUCTS: {
     CESTLAVIE: 'cestlavie',
-    IELTS_SPEAKING: 'ielts-speaking', 
     FEELINK: 'feelink',
     JOB_APPLICATION: 'job-application',
     JD2CV: 'jd2cv',
@@ -17,8 +16,6 @@ export const PROJECT_CONFIG = {
   // 模块到产品的映射（用于路由模块）
   MODULE_MAPPING: {
     '/cestlavie': 'cestlavie',
-    '/new-ielts-speaking': 'ielts-speaking',
-    '/ielts-speaking': 'ielts-speaking',
     '/feelink': 'feelink',
     '/job-application': 'job-application',
     '/jd2cv-full': 'jd2cv',
