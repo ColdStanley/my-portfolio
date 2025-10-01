@@ -375,16 +375,16 @@ const ArticleReader = memo<ArticleReaderProps>(({ article }) => {
         }
         
         @keyframes highlight-flash {
-          0%, 100% { 
-            background: linear-gradient(145deg, #f3e8ff, #e9d5ff);
-            box-shadow: 
-              2px 2px 4px rgba(196, 132, 252, 0.2),
+          0%, 100% {
+            background: var(--accent);
+            box-shadow:
+              2px 2px 4px rgba(244, 211, 94, 0.3),
               -1px -1px 3px rgba(255, 255, 255, 0.8);
           }
-          50% { 
-            background: linear-gradient(145deg, #ede9fe, #ddd6fe);
-            box-shadow: 
-              4px 4px 12px rgba(196, 132, 252, 0.4),
+          50% {
+            background: #FDE68A;
+            box-shadow:
+              4px 4px 12px rgba(244, 211, 94, 0.5),
               -2px -2px 6px rgba(255, 255, 255, 1);
             transform: translateY(-2px);
           }
