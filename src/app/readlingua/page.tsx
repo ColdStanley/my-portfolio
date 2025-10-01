@@ -58,22 +58,10 @@ export default function ReadLinguaPage() {
 
   return (
     <>
-      {/* Hide global navbar/footer */}
-      <style jsx global>{`
-        nav[role="banner"], 
-        footer[role="contentinfo"],
-        .navbar,
-        .footer {
-          display: none !important;
-        }
-      `}</style>
-      
-      <NewNavbar />
-      
       <PageTransition>
         <div className="min-h-screen bg-surface">
       {/* Desktop Tab Navigation - Fixed at top */}
-      <div className="hidden md:block max-w-7xl mx-auto px-4 py-6 pt-20">
+      <div className="hidden md:block max-w-7xl mx-auto px-4 py-6 pt-6">
         <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 mb-6">
           <div className="flex">
             <button
@@ -81,7 +69,7 @@ export default function ReadLinguaPage() {
               className={`flex-1 px-3 py-3 sm:px-6 sm:py-4 text-center font-medium transition-all duration-300 transform hover:scale-105 text-sm sm:text-base rounded-l-xl ${
                 activeTab === 'dashboard'
                   ? 'bg-primary text-white shadow-lg'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-neutral-light'
+                  : 'text-text-primary bg-white hover:bg-neutral-light'
               }`}
             >
               <svg className="w-5 h-5 inline-block mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -95,7 +83,7 @@ export default function ReadLinguaPage() {
               className={`flex-1 px-3 py-3 sm:px-6 sm:py-4 text-center font-medium transition-all duration-300 transform hover:scale-105 text-sm sm:text-base rounded-r-xl ${
                 activeTab === 'learning'
                   ? 'bg-primary text-white shadow-lg'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-neutral-light'
+                  : 'text-text-primary bg-white hover:bg-neutral-light'
               }`}
             >
               <svg className="w-5 h-5 inline-block mr-2" fill="currentColor" viewBox="0 0 20 20">
