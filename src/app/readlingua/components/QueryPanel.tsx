@@ -326,13 +326,19 @@ export default function QueryPanel() {
               <div className="flex items-center justify-center gap-1 relative">
                 <span className="truncate">{tab.label}</span>
                 {/* Number Badge */}
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                <div
+                  className="absolute -top-1 -right-1 w-4 h-4 text-white text-[10px] font-bold rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: 'var(--primary)' }}
+                >
                   {tab.count}
                 </div>
               </div>
               {/* Active Tab Indicator */}
               {activeTab === tab.id && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary hover:brightness-110 transition-all duration-300 ease-in-out"></div>
+                <div
+                  className="absolute bottom-0 left-0 right-0 h-0.5 hover:brightness-110 transition-all duration-300 ease-in-out"
+                  style={{ backgroundColor: 'var(--primary)' }}
+                ></div>
               )}
             </button>
           ))}
@@ -347,17 +353,21 @@ export default function QueryPanel() {
                 onClick={() => handleTabChange(tab.id)}
                 className={`relative flex-shrink-0 px-4 py-2 text-xs font-medium rounded-full transition-all duration-300 whitespace-nowrap flex items-center gap-1 ${
                   activeTab === tab.id
-                    ? 'text-white bg-primary shadow-md'
+                    ? 'text-white shadow-md'
                     : 'text-gray-600 bg-white hover:text-primary hover:bg-neutral-light'
                 }`}
+                style={activeTab === tab.id ? { backgroundColor: 'var(--primary)' } : {}}
               >
                 <span>{tab.label}</span>
                 {/* Number Badge for Mobile */}
-                <div className={`min-w-[16px] h-4 text-[10px] font-bold rounded-full flex items-center justify-center ${
-                  activeTab === tab.id 
-                    ? 'bg-white/20 text-white' 
-                    : 'bg-primary text-white'
-                }`}>
+                <div
+                  className={`min-w-[16px] h-4 text-[10px] font-bold rounded-full flex items-center justify-center ${
+                    activeTab === tab.id
+                      ? 'bg-white/20 text-white'
+                      : 'text-white'
+                  }`}
+                  style={activeTab === tab.id ? {} : { backgroundColor: 'var(--primary)' }}
+                >
                   {tab.count}
                 </div>
               </button>
@@ -402,11 +412,12 @@ export default function QueryPanel() {
                 onTouchCancel={handleLongPressEnd}
                 className={`relative px-3 py-1.5 rounded-full text-sm cursor-pointer transition-all duration-200 select-none ${
                   selectedQuery?.id === query.id
-                    ? 'bg-primary hover:brightness-110 text-white shadow-lg'
+                    ? 'hover:brightness-110 text-white shadow-lg'
                     : `${getQueryTypeColor(query.query_type)} hover:shadow-md hover:scale-105`
                 } ${
                   deleteMode === query.id ? 'animate-pulse' : ''
                 }`}
+                style={selectedQuery?.id === query.id ? { backgroundColor: 'var(--primary)' } : {}}
                 title={deleteMode === query.id ? 'Click X to delete' : `${query.selected_text} - Long press to delete`}
               >
                 <div className="flex items-center justify-between gap-1 max-w-xs">
