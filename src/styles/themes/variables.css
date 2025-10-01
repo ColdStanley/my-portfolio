@@ -1,6 +1,27 @@
 /* Theme-specific CSS Variables */
 
 :root {
+  /* Default Global Theme (from theme.config.ts) */
+  --primary: #111111;
+  --secondary: #9CA3AF;
+  --accent: #F4D35E;
+  --success: #34A853;
+  --warning: #F4B400;
+  --error: #EA4335;
+  --background: #FFFFFF;
+  --surface: #F8F8F8;
+  --text-primary: #111111;
+  --text-secondary: #6B7280;
+  --text-muted: #9CA3AF;
+  --neutral-light: #F9FAFB;
+  --neutral-dark: #E5E7EB;
+  --neutral-mid: #9CA3AF;
+  --border: #E5E7EB;
+  --foreground: #111111;
+  --input: #F9FAFB;
+  --muted: #F9FAFB;
+  --muted-foreground: #6B7280;
+
   /* Lakers Theme Variables */
   --lakers-primary: #FDB927;    /* Lakers Gold */
   --lakers-secondary: #FFCC33;  /* Light Gold */
