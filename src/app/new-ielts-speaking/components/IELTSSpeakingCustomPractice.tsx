@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
+import Button from '@/components/ui/button'
 import { Textarea } from '@/components/ui/SimpleComponents'
 import { Loader2 } from 'lucide-react'
 import { buildPrompt } from '@/utils/promptBuilder'
