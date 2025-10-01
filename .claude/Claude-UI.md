@@ -218,6 +218,67 @@ Textarea：继承 Input 样式，增加 min-h-[120px] resize-y
 
 亮度微调（hover/active）
 
+6.5 可访问性与对比度规范（CRITICAL）
+
+颜色对比度要求
+
+所有文字与背景必须满足 WCAG AA 标准：
+- 正文文字（< 18px）：对比度 ≥ 4.5:1
+- 大字体（≥ 18px 或 14px bold）：对比度 ≥ 3:1
+- 图标与关键 UI 元素：对比度 ≥ 3:1
+
+颜色组合矩阵（Color Contrast Matrix）
+
+✅ 允许组合：
+- bg-primary (#111111) + text-white：对比度 16.5:1 ✓
+- bg-white + text-primary (#111111)：对比度 16.5:1 ✓
+- bg-accent (#F4D35E) + text-primary (#111111)：对比度 8.2:1 ✓
+- bg-neutralLight + text-primary：对比度 14.3:1 ✓
+
+❌ 禁止组合：
+- bg-primary + text-primary：对比度 1:1（完全不可见）
+- bg-white + text-white：对比度 1:1（完全不可见）
+- bg-accent + text-white：对比度 2.1:1（不达标）
+
+CSS 变量使用规则
+
+Tailwind 类优先：
+- 优先使用 bg-primary、text-primary 等 Tailwind 类
+- 确保 tailwind.config.ts 正确映射 CSS 变量
+
+内联样式降级：
+- 当 Tailwind 类渲染失败（如背景显示为白色）时，使用内联样式：
+  style={{ backgroundColor: 'var(--primary)' }}
+- 适用场景：动态状态切换、Portal 组件、复杂嵌套
+
+检查清单（Self-Check Before Commit）
+
+必须检查：
+□ 所有按钮在不同状态（default/hover/active/disabled）下文字清晰可见
+□ 所有选中状态（selected/active tab）的文字与背景有足够对比度
+□ 所有 Input/Textarea 的 placeholder 文字可读（不得过浅）
+□ 所有 Toast/Alert 的文字与背景对比度达标
+□ 禁止出现「白字白底」或「黑字黑底」
+□ 禁止在 primary (#111111) 背景上使用 text-primary
+
+状态颜色指引
+
+Default：
+- Primary Button：bg-primary + text-white
+- Secondary Button：border-primary + text-primary + bg-white
+
+Hover：
+- Primary Button：bg-primary + brightness-110 + text-white
+- Secondary Button：bg-primary + text-white（反转）
+
+Active/Selected：
+- Tab/Item：bg-primary + text-white（必须确保白色文字显示）
+- Badge：bg-accent + text-primary
+
+Disabled：
+- 所有按钮：opacity-50 + cursor-not-allowed
+- 禁止改变颜色，仅降低透明度
+
 7. 禁止模式（CRITICAL）
 
 ❌ 玻璃态（backdrop-blur + 半透明）
