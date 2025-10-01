@@ -125,21 +125,24 @@ const TextSelectionToolbar = memo<TextSelectionToolbarProps>(({
         <button
           onClick={() => handleQueryType('quick')}
           disabled={isSubmitting}
-          className="w-full px-3 py-2 bg-gradient-to-r from-primary to-primary hover:brightness-110  disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md font-medium text-xs shadow-sm hover:shadow-md transition-all duration-200"
+          className="w-full px-3 py-2 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md font-medium text-xs shadow-sm hover:shadow-md transition-all duration-200"
+          style={{ backgroundColor: 'var(--primary)' }}
         >
           Quick
         </button>
         <button
           onClick={() => handleQueryType('standard')}
           disabled={isSubmitting}
-          className="w-full px-3 py-2 bg-gradient-to-r from-primary to-primary hover:brightness-110  disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md font-medium text-xs shadow-sm hover:shadow-md transition-all duration-200"
+          className="w-full px-3 py-2 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md font-medium text-xs shadow-sm hover:shadow-md transition-all duration-200"
+          style={{ backgroundColor: 'var(--primary)' }}
         >
           Standard
         </button>
         <button
           onClick={() => handleQueryType('deep')}
           disabled={isSubmitting}
-          className="w-full px-3 py-2 bg-gradient-to-r from-primary to-primary hover:brightness-110  disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md font-medium text-xs shadow-sm hover:shadow-md transition-all duration-200"
+          className="w-full px-3 py-2 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md font-medium text-xs shadow-sm hover:shadow-md transition-all duration-200"
+          style={{ backgroundColor: 'var(--primary)' }}
         >
           Deep
         </button>
@@ -185,7 +188,8 @@ const TextSelectionToolbar = memo<TextSelectionToolbarProps>(({
               toast.error(error instanceof Error ? error.message : 'Failed to generate pronunciation')
             }
           }}
-          className="absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-to-r from-primary to-primary hover:brightness-110  text-white rounded-full flex items-center justify-center transition-all duration-150 shadow-sm hover:scale-110 hover:shadow-md"
+          className="absolute -bottom-1 -right-1 w-4 h-4 hover:brightness-110 text-white rounded-full flex items-center justify-center transition-all duration-150 shadow-sm hover:scale-110 hover:shadow-md"
+          style={{ backgroundColor: 'var(--primary)' }}
           title="Play pronunciation"
         >
           <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
