@@ -170,8 +170,8 @@ export default function AIResponseFloatingPanel({
     const colors = {
       copy: 'bg-gray-100 text-gray-700',
       quick: 'bg-neutral-light text-text-primary',
-      standard: 'bg-purple-200 text-purple-800',
-      deep: 'bg-purple-300 text-purple-900',
+      standard: 'bg-neutral-light text-text-primary',
+      deep: 'bg-accent text-black',
       ask_ai: 'bg-primary text-white'
     }
     return colors[type as keyof typeof colors] || 'bg-gray-100 text-gray-700'

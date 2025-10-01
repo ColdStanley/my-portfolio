@@ -164,7 +164,7 @@ export default function SimpleQuiz() {
         </p>
         <button
           onClick={handleGenerate}
-          className="px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-medium transition-all duration-300"
+          className="px-6 py-2 bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-white rounded-lg font-medium transition-all duration-300"
         >
           Start Quiz
         </button>
@@ -176,7 +176,7 @@ export default function SimpleQuiz() {
     return (
       <div className="p-6 text-center">
         <div className="mb-4">
-          <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-primary to-primary rounded-full flex items-center justify-center">
             <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
             </svg>
@@ -207,7 +207,7 @@ export default function SimpleQuiz() {
           </button>
           <button
             onClick={handleGenerate}
-            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-medium"
+            className="px-4 py-2 bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-white rounded-lg font-medium"
           >
             New Quiz
           </button>
@@ -226,7 +226,7 @@ export default function SimpleQuiz() {
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div 
-            className="bg-gradient-to-r from-purple-600 to-indigo-600 h-2 rounded-full transition-all duration-300" 
+            className="bg-gradient-to-r from-primary to-primary h-2 rounded-full transition-all duration-300" 
             style={{width: `${((session.currentIndex + 1) / session.questions.length) * 100}%`}} 
           />
         </div>
@@ -240,7 +240,7 @@ export default function SimpleQuiz() {
             <button
               onClick={() => handlePlayAudio(currentQuestion.text)}
               disabled={isPlaying}
-              className="w-12 h-12 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 text-white rounded-full flex items-center justify-center transition-all shadow-lg hover:shadow-xl"
+              className="w-12 h-12 bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary disabled:opacity-50 text-white rounded-full flex items-center justify-center transition-all shadow-lg hover:shadow-xl"
             >
               {isPlaying ? (
                 <svg className="w-6 h-6 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
@@ -266,7 +266,7 @@ export default function SimpleQuiz() {
             <button
               onClick={handleSubmit}
               disabled={!currentAnswer.trim()}
-              className="w-20 px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl whitespace-nowrap"
+              className="w-20 px-4 py-3 bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl whitespace-nowrap"
             >
               Submit
             </button>
@@ -276,7 +276,7 @@ export default function SimpleQuiz() {
           {feedback && (
             <div className={`mt-4 p-4 rounded-lg transition-all duration-500 transform ${
               feedback.type === 'correct' 
-                ? 'bg-gradient-to-r from-neutral-light to-purple-100 border-l-4 border-primary'
+                ? 'bg-gradient-to-r from-neutral-light to-neutral-light border-l-4 border-primary'
                 : 'bg-gradient-to-r from-neutral-light to-red-50 border-l-4 border-red-400'
             } animate-pulse`}>
               <div className="flex items-center gap-2">

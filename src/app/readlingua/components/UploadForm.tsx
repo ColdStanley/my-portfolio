@@ -181,7 +181,7 @@ export default function UploadForm({ defaultNativeLanguage = 'chinese', defaultS
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-40 px-6 py-3 bg-primary hover:bg-primary hover:brightness-110 disabled:bg-purple-300 text-white rounded-lg font-medium whitespace-nowrap flex items-center gap-2 justify-center"
+            className="w-40 px-6 py-3 bg-primary hover:bg-primary hover:brightness-110 disabled:bg-accent text-white rounded-lg font-medium whitespace-nowrap flex items-center gap-2 justify-center"
           >
             {isSubmitting ? (
               <>

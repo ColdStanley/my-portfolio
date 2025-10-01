@@ -146,8 +146,8 @@ export default function QueryPanel() {
     const colors = {
       copy: 'bg-gray-100 text-gray-700',
       quick: 'bg-neutral-light text-text-primary',
-      standard: 'bg-purple-200 text-purple-800',
-      deep: 'bg-purple-300 text-purple-900',
+      standard: 'bg-neutral-light text-text-primary',
+      deep: 'bg-accent text-black',
       ask_ai: 'bg-primary text-white'
     }
     return colors[type as keyof typeof colors] || 'bg-gray-100 text-gray-700'
@@ -320,7 +320,7 @@ export default function QueryPanel() {
               className={`relative flex-1 px-3 py-3 text-sm font-medium transition-all duration-300 ease-in-out ${
                 activeTab === tab.id
                   ? 'text-primary bg-neutral-light'
-                  : 'text-gray-600 hover:text-primary hover:bg-purple-25'
+                  : 'text-gray-600 hover:text-primary hover:bg-neutral-light'
               }`}
             >
               <div className="flex items-center justify-center gap-1 relative">
@@ -644,7 +644,7 @@ export default function QueryPanel() {
               <button
                 onClick={handleSelectionPronunciation}
                 disabled={isPlaying}
-                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 text-white font-medium text-sm transition-all duration-200 whitespace-nowrap"
+                className="px-4 py-2 bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary disabled:opacity-50 text-white font-medium text-sm transition-all duration-200 whitespace-nowrap"
                 title="Play pronunciation"
               >
                 {isPlaying ? (
