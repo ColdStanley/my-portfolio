@@ -66,11 +66,12 @@ export default function ReadLinguaPage() {
           <div className="flex">
             <button
               onClick={() => setActiveTab('dashboard')}
-              className={`flex-1 px-3 py-3 sm:px-6 sm:py-4 text-center font-medium transition-all duration-300 transform hover:scale-105 text-sm sm:text-base rounded-l-xl ${
+              className={`flex-1 px-3 py-3 sm:px-6 sm:py-4 text-center font-medium transition-all duration-300 transform hover:scale-105 text-sm sm:text-base rounded-l-xl shadow-lg ${
                 activeTab === 'dashboard'
-                  ? 'bg-primary text-white shadow-lg'
+                  ? 'text-white'
                   : 'text-text-primary bg-white hover:bg-neutral-light'
               }`}
+              style={activeTab === 'dashboard' ? { backgroundColor: 'var(--primary)' } : {}}
             >
               <svg className="w-5 h-5 inline-block mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
@@ -80,11 +81,12 @@ export default function ReadLinguaPage() {
             </button>
             <button
               onClick={() => setActiveTab('learning')}
-              className={`flex-1 px-3 py-3 sm:px-6 sm:py-4 text-center font-medium transition-all duration-300 transform hover:scale-105 text-sm sm:text-base rounded-r-xl ${
+              className={`flex-1 px-3 py-3 sm:px-6 sm:py-4 text-center font-medium transition-all duration-300 transform hover:scale-105 text-sm sm:text-base rounded-r-xl shadow-lg ${
                 activeTab === 'learning'
-                  ? 'bg-primary text-white shadow-lg'
+                  ? 'text-white'
                   : 'text-text-primary bg-white hover:bg-neutral-light'
               }`}
+              style={activeTab === 'learning' ? { backgroundColor: 'var(--primary)' } : {}}
             >
               <svg className="w-5 h-5 inline-block mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
