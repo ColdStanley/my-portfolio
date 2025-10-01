@@ -60,10 +60,10 @@ export default function JD2CV() {
   // 显示加载状态
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-gray-50/30">
         <div className="flex justify-center items-center min-h-screen">
           <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-500 mx-auto"></div>
             <p className="text-gray-600 mt-4">Loading...</p>
           </div>
         </div>
@@ -127,13 +127,13 @@ export default function JD2CV() {
       `}</style>
       
       <PageTransition>
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-gray-50/30">
         {/* Custom Navigation */}
         <NewNavbar />
 
 
         {/* Fixed Tab Navigation */}
-        <div className="fixed top-[104px] left-0 right-0 z-50 bg-gradient-to-br from-slate-50 via-white to-purple-50/30 pb-4 border-b border-gray-100/50">
+        <div className="fixed top-[104px] left-0 right-0 z-50 bg-gradient-to-br from-slate-50 via-white to-gray-50/30 pb-4 border-b border-gray-100/50">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-4">
           <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20">
             <div className="flex">
@@ -147,10 +147,11 @@ export default function JD2CV() {
                     className={`flex-1 px-3 py-3 sm:px-6 sm:py-4 text-center font-medium transition-all duration-300 transform hover:scale-105 text-sm sm:text-base relative ${
                       index === 0 ? 'rounded-l-xl' : index === 1 ? 'rounded-r-xl' : 'rounded-none'
                     } ${
-                      isActive 
-                        ? 'bg-purple-500 text-white shadow-lg'
+                      isActive
+                        ? 'bg-primary text-white shadow-lg'
                         : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
                     }`}
+                    style={isActive ? { backgroundColor: '#111111' } : undefined}
                   >
                     <span className="hidden sm:inline">{tab.label}</span>
                     <span className="sm:hidden">
@@ -214,8 +215,8 @@ function JDSubTabNavigation({ activeSubTab, setActiveSubTab }: { activeSubTab: n
               className={`flex-1 px-4 py-2 text-center text-xs font-medium transition-all ${
                 index === 0 ? 'rounded-l-lg' : 'rounded-r-lg'
               } ${
-                isActive 
-                  ? 'bg-purple-300 text-white shadow-md'
+                isActive
+                  ? 'bg-gray-700 text-white shadow-md'
                   : 'text-gray-600 hover:text-gray-700 hover:bg-white/40'
               }`}
             >
@@ -415,14 +416,14 @@ function CreateJDContent({
             placeholder="Job Title"
             value={jdData.title}
             onChange={(e) => handleInputChange('title', e.target.value)}
-            className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+            className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white"
           />
           <input
             type="text"
             placeholder="Company Name"
             value={jdData.company}
             onChange={(e) => handleInputChange('company', e.target.value)}
-            className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+            className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white"
           />
         </div>
       </div>
@@ -435,7 +436,7 @@ function CreateJDContent({
           value={jdData.full_job_description}
           onChange={(e) => handleInputChange('full_job_description', e.target.value)}
           rows={12}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white resize-none"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white resize-none"
         />
       </div>
 
@@ -446,7 +447,7 @@ function CreateJDContent({
           <select
             value={jdData.application_stage}
             onChange={(e) => handleInputChange('application_stage', e.target.value)}
-            className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+            className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white"
           >
             <option value="">Application Stage</option>
             <option value="Draft">Draft</option>
@@ -467,14 +468,14 @@ function CreateJDContent({
             placeholder="Role Group"
             value={jdData.role_group}
             onChange={(e) => handleInputChange('role_group', e.target.value)}
-            className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+            className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white"
           />
           <input
             type="text"
             placeholder="Firm Type"
             value={jdData.firm_type}
             onChange={(e) => handleInputChange('firm_type', e.target.value)}
-            className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+            className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white"
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
@@ -483,7 +484,7 @@ function CreateJDContent({
             placeholder="Comment"
             value={jdData.comment}
             onChange={(e) => handleInputChange('comment', e.target.value)}
-            className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+            className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white"
           />
         </div>
       </div>
@@ -501,7 +502,7 @@ function CreateJDContent({
           <button
             onClick={handleSave}
             disabled={isLoading || !jdData.title || !jdData.company}
-            className="w-32 px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+            className="w-32 px-6 py-3 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
           >
             {isLoading ? (editingRecordId ? 'Updating...' : 'Saving...') : (editingRecordId ? 'Update' : 'Save')}
           </button>
@@ -533,7 +534,7 @@ function LibraryJDContent({
     return (
       <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6">
         <div className="flex justify-center items-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-500"></div>
           <span className="ml-3 text-gray-600">Loading JD records...</span>
         </div>
       </div>
@@ -555,7 +556,7 @@ function LibraryJDContent({
     return (
       <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6">
         <div className="flex justify-center items-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-500"></div>
           <span className="ml-3 text-gray-600">Loading JD records...</span>
         </div>
       </div>
@@ -639,7 +640,7 @@ function LibraryJDContent({
                   {/* Stage: 63% - 72% */}
                   <div className="absolute left-[63%] w-[9%]">
                     {record.application_stage && (
-                      <span className="bg-purple-100 text-purple-700 px-1 py-0.5 rounded-full text-xs font-medium truncate block text-center">
+                      <span className="bg-gray-100 text-gray-700 px-1 py-0.5 rounded-full text-xs font-medium truncate block text-center">
                         {record.application_stage}
                       </span>
                     )}
@@ -669,20 +670,20 @@ function LibraryJDContent({
 
                 {/* Second Row: 3 Columns for Keywords Groups (90% width) */}
                 <div className="grid grid-cols-3 gap-3 text-xs">
-                  <div className="bg-purple-50 p-2 rounded">
-                    <div className="font-medium text-purple-700 mb-1">Group 1</div>
+                  <div className="bg-gray-50 p-2 rounded">
+                    <div className="font-medium text-gray-700 mb-1">Group 1</div>
                     <div className="text-gray-700">
                       {keywordGroups.group1 || 'No keywords'}
                     </div>
                   </div>
-                  <div className="bg-purple-50 p-2 rounded">
-                    <div className="font-medium text-purple-700 mb-1">Group 2</div>
+                  <div className="bg-gray-50 p-2 rounded">
+                    <div className="font-medium text-gray-700 mb-1">Group 2</div>
                     <div className="text-gray-700">
                       {keywordGroups.group2 || 'No keywords'}
                     </div>
                   </div>
-                  <div className="bg-purple-50 p-2 rounded">
-                    <div className="font-medium text-purple-700 mb-1">Group 3</div>
+                  <div className="bg-gray-50 p-2 rounded">
+                    <div className="font-medium text-gray-700 mb-1">Group 3</div>
                     <div className="text-gray-700">
                       {keywordGroups.group3 || 'No keywords'}
                     </div>
@@ -696,7 +697,7 @@ function LibraryJDContent({
                   onClick={() => handleSelectForWorkspace(record)}
                   className={`w-full px-2 py-1 rounded-lg text-xs font-medium whitespace-nowrap flex items-center justify-center gap-1 transition-colors ${
                     selectedJD?.id === record.id
-                      ? 'bg-purple-500 hover:bg-purple-600 text-white'
+                      ? 'bg-gray-800 hover:bg-gray-900 text-white'
                       : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
                   }`}
                 >
@@ -719,7 +720,7 @@ function LibraryJDContent({
 
                 <button
                   onClick={() => loadRecord(record)}
-                  className="w-full px-2 py-1 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-xs font-medium whitespace-nowrap flex items-center justify-center gap-1 transition-colors"
+                  className="w-full px-2 py-1 bg-gray-800 hover:bg-gray-900 text-white rounded-lg text-xs font-medium whitespace-nowrap flex items-center justify-center gap-1 transition-colors"
                 >
                   <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
@@ -831,7 +832,7 @@ function ExperienceTooltipForm({
                 value={experienceData.company}
                 onChange={(e) => handleInputChange('company', e.target.value)}
                 disabled={isEditMode}
-                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent ${
                   isEditMode ? 'bg-gray-50 cursor-not-allowed' : ''
                 }`}
                 required
@@ -847,7 +848,7 @@ function ExperienceTooltipForm({
                 placeholder="Your job title"
                 value={experienceData.title}
                 onChange={(e) => handleInputChange('title', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent"
                 required
               />
             </div>
@@ -862,7 +863,7 @@ function ExperienceTooltipForm({
                 value={experienceData.time}
                 onChange={(e) => handleInputChange('time', e.target.value)}
                 disabled={isEditMode}
-                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent ${
                   isEditMode ? 'bg-gray-50 cursor-not-allowed' : ''
                 }`}
               />
@@ -875,7 +876,7 @@ function ExperienceTooltipForm({
               <select
                 value={experienceData.work_or_project}
                 onChange={(e) => handleInputChange('work_or_project', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent"
               >
                 <option value="">Select type</option>
                 <option value="work">Work Experience</option>
@@ -891,7 +892,7 @@ function ExperienceTooltipForm({
             <select
               value={experienceData.role_group}
               onChange={(e) => handleInputChange('role_group', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent"
             >
               <option value="">Select role group</option>
               <option value="Software Engineering">Software Engineering</option>
@@ -915,7 +916,7 @@ function ExperienceTooltipForm({
               value={experienceData.experience}
               onChange={(e) => handleInputChange('experience', e.target.value)}
               rows={6}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent resize-none"
               required
             />
           </div>
@@ -930,7 +931,7 @@ function ExperienceTooltipForm({
               placeholder="e.g. React, Node.js, Python, Machine Learning"
               value={Array.isArray(experienceData.keywords) ? experienceData.keywords.join(', ') : experienceData.keywords}
               onChange={(e) => handleInputChange('keywords', e.target.value.split(',').map((k: string) => k.trim()).filter((k: string) => k))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent"
             />
           </div>
 
@@ -946,7 +947,7 @@ function ExperienceTooltipForm({
             <button
               type="submit"
               disabled={isLoading || !experienceData.company || !experienceData.title || !experienceData.experience}
-              className="px-6 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+              className="px-6 py-2 bg-gray-800 hover:bg-gray-900 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
             >
               {isLoading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>}
               {isEditMode ? 'Update Experience' : 'Add Experience'}
@@ -1142,7 +1143,7 @@ function CVLibraryContent({ user }: { user: any }) {
             {/* Add Button */}
             <button
               onClick={handleAddExperience}
-              className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
@@ -1293,7 +1294,7 @@ function ExperienceLibraryContent({
     return (
       <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6">
         <div className="flex justify-center items-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-500"></div>
           <span className="ml-3 text-gray-600">Loading experience records...</span>
         </div>
       </div>
@@ -1326,7 +1327,7 @@ function ExperienceLibraryContent({
                 index === sortedCompanyNames.length - 1 ? 'rounded-r-xl' : ''
               } ${
                 selectedCompany === companyName
-                  ? 'bg-purple-500 text-white shadow-lg'
+                  ? 'bg-gray-500 text-white shadow-lg'
                   : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
               }`}
             >
@@ -1334,7 +1335,7 @@ function ExperienceLibraryContent({
               <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
                 selectedCompany === companyName
                   ? 'bg-white/20 text-white'
-                  : 'bg-purple-500 text-white'
+                  : 'bg-gray-500 text-white'
               }`}>
                 {companyGroups[companyName].length}
               </div>
@@ -1402,7 +1403,7 @@ function ExperienceLibraryContent({
                     <div className="mb-3">
                       <div className="flex flex-wrap gap-1">
                         {record.keywords.map((keyword: string, idx: number) => (
-                          <span key={idx} className="text-xs bg-purple-50 text-purple-600 px-2 py-1 rounded">
+                          <span key={idx} className="text-xs bg-gray-50 text-gray-600 px-2 py-1 rounded">
                             {keyword}
                           </span>
                         ))}
@@ -1426,7 +1427,7 @@ function ExperienceLibraryContent({
                     }}
                     className={`w-full px-2 py-1 rounded-lg text-xs font-medium whitespace-nowrap flex items-center justify-center gap-1 transition-colors ${
                       isStarred(record.id)
-                        ? 'bg-purple-500 hover:bg-purple-600 text-white'
+                        ? 'bg-gray-800 hover:bg-gray-900 text-white'
                         : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
                     }`}
                   >
@@ -1451,7 +1452,7 @@ function ExperienceLibraryContent({
                     onClick={(e) => handleToggleSelection(record, e)}
                     className={`w-full px-2 py-1 rounded-lg text-xs font-medium whitespace-nowrap flex items-center justify-center gap-1 transition-colors ${
                       selectedExperiences.find(exp => exp.id === record.id)
-                        ? 'bg-purple-500 hover:bg-purple-600 text-white'
+                        ? 'bg-gray-800 hover:bg-gray-900 text-white'
                         : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
                     }`}
                   >
@@ -1474,7 +1475,7 @@ function ExperienceLibraryContent({
 
                   <button
                     onClick={() => onEditExperience(record)}
-                    className="w-full px-2 py-1 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-xs font-medium whitespace-nowrap flex items-center justify-center gap-1 transition-colors"
+                    className="w-full px-2 py-1 bg-gray-800 hover:bg-gray-900 text-white rounded-lg text-xs font-medium whitespace-nowrap flex items-center justify-center gap-1 transition-colors"
                   >
                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
@@ -1525,13 +1526,13 @@ function KeywordsInput({ keywords, onChange }: { keywords: string[], onChange: (
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyPress={handleKeyPress}
-          className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+          className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white"
         />
         <button
           type="button"
           onClick={addKeyword}
           disabled={!inputValue.trim()}
-          className="w-32 px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+          className="w-32 px-6 py-3 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
         >
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd"></path>
@@ -1545,13 +1546,13 @@ function KeywordsInput({ keywords, onChange }: { keywords: string[], onChange: (
           {keywords.map((keyword, index) => (
             <span
               key={index}
-              className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium"
+              className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium"
             >
               {keyword}
               <button
                 type="button"
                 onClick={() => removeKeyword(keyword)}
-                className="ml-1 text-purple-500 hover:text-purple-700 transition-colors"
+                className="ml-1 text-gray-500 hover:text-gray-700 transition-colors"
               >
                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path>

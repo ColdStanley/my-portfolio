@@ -208,6 +208,29 @@ Textarea：继承 Input 样式，增加 min-h-[120px] resize-y
 - 背景遮罩：从 opacity-0 到适当透明度的渐变
 - 必须支持平滑的显示/隐藏状态切换
 
+通知（Notification）规范（CRITICAL）：
+
+❌ 禁止使用 Toast（弹出式提示框）
+✅ 必须使用右上角通知（Notification）形式
+
+Notification 实现规则：
+- 位置：固定在页面右上角（fixed top-4 right-4）
+- 动画：从右侧滑入（translate-x-full → translate-x-0）
+- 持续时间：3-5秒后自动消失（可点击关闭）
+- 样式：
+  * Success: bg-white border-l-4 border-green-500
+  * Error: bg-white border-l-4 border-red-500
+  * Info: bg-white border-l-4 border-blue-500
+  * Warning: bg-white border-l-4 border-yellow-500
+- 必须包含：图标 + 文字 + 关闭按钮
+- 阴影：shadow-lg
+- 圆角：rounded-lg
+
+用户确认规范：
+- 删除操作：直接删除，无需二次确认
+- 重要操作（如数据清空）：可使用 Modal 确认，但禁止使用 confirm() 原生弹窗
+- 操作结果：使用右上角 Notification 反馈成功/失败
+
 质感主要来自：
 
 背景层次（白 + 浅灰）
@@ -288,6 +311,10 @@ Disabled：
 ❌ 硬编码颜色
 
 ❌ 每个页面自定义颜色
+
+❌ Toast 提示（必须使用右上角 Notification）
+
+❌ confirm() / alert() 原生弹窗（必须使用自定义 Modal 或 Notification）
 
 8. 响应式规范
 

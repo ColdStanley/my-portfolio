@@ -226,11 +226,11 @@ Based on the above information, generate a professional cover letter for this po
 
             {/* Cover Letter Generator Content - Exactly same as JD2CV 2.0 */}
             <div className="p-6">
-              <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">
+              <h2 className="text-xl font-bold bg-gradient-to-r from-gray-800 to-gray-700 bg-clip-text text-transparent mb-4">
                 📝 Cover Letter Generator
               </h2>
               
-              <div className="text-sm text-purple-600 mb-4 bg-purple-50/50 rounded-lg p-3">
+              <div className="text-sm text-gray-600 mb-4 bg-gray-50/50 rounded-lg p-3">
                 ✨ Your resume has been generated! Now create a professional cover letter using the same information.
               </div>
 
@@ -244,7 +244,7 @@ Based on the above information, generate a professional cover letter for this po
                     value={coverLetterState.userPrompt}
                     onChange={(e) => setCoverLetterState(prev => ({ ...prev, userPrompt: e.target.value }))}
                     rows={12}
-                    className="w-full p-3 border border-gray-200 rounded-lg text-sm focus:border-purple-500 focus:outline-none transition-colors"
+                    className="w-full p-3 border border-gray-200 rounded-lg text-sm focus:border-gray-500 focus:outline-none transition-colors"
                     placeholder="Modify the prompt or use the default template..."
                   />
                 </div>
@@ -255,7 +255,7 @@ Based on the above information, generate a professional cover letter for this po
                   <select 
                     value={coverLetterState.aiModel}
                     onChange={(e) => setCoverLetterState(prev => ({ ...prev, aiModel: e.target.value as 'openai' | 'deepseek' }))}
-                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-purple-500 focus:outline-none"
+                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-gray-500 focus:outline-none"
                   >
                     <option value="deepseek">DeepSeek (Recommended)</option>
                     <option value="openai">OpenAI GPT-4</option>
@@ -266,7 +266,7 @@ Based on the above information, generate a professional cover letter for this po
                 <button
                   onClick={handleGenerateCoverLetter}
                   disabled={coverLetterState.generating}
-                  className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50"
+                  className="w-full px-6 py-3 bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-indigo-700 text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50"
                 >
                   {coverLetterState.generating ? (
                     <div className="flex items-center justify-center gap-2">
@@ -293,15 +293,15 @@ Based on the above information, generate a professional cover letter for this po
                 
                 {/* Generated Content Display */}
                 {coverLetterState.generated && coverLetterState.content && (
-                  <div className="p-4 bg-white border border-purple-200 rounded-lg">
+                  <div className="p-4 bg-white border border-gray-200 rounded-lg">
                     <div className="flex justify-between items-center mb-3">
-                      <h4 className="font-medium text-purple-900">Generated Cover Letter</h4>
+                      <h4 className="font-medium text-gray-900">Generated Cover Letter</h4>
                       <button 
                         onClick={() => {
                           navigator.clipboard.writeText(coverLetterState.content || '')
                           alert('Cover letter copied to clipboard!')
                         }}
-                        className="text-sm text-purple-600 hover:text-purple-800 underline"
+                        className="text-sm text-gray-600 hover:text-gray-800 underline"
                       >
                         Copy to Clipboard
                       </button>

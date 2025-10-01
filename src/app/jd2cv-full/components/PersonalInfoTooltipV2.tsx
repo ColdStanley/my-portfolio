@@ -306,17 +306,17 @@ export default function PersonalInfoTooltipV2({
           border-radius: 3px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(147, 51, 234, 0.3);
+          background: rgba(107, 114, 128, 0.3);
           border-radius: 3px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(147, 51, 234, 0.5);
+          background: rgba(107, 114, 128, 0.5);
         }
         
         /* Firefox scrollbar */
         .custom-scrollbar {
           scrollbar-width: thin;
-          scrollbar-color: rgba(147, 51, 234, 0.3) rgba(0,0,0,0.1);
+          scrollbar-color: rgba(107, 114, 128, 0.3) rgba(0,0,0,0.1);
         }
       `}</style>
       <button
@@ -332,7 +332,7 @@ export default function PersonalInfoTooltipV2({
             setIsOpen(!isOpen)
           }
         }}
-        className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors border border-gray-200 hover:border-purple-300"
+        className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded transition-colors border border-gray-200 hover:border-gray-300"
         title="Personal Info V2"
       >
         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -352,7 +352,7 @@ export default function PersonalInfoTooltipV2({
             }`}>
             <div className="p-6 border-b border-gray-100">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                <h2 className="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-700 bg-clip-text text-transparent">
                   Personal Information V2
                 </h2>
                 <button
@@ -371,7 +371,7 @@ export default function PersonalInfoTooltipV2({
 
             <div className="p-6 space-y-6">
               {/* Format Selection */}
-              <div className="bg-purple-50/50 rounded-lg p-4">
+              <div className="bg-gray-50/50 rounded-lg p-4">
                 <h3 className="font-medium text-gray-800 mb-3">PDF Format</h3>
                 <div className="flex gap-4">
                   {['A4', 'Letter'].map((format) => (
@@ -382,7 +382,7 @@ export default function PersonalInfoTooltipV2({
                         value={format}
                         checked={personalInfo.format === format}
                         onChange={(e) => setPersonalInfo(prev => ({ ...prev, format: e.target.value as 'A4' | 'Letter' }))}
-                        className="text-purple-500"
+                        className="text-gray-600"
                       />
                       <span className="text-sm">{format}</span>
                     </label>
@@ -400,7 +400,7 @@ export default function PersonalInfoTooltipV2({
                       type="text"
                       value={personalInfo.fullName}
                       onChange={(e) => setPersonalInfo(prev => ({ ...prev, fullName: e.target.value }))}
-                      className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
+                      className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none transition-colors"
                       placeholder="Your full name"
                     />
                   </div>
@@ -410,7 +410,7 @@ export default function PersonalInfoTooltipV2({
                       type="email"
                       value={personalInfo.email}
                       onChange={(e) => setPersonalInfo(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
+                      className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none transition-colors"
                       placeholder="your.email@example.com"
                     />
                   </div>
@@ -420,7 +420,7 @@ export default function PersonalInfoTooltipV2({
                       type="text"
                       value={personalInfo.phone}
                       onChange={(e) => setPersonalInfo(prev => ({ ...prev, phone: e.target.value }))}
-                      className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
+                      className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none transition-colors"
                       placeholder="+1 (555) 123-4567"
                     />
                   </div>
@@ -430,7 +430,7 @@ export default function PersonalInfoTooltipV2({
                       type="text"
                       value={personalInfo.location}
                       onChange={(e) => setPersonalInfo(prev => ({ ...prev, location: e.target.value }))}
-                      className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
+                      className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none transition-colors"
                       placeholder="City, Country"
                     />
                   </div>
@@ -440,7 +440,7 @@ export default function PersonalInfoTooltipV2({
                       type="text"
                       value={personalInfo.linkedin}
                       onChange={(e) => setPersonalInfo(prev => ({ ...prev, linkedin: e.target.value }))}
-                      className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
+                      className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none transition-colors"
                       placeholder="linkedin.com/in/yourprofile"
                     />
                   </div>
@@ -450,7 +450,7 @@ export default function PersonalInfoTooltipV2({
                       type="text"
                       value={personalInfo.website}
                       onChange={(e) => setPersonalInfo(prev => ({ ...prev, website: e.target.value }))}
-                      className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
+                      className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none transition-colors"
                       placeholder="yourwebsite.com"
                     />
                   </div>
@@ -465,13 +465,13 @@ export default function PersonalInfoTooltipV2({
                     type="text"
                     value={newSummaryItem}
                     onChange={(e) => setNewSummaryItem(e.target.value)}
-                    className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
+                    className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none transition-colors"
                     placeholder="Add a summary point..."
                     onKeyPress={(e) => e.key === 'Enter' && addSummaryItem()}
                   />
                   <button
                     onClick={addSummaryItem}
-                    className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                    className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
                   >
                     Add
                   </button>
@@ -502,13 +502,13 @@ export default function PersonalInfoTooltipV2({
                       type="text"
                       value={newSkill}
                       onChange={(e) => setNewSkill(e.target.value)}
-                      className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
+                      className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none transition-colors"
                       placeholder="Add a skill..."
                       onKeyPress={(e) => e.key === 'Enter' && addSkill()}
                     />
                     <button
                       onClick={addSkill}
-                      className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                      className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
                     >
                       Add
                     </button>
@@ -516,11 +516,11 @@ export default function PersonalInfoTooltipV2({
                   {personalInfo.technicalSkills.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {personalInfo.technicalSkills.map((skill, index) => (
-                        <div key={index} className="flex items-center bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm">
+                        <div key={index} className="flex items-center bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
                           <span>{skill}</span>
                           <button
                             onClick={() => removeSkill(index)}
-                            className="ml-2 text-purple-500 hover:text-purple-700 transition-colors"
+                            className="ml-2 text-gray-600 hover:text-purple-700 transition-colors"
                           >
                             ×
                           </button>
@@ -537,13 +537,13 @@ export default function PersonalInfoTooltipV2({
                       type="text"
                       value={newLanguage}
                       onChange={(e) => setNewLanguage(e.target.value)}
-                      className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
+                      className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none transition-colors"
                       placeholder="Add a language..."
                       onKeyPress={(e) => e.key === 'Enter' && addLanguage()}
                     />
                     <button
                       onClick={addLanguage}
-                      className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                      className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
                     >
                       Add
                     </button>
@@ -551,11 +551,11 @@ export default function PersonalInfoTooltipV2({
                   {personalInfo.languages.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {personalInfo.languages.map((language, index) => (
-                        <div key={index} className="flex items-center bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm">
+                        <div key={index} className="flex items-center bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
                           <span>{language}</span>
                           <button
                             onClick={() => removeLanguage(index)}
-                            className="ml-2 text-indigo-500 hover:text-indigo-700 transition-colors"
+                            className="ml-2 text-gray-500 hover:text-gray-700 transition-colors"
                           >
                             ×
                           </button>
@@ -574,33 +574,33 @@ export default function PersonalInfoTooltipV2({
                     type="text"
                     value={newEducation.degree}
                     onChange={(e) => setNewEducation(prev => ({ ...prev, degree: e.target.value }))}
-                    className="flex-1 min-w-[140px] px-3 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors text-sm"
+                    className="flex-1 min-w-[140px] px-3 py-2 bg-white border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none transition-colors text-sm"
                     placeholder="Degree"
                   />
                   <input
                     type="text"
                     value={newEducation.institution}
                     onChange={(e) => setNewEducation(prev => ({ ...prev, institution: e.target.value }))}
-                    className="flex-1 min-w-[140px] px-3 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors text-sm"
+                    className="flex-1 min-w-[140px] px-3 py-2 bg-white border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none transition-colors text-sm"
                     placeholder="Institution"
                   />
                   <input
                     type="text"
                     value={newEducation.year}
                     onChange={(e) => setNewEducation(prev => ({ ...prev, year: e.target.value }))}
-                    className="w-20 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors text-sm"
+                    className="w-20 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none transition-colors text-sm"
                     placeholder="Year"
                   />
                   <input
                     type="text"
                     value={newEducation.gpa}
                     onChange={(e) => setNewEducation(prev => ({ ...prev, gpa: e.target.value }))}
-                    className="w-16 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors text-sm"
+                    className="w-16 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none transition-colors text-sm"
                     placeholder="GPA"
                   />
                   <button
                     onClick={addEducation}
-                    className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm whitespace-nowrap"
+                    className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors text-sm whitespace-nowrap"
                   >
                     Add
                   </button>
@@ -633,13 +633,13 @@ export default function PersonalInfoTooltipV2({
                     type="text"
                     value={newCertificate}
                     onChange={(e) => setNewCertificate(e.target.value)}
-                    className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
+                    className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none transition-colors"
                     placeholder="Add a certificate..."
                     onKeyPress={(e) => e.key === 'Enter' && addCertificate()}
                   />
                   <button
                     onClick={addCertificate}
-                    className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                    className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
                   >
                     Add
                   </button>
@@ -680,7 +680,7 @@ export default function PersonalInfoTooltipV2({
                         }, 100)
                       }
                     }}
-                    className="flex items-center gap-1 px-3 py-1 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors text-sm"
+                    className="flex items-center gap-1 px-3 py-1 bg-gray-800 text-white rounded-md hover:bg-gray-900 transition-colors text-sm"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -695,13 +695,13 @@ export default function PersonalInfoTooltipV2({
                     type="text"
                     value={newCustomModuleTitle}
                     onChange={(e) => setNewCustomModuleTitle(e.target.value)}
-                    className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
+                    className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none transition-colors"
                     placeholder="Module title..."
                     onKeyPress={(e) => e.key === 'Enter' && addCustomModule()}
                   />
                   <button
                     onClick={addCustomModule}
-                    className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                    className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
                   >
                     Create
                   </button>
@@ -744,13 +744,13 @@ export default function PersonalInfoTooltipV2({
                             type="text"
                             value={newCustomModuleItem}
                             onChange={(e) => setNewCustomModuleItem(e.target.value)}
-                            className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
+                            className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none transition-colors"
                             placeholder="Add content item..."
                             onKeyPress={(e) => e.key === 'Enter' && addCustomModuleItem(module.id)}
                           />
                           <button
                             onClick={() => addCustomModuleItem(module.id)}
-                            className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                            className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
                           >
                             Add
                           </button>
@@ -795,7 +795,7 @@ export default function PersonalInfoTooltipV2({
                   setIsVisible(false)
                   setTimeout(() => setIsOpen(false), 300)
                 }}
-                className="px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl"
+                className="px-6 py-2 bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-900 hover:to-gray-800 text-white rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl"
               >
                 Save & Close
               </button>

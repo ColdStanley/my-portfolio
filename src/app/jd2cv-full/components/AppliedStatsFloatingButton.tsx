@@ -56,21 +56,21 @@ export default function AppliedStatsFloatingButton({ jds }: AppliedStatsFloating
         onClick={() => setIsOpen(!isOpen)}
         className="w-12 h-12 bg-white/90 backdrop-blur-md rounded-full shadow-xl hover:shadow-2xl transition-all duration-200 flex items-center justify-center group"
         style={{
-          boxShadow: '0 8px 32px rgba(139, 92, 246, 0.2), 0 4px 16px rgba(0, 0, 0, 0.1)'
+          boxShadow: '0 8px 32px rgba(107, 114, 128, 0.2), 0 4px 16px rgba(0, 0, 0, 0.1)'
         }}
         title="Applied Statistics"
       >
           {/* Chart Icon with total count */}
           <div className="flex flex-col items-center">
             <svg 
-              className="w-4 h-4 text-purple-500 transition-transform duration-200" 
+              className="w-4 h-4 text-gray-700 transition-transform duration-200" 
               fill="currentColor" 
               viewBox="0 0 20 20"
             >
               <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"/>
               <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"/>
             </svg>
-            <span className="text-xs text-purple-600 font-medium leading-none mt-0.5">
+            <span className="text-xs text-gray-800 font-medium leading-none mt-0.5">
               {stats.allTime}
             </span>
           </div>
@@ -81,12 +81,12 @@ export default function AppliedStatsFloatingButton({ jds }: AppliedStatsFloating
         <div 
           className="absolute bottom-16 right-0 z-50 bg-white/95 backdrop-blur-md rounded-xl shadow-2xl p-4 min-w-48 transform transition-all duration-200"
           style={{
-            boxShadow: '0 8px 32px rgba(139, 92, 246, 0.2), 0 4px 16px rgba(0, 0, 0, 0.15)'
+            boxShadow: '0 8px 32px rgba(107, 114, 128, 0.2), 0 4px 16px rgba(0, 0, 0, 0.15)'
           }}
         >
           {/* Header */}
           <div className="flex items-center gap-2 mb-3">
-            <svg className="w-4 h-4 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-4 h-4 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
               <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"/>
               <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"/>
             </svg>
@@ -97,26 +97,26 @@ export default function AppliedStatsFloatingButton({ jds }: AppliedStatsFloating
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">Today</span>
-              <span className="text-sm font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+              <span className="text-sm font-semibold bg-gradient-to-r from-gray-800 to-gray-700 bg-clip-text text-transparent">
                 {stats.today}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">This Week</span>
-              <span className="text-sm font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+              <span className="text-sm font-semibold bg-gradient-to-r from-gray-800 to-gray-700 bg-clip-text text-transparent">
                 {stats.thisWeek}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">This Month</span>
-              <span className="text-sm font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+              <span className="text-sm font-semibold bg-gradient-to-r from-gray-800 to-gray-700 bg-clip-text text-transparent">
                 {stats.thisMonth}
               </span>
             </div>
             <div className="border-t border-gray-200 pt-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">All Time</span>
-                <span className="text-sm font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                <span className="text-sm font-bold bg-gradient-to-r from-gray-800 to-gray-700 bg-clip-text text-transparent">
                   {stats.allTime}
                 </span>
               </div>

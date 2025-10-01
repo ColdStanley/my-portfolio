@@ -124,10 +124,6 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
   }
 
   const handleDeleteJD = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this JD record? This action cannot be undone.')) {
-      return
-    }
-
     // Start fade out animation
     setDeletingJDs(prev => new Set(prev).add(id))
 
@@ -370,7 +366,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
               href={jd.cv_pdf_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-purple-500 hover:text-purple-700 hover:underline flex items-center gap-1 truncate flex-1 min-w-0"
+              className="text-xs text-gray-600 hover:text-gray-800 hover:underline flex items-center gap-1 truncate flex-1 min-w-0"
               title={jd.cv_pdf_filename}
             >
               <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -390,7 +386,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
           </>
         ) : (
           // No PDF - show upload button using label approach
-          <label className="text-xs text-gray-500 hover:text-purple-600 transition-colors flex items-center gap-1 px-2 py-1 rounded hover:bg-purple-50 w-full justify-center cursor-pointer">
+          <label className="text-xs text-gray-500 hover:text-gray-700 transition-colors flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-50 w-full justify-center cursor-pointer">
             <input
               ref={fileInputRef}
               type="file"
@@ -401,7 +397,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
             />
             {isUploading ? (
               <>
-                <div className="animate-spin rounded-full h-3 w-3 border-b border-purple-500"></div>
+                <div className="animate-spin rounded-full h-3 w-3 border-b border-gray-500"></div>
                 <span>Uploading...</span>
               </>
             ) : (
@@ -435,7 +431,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
   if (loading && !globalLoading) {
     return (
       <div className="flex justify-center items-center py-16">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-500"></div>
       </div>
     )
   }
@@ -472,7 +468,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                 <>
                   <button
                     onClick={() => setShowAddPopover(true)}
-                    className="w-32 px-6 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-2"
+                    className="w-32 px-6 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-2"
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
@@ -483,7 +479,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                   {/* Global Personal Info Button */}
                   <button
                     onClick={() => setShowPersonalInfoTooltip(true)}
-                    className="w-32 px-6 py-2 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-purple-600 rounded-lg font-medium border border-purple-200 transition-all duration-300 whitespace-nowrap inline-flex items-center justify-center gap-2"
+                    className="w-32 px-6 py-2 bg-white/70 backdrop-blur-sm hover:bg-white/90 text-gray-700 rounded-lg font-medium border border-gray-300 transition-all duration-300 whitespace-nowrap inline-flex items-center justify-center gap-2"
                     title="Configure Personal Information"
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -499,7 +495,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                 <select
                   value={filters.stage}
                   onChange={(e) => handleFilterChange('stage', e.target.value)}
-                  className="w-32 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 appearance-none cursor-pointer"
+                  className="w-32 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-500 appearance-none cursor-pointer"
                 >
                   <option value="">All Stages</option>
                   <option value="null">Not Set</option>
@@ -519,7 +515,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                 <select
                   value={filters.time}
                   onChange={(e) => handleFilterChange('time', e.target.value)}
-                  className="w-32 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 appearance-none cursor-pointer"
+                  className="w-32 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-500 appearance-none cursor-pointer"
                 >
                   <option value="">All Time</option>
                   <option value="yesterday">Yesterday</option>
@@ -547,7 +543,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                           handleFilterChange('searchTerm', searchInput)
                         }
                       }}
-                      className="w-40 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      className="w-40 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-500"
                     />
                     {searchInput && (
                       <button
@@ -570,7 +566,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                     disabled={!hasFilters}
                     className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-2 ${
                       hasFilters
-                        ? 'bg-purple-100 hover:bg-purple-200 text-purple-600 cursor-pointer'
+                        ? 'bg-gray-100 hover:bg-gray-200 text-gray-700 cursor-pointer'
                         : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     }`}
                   >
@@ -602,7 +598,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
               <p className="text-gray-500 mb-6">Get started by adding your first job description</p>
               <button
                 onClick={() => setShowAddPopover(true)}
-                className="w-40 px-6 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-2"
+                className="w-40 px-6 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-2"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
@@ -623,7 +619,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
               <p className="text-gray-500 mb-6">Try adjusting your filters to see more results</p>
               <button
                 onClick={clearFilters}
-                className="w-40 px-6 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-2"
+                className="w-40 px-6 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-2"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -658,7 +654,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                           }}
                           onBlur={(e) => handleUpdateField(jd.id, 'title', e.target.value)}
                           placeholder="Job title..."
-                          className="w-full h-10 px-3 text-lg font-bold text-gray-900 bg-transparent border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent hover:border-gray-200 transition-colors"
+                          className="w-full h-10 px-3 text-lg font-bold text-gray-900 bg-transparent border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent hover:border-gray-200 transition-colors"
                         />
                         {/* Company */}
                         <input
@@ -670,7 +666,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                           }}
                           onBlur={(e) => handleUpdateField(jd.id, 'company', e.target.value)}
                           placeholder="Company name..."
-                          className="w-full h-8 px-3 text-sm font-medium text-gray-600 bg-transparent border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent hover:border-gray-200 transition-colors"
+                          className="w-full h-8 px-3 text-sm font-medium text-gray-600 bg-transparent border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent hover:border-gray-200 transition-colors"
                         />
                       </div>
                     </div>
@@ -754,7 +750,7 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
                                 }
                               }
                             }}
-                            className="flex-1 h-9 px-3 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 cursor-pointer transition-colors"
+                            className="flex-1 h-9 px-3 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-500 cursor-pointer transition-colors"
                           >
                             <option value="">Not Set</option>
                             {stageOptions.map(stage => (

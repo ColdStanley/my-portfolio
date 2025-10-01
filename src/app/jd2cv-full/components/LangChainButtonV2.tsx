@@ -640,12 +640,12 @@ const runPostGenerationSteps = async (
               className="fixed z-[95]"
               style={{ top: dockPosition.y, left: dockPosition.x }}
             >
-              <div className="w-[320px] rounded-3xl border border-purple-100 bg-white/95 shadow-2xl backdrop-blur p-4">
+              <div className="w-[320px] rounded-3xl border border-gray-100 bg-white/95 shadow-2xl backdrop-blur p-4">
                 <div
                   className={`flex items-start justify-between gap-3 select-none ${isDockDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
                   onPointerDown={handleDockPointerDown}
                 >
-                  <div className="text-sm font-semibold text-purple-700 drop-shadow-sm">
+                  <div className="text-sm font-semibold text-gray-700 drop-shadow-sm">
                     Resume Tasks ({tasks.length})
                   </div>
                   <button
@@ -667,8 +667,8 @@ const runPostGenerationSteps = async (
                       const stageKey = getTaskStage(task.stageOutputs)
                       const stageLabel = getStageLabel(stageKey)
                       const cardBaseClass = isActiveTask
-                        ? 'border-purple-300 bg-purple-50/70 shadow-sm'
-                        : 'border-purple-100 bg-white hover:border-purple-200 hover:shadow-sm'
+                        ? 'border-gray-300 bg-gray-50/70 shadow-sm'
+                        : 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm'
 
                       return (
                         <button
@@ -697,23 +697,23 @@ const runPostGenerationSteps = async (
           {showPanel && currentTaskId && (
             <div
               ref={panelRef}
-              className="fixed z-[96] w-[520px] rounded-2xl border border-purple-100 bg-white/95 shadow-2xl backdrop-blur origin-top-left animate-panelFadeIn transition-all duration-300 ease-out"
+              className="fixed z-[96] w-[520px] rounded-2xl border border-gray-100 bg-white/95 shadow-2xl backdrop-blur origin-top-left animate-panelFadeIn transition-all duration-300 ease-out"
               style={{
                 top: dockPosition.y,
                 left: dockPosition.x + 340
               }}
             >
-              <div className="flex items-center justify-between px-4 py-3 border-b border-purple-100/60">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100/60">
                 <div>
-                  <div className="text-sm font-semibold text-purple-700">Resume Progress</div>
+                  <div className="text-sm font-semibold text-gray-700">Resume Progress</div>
                   <div className="text-xs text-slate-500">Track each step as it happens</div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {isGenerating && <span className="text-xs text-purple-500 animate-softPulse">Processing…</span>}
+                  {isGenerating && <span className="text-xs text-gray-500 animate-softPulse">Processing…</span>}
                   {!isGenerating && pendingReview && !manualReviewOpen && (
                     <button
                       onClick={openExistingManualReview}
-                      className="rounded-full border border-purple-200 bg-white px-3 py-1 text-[11px] font-medium text-purple-600 hover:bg-purple-50"
+                      className="rounded-full border border-gray-200 bg-white px-3 py-1 text-[11px] font-medium text-gray-600 hover:bg-gray-50"
                     >
                       Review & Download
                     </button>
@@ -721,14 +721,14 @@ const runPostGenerationSteps = async (
                 </div>
               </div>
 
-          <div className="flex gap-2 border-b border-purple-100/60 px-2 pt-2">
+          <div className="flex gap-2 border-b border-gray-100/60 px-2 pt-2">
             {STAGE_CONFIG.map(stage => {
               const data = stageOutputs[stage.key]
               const isActive = activeStage === stage.key
               const statusClass = data.status === 'completed'
-                ? 'bg-purple-600 text-white'
+                ? 'bg-gray-600 text-white'
                 : data.status === 'in_progress'
-                  ? 'bg-purple-100 text-purple-700'
+                  ? 'bg-gray-100 text-gray-700'
                   : data.status === 'error'
                     ? 'bg-rose-100 text-rose-600'
                     : 'bg-slate-50 text-slate-500'
@@ -737,7 +737,7 @@ const runPostGenerationSteps = async (
                 <button
                   key={stage.key}
                   onClick={() => setActiveStage(stage.key)}
-                  className={`flex-1 rounded-t-lg border border-transparent px-3 py-2 text-xs font-semibold transition-all duration-300 ease-out ${isActive ? 'bg-white text-purple-700 shadow-lg border-purple-200 border-b-white' : 'text-slate-500 hover:bg-slate-50 hover:-translate-y-0.5'}`}
+                  className={`flex-1 rounded-t-lg border border-transparent px-3 py-2 text-xs font-semibold transition-all duration-300 ease-out ${isActive ? 'bg-white text-gray-700 shadow-lg border-gray-200 border-b-white' : 'text-slate-500 hover:bg-slate-50 hover:-translate-y-0.5'}`}
                 >
                   <div className={`mx-auto w-max rounded-full px-3 py-1 transition-transform duration-300 ${isActive ? 'scale-105' : 'scale-100'} ${statusClass}`}>
                     {stage.icon} {stage.label}
@@ -751,7 +751,7 @@ const runPostGenerationSteps = async (
                 {renderStageContent(stageOutputs[activeStage])}
               </div>
 
-              <div className="flex items-center justify-between border-t border-purple-100/60 px-4 py-2 text-[11px] text-slate-500">
+              <div className="flex items-center justify-between border-t border-gray-100/60 px-4 py-2 text-[11px] text-slate-500">
                 <div>
                   <span>Status: {formatStageStatus(stageOutputs[activeStage].status)}</span>
                   {stageOutputs[activeStage].duration != null && (
@@ -791,7 +791,7 @@ const runPostGenerationSteps = async (
                 <label className="text-xs font-semibold text-slate-600" htmlFor="manual-work-experience">Work Experience</label>
                 <textarea
                   id="manual-work-experience"
-                  className="h-64 w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] text-slate-700 focus:border-purple-400 focus:outline-none focus:ring-1 focus:ring-purple-300"
+                  className="h-64 w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] text-slate-700 focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300"
                   value={manualWorkExperience}
                   onChange={event => setManualWorkExperience(event.target.value)}
                   spellCheck={false}
@@ -802,7 +802,7 @@ const runPostGenerationSteps = async (
                 <label className="text-xs font-semibold text-slate-600" htmlFor="manual-personal-info">Personal Info (JSON)</label>
                 <textarea
                   id="manual-personal-info"
-                  className="h-64 w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] font-mono text-slate-700 focus:border-purple-400 focus:outline-none focus:ring-1 focus:ring-purple-300"
+                  className="h-64 w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] font-mono text-slate-700 focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300"
                   value={manualPersonalInfoText}
                   onChange={event => setManualPersonalInfoText(event.target.value)}
                   spellCheck={false}
@@ -829,7 +829,7 @@ const runPostGenerationSteps = async (
                 </button>
                 <button
                   onClick={handleManualReviewConfirm}
-                  className="rounded-full bg-purple-600 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-purple-700 disabled:opacity-60"
+                  className="rounded-full bg-gray-600 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-gray-700 disabled:opacity-60"
                   disabled={isFinalizingPdf}
                 >
                   {isFinalizingPdf ? 'Generating…' : 'Confirm & Download PDF'}
@@ -950,7 +950,7 @@ function formatTaskStatusLabel(status: TaskStatus) {
 function getStatusAccentClass(status: TaskStatus) {
   switch (status) {
     case 'running':
-      return 'text-purple-600'
+      return 'text-gray-600'
     case 'completed':
       return 'text-emerald-600'
     case 'error':
@@ -1081,8 +1081,8 @@ function renderStageContent(stage: StageData) {
   if (stage.status === 'in_progress' && stage.streamingContent && !stage.content && !stage.json && !stage.roleType) {
     return (
       <div className="space-y-2">
-        <div className="text-xs text-purple-600 font-medium flex items-center gap-1">
-          <div className="animate-spin w-3 h-3 border border-purple-300 border-t-purple-600 rounded-full"></div>
+        <div className="text-xs text-gray-600 font-medium flex items-center gap-1">
+          <div className="animate-spin w-3 h-3 border border-gray-300 border-t-purple-600 rounded-full"></div>
           AI Generating...
         </div>
         <pre className="whitespace-pre-wrap text-[11px] text-slate-600 bg-slate-50 p-2 rounded max-h-48 overflow-y-auto">
@@ -1101,13 +1101,13 @@ function renderStageContent(stage: StageData) {
       <div className="space-y-3 text-[11px] text-slate-600">
         {stage.roleType && (
           <div>
-            <div className="text-xs font-semibold text-purple-700">Role Type</div>
+            <div className="text-xs font-semibold text-gray-700">Role Type</div>
             <div>{stage.roleType}</div>
           </div>
         )}
         {stage.insights && stage.insights.length > 0 && (
           <div>
-            <div className="text-xs font-semibold text-purple-700">Classifier Insights</div>
+            <div className="text-xs font-semibold text-gray-700">Classifier Insights</div>
             <ul className="list-disc pl-4 space-y-1">
               {stage.insights.map((insight, idx) => (
                 <li key={idx}>{insight}</li>
@@ -1117,7 +1117,7 @@ function renderStageContent(stage: StageData) {
         )}
         {stage.keywords && stage.keywords.length > 0 && (
           <div>
-            <div className="text-xs font-semibold text-purple-700">Priority Keywords</div>
+            <div className="text-xs font-semibold text-gray-700">Priority Keywords</div>
             <div>{stage.keywords.join(', ')}</div>
           </div>
         )}
