@@ -16,6 +16,12 @@ export default function StepPersonalInfo() {
   )
   const [errors, setErrors] = useState<string[]>([])
 
+  // Temporary input states for add-mode fields
+  const [summaryInput, setSummaryInput] = useState('')
+  const [skillInput, setSkillInput] = useState('')
+  const [languageInput, setLanguageInput] = useState('')
+  const [certificateInput, setCertificateInput] = useState('')
+
   // Sync with store when personalInfo changes
   useEffect(() => {
     if (personalInfo) {
@@ -74,6 +80,55 @@ export default function StepPersonalInfo() {
   const removeCustomModule = (index: number) => {
     const updated = formData.customModules.filter((_, i) => i !== index)
     handleChange('customModules', updated)
+  }
+
+  // Handle add-mode fields
+  const addSummary = () => {
+    if (summaryInput.trim()) {
+      handleChange('summary', [...formData.summary, summaryInput.trim()])
+      setSummaryInput('')
+    }
+  }
+
+  const removeSummary = (index: number) => {
+    const updated = formData.summary.filter((_, i) => i !== index)
+    handleChange('summary', updated)
+  }
+
+  const addSkill = () => {
+    if (skillInput.trim()) {
+      handleChange('technicalSkills', [...formData.technicalSkills, skillInput.trim()])
+      setSkillInput('')
+    }
+  }
+
+  const removeSkill = (index: number) => {
+    const updated = formData.technicalSkills.filter((_, i) => i !== index)
+    handleChange('technicalSkills', updated)
+  }
+
+  const addLanguage = () => {
+    if (languageInput.trim()) {
+      handleChange('languages', [...formData.languages, languageInput.trim()])
+      setLanguageInput('')
+    }
+  }
+
+  const removeLanguage = (index: number) => {
+    const updated = formData.languages.filter((_, i) => i !== index)
+    handleChange('languages', updated)
+  }
+
+  const addCertificate = () => {
+    if (certificateInput.trim()) {
+      handleChange('certificates', [...formData.certificates, certificateInput.trim()])
+      setCertificateInput('')
+    }
+  }
+
+  const removeCertificate = (index: number) => {
+    const updated = formData.certificates.filter((_, i) => i !== index)
+    handleChange('certificates', updated)
   }
 
   // Validation and save
@@ -194,48 +249,151 @@ export default function StepPersonalInfo() {
           <label className="block text-sm font-medium text-text-primary mb-1">
             Professional Summary
           </label>
-          <p className="text-xs text-text-secondary mb-2">One point per line</p>
-          <Input
-            multiline
-            rows={3}
-            value={arrayToMultiline(formData.summary)}
-            onChange={(e) => handleArrayChange('summary', e.target.value)}
-            placeholder="• Experienced software developer with 5+ years..."
-          />
+
+          {/* Added items */}
+          {formData.summary.length > 0 && (
+            <div className="space-y-2 mb-3">
+              {formData.summary.map((item, index) => (
+                <div key={index} className="flex items-start gap-2 p-2 bg-neutral-light/50 rounded border border-neutral-mid">
+                  <span className="flex-1 text-sm text-text-primary">{item}</span>
+                  <Button
+                    onClick={() => removeSummary(index)}
+                    variant="ghost"
+                    size="sm"
+                    className="text-error hover:brightness-90 text-xs"
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Add new item */}
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              value={summaryInput}
+              onChange={(e) => setSummaryInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  addSummary()
+                }
+              }}
+              placeholder="Experienced software developer with 5+ years..."
+              className="flex-1"
+            />
+            <Button
+              onClick={addSummary}
+              variant="primary"
+              size="md"
+            >
+              Add
+            </Button>
+          </div>
         </div>
 
         {/* Skills and Languages */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Technical Skills */}
           <div>
             <label className="block text-sm font-medium text-text-primary mb-1">
               Technical Skills
             </label>
-            <p className="text-xs text-text-secondary mb-2">One skill per line</p>
-            <Input
-              multiline
-              rows={4}
-              value={arrayToMultiline(formData.technicalSkills)}
-              onChange={(e) => handleArrayChange('technicalSkills', e.target.value)}
-              placeholder="JavaScript
-React
-Node.js
-Python"
-            />
+
+            {/* Added items */}
+            {formData.technicalSkills.length > 0 && (
+              <div className="space-y-2 mb-3">
+                {formData.technicalSkills.map((item, index) => (
+                  <div key={index} className="flex items-start gap-2 p-2 bg-neutral-light/50 rounded border border-neutral-mid">
+                    <span className="flex-1 text-sm text-text-primary">{item}</span>
+                    <Button
+                      onClick={() => removeSkill(index)}
+                      variant="ghost"
+                      size="sm"
+                      className="text-error hover:brightness-90 text-xs"
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add new item */}
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                value={skillInput}
+                onChange={(e) => setSkillInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    addSkill()
+                  }
+                }}
+                placeholder="e.g., React, Python, Node.js"
+                className="flex-1"
+              />
+              <Button
+                onClick={addSkill}
+                variant="primary"
+                size="md"
+              >
+                Add
+              </Button>
+            </div>
           </div>
 
+          {/* Languages */}
           <div>
             <label className="block text-sm font-medium text-text-primary mb-1">
               Languages
             </label>
-            <p className="text-xs text-text-secondary mb-2">One language per line</p>
-            <Input
-              multiline
-              rows={4}
-              value={arrayToMultiline(formData.languages)}
-              onChange={(e) => handleArrayChange('languages', e.target.value)}
-              placeholder="English (Native)
-Spanish (Fluent)"
-            />
+
+            {/* Added items */}
+            {formData.languages.length > 0 && (
+              <div className="space-y-2 mb-3">
+                {formData.languages.map((item, index) => (
+                  <div key={index} className="flex items-start gap-2 p-2 bg-neutral-light/50 rounded border border-neutral-mid">
+                    <span className="flex-1 text-sm text-text-primary">{item}</span>
+                    <Button
+                      onClick={() => removeLanguage(index)}
+                      variant="ghost"
+                      size="sm"
+                      className="text-error hover:brightness-90 text-xs"
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add new item */}
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                value={languageInput}
+                onChange={(e) => setLanguageInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    addLanguage()
+                  }
+                }}
+                placeholder="e.g., English (Native)"
+                className="flex-1"
+              />
+              <Button
+                onClick={addLanguage}
+                variant="primary"
+                size="md"
+              >
+                Add
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -326,15 +484,49 @@ Spanish (Fluent)"
           <label className="block text-sm font-medium text-text-primary mb-1">
             Certifications
           </label>
-          <p className="text-xs text-text-secondary mb-2">One certification per line</p>
-          <Input
-            multiline
-            rows={3}
-            value={arrayToMultiline(formData.certificates)}
-            onChange={(e) => handleArrayChange('certificates', e.target.value)}
-            placeholder="AWS Certified Solutions Architect
-Google Cloud Professional"
-          />
+
+          {/* Added items */}
+          {formData.certificates.length > 0 && (
+            <div className="space-y-2 mb-3">
+              {formData.certificates.map((item, index) => (
+                <div key={index} className="flex items-start gap-2 p-2 bg-neutral-light/50 rounded border border-neutral-mid">
+                  <span className="flex-1 text-sm text-text-primary">{item}</span>
+                  <Button
+                    onClick={() => removeCertificate(index)}
+                    variant="ghost"
+                    size="sm"
+                    className="text-error hover:brightness-90 text-xs"
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Add new item */}
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              value={certificateInput}
+              onChange={(e) => setCertificateInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  addCertificate()
+                }
+              }}
+              placeholder="e.g., AWS Certified Solutions Architect"
+              className="flex-1"
+            />
+            <Button
+              onClick={addCertificate}
+              variant="primary"
+              size="md"
+            >
+              Add
+            </Button>
+          </div>
         </div>
 
         {/* Custom Modules */}

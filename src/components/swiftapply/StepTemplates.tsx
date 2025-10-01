@@ -136,9 +136,10 @@ export default function StepTemplates() {
                       {isExpanded ? 'Collapse' : 'Edit'}
                     </Button>
                     <Button
-                      variant="danger"
+                      variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteTemplate(template.id, template.title)}
+                      className="text-error hover:brightness-90"
                     >
                       Delete
                     </Button>
