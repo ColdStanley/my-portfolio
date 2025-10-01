@@ -302,12 +302,12 @@ const ArticleReader = memo<ArticleReaderProps>(({ article }) => {
       {/* Custom Styles for Article Highlights */}
       <style jsx>{`
         .immediate-highlight {
-          background: linear-gradient(145deg, #f3e8ff, #e9d5ff);
+          background: var(--accent);
           border-radius: 4px;
           padding: 2px 6px;
           margin: 0;
-          box-shadow: 2px 2px 4px rgba(196, 132, 252, 0.2), -1px -1px 3px rgba(255, 255, 255, 0.8);
-          color: #7c3aed;
+          box-shadow: 2px 2px 4px rgba(244, 211, 94, 0.3), -1px -1px 3px rgba(255, 255, 255, 0.8);
+          color: var(--primary);
           font-weight: 500;
           display: flex;
           align-items: center;
@@ -317,7 +317,7 @@ const ArticleReader = memo<ArticleReaderProps>(({ article }) => {
           overflow-wrap: break-word;
           text-align: left;
         }
-        
+
         .immediate-highlight::after {
           content: '';
           position: absolute;
@@ -328,23 +328,23 @@ const ArticleReader = memo<ArticleReaderProps>(({ article }) => {
           background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
           animation: highlight-sweep 0.6s ease-out;
         }
-        
+
         @keyframes highlight-sweep {
-          to { 
-            left: 100%; 
+          to {
+            left: 100%;
           }
         }
-        
+
         :global(.article-highlight) {
-          background: linear-gradient(145deg, #f3e8ff, #e9d5ff);
+          background: var(--accent);
           border-radius: 4px;
           padding: 2px 6px;
           margin: 0 1px;
-          box-shadow: 
-            2px 2px 4px rgba(196, 132, 252, 0.2),
+          box-shadow:
+            2px 2px 4px rgba(244, 211, 94, 0.3),
             -1px -1px 3px rgba(255, 255, 255, 0.8),
             inset 0 1px 0 rgba(255, 255, 255, 0.6);
-          color: #7c3aed;
+          color: var(--primary);
           font-weight: 500;
           transform: translateY(0);
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
