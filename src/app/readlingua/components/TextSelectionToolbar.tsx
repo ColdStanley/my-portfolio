@@ -167,36 +167,22 @@ const TextSelectionToolbar = memo<TextSelectionToolbarProps>(({
               const store = useReadLinguaStore.getState?.() || {}
               const selectedArticle = store.selectedArticle
               if (!selectedArticle) return
-              
-              const response = await fetch('/api/readlingua/text-to-speech', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                  text: selectedText,
-                  language: selectedArticle.source_language
-                })
-              })
-              
-              if (response.ok) {
-                const audioBlob = await response.blob()
-                const audioUrl = URL.createObjectURL(audioBlob)
-                const audio = new Audio(audioUrl)
-                
-                audio.onended = () => {
-                  URL.revokeObjectURL(audioUrl)
-                }
-                
-                audio.onerror = () => {
-                  URL.revokeObjectURL(audioUrl)
-                }
-                
-                await audio.play()
-              } else {
-                const errorData = await response.json()
-                toast.error(errorData.error || 'Failed to generate pronunciation')
+
+              const audioBlob = await ttsApi.getPronunciation(selectedText, selectedArticle.source_language)
+              const audioUrl = URL.createObjectURL(audioBlob)
+              const audio = new Audio(audioUrl)
+
+              audio.onended = () => {
+                URL.revokeObjectURL(audioUrl)
               }
+
+              audio.onerror = () => {
+                URL.revokeObjectURL(audioUrl)
+              }
+
+              await audio.play()
             } catch (error) {
-              // Silent fail
+              toast.error(error instanceof Error ? error.message : 'Failed to generate pronunciation')
             }
           }}
           className="absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-to-r from-primary to-primary hover:brightness-110  text-white rounded-full flex items-center justify-center transition-all duration-150 shadow-sm hover:scale-110 hover:shadow-md"

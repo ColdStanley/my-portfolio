@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useReadLinguaStore } from './store/useReadLinguaStore'
+import { emailApi } from './utils/apiClient'
 import DashboardTab from './components/DashboardTab'
 import LearningTab from './components/LearningTab'
 import NewNavbar from '@/components/NewNavbar'
@@ -29,27 +30,17 @@ export default function ReadLinguaPage() {
     if (!userEmail.trim() || isSendingEmail || selectedEmailContents.length === 0) return
 
     setIsSendingEmail(true)
-    
+
     try {
-      const response = await fetch('/api/readlingua/send-selected-content', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          selectedContents: selectedEmailContents,
-          userEmail: userEmail.trim()
-        })
+      await emailApi.sendSelectedContent({
+        selectedContents: selectedEmailContents,
+        userEmail: userEmail.trim()
       })
 
-      if (response.ok) {
-        toast.success('Selected content sent successfully!')
-        setShowEmailPanel(false)
-        setUserEmail('')
-        clearEmailSelection()
-      } else {
-        toast.error('Failed to send email. Please try again.')
-      }
+      toast.success('Selected content sent successfully!')
+      setShowEmailPanel(false)
+      setUserEmail('')
+      clearEmailSelection()
     } catch (error) {
       console.error('Email sending error:', error)
       toast.error('Failed to send email. Please try again.')

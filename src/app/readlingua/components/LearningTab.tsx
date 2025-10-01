@@ -3,7 +3,7 @@
 import React, { useEffect, useState, memo, useCallback } from 'react'
 import { toast } from 'sonner'
 import { useReadLinguaStore } from '../store/useReadLinguaStore'
-import { queryApi } from '../utils/apiClient'
+import { queryApi, ttsApi } from '../utils/apiClient'
 import { supabase } from '../utils/supabaseClient'
 import ArticleReader from './ArticleReader'
 import QueryPanel from './QueryPanel'
@@ -76,42 +76,27 @@ const LearningTab = memo(() => {
 
   const handlePlayPronunciation = useCallback(async (text: string) => {
     if (isPlaying || !selectedArticle) return
-    
+
     setIsPlaying(true)
     try {
-      const response = await fetch('/api/readlingua/text-to-speech', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          text,
-          language: selectedArticle.source_language
-        })
-      })
-      
-      if (response.ok) {
-        const audioBlob = await response.blob()
-        const audioUrl = URL.createObjectURL(audioBlob)
-        const audio = new Audio(audioUrl)
-        
-        audio.onended = () => {
-          setIsPlaying(false)
-          URL.revokeObjectURL(audioUrl)
-        }
-        
-        audio.onerror = () => {
-          setIsPlaying(false)
-          URL.revokeObjectURL(audioUrl)
-        }
-        
-        await audio.play()
-      } else {
-        const errorData = await response.json()
-        console.error('Failed to get audio:', errorData.error)
-        toast.error(errorData.error || 'Failed to generate pronunciation')
+      const audioBlob = await ttsApi.getPronunciation(text, selectedArticle.source_language)
+      const audioUrl = URL.createObjectURL(audioBlob)
+      const audio = new Audio(audioUrl)
+
+      audio.onended = () => {
         setIsPlaying(false)
+        URL.revokeObjectURL(audioUrl)
       }
+
+      audio.onerror = () => {
+        setIsPlaying(false)
+        URL.revokeObjectURL(audioUrl)
+      }
+
+      await audio.play()
     } catch (error) {
       console.error('Error playing pronunciation:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to generate pronunciation')
       setIsPlaying(false)
     }
   }, [isPlaying, selectedArticle])

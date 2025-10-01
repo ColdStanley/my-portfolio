@@ -201,7 +201,7 @@ export const aiApi = {
   }> {
     return new Promise((resolve, reject) => {
       let fullResponse = ''
-      
+
       this.processQueryStream(
         queryData,
         (chunk) => {
@@ -222,5 +222,38 @@ export const aiApi = {
         }
       )
     })
+  }
+}
+
+// Email API calls
+export const emailApi = {
+  // Send selected content via email
+  async sendSelectedContent(data: {
+    selectedContents: any[]
+    userEmail: string
+  }): Promise<void> {
+    const response = await fetch('/api/readlingua/send-selected-content', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    if (!response.ok) throw new Error('Failed to send email')
+  }
+}
+
+// Text-to-Speech API calls
+export const ttsApi = {
+  // Get pronunciation audio
+  async getPronunciation(text: string, language: string): Promise<Blob> {
+    const response = await fetch('/api/readlingua/text-to-speech', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, language })
+    })
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Failed to generate pronunciation')
+    }
+    return await response.blob()
   }
 }
