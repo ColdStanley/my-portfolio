@@ -32,11 +32,18 @@ export default function ArticleReader() {
     // 清空旧的高亮
     clearHighlights()
 
-    // 从 queries 中重建
-    queries.forEach((query) => {
+    // 过滤出当前语言对的 queries
+    const filteredQueries = queries.filter(
+      (q) =>
+        q.article_language === currentArticle.article_language &&
+        q.mother_tongue === currentArticle.mother_tongue
+    )
+
+    // 从过滤后的 queries 中重建
+    filteredQueries.forEach((query) => {
       addHighlightedWord(query.selected_text, query)
     })
-  }, [currentArticle?.id, queries, clearHighlights, addHighlightedWord])
+  }, [currentArticle?.id, currentArticle?.article_language, currentArticle?.mother_tongue, queries, clearHighlights, addHighlightedWord])
 
   const handleTextSelection = useCallback(() => {
     const selection = window.getSelection()
@@ -171,7 +178,7 @@ export default function ArticleReader() {
                     {fragment.content}
                     <sup
                       onClick={(e) => handleBadgeClick(e, fragment.word!)}
-                      className="absolute -right-1.5 -top-1.5 inline-flex h-3 w-3 cursor-pointer items-center justify-center rounded-full text-[8px] font-semibold text-white transition-all duration-200 hover:scale-110"
+                      className="absolute -right-1.5 -top-1.5 inline-flex h-3 w-3 cursor-pointer select-none items-center justify-center rounded-full text-[8px] font-semibold text-white transition-all duration-200 hover:scale-110"
                       style={{
                         backgroundColor: theme.primary,
                         fontSize: '8px',

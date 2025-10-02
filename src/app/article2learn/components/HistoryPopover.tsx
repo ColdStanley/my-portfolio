@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import ReactMarkdown from 'react-markdown'
 import { theme } from '@/styles/theme.config'
 import { Query } from '../store/useArticleStore'
 
@@ -94,12 +95,12 @@ export default function HistoryPopover({
 
                 {/* AI Response */}
                 <div
-                  className={`break-words text-xs leading-relaxed ${
+                  className={`prose prose-xs max-w-none break-words text-xs leading-relaxed ${
                     isExpanded ? '' : 'line-clamp-3'
                   }`}
                   style={{ color: theme.textSecondary }}
                 >
-                  {query.ai_response}
+                  <ReactMarkdown>{query.ai_response}</ReactMarkdown>
                 </div>
 
                 {/* Show More/Less Button */}

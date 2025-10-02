@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import ReactMarkdown from 'react-markdown'
 import { theme } from '@/styles/theme.config'
 import { useArticleStore, Query } from '../store/useArticleStore'
 import { queryApi } from '../utils/apiClient'
@@ -94,12 +95,12 @@ export default function QueryCardView({ queries }: QueryCardViewProps) {
 
           {/* Response Preview */}
           <div
-            className={`mb-2 break-words text-xs leading-relaxed ${
+            className={`prose prose-xs mb-2 max-w-none break-words text-xs leading-relaxed ${
               expandedCards.has(query.id) ? '' : 'line-clamp-4'
             }`}
             style={{ color: theme.textSecondary }}
           >
-            {query.ai_response}
+            <ReactMarkdown>{query.ai_response}</ReactMarkdown>
           </div>
 
           {/* More/Less Button */}

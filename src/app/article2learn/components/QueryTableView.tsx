@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import ReactMarkdown from 'react-markdown'
 import { theme } from '@/styles/theme.config'
 import { useArticleStore, Query } from '../store/useArticleStore'
 import { queryApi } from '../utils/apiClient'
@@ -98,12 +99,12 @@ export default function QueryTableView() {
               </td>
               <td className="max-w-md px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <p
-                    className={`text-xs ${expandedRows.has(query.id) ? '' : 'truncate'}`}
+                  <div
+                    className={`prose prose-xs max-w-none text-xs ${expandedRows.has(query.id) ? '' : 'line-clamp-2'}`}
                     style={{ color: theme.textSecondary }}
                   >
-                    {query.ai_response}
-                  </p>
+                    <ReactMarkdown>{query.ai_response}</ReactMarkdown>
+                  </div>
                   <button
                     onClick={() => toggleExpand(query.id)}
                     className="shrink-0 text-xs font-medium underline transition-colors hover:brightness-90"

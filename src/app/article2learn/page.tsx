@@ -112,7 +112,7 @@ export default function Article2LearnPage() {
       </header>
 
       {/* Tab Navigation */}
-      <div className="border-b bg-white" style={{ borderColor: theme.neutralDark }}>
+      <div className="sticky top-[73px] z-10 border-b bg-white" style={{ borderColor: theme.neutralDark }}>
         <div className="px-6">
           <div className="flex gap-2">
             <button
