@@ -11,6 +11,7 @@ import QueryHistory from './components/QueryHistory'
 import AIResponseModal from './components/AIResponseModal'
 import SettingsTooltip from './components/SettingsTooltip'
 import ArticleHistoryModal from './components/ArticleHistoryModal'
+import QuizTabs from './components/quiz/QuizTabs'
 
 export default function Article2LearnPage() {
   const settingsButtonRef = useRef<HTMLButtonElement>(null)
@@ -179,9 +180,9 @@ export default function Article2LearnPage() {
             <motion.div
               key="quiz-tab"
               {...ANIMATIONS.contentSwitch}
-              className="flex h-[calc(100vh-130px)] items-center justify-center"
+              className="h-[calc(100vh-130px)]"
             >
-              <p style={{ color: theme.textSecondary }}>Quiz - Coming Soon</p>
+              <QuizTabs />
             </motion.div>
           )}
         </AnimatePresence>

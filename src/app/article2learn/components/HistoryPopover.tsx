@@ -4,6 +4,7 @@ import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { theme } from '@/styles/theme.config'
 import { Query } from '../store/useArticleStore'
+import SpeakerButton from './SpeakerButton'
 
 interface HistoryPopoverProps {
   word: string
@@ -41,6 +42,9 @@ export default function HistoryPopover({
             <h3 className="font-semibold" style={{ color: theme.primary }}>
               "{word}"
             </h3>
+            {queries.length > 0 && (queries[0].article_language === 'English' || queries[0].article_language === 'Français') && (
+              <SpeakerButton text={word} language={queries[0].article_language} size="sm" />
+            )}
             <span
               className="text-xs"
               style={{ color: theme.textSecondary }}

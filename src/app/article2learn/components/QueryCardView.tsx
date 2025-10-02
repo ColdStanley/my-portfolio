@@ -6,6 +6,7 @@ import { theme } from '@/styles/theme.config'
 import { useArticleStore, Query } from '../store/useArticleStore'
 import { queryApi } from '../utils/apiClient'
 import { toast } from 'sonner'
+import SpeakerButton from './SpeakerButton'
 
 interface QueryCardViewProps {
   queries: Query[]
@@ -71,6 +72,9 @@ export default function QueryCardView({ queries }: QueryCardViewProps) {
               >
                 "{query.selected_text}"
               </span>
+              {(query.article_language === 'English' || query.article_language === 'Français') && (
+                <SpeakerButton text={query.selected_text} language={query.article_language} size="sm" />
+              )}
               <span
                 className="text-xs font-medium"
                 style={{ color: theme.textSecondary }}

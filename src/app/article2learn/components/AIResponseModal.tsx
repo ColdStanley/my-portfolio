@@ -8,6 +8,7 @@ import { theme } from '@/styles/theme.config'
 import { ANIMATIONS } from '../utils/animations'
 import { useArticleStore } from '../store/useArticleStore'
 import { aiApi, queryApi } from '../utils/apiClient'
+import SpeakerButton from './SpeakerButton'
 
 export default function AIResponseModal() {
   const {
@@ -102,32 +103,37 @@ export default function AIResponseModal() {
         >
           {/* Header */}
           <div className="mb-4 flex items-start justify-between border-b pb-3" style={{ borderColor: theme.neutralDark }}>
-            <div className="flex-1">
+            <div className="flex flex-1 items-center gap-2">
               <h3
                 className="text-lg font-semibold"
                 style={{ color: theme.primary }}
               >
                 {selectedText}
               </h3>
+              {(currentArticle?.article_language === 'English' || currentArticle?.article_language === 'Français') && selectedText && (
+                <SpeakerButton text={selectedText} language={currentArticle?.article_language} size="sm" />
+              )}
+            </div>
+
+            <div className="ml-4 flex items-center gap-2">
               <p
-                className="mt-1 text-xs"
+                className="text-xs"
                 style={{ color: theme.textSecondary }}
               >
                 {selectedPrompt?.name}
               </p>
+              <button
+                onClick={handleClose}
+                className="h-8 w-8 rounded-lg border bg-white shadow-[0_1px_2px_rgba(0,0,0,0.08)] transition-all duration-200 hover:shadow-[0_2px_4px_rgba(0,0,0,0.12)]"
+                style={{
+                  borderColor: theme.neutralDark,
+                  color: theme.textPrimary,
+                }}
+                aria-label="Close"
+              >
+                ✕
+              </button>
             </div>
-
-            <button
-              onClick={handleClose}
-              className="ml-4 h-8 w-8 rounded-lg border bg-white shadow-[0_1px_2px_rgba(0,0,0,0.08)] transition-all duration-200 hover:shadow-[0_2px_4px_rgba(0,0,0,0.12)]"
-              style={{
-                borderColor: theme.neutralDark,
-                color: theme.textPrimary,
-              }}
-              aria-label="Close"
-            >
-              ✕
-            </button>
           </div>
 
           {/* Content */}
