@@ -8,18 +8,21 @@ import UploadForm from './UploadForm'
 import ArticleList from './ArticleList'
 import FlagIcon from './FlagIcon'
 
-export default function DashboardTab() {
+interface DashboardTabProps {
+  nativeLanguage: string
+  learningLanguage: string
+}
+
+export default function DashboardTab({ nativeLanguage, learningLanguage }: DashboardTabProps) {
   const [activeSubTab, setActiveSubTab] = useState<'upload' | 'articles'>('upload')
-  const { 
-    articles, 
-    setArticles, 
-    shouldRefreshArticles, 
-    setSelectedArticle, 
+  const {
+    articles,
+    setArticles,
+    shouldRefreshArticles,
+    setSelectedArticle,
     setActiveTab,
     addArticle
   } = useReadLinguaStore()
-  const [nativeLanguage, setNativeLanguage] = useState('chinese')
-  const [learningLanguage, setLearningLanguage] = useState('english')
   const [isLoading, setIsLoading] = useState(false)
 
   // Filter articles based on selected languages
@@ -69,67 +72,9 @@ export default function DashboardTab() {
   }
 
   return (
-    <div className="min-h-screen md:min-h-0 md:bg-gradient-to-br md:from-slate-50 md:via-white md:to-neutral-light/30">
-      {/* Desktop Header */}
-      <div className="hidden md:block px-6 py-6 bg-white/90 backdrop-blur-md shadow-lg"
-        style={{
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 10px rgba(139, 92, 246, 0.1)'
-        }}>
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          
-          {/* Language Selector */}
-          <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-xl shadow-lg"
-            style={{
-              boxShadow: '0 4px 15px rgba(139, 92, 246, 0.15), 0 2px 8px rgba(139, 92, 246, 0.1)'
-            }}>
-            <span className="text-xs text-gray-500 font-medium">From:</span>
-            <div className="flex items-center gap-2">
-              <FlagIcon language={learningLanguage} size={16} />
-              <select 
-                value={learningLanguage}
-                onChange={(e) => setLearningLanguage(e.target.value)}
-                className="bg-transparent border-none text-sm font-medium text-gray-700 focus:outline-none cursor-pointer"
-              >
-                <option value="english">English</option>
-                <option value="chinese">中文</option>
-                <option value="french">Français</option>
-                <option value="japanese">日本語</option>
-                <option value="korean">한국어</option>
-                <option value="russian">Русский</option>
-                <option value="spanish">Español</option>
-                <option value="arabic">العربية</option>
-              </select>
-            </div>
-            
-            <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
-            </svg>
-            
-            <span className="text-xs text-gray-500 font-medium">To:</span>
-            <div className="flex items-center gap-2">
-              <FlagIcon language={nativeLanguage} size={16} />
-              <select 
-                value={nativeLanguage}
-                onChange={(e) => setNativeLanguage(e.target.value)}
-                className="bg-transparent border-none text-sm font-medium text-gray-700 focus:outline-none cursor-pointer"
-              >
-                <option value="chinese">中文</option>
-                <option value="english">English</option>
-                <option value="french">Français</option>
-                <option value="japanese">日本語</option>
-                <option value="korean">한국어</option>
-                <option value="russian">Русский</option>
-                <option value="spanish">Español</option>
-                <option value="arabic">العربية</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <div className="h-full flex flex-col md:bg-gradient-to-br md:from-slate-50 md:via-white md:to-neutral-light/30">
       {/* Main Content */}
-      <div className="px-6 py-8">
+      <div className="px-6 py-8 flex-1 overflow-hidden flex flex-col">
         {/* Mobile Language Selector - Above Articles */}
         <div className="md:hidden mb-6 flex justify-center">
           <div className="flex items-center gap-3 px-4 py-3 bg-white/90 backdrop-blur-md rounded-xl shadow-lg"
@@ -139,7 +84,7 @@ export default function DashboardTab() {
             <span className="text-xs text-gray-500 font-medium">From:</span>
             <div className="flex items-center gap-2">
               <FlagIcon language={learningLanguage} size={16} />
-              <select 
+              <select
                 value={learningLanguage}
                 onChange={(e) => setLearningLanguage(e.target.value)}
                 className="bg-transparent border-none text-sm font-medium text-gray-700 focus:outline-none cursor-pointer"
@@ -154,15 +99,15 @@ export default function DashboardTab() {
                 <option value="arabic">العربية</option>
               </select>
             </div>
-            
+
             <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
             </svg>
-            
+
             <span className="text-xs text-gray-500 font-medium">To:</span>
             <div className="flex items-center gap-2">
               <FlagIcon language={nativeLanguage} size={16} />
-              <select 
+              <select
                 value={nativeLanguage}
                 onChange={(e) => setNativeLanguage(e.target.value)}
                 className="bg-transparent border-none text-sm font-medium text-gray-700 focus:outline-none cursor-pointer"
@@ -180,11 +125,11 @@ export default function DashboardTab() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 overflow-hidden">
           
           {/* Browse Articles */}
-          <div 
-            className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 min-h-[500px] md:col-span-1 col-span-full"
+          <div
+            className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 h-full md:col-span-1 col-span-full"
             style={{
               boxShadow: '0 15px 35px rgba(139, 92, 246, 0.15), 0 6px 20px rgba(139, 92, 246, 0.08)'
             }}
@@ -234,25 +179,27 @@ export default function DashboardTab() {
           </div>
 
           {/* Add New Article - Hidden on Mobile */}
-          <div 
-            className="hidden md:block group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 min-h-[500px]"
+          <div
+            className="hidden md:flex group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 h-full"
             style={{
               boxShadow: '0 15px 35px rgba(139, 92, 246, 0.15), 0 6px 20px rgba(139, 92, 246, 0.08)'
             }}
           >
-            <div className="p-6">
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
+            <div className="p-6 flex flex-col w-full h-full">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4 flex-shrink-0">
                 <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd"/>
                 </svg>
                 Add New
               </h2>
-              
-              <UploadForm 
-                defaultNativeLanguage={nativeLanguage}
-                defaultSourceLanguage={learningLanguage}
-                onArticleUploaded={handleArticleUploaded}
-              />
+
+              <div className="flex-1 overflow-y-auto">
+                <UploadForm
+                  defaultNativeLanguage={nativeLanguage}
+                  defaultSourceLanguage={learningLanguage}
+                  onArticleUploaded={handleArticleUploaded}
+                />
+              </div>
             </div>
           </div>
           

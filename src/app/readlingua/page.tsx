@@ -6,24 +6,28 @@ import { useReadLinguaStore } from './store/useReadLinguaStore'
 import { emailApi } from './utils/apiClient'
 import DashboardTab from './components/DashboardTab'
 import LearningTab from './components/LearningTab'
+import FlagIcon from './components/FlagIcon'
 import NewNavbar from '@/components/NewNavbar'
-import FooterSection from '@/components/FooterSection'
 import PageTransition from '@/components/PageTransition'
 
 export default function ReadLinguaPage() {
-  const { 
-    activeTab, 
-    setActiveTab, 
+  const {
+    activeTab,
+    setActiveTab,
     selectedEmailContents,
     showEmailPanel,
     setShowEmailPanel,
     clearEmailSelection,
     isLoading
   } = useReadLinguaStore()
-  
+
   // Email states
   const [userEmail, setUserEmail] = useState('')
   const [isSendingEmail, setIsSendingEmail] = useState(false)
+
+  // Language states for Dashboard
+  const [nativeLanguage, setNativeLanguage] = useState('chinese')
+  const [learningLanguage, setLearningLanguage] = useState('english')
 
   // Email sending functionality
   const handleSendEmail = async () => {
@@ -59,41 +63,92 @@ export default function ReadLinguaPage() {
   return (
     <>
       <PageTransition>
-        <div className="min-h-screen bg-surface">
+        <div className="h-screen bg-surface flex flex-col overflow-hidden">
       {/* Desktop Tab Navigation - Fixed at top */}
-      <div className="hidden md:block max-w-7xl mx-auto px-4 py-6 pt-6">
-        <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 mb-6">
-          <div className="flex">
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`flex-1 px-3 py-3 sm:px-6 sm:py-4 text-center font-medium transition-all duration-300 transform hover:scale-105 text-sm sm:text-base rounded-l-xl shadow-lg ${
-                activeTab === 'dashboard'
-                  ? 'text-white'
-                  : 'text-text-primary bg-white hover:bg-neutral-light'
-              }`}
-              style={activeTab === 'dashboard' ? { backgroundColor: 'var(--primary)' } : {}}
-            >
-              <svg className="w-5 h-5 inline-block mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
-              </svg>
-              <span className="hidden sm:inline">Dashboard</span>
-              <span className="sm:hidden">Articles</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('learning')}
-              className={`flex-1 px-3 py-3 sm:px-6 sm:py-4 text-center font-medium transition-all duration-300 transform hover:scale-105 text-sm sm:text-base rounded-r-xl shadow-lg ${
-                activeTab === 'learning'
-                  ? 'text-white'
-                  : 'text-text-primary bg-white hover:bg-neutral-light'
-              }`}
-              style={activeTab === 'learning' ? { backgroundColor: 'var(--primary)' } : {}}
-            >
-              <svg className="w-5 h-5 inline-block mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-              <span className="hidden sm:inline">Learning</span>
-              <span className="sm:hidden">History</span>
-            </button>
+      <div className="hidden md:block max-w-7xl mx-auto px-4 py-6 pt-6 flex-shrink-0">
+        <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 p-4">
+          <div className="flex items-center justify-between gap-6">
+            {/* Left: Tab Navigation */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                className={`px-6 py-3 text-center font-medium transition-all duration-300 text-sm rounded-xl shadow-lg ${
+                  activeTab === 'dashboard'
+                    ? 'text-white'
+                    : 'text-text-primary bg-white hover:bg-neutral-light'
+                }`}
+                style={activeTab === 'dashboard' ? { backgroundColor: 'var(--primary)' } : {}}
+              >
+                <svg className="w-5 h-5 inline-block mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                </svg>
+                <span>Dashboard</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('learning')}
+                className={`px-6 py-3 text-center font-medium transition-all duration-300 text-sm rounded-xl shadow-lg ${
+                  activeTab === 'learning'
+                    ? 'text-white'
+                    : 'text-text-primary bg-white hover:bg-neutral-light'
+                }`}
+                style={activeTab === 'learning' ? { backgroundColor: 'var(--primary)' } : {}}
+              >
+                <svg className="w-5 h-5 inline-block mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span>Learning</span>
+              </button>
+            </div>
+
+            {/* Right: Language Selector - Only show on Dashboard tab */}
+            {activeTab === 'dashboard' && (
+              <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-xl shadow-lg"
+                style={{
+                  boxShadow: '0 4px 15px rgba(139, 92, 246, 0.15), 0 2px 8px rgba(139, 92, 246, 0.1)'
+                }}>
+                <span className="text-xs text-gray-500 font-medium">From:</span>
+                <div className="flex items-center gap-2">
+                  <FlagIcon language={learningLanguage} size={16} />
+                  <select
+                    value={learningLanguage}
+                    onChange={(e) => setLearningLanguage(e.target.value)}
+                    className="bg-transparent border-none text-sm font-medium text-gray-700 focus:outline-none cursor-pointer"
+                  >
+                    <option value="english">English</option>
+                    <option value="chinese">中文</option>
+                    <option value="french">Français</option>
+                    <option value="japanese">日本語</option>
+                    <option value="korean">한국어</option>
+                    <option value="russian">Русский</option>
+                    <option value="spanish">Español</option>
+                    <option value="arabic">العربية</option>
+                  </select>
+                </div>
+
+                <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
+                </svg>
+
+                <span className="text-xs text-gray-500 font-medium">To:</span>
+                <div className="flex items-center gap-2">
+                  <FlagIcon language={nativeLanguage} size={16} />
+                  <select
+                    value={nativeLanguage}
+                    onChange={(e) => setNativeLanguage(e.target.value)}
+                    className="bg-transparent border-none text-sm font-medium text-gray-700 focus:outline-none cursor-pointer"
+                  >
+                    <option value="chinese">中文</option>
+                    <option value="english">English</option>
+                    <option value="french">Français</option>
+                    <option value="japanese">日本語</option>
+                    <option value="korean">한국어</option>
+                    <option value="russian">Русский</option>
+                    <option value="spanish">Español</option>
+                    <option value="arabic">العربية</option>
+                  </select>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -131,10 +186,13 @@ export default function ReadLinguaPage() {
       </div>
 
       {/* Tab Content */}
-      <div className="pb-20 md:pb-0">
+      <div className="pb-20 md:pb-0 flex-1 overflow-hidden">
         {activeTab === 'dashboard' && (
-          <div className="md:max-w-7xl md:mx-auto md:px-4">
-            <DashboardTab />
+          <div className="md:max-w-7xl md:mx-auto md:px-4 h-full">
+            <DashboardTab
+              nativeLanguage={nativeLanguage}
+              learningLanguage={learningLanguage}
+            />
           </div>
         )}
         {activeTab === 'learning' && <LearningTab />}
@@ -244,8 +302,6 @@ export default function ReadLinguaPage() {
           </div>
         </>
       )}
-      
-      <FooterSection />
     </div>
       </PageTransition>
     </>
