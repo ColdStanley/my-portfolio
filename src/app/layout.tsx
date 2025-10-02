@@ -97,7 +97,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans bg-white text-gray-900">
         {children}
         {/* ✅ Toast 支持（不影响现有样式） */}
-        <Toaster richColors position="top-center" />
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: 'white',
+              color: '#111111',
+              border: '1px solid #E5E7EB',
+            },
+          }}
+        />
         {/* ✅ Cookie同意弹窗 */}
         <CookieConsent />
       </body>
