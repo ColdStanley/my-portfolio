@@ -136,12 +136,25 @@ function HeroSection({ hero }: HeroProps) {
   }, [])
 
   return (
-    <section className="relative px-6 pt-28 pb-20 lg:min-h-[calc(100vh-6rem)] overflow-visible">
-      <div className="absolute inset-0 bg-[var(--surface)] pointer-events-none" />
+    <section className="relative h-screen overflow-hidden">
+      {/* Video Background */}
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover"
+      >
+        <source src={hero.background_video} type="video/mp4" />
+      </video>
 
-      <div className="max-w-6xl mx-auto relative z-20 flex flex-col-reverse lg:flex-row items-center gap-14">
+      {/* Dark Overlay */}
+      <div className="absolute inset-0 bg-black/60 pointer-events-none" />
+
+      {/* Content */}
+      <div className="relative z-20 h-full flex items-center justify-center px-6">
         <motion.div
-          className="w-full lg:w-1/2 text-center lg:text-left"
+          className="text-center max-w-4xl"
           style={{ y: scrollY * 0.2 }}
         >
           <motion.div
@@ -149,17 +162,17 @@ function HeroSection({ hero }: HeroProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+            <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold mb-6 leading-tight text-white">
               {hero.gradient_text && hero.gradient_text !== hero.title ? (
                 <>
-                  <span className="text-[var(--text-primary)]">{hero.title.split(hero.gradient_text)[0]}</span>
-                  <span className="text-[var(--primary)]">
+                  <span>{hero.title.split(hero.gradient_text)[0]}</span>
+                  <span className="text-[var(--accent)]">
                     {hero.gradient_text}
                   </span>
-                  <span className="text-[var(--text-primary)]">{hero.title.split(hero.gradient_text)[1]}</span>
+                  <span>{hero.title.split(hero.gradient_text)[1]}</span>
                 </>
               ) : (
-                <span className="text-[var(--primary)]">
+                <span className="text-[var(--accent)]">
                   {hero.title}
                 </span>
               )}
@@ -169,7 +182,7 @@ function HeroSection({ hero }: HeroProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-              className="text-lg md:text-xl text-[var(--text-secondary)] mb-10 leading-relaxed"
+              className="text-lg md:text-xl text-gray-200 mb-10 leading-relaxed max-w-2xl mx-auto"
             >
               {hero.subtitle}
             </motion.p>
@@ -178,7 +191,7 @@ function HeroSection({ hero }: HeroProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-              className="flex flex-wrap justify-center lg:justify-start gap-4"
+              className="flex flex-wrap justify-center gap-4"
             >
               {hero.primary_button_href.startsWith('#') ? (
                 <ScrollToSection targetId={hero.primary_button_href.slice(1)}>
@@ -212,41 +225,22 @@ function HeroSection({ hero }: HeroProps) {
             </motion.div>
           </motion.div>
         </motion.div>
-
-        <motion.div
-          className="w-full lg:w-1/2 flex justify-center lg:justify-end"
-          initial={{ opacity: 0, x: 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-        >
-          <div className="relative w-full max-w-xl aspect-[16/10] md:aspect-[4/3] lg:aspect-[3/2] rounded-[28px] overflow-hidden shadow-xl ring-1 ring-[var(--neutral-dark)]">
-            <div className="absolute inset-0 bg-[var(--surface)]/10 pointer-events-none" />
-            <video
-              ref={videoRef}
-              autoPlay
-              muted
-              playsInline
-              className="absolute inset-0 w-full h-full object-cover"
-            >
-              <source src={hero.background_video} type="video/mp4" />
-            </video>
-          </div>
-        </motion.div>
       </div>
 
+      {/* Decorative Elements */}
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 0.35, scale: 1 }}
+        animate={{ opacity: 0.2, scale: 1 }}
         transition={{ duration: 1.2, delay: 0.3, ease: "easeOut" }}
-        className="absolute -left-16 top-1/3 w-72 h-72 bg-[var(--accent)]/20 rounded-full blur-3xl pointer-events-none"
+        className="absolute -left-16 top-1/3 w-72 h-72 bg-[var(--accent)]/30 rounded-full blur-3xl pointer-events-none"
         style={{ y: scrollY * 0.2 }}
       />
 
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 0.3, scale: 1 }}
+        animate={{ opacity: 0.2, scale: 1 }}
         transition={{ duration: 1.2, delay: 0.5, ease: "easeOut" }}
-        className="absolute -right-24 bottom-10 w-60 h-60 bg-[var(--primary)]/10 rounded-full blur-3xl pointer-events-none"
+        className="absolute -right-24 bottom-10 w-60 h-60 bg-white/10 rounded-full blur-3xl pointer-events-none"
         style={{ y: scrollY * 0.2 }}
       />
     </section>
@@ -362,7 +356,6 @@ function ProjectSection({ title, description, benefits, buttonText, href, gradie
             </div>
 
             <motion.div variants={itemVariants} className="space-y-4">
-              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Core Benefits:</h3>
               <ul className="space-y-3">
                 {benefits.map((benefit, idx) => (
                   <motion.li

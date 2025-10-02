@@ -1,10 +1,19 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useSwiftApplyStore } from '@/lib/swiftapply/store'
 import Button from '@/components/ui/button'
+import { Dropdown, DropdownItem } from '@/components/ui/dropdown'
 
 export default function Header() {
-  const { openSettings } = useSwiftApplyStore()
+  const { openSettings, openAIParseMode, hasStoredData } = useSwiftApplyStore()
+  const [showSetupMenu, setShowSetupMenu] = useState(false)
+  const [isNewUser, setIsNewUser] = useState(false)
+
+  // 只在客户端检查是否为新用户，避免 hydration mismatch
+  useEffect(() => {
+    setIsNewUser(!hasStoredData())
+  }, [hasStoredData])
 
 
   return (
@@ -36,20 +45,55 @@ export default function Header() {
         {/* Actions */}
         <div className="flex items-center gap-2 lg:gap-3">
 
-          {/* Settings Button */}
-          <Button
-            onClick={() => openSettings()}
-            variant="ghost"
-            size="sm"
-            className="p-2 text-text-secondary hover:text-primary"
-            title="Settings"
-            aria-label="Open Settings"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </Button>
+          {/* Setup Button with Dropdown */}
+          <div className="relative">
+            <Button
+              onClick={() => setShowSetupMenu(!showSetupMenu)}
+              variant={isNewUser ? "primary" : "secondary"}
+              size="sm"
+              className={`flex items-center gap-2 ${isNewUser ? 'animate-pulse' : ''}`}
+              aria-label="Setup Options"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span className="hidden sm:inline text-sm font-medium">Setup</span>
+            </Button>
+
+            <Dropdown
+              isOpen={showSetupMenu}
+              onClose={() => setShowSetupMenu(false)}
+              align="right"
+            >
+              <DropdownItem
+                onClick={() => {
+                  openSettings()
+                  setShowSetupMenu(false)
+                }}
+                icon={
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                }
+              >
+                Manual Input
+              </DropdownItem>
+              <DropdownItem
+                onClick={() => {
+                  openAIParseMode()
+                  setShowSetupMenu(false)
+                }}
+                icon={
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                }
+              >
+                Upload PDF
+              </DropdownItem>
+            </Dropdown>
+          </div>
         </div>
       </div>
 

@@ -1,20 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useReadLinguaStore } from '../store/useReadLinguaStore'
 import { articleApi } from '../utils/apiClient'
 import { supabase } from '../utils/supabaseClient'
 import UploadForm from './UploadForm'
 import ArticleList from './ArticleList'
-import FlagIcon from './FlagIcon'
 
 interface DashboardTabProps {
   nativeLanguage: string
   learningLanguage: string
 }
 
+const PANEL_CLASS = 'flex min-h-0 flex-col overflow-hidden border border-border bg-surface'
+const PANEL_BODY_CLASS = 'flex-1 min-h-0 overflow-y-auto p-4'
+
 export default function DashboardTab({ nativeLanguage, learningLanguage }: DashboardTabProps) {
-  const [activeSubTab, setActiveSubTab] = useState<'upload' | 'articles'>('upload')
   const {
     articles,
     setArticles,
@@ -25,19 +26,19 @@ export default function DashboardTab({ nativeLanguage, learningLanguage }: Dashb
   } = useReadLinguaStore()
   const [isLoading, setIsLoading] = useState(false)
 
-  // Filter articles based on selected languages
-  const filteredArticles = articles.filter(article => 
-    article.native_language === nativeLanguage && article.source_language === learningLanguage
+  const filteredArticles = articles.filter(
+    (article) =>
+      article.native_language === nativeLanguage &&
+      article.source_language === learningLanguage
   )
 
-  // Load articles on mount and when refresh is needed
   useEffect(() => {
     if (shouldRefreshArticles()) {
-      loadArticles()
+      void loadArticles()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Refresh articles when new article is uploaded
   const handleArticleUploaded = (newArticle: any) => {
     addArticle(newArticle)
   }
@@ -46,15 +47,16 @@ export default function DashboardTab({ nativeLanguage, learningLanguage }: Dashb
     try {
       setIsLoading(true)
       let userId = 'anonymous'
-      
-      // Try to get authenticated user, but don't require it
+
       try {
-        const { data: { user } } = await supabase.auth.getUser()
+        const {
+          data: { user }
+        } = await supabase.auth.getUser()
         if (user) {
           userId = user.id
         }
       } catch (authError) {
-        // Using anonymous mode
+        console.warn('Anonymous mode', authError)
       }
 
       const userArticles = await articleApi.getArticles(userId)
@@ -72,139 +74,59 @@ export default function DashboardTab({ nativeLanguage, learningLanguage }: Dashb
   }
 
   return (
-    <div className="h-full flex flex-col md:bg-gradient-to-br md:from-slate-50 md:via-white md:to-neutral-light/30">
-      {/* Main Content */}
-      <div className="px-6 py-8 flex-1 overflow-hidden flex flex-col">
-        {/* Mobile Language Selector - Above Articles */}
-        <div className="md:hidden mb-6 flex justify-center">
-          <div className="flex items-center gap-3 px-4 py-3 bg-white/90 backdrop-blur-md rounded-xl shadow-lg"
-            style={{
-              boxShadow: '0 4px 15px rgba(139, 92, 246, 0.15), 0 2px 8px rgba(139, 92, 246, 0.1)'
-            }}>
-            <span className="text-xs text-gray-500 font-medium">From:</span>
+    <section className="flex h-full min-h-0 flex-col overflow-hidden px-6 py-6">
+      <div className="grid h-full min-h-0 gap-4 lg:grid-cols-2">
+        <article className={PANEL_CLASS}>
+          <header className="flex items-center justify-between border-b border-border px-4 py-3">
+            <h2 className="text-sm font-medium text-text-primary">Browse Articles</h2>
             <div className="flex items-center gap-2">
-              <FlagIcon language={learningLanguage} size={16} />
-              <select
-                value={learningLanguage}
-                onChange={(e) => setLearningLanguage(e.target.value)}
-                className="bg-transparent border-none text-sm font-medium text-gray-700 focus:outline-none cursor-pointer"
+              <button
+                onClick={loadArticles}
+                disabled={isLoading}
+                className="p-1 text-text-secondary transition-colors hover:text-text-primary disabled:opacity-50"
+                title="Refresh articles"
               >
-                <option value="english">English</option>
-                <option value="chinese">中文</option>
-                <option value="french">Français</option>
-                <option value="japanese">日本語</option>
-                <option value="korean">한국어</option>
-                <option value="russian">Русский</option>
-                <option value="spanish">Español</option>
-                <option value="arabic">العربية</option>
-              </select>
+                <svg className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+              <span className="px-2 py-0.5 text-xs text-text-secondary border border-border">
+                {filteredArticles.length}
+              </span>
             </div>
+          </header>
 
-            <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
-            </svg>
-
-            <span className="text-xs text-gray-500 font-medium">To:</span>
-            <div className="flex items-center gap-2">
-              <FlagIcon language={nativeLanguage} size={16} />
-              <select
-                value={nativeLanguage}
-                onChange={(e) => setNativeLanguage(e.target.value)}
-                className="bg-transparent border-none text-sm font-medium text-gray-700 focus:outline-none cursor-pointer"
-              >
-                <option value="chinese">中文</option>
-                <option value="english">English</option>
-                <option value="french">Français</option>
-                <option value="japanese">日本語</option>
-                <option value="korean">한국어</option>
-                <option value="russian">Русский</option>
-                <option value="spanish">Español</option>
-                <option value="arabic">العربية</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 overflow-hidden">
-          
-          {/* Browse Articles */}
-          <div
-            className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 h-full md:col-span-1 col-span-full"
-            style={{
-              boxShadow: '0 15px 35px rgba(139, 92, 246, 0.15), 0 6px 20px rgba(139, 92, 246, 0.08)'
-            }}
-          >
-            <div className="p-6 h-full flex flex-col">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/>
-                  </svg>
-                  <span className="hidden md:inline">Browse</span>
-                  <span className="md:hidden">Articles</span>
-                </h2>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={loadArticles}
-                    disabled={isLoading}
-                    className="p-1.5 text-gray-500 hover:text-primary hover:bg-neutral-light rounded-lg transition-colors disabled:opacity-50"
-                    title="Refresh articles"
-                  >
-                    <svg className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                  </button>
-                  <div className="px-3 py-1 bg-neutral-light text-text-primary rounded-full text-xs font-medium">
-                    {filteredArticles.length}
-                  </div>
+          <div className={PANEL_BODY_CLASS}>
+            {isLoading ? (
+              <div className="flex h-32 items-center justify-center">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="h-5 w-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                  <span className="text-sm text-text-secondary">Loading...</span>
                 </div>
               </div>
-              
-              <div className="flex-1 overflow-y-auto">
-                {isLoading ? (
-                  <div className="flex items-center justify-center h-32">
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                      <span className="text-sm text-gray-500">Loading articles...</span>
-                    </div>
-                  </div>
-                ) : (
-                  <ArticleList 
-                    articles={filteredArticles}
-                    onArticleSelect={handleArticleSelect}
-                  />
-                )}
-              </div>
-            </div>
+            ) : (
+              <ArticleList
+                articles={filteredArticles}
+                onArticleSelect={handleArticleSelect}
+              />
+            )}
           </div>
+        </article>
 
-          {/* Add New Article - Hidden on Mobile */}
-          <div
-            className="hidden md:flex group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 h-full"
-            style={{
-              boxShadow: '0 15px 35px rgba(139, 92, 246, 0.15), 0 6px 20px rgba(139, 92, 246, 0.08)'
-            }}
-          >
-            <div className="p-6 flex flex-col w-full h-full">
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4 flex-shrink-0">
-                <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd"/>
-                </svg>
-                Add New
-              </h2>
+        <article className={`${PANEL_CLASS} hidden md:flex`}>
+          <header className="border-b border-border px-4 py-3">
+            <h2 className="text-sm font-medium text-text-primary">Add New Article</h2>
+          </header>
 
-              <div className="flex-1 overflow-y-auto">
-                <UploadForm
-                  defaultNativeLanguage={nativeLanguage}
-                  defaultSourceLanguage={learningLanguage}
-                  onArticleUploaded={handleArticleUploaded}
-                />
-              </div>
-            </div>
+          <div className={PANEL_BODY_CLASS}>
+            <UploadForm
+              defaultNativeLanguage={nativeLanguage}
+              defaultSourceLanguage={learningLanguage}
+              onArticleUploaded={handleArticleUploaded}
+            />
           </div>
-          
-        </div>
+        </article>
       </div>
-    </div>
+    </section>
   )
 }

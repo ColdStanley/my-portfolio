@@ -147,3 +147,79 @@ export const OPENAI_CONFIG = {
   max_tokens: 4000,
   top_p: 0.9
 }
+
+// AI Resume Parser Prompts
+
+// DeepSeek: Parse resume text to PersonalInfo JSON
+export const PROMPT_PARSE_PERSONAL_INFO = `Parse this resume text into JSON matching this TypeScript interface:
+
+interface PersonalInfo {
+  fullName: string          // REQUIRED
+  email: string             // REQUIRED
+  phone: string
+  location: string
+  linkedin: string
+  website: string
+  summary: string[]         // Professional summary as bullet points
+  technicalSkills: string[] // List of technical skills
+  languages: string[]       // e.g., ["English (Native)", "Mandarin (Fluent)"]
+  education: {
+    degree: string
+    institution: string
+    year: string
+    gpa?: string
+  }[]
+  certificates: string[]    // Certifications
+  customModules: {
+    id: string              // Generate unique IDs using timestamp
+    title: string           // e.g., "Projects", "Publications"
+    content: string[]       // Bullet points
+  }[]
+  format: "A4" | "Letter"   // Default to "A4"
+}
+
+Resume text:
+"""
+{resumeText}
+"""
+
+Rules:
+- Extract fullName and email (REQUIRED)
+- Parse summary into 2-4 concise bullet points
+- List each technical skill separately
+- If no clear section for data, use customModules with appropriate title
+- Use empty arrays [] if no data found, NOT null
+- Generate unique IDs for customModules using timestamps
+- Output valid JSON only, no explanations
+
+Return JSON:`
+
+// DeepSeek: Generate ExperienceTemplate from resume
+export const PROMPT_GENERATE_TEMPLATES = `Based on this resume text, create experience templates for the target role: "{targetRole}"
+
+Resume text:
+"""
+{resumeText}
+"""
+
+Target Role: {targetRole}
+
+Output Format:
+interface ExperienceTemplate {
+  id: string              // Use timestamp
+  title: string           // e.g., "Senior Software Engineer at Google"
+  targetRole: string      // Echo the input target role
+  content: string[]       // 4-6 bullet points using STAR method
+}
+
+Rules:
+- Extract ONLY work experience relevant to {targetRole}
+- Each bullet point: action verb + achievement + quantifiable result
+- Focus on technical skills and leadership if applicable
+- Format: "• Verb + what + impact (metrics if possible)"
+- Generate 1-2 templates for most relevant experiences
+- If no relevant experience, return empty array []
+- Each template ID should be unique timestamp
+
+Return JSON array:
+[{ id, title, targetRole, content }]`

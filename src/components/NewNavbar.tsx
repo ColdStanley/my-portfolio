@@ -197,7 +197,7 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
       className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
         scrolled
           ? 'bg-[var(--surface)]/95 shadow-lg border-b border-[var(--neutral-dark)]'
-          : 'bg-transparent'
+          : 'bg-gradient-to-b from-black/40 to-transparent'
       }`}
     >
       <div className="max-w-7xl mx-auto px-6">
@@ -208,7 +208,9 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
               <motion.span
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="text-xl font-semibold text-[var(--primary)]"
+                className={`text-xl font-semibold transition-colors duration-300 ${
+                  scrolled ? 'text-[var(--primary)]' : 'text-white'
+                }`}
               >
                 {logoData.name}
               </motion.span>
@@ -232,9 +234,9 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setOpenDropdown(prev => prev === item.name ? null : item.name)}
                       className={`font-medium transition-all duration-200 flex items-center gap-1 ${
-                        isActiveDropdown(item)
-                          ? 'text-[var(--primary)]'
-                          : 'text-[var(--text-secondary)] hover:text-[var(--primary)]'
+                        scrolled
+                          ? (isActiveDropdown(item) ? 'text-[var(--primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--primary)]')
+                          : 'text-white/90 hover:text-white'
                       }`}
                     >
                       {item.name}
@@ -283,9 +285,9 @@ export default function NewNavbar({ navigationData }: NewNavbarProps) {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       className={`font-medium transition-colors duration-200 ${
-                        pathname === item.href
-                          ? 'text-[var(--primary)]'
-                          : 'text-[var(--text-secondary)] hover:text-[var(--primary)]'
+                        scrolled
+                          ? (pathname === item.href ? 'text-[var(--primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--primary)]')
+                          : 'text-white/90 hover:text-white'
                       }`}
                     >
                       {item.name}

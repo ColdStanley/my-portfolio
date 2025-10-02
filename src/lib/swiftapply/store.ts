@@ -82,12 +82,14 @@ interface SwiftApplyState {
   templates: ExperienceTemplate[]
   jobTitle: string
   jobDescription: string
+  resumeRawText: string | null
 
   // UI State
   isSettingsOpen: boolean
   settingsStep: 1 | 2 | 3
   isSignUpModalOpen: boolean
   isUpgradeModalOpen: boolean
+  isAIParseModeOpen: boolean
 
   // AI Generation State
   ai: AIGenerationState
@@ -103,12 +105,15 @@ interface SwiftApplyState {
   setTemplates: (t: ExperienceTemplate[]) => void
   setJobTitle: (v: string) => void
   setJobDescription: (v: string) => void
+  setResumeRawText: (text: string | null) => void
   openSettings: (step?: 1 | 2 | 3) => void
   closeSettings: () => void
   openSignUpModal: () => void
   closeSignUpModal: () => void
   openUpgradeModal: () => void
   closeUpgradeModal: () => void
+  openAIParseMode: () => void
+  closeAIParseMode: () => void
   initializeFromStorage: () => void
   hasStoredData: () => boolean
 
@@ -168,10 +173,12 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
   templates: [],
   jobTitle: '',
   jobDescription: '',
+  resumeRawText: null,
   isSettingsOpen: false,
   settingsStep: 1,
   isSignUpModalOpen: false,
   isUpgradeModalOpen: false,
+  isAIParseModeOpen: false,
   ai: getInitialAIState(),
   coverLetter: getInitialCoverLetterState(),
   pdfPreviewUrl: null,
@@ -197,6 +204,10 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
     saveToStorage('swiftapply-job-description', jobDescription)
   },
 
+  setResumeRawText: (resumeRawText) => {
+    set({ resumeRawText })
+  },
+
   // UI actions
   openSettings: (step = 1) => {
     set({ isSettingsOpen: true, settingsStep: step })
@@ -220,6 +231,14 @@ export const useSwiftApplyStore = create<SwiftApplyState>((set, get) => ({
 
   closeUpgradeModal: () => {
     set({ isUpgradeModalOpen: false })
+  },
+
+  openAIParseMode: () => {
+    set({ isAIParseModeOpen: true })
+  },
+
+  closeAIParseMode: () => {
+    set({ isAIParseModeOpen: false })
   },
 
   initializeFromStorage: () => {
