@@ -81,8 +81,8 @@ export default function UploadForm({ defaultNativeLanguage = 'chinese', defaultS
       setFormData({
         title: '',
         content: '',
-        source_language: 'english',
-        native_language: 'chinese'
+        source_language: defaultSourceLanguage,
+        native_language: defaultNativeLanguage
       })
       
       toast.success('Article saved successfully!')
@@ -95,89 +95,91 @@ export default function UploadForm({ defaultNativeLanguage = 'chinese', defaultS
   }
 
   return (
-    <div className="max-w-3xl">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Title */}
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-            Article Title
-          </label>
-          <input
-            type="text"
-            id="title"
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
-            placeholder="Enter article title..."
-            required
-          />
-        </div>
-
-        {/* Language Selection */}
-        <div className="grid grid-cols-2 gap-4">
+    <div className="max-w-3xl h-full flex flex-col">
+      <form onSubmit={handleSubmit} className="flex flex-col h-full">
+        <div className="flex-1 overflow-y-auto pr-1 space-y-6">
+          {/* Title */}
           <div>
-            <label htmlFor="source_language" className="block text-sm font-medium text-gray-700 mb-2">
-              Learning Language
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+              Article Title
             </label>
-            <select
-              id="source_language"
-              value={formData.source_language}
-              onChange={(e) => {
-                const newSourceLanguage = e.target.value
-                const availableNativeLanguages = getAvailableNativeLanguages(newSourceLanguage)
-                // If current native language is same as new source language, change to first available
-                const newNativeLanguage = newSourceLanguage === formData.native_language 
-                  ? availableNativeLanguages[0]?.value || 'chinese'
-                  : formData.native_language
-                
-                setFormData({ 
-                  ...formData, 
-                  source_language: newSourceLanguage,
-                  native_language: newNativeLanguage
-                })
-              }}
+            <input
+              type="text"
+              id="title"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
-            >
-              {LANGUAGE_OPTIONS.source.map(lang => (
-                <option key={lang.value} value={lang.value}>{lang.label}</option>
-              ))}
-            </select>
+              placeholder="Enter article title..."
+              required
+            />
           </div>
-          <div>
-            <label htmlFor="native_language" className="block text-sm font-medium text-gray-700 mb-2">
-              Native Language
-            </label>
-            <select
-              id="native_language"
-              value={formData.native_language}
-              onChange={(e) => setFormData({ ...formData, native_language: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
-            >
-              {getAvailableNativeLanguages(formData.source_language).map(lang => (
-                <option key={lang.value} value={lang.value}>{lang.label}</option>
-              ))}
-            </select>
-          </div>
-        </div>
 
-        {/* Content */}
-        <div>
-          <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
-            Article Content
-          </label>
-          <textarea
-            id="content"
-            value={formData.content}
-            onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-            rows={12}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary resize-none"
-            placeholder="Paste your article content here..."
-            required
-          />
+          {/* Language Selection */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="source_language" className="block text-sm font-medium text-gray-700 mb-2">
+                Learning Language
+              </label>
+              <select
+                id="source_language"
+                value={formData.source_language}
+                onChange={(e) => {
+                  const newSourceLanguage = e.target.value
+                  const availableNativeLanguages = getAvailableNativeLanguages(newSourceLanguage)
+                  // If current native language is same as new source language, change to first available
+                  const newNativeLanguage = newSourceLanguage === formData.native_language 
+                    ? availableNativeLanguages[0]?.value || 'chinese'
+                    : formData.native_language
+                  
+                  setFormData({ 
+                    ...formData, 
+                    source_language: newSourceLanguage,
+                    native_language: newNativeLanguage
+                  })
+                }}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+              >
+                {LANGUAGE_OPTIONS.source.map(lang => (
+                  <option key={lang.value} value={lang.value}>{lang.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="native_language" className="block text-sm font-medium text-gray-700 mb-2">
+                Native Language
+              </label>
+              <select
+                id="native_language"
+                value={formData.native_language}
+                onChange={(e) => setFormData({ ...formData, native_language: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+              >
+                {getAvailableNativeLanguages(formData.source_language).map(lang => (
+                  <option key={lang.value} value={lang.value}>{lang.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div>
+            <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
+              Article Content
+            </label>
+            <textarea
+              id="content"
+              value={formData.content}
+              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+              rows={12}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary resize-none"
+              placeholder="Paste your article content here..."
+              required
+            />
+          </div>
         </div>
 
         {/* Submit Button */}
-        <div className="flex justify-end">
+        <div className="pt-4 mt-4 border-t border-gray-200 flex justify-end">
           <button
             type="submit"
             disabled={isSubmitting}

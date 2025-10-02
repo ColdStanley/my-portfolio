@@ -39,7 +39,10 @@ const cormorantGaramond = Cormorant_Garamond({
 })
 
 export const metadata: Metadata = {
-  title: "Stanley's Portfolio",
+  title: {
+    default: "StanleyHi",
+    template: "%s | StanleyHi"
+  },
   description: "Personal website for Stanley - content creator & tutor",
 }
 

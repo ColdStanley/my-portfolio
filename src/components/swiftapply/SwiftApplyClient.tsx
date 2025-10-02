@@ -12,6 +12,7 @@ import AIProgressPanel from '@/components/swiftapply/AIProgressPanel'
 import AIReviewModal from '@/components/swiftapply/AIReviewModal'
 import CoverLetterEditor from '@/components/swiftapply/CoverLetterEditor'
 import CoverLetterPreview from '@/components/swiftapply/CoverLetterPreview'
+import AIParseModeModal from '@/components/swiftapply/AIParseModeModal'
 
 export default function SwiftApplyClient() {
   const {
@@ -19,6 +20,7 @@ export default function SwiftApplyClient() {
     isSettingsOpen,
     isSignUpModalOpen,
     isUpgradeModalOpen,
+    isAIParseModeOpen,
     openSettings,
     initializeFromStorage,
     hasStoredData,
@@ -33,13 +35,6 @@ export default function SwiftApplyClient() {
   useEffect(() => {
     initializeFromStorage()
   }, [initializeFromStorage])
-
-  // Auto-open settings only if no stored data (first-time users)
-  useEffect(() => {
-    if (!hasStoredData() && !isSettingsOpen) {
-      openSettings(1)
-    }
-  }, [hasStoredData, isSettingsOpen, openSettings])
 
   // Handle scroll state for navigation arrows
   const updateScrollState = () => {
@@ -162,6 +157,9 @@ export default function SwiftApplyClient() {
 
       {/* Settings Modal */}
       {isSettingsOpen && <SettingsModal />}
+
+      {/* AI Parse Mode Modal */}
+      {isAIParseModeOpen && <AIParseModeModal />}
 
       {/* Sign Up Modal */}
       {isSignUpModalOpen && <SignUpModal />}

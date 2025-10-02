@@ -1,0 +1,71 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - img [ref=e7]
+          - heading "SwiftApply" [level=1] [ref=e9]
+        - generic [ref=e10]:
+          - generic [ref=e11]: Profile Setup
+          - text: →
+          - generic [ref=e12]: Job Input
+          - text: →
+          - generic [ref=e13]: Resume (Customization, Edit, PDF Download)
+          - text: →
+          - generic [ref=e14]: Cover Letter (Customization, Edit, PDF Download)
+        - button "Setup Options" [ref=e17]:
+          - img [ref=e18]
+          - generic [ref=e21]: Setup
+    - main [ref=e22]:
+      - generic [ref=e23]:
+        - generic [ref=e25]:
+          - heading "Job Description" [level=2] [ref=e27]
+          - generic [ref=e28]:
+            - generic [ref=e29]: Job Title
+            - textbox "Job Title Input" [ref=e31]
+          - generic [ref=e32]:
+            - generic [ref=e33]: Job Description
+            - textbox "Job Description Input" [ref=e35]
+          - generic [ref=e37]:
+            - generic [ref=e38]: "Title: 0 chars"
+            - generic [ref=e39]: "Description: 0 chars"
+            - generic [ref=e40]: 0 words
+        - generic [ref=e42]:
+          - generic [ref=e43]:
+            - heading "Resume Customizer" [level=2] [ref=e44]
+            - button "Customize Resume" [ref=e45]
+          - generic [ref=e47]:
+            - button "Analysis" [ref=e48]
+            - button "Generation" [ref=e49]
+            - button "Review" [ref=e50]
+          - generic [ref=e53]: "Status: Pending"
+        - generic [ref=e56]:
+          - heading "Resume Editor" [level=2] [ref=e57]
+          - button "Confirm & Preview" [disabled] [ref=e58]
+        - generic [ref=e62]:
+          - heading "Resume PDF Download" [level=2] [ref=e63]
+          - button "Download PDF" [disabled] [ref=e64]
+        - generic [ref=e66]:
+          - generic [ref=e67]:
+            - heading "Cover Letter Customizer & Editor" [level=2] [ref=e68]
+            - button "Complete Resume First" [disabled] [ref=e69]
+          - textbox [ref=e72]
+          - generic [ref=e73]:
+            - generic [ref=e74]:
+              - generic [ref=e75]: "Status: Waiting to generate"
+              - generic [ref=e76]: "Content: 0 chars"
+              - generic [ref=e77]: 0 words
+            - button "Confirm & Preview" [disabled] [ref=e78]
+        - generic [ref=e80]:
+          - generic [ref=e82]:
+            - heading "Cover Letter Download" [level=2] [ref=e83]
+            - button "Download PDF" [disabled] [ref=e84]
+          - generic [ref=e86]:
+            - img [ref=e88]
+            - heading "No Cover Letter Yet" [level=3] [ref=e90]
+            - paragraph [ref=e91]: Generate your cover letter in the editor panel to see the PDF preview here.
+  - region "Notifications alt+T"
+```

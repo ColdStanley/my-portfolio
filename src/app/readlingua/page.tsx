@@ -1,13 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type KeyboardEvent } from 'react'
 import { toast } from 'sonner'
 import { useReadLinguaStore } from './store/useReadLinguaStore'
 import { emailApi } from './utils/apiClient'
 import DashboardTab from './components/DashboardTab'
 import LearningTab from './components/LearningTab'
-import FlagIcon from './components/FlagIcon'
-import NewNavbar from '@/components/NewNavbar'
 import PageTransition from '@/components/PageTransition'
 
 export default function ReadLinguaPage() {
@@ -21,15 +19,11 @@ export default function ReadLinguaPage() {
     isLoading
   } = useReadLinguaStore()
 
-  // Email states
   const [userEmail, setUserEmail] = useState('')
   const [isSendingEmail, setIsSendingEmail] = useState(false)
-
-  // Language states for Dashboard
   const [nativeLanguage, setNativeLanguage] = useState('chinese')
   const [learningLanguage, setLearningLanguage] = useState('english')
 
-  // Email sending functionality
   const handleSendEmail = async () => {
     if (!userEmail.trim() || isSendingEmail || selectedEmailContents.length === 0) return
 
@@ -53,257 +47,212 @@ export default function ReadLinguaPage() {
     }
   }
 
-  const handleEmailKeyPress = (e: React.KeyboardEvent) => {
+  const handleEmailKeyPress = (e: KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSendEmail()
     }
   }
 
+  const renderLanguageSelect = () => (
+    <div className="flex items-center gap-3 text-sm">
+      <span className="text-text-secondary">From:</span>
+      <select
+        value={learningLanguage}
+        onChange={(event) => setLearningLanguage(event.target.value)}
+        className="border border-border px-2 py-1 text-text-primary focus:border-primary focus:outline-none"
+      >
+        <option value="english">English</option>
+        <option value="chinese">中文</option>
+        <option value="french">Français</option>
+        <option value="japanese">日本語</option>
+        <option value="korean">한국어</option>
+        <option value="russian">Русký</option>
+        <option value="spanish">Español</option>
+        <option value="arabic">العربية</option>
+      </select>
+
+      <span className="text-text-secondary">→</span>
+
+      <span className="text-text-secondary">To:</span>
+      <select
+        value={nativeLanguage}
+        onChange={(event) => setNativeLanguage(event.target.value)}
+        className="border border-border px-2 py-1 text-text-primary focus:border-primary focus:outline-none"
+      >
+        <option value="chinese">中文</option>
+        <option value="english">English</option>
+        <option value="french">Français</option>
+        <option value="japanese">日本語</option>
+        <option value="korean">한국어</option>
+        <option value="russian">Русký</option>
+        <option value="spanish">Español</option>
+        <option value="arabic">العربية</option>
+      </select>
+    </div>
+  )
+
   return (
-    <>
-      <PageTransition>
-        <div className="h-screen bg-surface flex flex-col overflow-hidden">
-      {/* Desktop Tab Navigation - Fixed at top */}
-      <div className="hidden md:block max-w-7xl mx-auto px-4 py-6 pt-6 flex-shrink-0">
-        <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 p-4">
-          <div className="flex items-center justify-between gap-6">
-            {/* Left: Tab Navigation */}
-            <div className="flex gap-2">
+    <PageTransition>
+      <div className="flex h-screen flex-col overflow-hidden bg-surface">
+        <header className="hidden flex-shrink-0 border-b border-border md:block">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => setActiveTab('dashboard')}
-                className={`px-6 py-3 text-center font-medium transition-all duration-300 text-sm rounded-xl shadow-lg ${
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === 'dashboard'
-                    ? 'text-white'
-                    : 'text-text-primary bg-white hover:bg-neutral-light'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-text-secondary hover:text-text-primary'
                 }`}
-                style={activeTab === 'dashboard' ? { backgroundColor: 'var(--primary)' } : {}}
               >
-                <svg className="w-5 h-5 inline-block mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
-                </svg>
-                <span>Dashboard</span>
+                Dashboard
               </button>
               <button
                 onClick={() => setActiveTab('learning')}
-                className={`px-6 py-3 text-center font-medium transition-all duration-300 text-sm rounded-xl shadow-lg ${
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === 'learning'
-                    ? 'text-white'
-                    : 'text-text-primary bg-white hover:bg-neutral-light'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-text-secondary hover:text-text-primary'
                 }`}
-                style={activeTab === 'learning' ? { backgroundColor: 'var(--primary)' } : {}}
               >
-                <svg className="w-5 h-5 inline-block mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <span>Learning</span>
+                Learning
               </button>
             </div>
 
-            {/* Right: Language Selector - Only show on Dashboard tab */}
-            {activeTab === 'dashboard' && (
-              <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-xl shadow-lg"
-                style={{
-                  boxShadow: '0 4px 15px rgba(139, 92, 246, 0.15), 0 2px 8px rgba(139, 92, 246, 0.1)'
-                }}>
-                <span className="text-xs text-gray-500 font-medium">From:</span>
-                <div className="flex items-center gap-2">
-                  <FlagIcon language={learningLanguage} size={16} />
-                  <select
-                    value={learningLanguage}
-                    onChange={(e) => setLearningLanguage(e.target.value)}
-                    className="bg-transparent border-none text-sm font-medium text-gray-700 focus:outline-none cursor-pointer"
-                  >
-                    <option value="english">English</option>
-                    <option value="chinese">中文</option>
-                    <option value="french">Français</option>
-                    <option value="japanese">日本語</option>
-                    <option value="korean">한국어</option>
-                    <option value="russian">Русский</option>
-                    <option value="spanish">Español</option>
-                    <option value="arabic">العربية</option>
-                  </select>
-                </div>
-
-                <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
-                </svg>
-
-                <span className="text-xs text-gray-500 font-medium">To:</span>
-                <div className="flex items-center gap-2">
-                  <FlagIcon language={nativeLanguage} size={16} />
-                  <select
-                    value={nativeLanguage}
-                    onChange={(e) => setNativeLanguage(e.target.value)}
-                    className="bg-transparent border-none text-sm font-medium text-gray-700 focus:outline-none cursor-pointer"
-                  >
-                    <option value="chinese">中文</option>
-                    <option value="english">English</option>
-                    <option value="french">Français</option>
-                    <option value="japanese">日本語</option>
-                    <option value="korean">한국어</option>
-                    <option value="russian">Русский</option>
-                    <option value="spanish">Español</option>
-                    <option value="arabic">العربية</option>
-                  </select>
-                </div>
-              </div>
-            )}
+            {activeTab === 'dashboard' && renderLanguageSelect()}
           </div>
-        </div>
-      </div>
+        </header>
 
-      {/* Mobile Bottom Tab Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-neutral-mid shadow-lg">
-        <div className="flex">
-          <button
-            onClick={() => setActiveTab('dashboard')}
-            className={`flex-1 px-4 py-3 flex flex-col items-center gap-1 transition-all ${
-              activeTab === 'dashboard'
-                ? 'text-primary bg-neutral-light'
-                : 'text-text-secondary hover:text-primary'
-            }`}
-          >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
-            </svg>
-            <span className="text-xs font-medium">Articles</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('learning')}
-            className={`flex-1 px-4 py-3 flex flex-col items-center gap-1 transition-all ${
-              activeTab === 'learning'
-                ? 'text-primary bg-neutral-light'
-                : 'text-text-secondary hover:text-primary'
-            }`}
-          >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <span className="text-xs font-medium">History</span>
-          </button>
-        </div>
-      </div>
+        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-surface md:hidden">
+          <div className="flex">
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`flex flex-1 flex-col items-center gap-1 px-4 py-3 ${
+                activeTab === 'dashboard' ? 'text-primary' : 'text-text-secondary'
+              }`}
+            >
+              <span className="text-xs">Articles</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('learning')}
+              className={`flex flex-1 flex-col items-center gap-1 px-4 py-3 ${
+                activeTab === 'learning' ? 'text-primary' : 'text-text-secondary'
+              }`}
+            >
+              <span className="text-xs">History</span>
+            </button>
+          </div>
+        </nav>
 
-      {/* Tab Content */}
-      <div className="pb-20 md:pb-0 flex-1 overflow-hidden">
-        {activeTab === 'dashboard' && (
-          <div className="md:max-w-7xl md:mx-auto md:px-4 h-full">
-            <DashboardTab
-              nativeLanguage={nativeLanguage}
-              learningLanguage={learningLanguage}
-            />
+        <main className="flex-1 min-h-0 overflow-hidden pb-20 md:pb-0">
+          {activeTab === 'dashboard' ? (
+            <div className="h-full min-h-0 md:mx-auto md:max-w-7xl md:px-4">
+              <DashboardTab
+                nativeLanguage={nativeLanguage}
+                learningLanguage={learningLanguage}
+              />
+            </div>
+          ) : (
+            <LearningTab />
+          )}
+        </main>
+
+        {!isLoading && activeTab === 'learning' && (
+          <div className="fixed bottom-40 right-6 z-20 hidden md:block">
+            <button
+              onClick={() => setShowEmailPanel(!showEmailPanel)}
+              className="relative flex h-10 w-10 items-center justify-center border border-border bg-surface"
+              title="Send Selected Content"
+            >
+              <svg className="h-4 w-4 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+
+              {selectedEmailContents.length > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs text-white">
+                  {selectedEmailContents.length}
+                </span>
+              )}
+            </button>
           </div>
         )}
-        {activeTab === 'learning' && <LearningTab />}
-      </div>
 
-      {/* Email Sending Button - Fixed position, above Ask AI button */}
-      {!isLoading && activeTab === 'learning' && (
-        <div className="hidden md:block fixed bottom-40 right-6 z-20">
-          <button
-            onClick={() => setShowEmailPanel(!showEmailPanel)}
-            className="w-12 h-12 bg-white/90 backdrop-blur-md rounded-full shadow-xl hover:shadow-2xl transition-all duration-200 flex items-center justify-center group relative"
-            title="Send Selected Content"
-          >
-            <svg
-              className="w-5 h-5 text-primary transition-transform duration-200" 
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-            
-            {/* Badge showing selected content count */}
-            {selectedEmailContents.length > 0 && (
-              <div className="absolute -top-2 -right-2 w-5 h-5 bg-accent text-black text-xs font-bold rounded-full flex items-center justify-center">
-                {selectedEmailContents.length}
-              </div>
-            )}
-          </button>
-        </div>
-      )}
-      
-      {/* Email Input Panel */}
-      {showEmailPanel && (
-        <>
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black/10 backdrop-blur-sm z-40"
-            onClick={() => setShowEmailPanel(false)}
-          />
-          
-          {/* Email Panel */}
-          <div className="fixed bottom-56 right-6 z-50 bg-white/95 backdrop-blur-md rounded-xl shadow-2xl min-w-80 transform transition-all duration-200">
-            <div className="p-4">
-              {/* Header */}
-              <div className="flex items-center gap-2 mb-3">
-                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                <span className="text-sm font-medium text-text-primary">Send Selected Content</span>
-                <div className="text-xs text-black bg-accent px-2 py-1 rounded-full font-medium">
-                  {selectedEmailContents.length} items
-                </div>
-                <button
-                  onClick={() => setShowEmailPanel(false)}
-                  className="ml-auto p-1 hover:bg-gray-100 rounded transition-colors"
-                >
-                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        {showEmailPanel && (
+          <>
+            <button
+              type="button"
+              className="fixed inset-0 z-40 bg-black/20"
+              onClick={() => setShowEmailPanel(false)}
+              aria-label="Close email panel"
+            />
+
+            <div className="fixed bottom-56 right-6 z-50 min-w-80 border border-border bg-surface">
+              <div className="p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <svg className="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
-                </button>
-              </div>
-
-              {selectedEmailContents.length === 0 ? (
-                <div className="text-center text-gray-500 text-sm py-4">
-                  No content selected. Select text from query history to add to email.
+                  <span className="text-sm font-medium text-text-primary">Send Selected Content</span>
+                  <span className="rounded-full bg-accent px-2 py-1 text-xs font-medium text-black">
+                    {selectedEmailContents.length} items
+                  </span>
+                  <button
+                    onClick={() => setShowEmailPanel(false)}
+                    className="ml-auto rounded p-1 transition-colors hover:bg-gray-100"
+                  >
+                    <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
-              ) : (
-                <>
-                  {/* Email Input */}
-                  <div className="flex gap-2">
-                    <input
-                      type="email"
-                      value={userEmail}
-                      onChange={(e) => setUserEmail(e.target.value)}
-                      onKeyPress={handleEmailKeyPress}
-                      placeholder="Enter your email..."
-                      className="flex-1 px-3 py-2 border border-neutral-mid rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder-text-muted"
-                      disabled={isSendingEmail}
-                      autoFocus
-                    />
-                    <button
-                      onClick={handleSendEmail}
-                      disabled={!userEmail.trim() || isSendingEmail || selectedEmailContents.length === 0}
-                      className="px-4 py-2 bg-primary hover:brightness-110 disabled:bg-neutral-mid disabled:cursor-not-allowed text-white rounded-lg font-medium whitespace-nowrap flex items-center gap-1.5 transition-all"
-                    >
-                      {isSendingEmail ? (
-                        <>
-                          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                          </svg>
-                          Sending...
-                        </>
-                      ) : (
-                        'Send'
-                      )}
-                    </button>
-                  </div>
 
-                  <div className="mt-2 text-xs text-gray-600 text-center">
-                    Send all selected content to your email
+                {selectedEmailContents.length === 0 ? (
+                  <div className="py-4 text-center text-sm text-gray-500">
+                    No content selected. Select text from query history to add to email.
                   </div>
-                </>
-              )}
+                ) : (
+                  <>
+                    <div className="flex gap-2">
+                      <input
+                        type="email"
+                        value={userEmail}
+                        onChange={(event) => setUserEmail(event.target.value)}
+                        onKeyPress={handleEmailKeyPress}
+                        placeholder="Enter your email..."
+                        className="flex-1 rounded-lg border border-neutral-mid px-3 py-2 text-sm placeholder-text-muted focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+                        disabled={isSendingEmail}
+                        autoFocus
+                      />
+                      <button
+                        onClick={handleSendEmail}
+                        disabled={!userEmail.trim() || isSendingEmail || selectedEmailContents.length === 0}
+                        className="flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-white transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:bg-neutral-mid"
+                      >
+                        {isSendingEmail ? (
+                          <>
+                            <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                            Sending...
+                          </>
+                        ) : (
+                          'Send'
+                        )}
+                      </button>
+                    </div>
+
+                    <p className="mt-2 text-center text-xs text-gray-600">
+                      Send all selected content to your email
+                    </p>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        </>
-      )}
-    </div>
-      </PageTransition>
-    </>
+          </>
+        )}
+      </div>
+    </PageTransition>
   )
 }
