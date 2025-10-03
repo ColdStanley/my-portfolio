@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
+import ReactMarkdown from 'react-markdown'
 import { theme } from '@/styles/theme.config'
 import { ANIMATIONS } from '../utils/animations'
 import { useArticleStore } from '../store/useArticleStore'
@@ -137,13 +138,44 @@ export default function AIResponseModal() {
           </div>
 
           {/* Content */}
-          <div
-            className="max-h-96 overflow-y-auto whitespace-pre-wrap text-sm leading-relaxed"
-            style={{ color: theme.textPrimary }}
-          >
-            {streamedContent || 'Analyzing...'}
+          <div className="prose prose-sm max-h-96 max-w-none overflow-y-auto text-sm leading-relaxed">
+            <ReactMarkdown
+              components={{
+                p: ({ children }) => (
+                  <p style={{ color: theme.textPrimary }} className="mb-3">
+                    {children}
+                  </p>
+                ),
+                ul: ({ children }) => (
+                  <ul style={{ color: theme.textPrimary }} className="mb-3 ml-4 list-disc">
+                    {children}
+                  </ul>
+                ),
+                ol: ({ children }) => (
+                  <ol style={{ color: theme.textPrimary }} className="mb-3 ml-4 list-decimal">
+                    {children}
+                  </ol>
+                ),
+                strong: ({ children }) => (
+                  <strong style={{ color: theme.primary }}>{children}</strong>
+                ),
+                code: ({ children }) => (
+                  <code
+                    style={{
+                      backgroundColor: theme.neutralLight,
+                      color: theme.primary,
+                    }}
+                    className="rounded px-1 py-0.5"
+                  >
+                    {children}
+                  </code>
+                ),
+              }}
+            >
+              {streamedContent || 'Analyzing...'}
+            </ReactMarkdown>
             {isStreaming && (
-              <span className="ml-1 inline-block animate-pulse">▊</span>
+              <span className="ml-1 inline-block animate-pulse" style={{ color: theme.primary }}>▊</span>
             )}
           </div>
 
