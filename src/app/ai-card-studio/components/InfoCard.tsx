@@ -734,30 +734,30 @@ function InfoCard({
                       </a>
                     ),
                     hr: ({node, ...props}) => (
-                      <hr className="border-t border-gray-200 dark:border-neutral-600 my-4" {...props} />
+                      <hr className="border-t border-gray-200 my-4" {...props} />
                     ),
                     table: ({node, ...props}) => (
                       <div className="overflow-x-auto my-3">
-                        <table className="min-w-full border border-gray-200 dark:border-neutral-600 rounded-lg" {...props} />
+                        <table className="min-w-full border border-gray-200 rounded-lg" {...props} />
                       </div>
                     ),
                     thead: ({node, ...props}) => (
-                      <thead className="bg-gray-50 dark:bg-neutral-700" {...props} />
+                      <thead className="bg-gray-50" {...props} />
                     ),
                     tbody: ({node, ...props}) => (
                       <tbody {...props} />
                     ),
                     tr: ({node, ...props}) => (
-                      <tr className="hover:bg-gray-50/50 dark:hover:bg-neutral-700/50" {...props} />
+                      <tr className="hover:bg-gray-50/50" {...props} />
                     ),
                     th: ({node, ...props}) => (
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-neutral-300 border-b border-gray-200 dark:border-neutral-600" {...props} />
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 border-b border-gray-200" {...props} />
                     ),
                     td: ({node, ...props}) => (
-                      <td className="px-3 py-2 text-sm text-gray-600 dark:text-neutral-300 border-b border-gray-100 dark:border-neutral-600" {...props} />
+                      <td className="px-3 py-2 text-sm text-gray-600 border-b border-gray-100" {...props} />
                     ),
                     del: ({node, ...props}) => (
-                      <del className="line-through text-gray-500 dark:text-neutral-400" {...props} />
+                      <del className="line-through text-gray-500" {...props} />
                     ),
                     input: ({node, ...props}) => {
                       const { type, checked, disabled } = props as any;
@@ -781,7 +781,7 @@ function InfoCard({
                       <sub className="text-xs" {...props} />
                     ),
                     pre: ({node, ...props}) => (
-                      <pre className="bg-gray-100 dark:bg-neutral-700 rounded-lg p-3 overflow-x-auto border border-gray-200 dark:border-neutral-600 my-3" {...props} />
+                      <pre className="bg-gray-100 rounded-lg p-3 overflow-x-auto border border-gray-200 my-3" {...props} />
                     )
                   }}
                 >
@@ -802,31 +802,31 @@ function InfoCard({
                     remarkPlugins={[remarkBreaks, remarkGfm]}
                     components={{
                       h1: ({node, ...props}) => (
-                        <h1 className="text-xl font-bold text-gray-800 dark:text-neutral-200 mb-3 mt-4 first:mt-0 border-b border-gray-200 dark:border-neutral-600 pb-1" {...props} />
+                        <h1 className="text-xl font-bold text-gray-800 mb-3 mt-4 first:mt-0 border-b border-gray-200 pb-1" {...props} />
                       ),
                       h2: ({node, ...props}) => (
-                        <h2 className="text-lg font-semibold text-gray-800 dark:text-neutral-200 mb-2 mt-3 first:mt-0" {...props} />
+                        <h2 className="text-lg font-semibold text-gray-800 mb-2 mt-3 first:mt-0" {...props} />
                       ),
                       h3: ({node, ...props}) => (
-                        <h3 className="text-base font-medium text-gray-800 dark:text-neutral-200 mb-2 mt-2 first:mt-0" {...props} />
+                        <h3 className="text-base font-medium text-gray-800 mb-2 mt-2 first:mt-0" {...props} />
                       ),
                       p: ({node, ...props}) => (
-                        <p className="text-gray-600 dark:text-neutral-300 mb-2 leading-relaxed" {...props} />
+                        <p className="text-gray-600 mb-2 leading-relaxed" {...props} />
                       ),
                       ul: ({node, ...props}) => (
-                        <ul className="list-disc list-inside mb-2 text-gray-600 dark:text-neutral-300" {...props} />
+                        <ul className="list-disc list-inside mb-2 text-gray-600" {...props} />
                       ),
                       ol: ({node, ...props}) => (
-                        <ol className="list-decimal list-inside mb-2 text-gray-600 dark:text-neutral-300" {...props} />
+                        <ol className="list-decimal list-inside mb-2 text-gray-600" {...props} />
                       ),
                       li: ({node, ...props}) => (
                         <li className="leading-relaxed" {...props} />
                       ),
                       code: ({node, inline, ...props}) => 
                         inline 
-                          ? <code className="bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 px-1 py-0.5 rounded text-xs font-mono" {...props} />
-                          : <code className="block bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre" {...props} />,
-                      blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-[var(--primary)] pl-3 italic text-gray-600 dark:text-neutral-300 mb-2" {...props} />,
+                          ? <code className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-xs font-mono" {...props} />
+                          : <code className="block bg-gray-100 text-gray-800 p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre" {...props} />,
+                      blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-[var(--primary)] pl-3 italic text-gray-600 mb-2" {...props} />,
                       a: ({ href, children, ...props }) => (
                         <a 
                           href={href} 
@@ -838,21 +838,21 @@ function InfoCard({
                           {children}
                         </a>
                       ),
-                      strong: ({node, ...props}) => <strong className="font-semibold text-gray-800 dark:text-neutral-200" {...props} />,
+                      strong: ({node, ...props}) => <strong className="font-semibold text-gray-800" {...props} />,
                       em: ({node, ...props}) => <em className="italic" {...props} />,
                       hr: ({node, ...props}) => (
-                        <hr className="border-t border-gray-200 dark:border-neutral-600 my-4" {...props} />
+                        <hr className="border-t border-gray-200 my-4" {...props} />
                       ),
                       table: ({node, ...props}) => (
                         <div className="overflow-x-auto my-3">
-                          <table className="min-w-full border border-gray-200 dark:border-neutral-600 rounded-lg" {...props} />
+                          <table className="min-w-full border border-gray-200 rounded-lg" {...props} />
                         </div>
                       ),
-                      thead: ({node, ...props}) => <thead className="bg-gray-50 dark:bg-neutral-700" {...props} />,
+                      thead: ({node, ...props}) => <thead className="bg-gray-50" {...props} />,
                       tbody: ({node, ...props}) => <tbody {...props} />,
-                      tr: ({node, ...props}) => <tr className="border-b border-gray-200 dark:border-neutral-600" {...props} />,
-                      td: ({node, ...props}) => <td className="px-3 py-2 text-sm text-gray-600 dark:text-neutral-300" {...props} />,
-                      th: ({node, ...props}) => <th className="px-3 py-2 text-left text-sm font-medium text-gray-800 dark:text-neutral-200" {...props} />,
+                      tr: ({node, ...props}) => <tr className="border-b border-gray-200" {...props} />,
+                      td: ({node, ...props}) => <td className="px-3 py-2 text-sm text-gray-600" {...props} />,
+                      th: ({node, ...props}) => <th className="px-3 py-2 text-left text-sm font-medium text-gray-800" {...props} />,
                       sup: ({node, ...props}) => (
                         <sup className="text-xs" {...props} />
                       ),
@@ -860,7 +860,7 @@ function InfoCard({
                         <sub className="text-xs" {...props} />
                       ),
                       pre: ({node, ...props}) => (
-                        <pre className="bg-gray-100 dark:bg-neutral-700 rounded-lg p-3 overflow-x-auto border border-gray-200 dark:border-neutral-600 my-3" {...props} />
+                        <pre className="bg-gray-100 rounded-lg p-3 overflow-x-auto border border-gray-200 my-3" {...props} />
                       )
                     }}
                   >
@@ -968,7 +968,7 @@ function InfoCard({
         >
           {/* Card Name */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">Name:</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Name:</label>
             <input
               type="text"
               value={localTitle}
@@ -977,14 +977,14 @@ function InfoCard({
                 setLocalTitle(newValue)
               }}
               placeholder="Enter card name..."
-              className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg text-sm text-gray-700 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-500 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
             />
           </div>
 
           {/* Description */}
           <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300">Description:</label>
+              <label className="block text-sm font-medium text-gray-700">Description:</label>
               <button
                 ref={urlButtonRef}
                 onClick={handleUrlsTooltipOpen}
@@ -1004,7 +1004,7 @@ function InfoCard({
                 setLocalDescription(newValue)
               }}
               placeholder="Enter description..."
-              className="w-full h-32 p-3 border border-gray-200 dark:border-neutral-700 rounded-lg text-sm text-gray-700 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-500 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent resize-none"
+              className="w-full h-32 p-3 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent resize-none"
             />
           </div>
 
@@ -1023,7 +1023,7 @@ function InfoCard({
           
           {/* Tooltip */}
           <div 
-            className={`fixed z-50 bg-white dark:bg-neutral-800 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-700 p-4 w-80 transform transition-all duration-200 ease-out ${
+            className={`fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-4 w-80 transform transition-all duration-200 ease-out ${
               urlsTooltipVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
             }`}
             style={{
@@ -1034,15 +1034,15 @@ function InfoCard({
               )
             }}
           >
-            <div className="absolute -top-1 left-4 w-2 h-2 bg-white dark:bg-neutral-800 border-l border-t border-gray-200 dark:border-neutral-700 transform rotate-45"></div>
+            <div className="absolute -top-1 left-4 w-2 h-2 bg-white border-l border-t border-gray-200 transform rotate-45"></div>
             
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium text-gray-800 dark:text-neutral-200">Configure URLs</h3>
+              <h3 className="text-sm font-medium text-gray-800">Configure URLs</h3>
               <button
                 onClick={handleUrlsTooltipClose}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-neutral-700 rounded transition-colors"
+                className="p-1 hover:bg-gray-100 rounded transition-colors"
               >
-                <svg className="w-4 h-4 text-gray-600 dark:text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -1055,7 +1055,7 @@ function InfoCard({
                 value={newUrl}
                 onChange={(e) => setNewUrl(e.target.value)}
                 placeholder="https://your-n8n-webhook-url"
-                className="flex-1 px-3 py-2 text-sm border border-gray-200 dark:border-neutral-700 rounded-lg text-gray-700 dark:text-neutral-200 bg-white dark:bg-neutral-900 placeholder-gray-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+                className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg text-gray-700 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                 onKeyPress={(e) => e.key === 'Enter' && addUrl()}
               />
               <button
@@ -1071,13 +1071,13 @@ function InfoCard({
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {localUrls.length > 0 ? (
                 localUrls.map((url, index) => (
-                  <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-neutral-900/50 rounded-lg">
-                    <span className="flex-1 text-sm text-gray-700 dark:text-neutral-300 truncate" title={url}>
+                  <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                    <span className="flex-1 text-sm text-gray-700 truncate" title={url}>
                       {url}
                     </span>
                     <button
                       onClick={() => removeUrl(index)}
-                      className="p-1 text-gray-400 dark:text-neutral-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-all duration-150"
+                      className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-all duration-150"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1086,7 +1086,7 @@ function InfoCard({
                   </div>
                 ))
               ) : (
-                <div className="text-sm text-gray-400 dark:text-neutral-500 text-center py-4">
+                <div className="text-sm text-gray-400 text-center py-4">
                   No URLs configured
                 </div>
               )}

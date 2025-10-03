@@ -17,13 +17,12 @@ export default function AICardStudioPage() {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showCardWidthMenu, setShowCardWidthMenu] = useState(false)
   const [showPdfTemplateMenu, setShowPdfTemplateMenu] = useState(false)
-  const [showThemeMenu, setShowThemeMenu] = useState(false)
   const [pdfTemplate, setPdfTemplate] = useState<'default' | 'resume'>('default')
   const [cardWidth, setCardWidth] = useState<'narrow' | 'normal' | 'wide'>('narrow')
   const userMenuRef = useRef<HTMLDivElement>(null)
   const { isLoading: workspaceLoading, canvases, saveError, actions } = useWorkspaceStore()
   const { checkForUpdates, cancelCurrentRequest } = actions
-  const { theme, actions: themeActions } = useThemeStore()
+  const { actions: themeActions } = useThemeStore()
   const initializedRef = useRef(false)
   const visibilityRef = useRef(true) // Track page visibility
 
@@ -231,7 +230,6 @@ export default function AICardStudioPage() {
     setShowUserMenu(false)
     setShowCardWidthMenu(false)
     setShowPdfTemplateMenu(false)
-    setShowThemeMenu(false)
   }
 
   const handlePdfTemplateToggle = () => {
@@ -239,7 +237,6 @@ export default function AICardStudioPage() {
       const next = !prev
       if (next) {
         setShowCardWidthMenu(false)
-        setShowThemeMenu(false)
       }
       return next
     })
@@ -253,28 +250,11 @@ export default function AICardStudioPage() {
     setShowPdfTemplateMenu(false)
   }
 
-  const handleThemeMenuToggle = () => {
-    setShowThemeMenu(prev => {
-      const next = !prev
-      if (next) {
-        setShowCardWidthMenu(false)
-        setShowPdfTemplateMenu(false)
-      }
-      return next
-    })
-  }
-
-  const handleThemeSelect = (selectedTheme: 'light' | 'dark' | 'lakers' | 'anno' | 'cyberpunk' | 'lightpink' | 'hellokitty') => {
-    themeActions.setTheme(selectedTheme)
-    setShowThemeMenu(false)
-  }
-
   const handleCardWidthToggle = () => {
     setShowCardWidthMenu(prev => {
       const next = !prev
       if (next) {
         setShowPdfTemplateMenu(false)
-        setShowThemeMenu(false)
       }
       return next
     })
@@ -293,10 +273,10 @@ export default function AICardStudioPage() {
     switch (authState) {
       case 'loading':
         return (
-          <div className="min-h-screen bg-white dark:bg-neutral-900 lakers:bg-gradient-to-br lakers:from-lakers-800 lakers:to-lakers-700 flex items-center justify-center">
+          <div className="min-h-screen bg-white flex items-center justify-center">
             <div className="flex flex-col items-center gap-4">
               <div className="w-8 h-8 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-gray-600 dark:text-neutral-400 lakers:text-lakers-300">Loading AI Card Studio...</p>
+              <p className="text-gray-600">Loading AI Card Studio...</p>
             </div>
           </div>
         )
@@ -311,7 +291,7 @@ export default function AICardStudioPage() {
                 {/* User email button */}
                 <button
                   onClick={handleUserMenuToggle}
-                  className="px-3 py-2 text-xs text-gray-400 hover:text-[var(--primary)] hover:bg-[var(--neutral-light)] dark:text-neutral-500 dark:hover:text-[var(--primary)] rounded-lg transition-all duration-200 flex items-center gap-2 transform hover:scale-105 active:scale-95"
+                  className="px-3 py-2 text-xs text-gray-400 hover:text-[var(--primary)] hover:bg-[var(--neutral-light)] rounded-lg transition-all duration-200 flex items-center gap-2 transform hover:scale-105 active:scale-95"
                 >
                   {user.email}
                   <svg 
@@ -417,96 +397,6 @@ export default function AICardStudioPage() {
                     </div>
                     
                     {/* Theme Selection */}
-                    <div className="relative">
-                      <button
-                        onClick={handleThemeMenuToggle}
-                        className="w-full px-3 py-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium rounded-md transition-all duration-150 text-left flex items-center"
-                      >
-                        <span>Theme</span>
-                      </button>
-                      
-                      {/* Theme Submenu */}
-                      {showThemeMenu && (
-                        <div className="absolute top-0 right-full mr-2 z-50 bg-[var(--surface)] backdrop-blur-md rounded-xl shadow-xl border border-[var(--neutral-mid)] p-3 animate-dropdown" style={{ transformOrigin: 'top right' }}>
-                          {/* Arrow pointing to button */}
-                          <div className="absolute top-4 -right-1 w-2 h-2 bg-[var(--surface)] backdrop-blur-md border-r border-b border-[var(--neutral-mid)] transform rotate-45"></div>
-                          
-                          <div className="flex flex-col gap-2 min-w-28">
-                            <button
-                              onClick={() => handleThemeSelect('light')}
-                              className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
-                                theme === 'light' 
-                                  ? 'text-[var(--primary)] bg-[var(--accent)] shadow-sm' 
-                                  : 'text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium'
-                              }`}
-                            >
-                              Light
-                            </button>
-                            <button
-                              onClick={() => handleThemeSelect('dark')}
-                              className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
-                                theme === 'dark' 
-                                  ? 'text-[var(--primary)] bg-[var(--accent)] shadow-sm' 
-                                  : 'text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium'
-                              }`}
-                            >
-                              Dark
-                            </button>
-                            <button
-                              onClick={() => handleThemeSelect('lakers')}
-                              className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
-                                theme === 'lakers' 
-                                  ? 'text-[var(--primary)] bg-[var(--accent)] shadow-sm' 
-                                  : 'text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium'
-                              }`}
-                            >
-                              Lakers
-                            </button>
-                            <button
-                              onClick={() => handleThemeSelect('anno')}
-                              className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
-                                theme === 'anno' 
-                                  ? 'text-[var(--primary)] bg-[var(--accent)] shadow-sm' 
-                                  : 'text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium'
-                              }`}
-                            >
-                              Anno
-                            </button>
-                            <button
-                              onClick={() => handleThemeSelect('lightpink')}
-                              className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
-                                theme === 'lightpink'
-                                  ? 'text-lightpink-600 bg-lightpink-50 shadow-sm'
-                                  : 'text-gray-600 hover:text-lightpink-600 hover:bg-lightpink-50'
-                              }`}
-                            >
-                              Anon Lightpink
-                            </button>
-                            <button
-                              onClick={() => handleThemeSelect('hellokitty')}
-                              className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
-                                theme === 'hellokitty'
-                                  ? 'text-hellokitty-600 bg-hellokitty-50 shadow-sm'
-                                  : 'text-gray-600 hover:text-hellokitty-600 hover:bg-hellokitty-50'
-                              }`}
-                            >
-                              Kid Hello Kitty
-                            </button>
-                            <button
-                              onClick={() => handleThemeSelect('cyberpunk')}
-                              className={`px-3 py-1.5 text-sm rounded-lg transition-all duration-200 text-left transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
-                                theme === 'cyberpunk' 
-                                  ? 'text-[var(--primary)] bg-[var(--accent)] shadow-sm' 
-                                  : 'text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] hover:font-medium'
-                              }`}
-                            >
-                              Cyberpunk
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
                     <button
                       onClick={() => {
                         handleCloseUserMenu()

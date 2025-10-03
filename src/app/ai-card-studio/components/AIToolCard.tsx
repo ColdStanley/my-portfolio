@@ -674,7 +674,7 @@ function AIToolCard({
           
           {/* Dropdown Menu */}
           <div 
-            className={`fixed z-50 bg-white dark:bg-neutral-800 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-700 p-2 min-w-40 transform transition-all duration-200 ease-out ${
+            className={`fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-2 min-w-40 transform transition-all duration-200 ease-out ${
               cardMenuVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
             }`}
             style={{
@@ -682,7 +682,7 @@ function AIToolCard({
               right: window.innerWidth - cardMenuButtonRef.current.getBoundingClientRect().right
             }}
           >
-            <div className="absolute -top-1 right-4 w-2 h-2 bg-white dark:bg-neutral-800 border-l border-t border-gray-200 dark:border-neutral-700 transform rotate-45"></div>
+            <div className="absolute -top-1 right-4 w-2 h-2 bg-white border-l border-t border-gray-200 transform rotate-45"></div>
             
             <div className="flex flex-col gap-1">
               {/* Settings */}
@@ -860,7 +860,7 @@ function AIToolCard({
       </button>
 
       {/* AI Response Area - Always visible with gray background */}
-      <div className="p-4 bg-gradient-to-br from-gray-50/80 via-gray-100/40 to-gray-50/60 dark:from-neutral-700/80 dark:via-neutral-800/40 dark:to-neutral-700/60 backdrop-blur-sm rounded-lg transition-all duration-300 border border-gray-200/50 dark:border-neutral-600/50 shadow-inner">
+      <div className="p-4 bg-gradient-to-br from-gray-50/80 via-gray-100/40 to-gray-50/60 backdrop-blur-sm rounded-lg transition-all duration-300 border border-gray-200/50 shadow-inner">
         
         
         {/* 骨架屏 - 独立显示条件 */}
@@ -902,7 +902,7 @@ function AIToolCard({
           
           {/* 流式容器 - 始终存在，避免重建，样式与markdown保持一致 */}
           <div 
-            className="prose prose-sm max-w-none text-gray-700 dark:text-neutral-300 whitespace-pre-wrap leading-relaxed"
+            className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap leading-relaxed"
             data-ai-response={cardId}
             style={{ 
               display: isGenerating && isStreaming ? 'block' : 'none',
@@ -916,7 +916,7 @@ function AIToolCard({
         {!isGenerating && generatedContent && !showMarkdown && (
           <div className="relative">
             <div 
-              className="prose prose-sm max-w-none text-gray-700 dark:text-neutral-300 whitespace-pre-wrap leading-relaxed transition-all duration-500"
+              className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap leading-relaxed transition-all duration-500"
               style={{
                 transform: isFormatting ? 'scale(1.01)' : 'scale(1)',
                 filter: isFormatting ? 'blur(0.5px)' : 'blur(0px)'
@@ -930,13 +930,13 @@ function AIToolCard({
               <>
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--neutral-light)] to-transparent animate-pulse">
                 </div>
-                <div className="absolute top-2 right-2 flex items-center gap-1 text-xs text-[var(--primary)] bg-white/80 dark:bg-neutral-800/80 px-2 py-1 rounded-md shadow-sm">
+                <div className="absolute top-2 right-2 flex items-center gap-1 text-xs text-[var(--primary)] bg-white/80 px-2 py-1 rounded-md shadow-sm">
                   <div className="w-2 h-2 bg-[var(--primary)] rounded-full animate-bounce"></div>
                   <span>Formatting...</span>
                 </div>
                 
                 {/* 微光扫过效果 */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 dark:via-white/10 to-transparent transform -skew-x-12 animate-shimmer-sweep opacity-60">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 animate-shimmer-sweep opacity-60">
                 </div>
               </>
             )}
@@ -960,7 +960,7 @@ function AIToolCard({
 
         {/* AI Response Content - intelligent more/less display */}
         {!isGenerating && generatedContent && showMarkdown && (
-          <div className="prose prose-sm max-w-none text-gray-700 dark:text-neutral-300">
+          <div className="prose prose-sm max-w-none text-gray-700">
             {isResponseExpanded ? (
               // Expanded view - show full markdown with "Show less" button
               <>
@@ -968,43 +968,43 @@ function AIToolCard({
                   remarkPlugins={[remarkBreaks, remarkGfm]}
                   components={{
                     h1: ({node, ...props}) => (
-                      <h1 className="text-xl font-bold text-gray-800 dark:text-neutral-200 mb-3 mt-4 first:mt-0 border-b border-gray-200 dark:border-neutral-600 pb-1" {...props} />
+                      <h1 className="text-xl font-bold text-gray-800 mb-3 mt-4 first:mt-0 border-b border-gray-200 pb-1" {...props} />
                     ),
                     h2: ({node, ...props}) => (
-                      <h2 className="text-lg font-semibold text-gray-800 dark:text-neutral-200 mb-2 mt-3 first:mt-0" {...props} />
+                      <h2 className="text-lg font-semibold text-gray-800 mb-2 mt-3 first:mt-0" {...props} />
                     ),
                     h3: ({node, ...props}) => (
-                      <h3 className="text-base font-medium text-gray-800 dark:text-neutral-200 mb-2 mt-2 first:mt-0" {...props} />
+                      <h3 className="text-base font-medium text-gray-800 mb-2 mt-2 first:mt-0" {...props} />
                     ),
                     h4: ({node, ...props}) => (
-                      <h4 className="text-sm font-medium text-gray-800 dark:text-neutral-200 mb-1 mt-2 first:mt-0" {...props} />
+                      <h4 className="text-sm font-medium text-gray-800 mb-1 mt-2 first:mt-0" {...props} />
                     ),
                     p: ({node, ...props}) => (
-                      <p className="text-gray-600 dark:text-neutral-400 mb-3 leading-relaxed text-sm" {...props} />
+                      <p className="text-gray-600 mb-3 leading-relaxed text-sm" {...props} />
                     ),
                     ul: ({node, ...props}) => (
-                      <ul className="list-disc list-inside mb-3 text-gray-600 dark:text-neutral-400 space-y-1" {...props} />
+                      <ul className="list-disc list-inside mb-3 text-gray-600 space-y-1" {...props} />
                     ),
                     ol: ({node, ...props}) => (
-                      <ol className="list-decimal list-inside mb-3 text-gray-600 dark:text-neutral-400 space-y-1" {...props} />
+                      <ol className="list-decimal list-inside mb-3 text-gray-600 space-y-1" {...props} />
                     ),
                     li: ({node, ...props}) => (
                       <li className="text-sm leading-relaxed mb-1" {...props} />
                     ),
                     code: ({node, inline, ...props}) => 
                       inline ? (
-                        <code className="bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 px-1 py-0.5 rounded text-xs font-mono" {...props} />
+                        <code className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-xs font-mono" {...props} />
                       ) : (
-                        <code className="block bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre" {...props} />
+                        <code className="block bg-gray-100 text-gray-800 p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre" {...props} />
                       ),
                     pre: ({node, ...props}) => (
-                      <pre className="bg-gray-100 dark:bg-neutral-700 rounded-lg p-3 overflow-x-auto border border-gray-200 dark:border-neutral-600 my-3" {...props} />
+                      <pre className="bg-gray-100 rounded-lg p-3 overflow-x-auto border border-gray-200 my-3" {...props} />
                     ),
                     blockquote: ({node, ...props}) => (
-                      <blockquote className="border-l-4 border-[var(--primary)] pl-3 italic text-gray-600 dark:text-neutral-400 mb-2" {...props} />
+                      <blockquote className="border-l-4 border-[var(--primary)] pl-3 italic text-gray-600 mb-2" {...props} />
                     ),
                     strong: ({node, ...props}) => (
-                      <strong className="font-semibold text-gray-800 dark:text-neutral-200" {...props} />
+                      <strong className="font-semibold text-gray-800" {...props} />
                     ),
                     em: ({node, ...props}) => (
                       <em className="italic" {...props} />
@@ -1021,30 +1021,30 @@ function AIToolCard({
                       </a>
                     ),
                     hr: ({node, ...props}) => (
-                      <hr className="border-t border-gray-200 dark:border-neutral-600 my-4" {...props} />
+                      <hr className="border-t border-gray-200 my-4" {...props} />
                     ),
                     table: ({node, ...props}) => (
                       <div className="overflow-x-auto my-3">
-                        <table className="min-w-full border border-gray-200 dark:border-neutral-600 rounded-lg" {...props} />
+                        <table className="min-w-full border border-gray-200 rounded-lg" {...props} />
                       </div>
                     ),
                     thead: ({node, ...props}) => (
-                      <thead className="bg-gray-50 dark:bg-neutral-700" {...props} />
+                      <thead className="bg-gray-50" {...props} />
                     ),
                     tbody: ({node, ...props}) => (
                       <tbody {...props} />
                     ),
                     tr: ({node, ...props}) => (
-                      <tr className="hover:bg-gray-50/50 dark:hover:bg-neutral-700/50" {...props} />
+                      <tr className="hover:bg-gray-50/50" {...props} />
                     ),
                     th: ({node, ...props}) => (
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-neutral-300 border-b border-gray-200 dark:border-neutral-600" {...props} />
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 border-b border-gray-200" {...props} />
                     ),
                     td: ({node, ...props}) => (
-                      <td className="px-3 py-2 text-sm text-gray-600 dark:text-neutral-400 border-b border-gray-100 dark:border-neutral-700" {...props} />
+                      <td className="px-3 py-2 text-sm text-gray-600 border-b border-gray-100" {...props} />
                     ),
                     del: ({node, ...props}) => (
-                      <del className="line-through text-gray-500 dark:text-neutral-500" {...props} />
+                      <del className="line-through text-gray-500" {...props} />
                     ),
                     input: ({node, ...props}) => {
                       const { type, checked, disabled } = props as any;
@@ -1054,7 +1054,7 @@ function AIToolCard({
                             type="checkbox" 
                             checked={checked} 
                             disabled={disabled}
-                            className="mr-2 rounded border-gray-300 dark:border-neutral-600 text-[var(--primary)] focus:ring-[var(--primary)]"
+                            className="mr-2 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]"
                             {...props} 
                           />
                         );
@@ -1086,43 +1086,43 @@ function AIToolCard({
                     remarkPlugins={[remarkBreaks, remarkGfm]}
                     components={{
                       h1: ({node, ...props}) => (
-                        <h1 className="text-xl font-bold text-gray-800 dark:text-neutral-200 mb-3 mt-4 first:mt-0 border-b border-gray-200 dark:border-neutral-600 pb-1" {...props} />
+                        <h1 className="text-xl font-bold text-gray-800 mb-3 mt-4 first:mt-0 border-b border-gray-200 pb-1" {...props} />
                       ),
                       h2: ({node, ...props}) => (
-                        <h2 className="text-lg font-semibold text-gray-800 dark:text-neutral-200 mb-2 mt-3 first:mt-0" {...props} />
+                        <h2 className="text-lg font-semibold text-gray-800 mb-2 mt-3 first:mt-0" {...props} />
                       ),
                       h3: ({node, ...props}) => (
-                        <h3 className="text-base font-medium text-gray-800 dark:text-neutral-200 mb-2 mt-2 first:mt-0" {...props} />
+                        <h3 className="text-base font-medium text-gray-800 mb-2 mt-2 first:mt-0" {...props} />
                       ),
                       h4: ({node, ...props}) => (
-                        <h4 className="text-sm font-medium text-gray-800 dark:text-neutral-200 mb-1 mt-2 first:mt-0" {...props} />
+                        <h4 className="text-sm font-medium text-gray-800 mb-1 mt-2 first:mt-0" {...props} />
                       ),
                       p: ({node, ...props}) => (
-                        <p className="text-gray-600 dark:text-neutral-400 mb-3 leading-relaxed text-sm" {...props} />
+                        <p className="text-gray-600 mb-3 leading-relaxed text-sm" {...props} />
                       ),
                       ul: ({node, ...props}) => (
-                        <ul className="list-disc list-inside mb-3 text-gray-600 dark:text-neutral-400 space-y-1" {...props} />
+                        <ul className="list-disc list-inside mb-3 text-gray-600 space-y-1" {...props} />
                       ),
                       ol: ({node, ...props}) => (
-                        <ol className="list-decimal list-inside mb-3 text-gray-600 dark:text-neutral-400 space-y-1" {...props} />
+                        <ol className="list-decimal list-inside mb-3 text-gray-600 space-y-1" {...props} />
                       ),
                       li: ({node, ...props}) => (
                         <li className="text-sm leading-relaxed mb-1" {...props} />
                       ),
                       code: ({node, inline, ...props}) => 
                         inline ? (
-                          <code className="bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 px-1 py-0.5 rounded text-xs font-mono" {...props} />
+                          <code className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-xs font-mono" {...props} />
                         ) : (
-                          <code className="block bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre" {...props} />
+                          <code className="block bg-gray-100 text-gray-800 p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre" {...props} />
                         ),
                       pre: ({node, ...props}) => (
-                        <pre className="bg-gray-100 dark:bg-neutral-700 rounded-lg p-3 overflow-x-auto border border-gray-200 dark:border-neutral-600 my-3" {...props} />
+                        <pre className="bg-gray-100 rounded-lg p-3 overflow-x-auto border border-gray-200 my-3" {...props} />
                       ),
                       blockquote: ({node, ...props}) => (
-                        <blockquote className="border-l-4 border-[var(--primary)] pl-3 italic text-gray-600 dark:text-neutral-400 mb-2" {...props} />
+                        <blockquote className="border-l-4 border-[var(--primary)] pl-3 italic text-gray-600 mb-2" {...props} />
                       ),
                       strong: ({node, ...props}) => (
-                        <strong className="font-semibold text-gray-800 dark:text-neutral-200" {...props} />
+                        <strong className="font-semibold text-gray-800" {...props} />
                       ),
                       em: ({node, ...props}) => (
                         <em className="italic" {...props} />
@@ -1140,26 +1140,26 @@ function AIToolCard({
                       ),
                       table: ({node, ...props}) => (
                         <div className="overflow-x-auto my-3">
-                          <table className="min-w-full border border-gray-200 dark:border-neutral-600 rounded-lg" {...props} />
+                          <table className="min-w-full border border-gray-200 rounded-lg" {...props} />
                         </div>
                       ),
                       thead: ({node, ...props}) => (
-                        <thead className="bg-gray-50 dark:bg-neutral-700" {...props} />
+                        <thead className="bg-gray-50" {...props} />
                       ),
                       tbody: ({node, ...props}) => (
                         <tbody {...props} />
                       ),
                       tr: ({node, ...props}) => (
-                        <tr className="border-b border-gray-200 dark:border-neutral-600" {...props} />
+                        <tr className="border-b border-gray-200" {...props} />
                       ),
                       td: ({node, ...props}) => (
-                        <td className="px-3 py-2 text-sm text-gray-600 dark:text-neutral-400" {...props} />
+                        <td className="px-3 py-2 text-sm text-gray-600" {...props} />
                       ),
                       th: ({node, ...props}) => (
-                        <th className="px-3 py-2 text-left text-sm font-medium text-gray-800 dark:text-neutral-200" {...props} />
+                        <th className="px-3 py-2 text-left text-sm font-medium text-gray-800" {...props} />
                       ),
                       hr: ({node, ...props}) => (
-                        <hr className="my-4 border-gray-300 dark:border-neutral-600" {...props} />
+                        <hr className="my-4 border-gray-300" {...props} />
                       ),
                       sup: ({node, ...props}) => (
                         <sup className="text-xs" {...props} />
@@ -1197,13 +1197,13 @@ function AIToolCard({
           
           {/* Tooltip */}
           <div 
-            className="fixed z-50 bg-white dark:bg-neutral-800 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-700 p-3"
+            className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-3"
             style={{
               top: generateButtonRef.current.getBoundingClientRect().bottom + 8,
               left: generateButtonRef.current.getBoundingClientRect().left
             }}
           >
-            <div className="absolute -top-1 left-4 w-2 h-2 bg-white dark:bg-neutral-800 border-l border-t border-gray-200 dark:border-neutral-700 transform rotate-45"></div>
+            <div className="absolute -top-1 left-4 w-2 h-2 bg-white border-l border-t border-gray-200 transform rotate-45"></div>
             <div className="flex flex-col gap-2 min-w-32">
               {(options || []).map((optionValue, index) => (
                 <button
@@ -1212,7 +1212,7 @@ function AIToolCard({
                     handleGenerateClick(optionValue)
                     setShowOptionsTooltip(false)
                   }}
-                  className="px-3 py-1.5 text-sm text-gray-600 dark:text-neutral-300 hover:text-[var(--primary)] dark:hover:text-[var(--primary)] hover:bg-[var(--neutral-light)] rounded-md transition-all duration-150 text-left"
+                  className="px-3 py-1.5 text-sm text-gray-600 hover:text-[var(--primary)][var(--primary)] hover:bg-[var(--neutral-light)] rounded-md transition-all duration-150 text-left"
                 >
                   {optionValue}
                 </button>
@@ -1271,7 +1271,7 @@ function AIToolCard({
         >
           {/* Button Name */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">Button Name:</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Button Name:</label>
             <input
               type="text"
               value={localButtonName}
@@ -1280,27 +1280,27 @@ function AIToolCard({
                 setLocalButtonName(newValue)
               }}
               placeholder="Enter button name..."
-              className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg text-sm text-gray-700 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-500 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
             />
           </div>
 
           {/* Prompt */}
           <div className="mb-4">
             <div className="flex justify-between items-center mb-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-neutral-300">Prompt:</label>
+              <label className="text-sm font-medium text-gray-700">Prompt:</label>
               <select
                 value={localAiModel}
                 onChange={(e) => {
                   const newModel = e.target.value as 'deepseek' | 'openai'
                   setLocalAiModel(newModel)
                 }}
-                className="px-3 py-1 text-sm border border-gray-200 dark:border-neutral-700 rounded-md text-gray-700 dark:text-neutral-200 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+                className="px-3 py-1 text-sm border border-gray-200 rounded-md text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
               >
                 <option value="deepseek">DeepSeek</option>
                 <option value="openai">OpenAI</option>
               </select>
             </div>
-            <div className="relative rounded-lg border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 focus-within:ring-2 focus-within:ring-[var(--primary)] focus-within:border-transparent">
+            <div className="relative rounded-lg border border-gray-200 bg-white focus-within:ring-2 focus-within:ring-[var(--primary)] focus-within:border-transparent">
               <textarea
                 ref={textareaRef}
                 value={localPromptText}
@@ -1308,7 +1308,7 @@ function AIToolCard({
                 onScroll={handlePromptScroll}
                 onKeyDown={handlePromptKeyDown}
                 placeholder="Enter your AI prompt here..."
-                className="relative z-10 w-full min-h-32 p-3 text-sm text-transparent caret-[var(--primary)] placeholder-gray-400 dark:placeholder-neutral-500 bg-transparent focus:outline-none resize-none"
+                className="relative z-10 w-full min-h-32 p-3 text-sm text-transparent caret-[var(--primary)] placeholder-gray-400 bg-transparent focus:outline-none resize-none"
                 style={{
                   minHeight: '128px',
                   maxHeight: '256px',
@@ -1317,7 +1317,7 @@ function AIToolCard({
               />
               <div
                 ref={overlayRef}
-                className="pointer-events-none absolute inset-0 overflow-hidden rounded-lg p-3 text-sm text-gray-700 dark:text-neutral-200 whitespace-pre-wrap break-words"
+                className="pointer-events-none absolute inset-0 overflow-hidden rounded-lg p-3 text-sm text-gray-700 whitespace-pre-wrap break-words"
                 style={{
                   minHeight: '128px',
                   maxHeight: '256px',
@@ -1337,13 +1337,13 @@ function AIToolCard({
                 <div className="flex-1">
                   {previousCards.length > 0 && (
                     <>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">Insert Reference from AI Cards</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Insert Reference from AI Cards</label>
                       <div className="flex flex-wrap gap-2">
                         {previousCards.map((card) => (
                           <button
                             key={card.id}
                             onClick={() => insertReference(card.buttonName)}
-                            className="px-3 py-1 text-xs bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-300 rounded-md hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors"
+                            className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
                           >
                             {card.buttonName}
                           </button>
@@ -1357,13 +1357,13 @@ function AIToolCard({
                 <div className="flex-1">
                   {infoCards.length > 0 && (
                     <>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">Insert Reference from Info Cards</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Insert Reference from Info Cards</label>
                       <div className="flex flex-wrap gap-2">
                         {infoCards.map((card) => (
                           <button
                             key={card.id}
                             onClick={() => insertInfoReference(card.title)}
-                            className="px-3 py-1 text-xs bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-300 rounded-md hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors"
+                            className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
                           >
                             {card.title}
                           </button>
@@ -1375,7 +1375,7 @@ function AIToolCard({
                 
                 {/* Right 1/3 - Options */}
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Options (click Insert Option to add to prompt):
                     <button
                       onClick={() => {
@@ -1433,18 +1433,18 @@ function AIToolCard({
       {/* Options Management Tooltip */}
       {showOptionsManageTooltip && typeof document !== 'undefined' && createPortal(
         <>
-          <div className="fixed inset-0 z-40 bg-black/20 dark:bg-black/40" />
+          <div className="fixed inset-0 z-40 bg-black/20" />
           <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-            <div className={`bg-white dark:bg-neutral-800 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-700 p-4 max-w-md w-full mx-4 pointer-events-auto transform transition-all duration-200 ease-out ${
+            <div className={`bg-white rounded-lg shadow-xl border border-gray-200 p-4 max-w-md w-full mx-4 pointer-events-auto transform transition-all duration-200 ease-out ${
               optionsManageTooltipVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
             }`}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-800 dark:text-neutral-200">Manage Options</h3>
+                <h3 className="text-lg font-medium text-gray-800">Manage Options</h3>
                 <button
                   onClick={handleCloseOptionsManageTooltip}
-                  className="p-1 hover:bg-gray-100 dark:hover:bg-neutral-700 rounded transition-colors"
+                  className="p-1 hover:bg-gray-100 rounded transition-colors"
                 >
-                  <svg className="w-4 h-4 text-gray-600 dark:text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -1462,14 +1462,14 @@ function AIToolCard({
                         setLocalOptions(newOptions)
                       }}
                       placeholder="Enter option..."
-                      className="flex-1 px-2 py-1 text-sm border border-gray-200 dark:border-neutral-700 rounded text-gray-700 dark:text-neutral-200 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
+                      className="flex-1 px-2 py-1 text-sm border border-gray-200 rounded text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
                     />
                     <button
                       onClick={() => {
                         const newOptions = localOptions.filter((_, i) => i !== index)
                         setLocalOptions(newOptions)
                       }}
-                      className="px-2 py-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                      className="px-2 py-1 text-red-600 hover:bg-red-50 rounded transition-colors"
                     >
                       ×
                     </button>

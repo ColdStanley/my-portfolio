@@ -162,24 +162,24 @@ export default function AuthUI() {
   };
   
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-neutral-900">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white/90 dark:bg-neutral-800/90 backdrop-blur-md rounded-xl shadow-xl border border-white/20 dark:border-neutral-700/50">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white/90 backdrop-blur-md rounded-xl shadow-xl border border-white/20">
         <div className="text-center">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">
             AI Card Studio
           </h1>
-          <p className="text-gray-600 dark:text-neutral-400 text-sm">
+          <p className="text-gray-600 text-sm">
             {view === 'sign_in' ? 'Sign in to your workspace' : 'Create your workspace'}
           </p>
         </div>
         
         {error && (
-          <div className="p-4 text-sm text-red-700 dark:text-red-400 bg-red-50/80 dark:bg-red-900/20 backdrop-blur-sm rounded-lg border border-red-200 dark:border-red-800" role="alert">
+          <div className="p-4 text-sm text-red-700 bg-red-50/80 backdrop-blur-sm rounded-lg border border-red-200" role="alert">
             {error}
           </div>
         )}
         {message && (
-          <div className="p-4 text-sm text-green-700 dark:text-green-400 bg-green-50/80 dark:bg-green-900/20 backdrop-blur-sm rounded-lg border border-green-200 dark:border-green-800" role="alert">
+          <div className="p-4 text-sm text-green-700 bg-green-50/80 backdrop-blur-sm rounded-lg border border-green-200" role="alert">
             {message}
           </div>
         )}
@@ -187,7 +187,7 @@ export default function AuthUI() {
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="email-address" className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+              <label htmlFor="email-address" className="block text-sm font-medium text-gray-700 mb-2">
                 Email
               </label>
               <input
@@ -196,14 +196,14 @@ export default function AuthUI() {
                 type="email"
                 autoComplete="email"
                 required
-                className="w-full px-4 py-3 border border-gray-200 dark:border-neutral-700 rounded-lg text-gray-900 dark:text-neutral-100 placeholder-gray-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm"
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white/80 backdrop-blur-sm"
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 Password
               </label>
               <input
@@ -212,7 +212,7 @@ export default function AuthUI() {
                 type="password"
                 autoComplete="current-password"
                 required
-                className="w-full px-4 py-3 border border-gray-200 dark:border-neutral-700 rounded-lg text-gray-900 dark:text-neutral-100 placeholder-gray-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm"
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white/80 backdrop-blur-sm"
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -237,21 +237,21 @@ export default function AuthUI() {
         
         <div className="text-center">
           {view === 'sign_in' ? (
-            <div className="text-sm text-gray-600 dark:text-neutral-400">
+            <div className="text-sm text-gray-600">
               <span>Don't have an account? </span>
               <button
                 onClick={() => setView('sign_up')}
-                className="font-medium bg-gradient-to-r from-purple-600 to-indigo-600 lakers:from-lakers-300 lakers:to-lakers-400 anno:from-anno-300 anno:to-anno-400 cyberpunk:from-cyberpunk-300 cyberpunk:to-cyberpunk-400 bg-clip-text text-transparent hover:from-purple-700 hover:to-indigo-700 lakers:hover:from-lakers-400 lakers:hover:to-lakers-500 anno:hover:from-anno-400 anno:hover:to-anno-500 cyberpunk:hover:from-cyberpunk-400 cyberpunk:hover:to-cyberpunk-500 transition-all duration-200"
+                className="font-medium bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent hover:from-purple-700 hover:to-indigo-700 transition-all duration-200"
               >
                 Sign up
               </button>
             </div>
           ) : (
-            <div className="text-sm text-gray-600 dark:text-neutral-400">
+            <div className="text-sm text-gray-600">
               <span>Already have an account? </span>
               <button
                 onClick={() => setView('sign_in')}
-                className="font-medium bg-gradient-to-r from-purple-600 to-indigo-600 lakers:from-lakers-300 lakers:to-lakers-400 anno:from-anno-300 anno:to-anno-400 cyberpunk:from-cyberpunk-300 cyberpunk:to-cyberpunk-400 bg-clip-text text-transparent hover:from-purple-700 hover:to-indigo-700 lakers:hover:from-lakers-400 lakers:hover:to-lakers-500 anno:hover:from-anno-400 anno:hover:to-anno-500 cyberpunk:hover:from-cyberpunk-400 cyberpunk:hover:to-cyberpunk-500 transition-all duration-200"
+                className="font-medium bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent hover:from-purple-700 hover:to-indigo-700 transition-all duration-200"
               >
                 Sign in
               </button>

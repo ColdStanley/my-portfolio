@@ -143,7 +143,7 @@ export default function MarketplacePage() {
                   Back to Studio
                 </Link>
               </div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 lakers:from-lakers-300 lakers:to-lakers-400 anno:from-anno-300 anno:to-anno-400 cyberpunk:from-cyberpunk-300 cyberpunk:to-cyberpunk-400 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
                 AI Card Studio Marketplace
               </h1>
               <p className="text-gray-600 mt-2">
