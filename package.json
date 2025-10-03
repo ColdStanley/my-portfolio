@@ -52,6 +52,7 @@
     "puppeteer": "^24.19.0",
     "puppeteer-core": "^24.22.2",
     "react": "^19.0.0",
+    "react-confetti-explosion": "^3.0.3",
     "react-dom": "^19.0.0",
     "react-icons": "^5.5.0",
     "react-intersection-observer": "^9.16.0",
