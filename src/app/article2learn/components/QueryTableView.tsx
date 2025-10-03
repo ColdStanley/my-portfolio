@@ -98,20 +98,20 @@ export default function QueryTableView() {
                 {query.prompt_label}
               </td>
               <td className="max-w-md px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`prose prose-xs max-w-none text-xs ${expandedRows.has(query.id) ? '' : 'line-clamp-2'}`}
-                    style={{ color: theme.textSecondary }}
-                  >
-                    <ReactMarkdown>{query.ai_response}</ReactMarkdown>
-                  </div>
-                  <button
-                    onClick={() => toggleExpand(query.id)}
-                    className="shrink-0 text-xs font-medium underline transition-colors hover:brightness-90"
-                    style={{ color: theme.primary }}
-                  >
-                    {expandedRows.has(query.id) ? 'Less' : 'More'}
-                  </button>
+                <div
+                  className={`prose prose-xs max-w-none text-xs ${expandedRows.has(query.id) ? '' : 'line-clamp-2'}`}
+                  style={{ color: theme.textSecondary }}
+                >
+                  <ReactMarkdown>{query.ai_response}</ReactMarkdown>
+                  {query.ai_response.length > 200 && (
+                    <button
+                      onClick={() => toggleExpand(query.id)}
+                      className="ml-1 inline text-xs font-medium underline transition-colors hover:brightness-90"
+                      style={{ color: theme.primary }}
+                    >
+                      {expandedRows.has(query.id) ? 'See less' : '... See more'}
+                    </button>
+                  )}
                 </div>
               </td>
               <td

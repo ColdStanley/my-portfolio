@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import ConfettiExplosion from 'react-confetti-explosion'
 import { theme } from '@/styles/theme.config'
 import { useArticleStore } from '../../store/useArticleStore'
 import SpeakerButton from '../SpeakerButton'
@@ -12,6 +13,7 @@ export default function MatchGame() {
   const [currentRound, setCurrentRound] = useState(0)
   const [selectedSpeaker, setSelectedSpeaker] = useState<string | null>(null)
   const [matchedWords, setMatchedWords] = useState<Set<string>>(new Set())
+  const [justMatchedWords, setJustMatchedWords] = useState<Set<string>>(new Set())
   const [showError, setShowError] = useState(false)
   const [errorWord, setErrorWord] = useState<string | null>(null)
 
@@ -66,9 +68,19 @@ export default function MatchGame() {
     if (!selectedSpeaker || matchedWords.has(word)) return
 
     if (selectedSpeaker === word) {
-      // 正确匹配
-      setMatchedWords((prev) => new Set(prev).add(word))
-      setSelectedSpeaker(null)
+      // 正确匹配：触发爆炸效果
+      setJustMatchedWords((prev) => new Set(prev).add(word))
+
+      // 延迟 600ms 后真正标记为匹配（等待动画完成）
+      setTimeout(() => {
+        setMatchedWords((prev) => new Set(prev).add(word))
+        setJustMatchedWords((prev) => {
+          const newSet = new Set(prev)
+          newSet.delete(word)
+          return newSet
+        })
+        setSelectedSpeaker(null)
+      }, 600)
     } else {
       // 错误
       setShowError(true)
@@ -145,22 +157,28 @@ export default function MatchGame() {
             className={`grid w-full gap-4 ${
               currentWords.length <= 4 ? 'grid-cols-4' : 'grid-cols-4 grid-rows-2'
             }`}
+            style={{ perspective: '1000px' }}
           >
             {currentWords.map((word) => (
               <AnimatePresence key={word}>
                 {!matchedWords.has(word) && (
                   <motion.div
                     initial={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{ duration: 0.3 }}
+                    exit={{
+                      rotateY: 180,
+                      scale: 0,
+                      opacity: 0
+                    }}
+                    transition={{ duration: 0.6 }}
                     onClick={() => handleSpeakerClick(word)}
-                    className={`flex aspect-square cursor-pointer items-center justify-center rounded-lg border p-2 transition-all duration-200 hover:shadow-lg ${
+                    className={`relative flex aspect-square cursor-pointer items-center justify-center rounded-lg border p-2 transition-all duration-200 hover:shadow-lg ${
                       selectedSpeaker === word ? 'ring-2' : ''
                     }`}
                     style={{
                       borderColor: selectedSpeaker === word ? theme.primary : theme.neutralDark,
                       backgroundColor: theme.surface,
                       ringColor: theme.primary,
+                      transformStyle: 'preserve-3d',
                     }}
                   >
                     <div className="scale-125">
@@ -170,6 +188,19 @@ export default function MatchGame() {
                         size="md"
                       />
                     </div>
+
+                    {/* 粒子爆炸效果 */}
+                    {justMatchedWords.has(word) && (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center">
+                        <ConfettiExplosion
+                          force={0.6}
+                          duration={2500}
+                          particleCount={50}
+                          width={400}
+                          colors={['#F4D35E', '#111111', '#FFFFFF']}
+                        />
+                      </div>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -183,21 +214,26 @@ export default function MatchGame() {
             className={`grid w-full gap-4 ${
               shuffledWords.length <= 4 ? 'grid-cols-4' : 'grid-cols-4 grid-rows-2'
             }`}
+            style={{ perspective: '1000px' }}
           >
             {shuffledWords.map((word) => (
               <AnimatePresence key={word}>
                 {!matchedWords.has(word) && (
                   <motion.div
                     initial={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
+                    exit={{
+                      rotateY: 180,
+                      scale: 0,
+                      opacity: 0
+                    }}
                     animate={
                       showError && errorWord === word
                         ? { x: [-10, 10, -10, 10, 0] }
                         : {}
                     }
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: 0.6 }}
                     onClick={() => handleCardClick(word)}
-                    className={`flex aspect-square cursor-pointer items-center justify-center rounded-lg border p-2 transition-all duration-200 hover:shadow-lg ${
+                    className={`relative flex aspect-square cursor-pointer items-center justify-center rounded-lg border p-2 transition-all duration-200 hover:shadow-lg ${
                       getFontSize(word)
                     } font-semibold`}
                     style={{
@@ -206,9 +242,23 @@ export default function MatchGame() {
                       backgroundColor:
                         showError && errorWord === word ? '#FEE2E2' : theme.surface,
                       color: theme.primary,
+                      transformStyle: 'preserve-3d',
                     }}
                   >
                     <span className="break-words text-center">{word}</span>
+
+                    {/* 粒子爆炸效果 */}
+                    {justMatchedWords.has(word) && (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center">
+                        <ConfettiExplosion
+                          force={0.6}
+                          duration={2500}
+                          particleCount={50}
+                          width={400}
+                          colors={['#F4D35E', '#111111', '#FFFFFF']}
+                        />
+                      </div>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
