@@ -78,11 +78,11 @@ export default function CommentInlineEdit({ value, onSave }: CommentInlineEditPr
           onKeyDown={handleKeyDown}
           disabled={isLoading}
           placeholder="Add comment..."
-          className="w-full h-9 px-3 text-sm border border-gray-300 rounded-lg bg-white transition-all duration-200 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 min-w-0"
+          className="w-full px-2 py-1 text-xs text-gray-900 bg-transparent border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-transparent transition-colors min-w-0"
         />
         {isLoading && (
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-            <div className="animate-spin rounded-full h-3 w-3 border-b border-purple-500"></div>
+          <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+            <div className="animate-spin rounded-full h-3 w-3 border-b border-gray-400"></div>
           </div>
         )}
       </div>
@@ -92,12 +92,12 @@ export default function CommentInlineEdit({ value, onSave }: CommentInlineEditPr
   return (
     <button
       onClick={() => setIsEditing(true)}
-      className="w-full h-9 px-3 text-sm rounded-lg transition-all duration-200 text-left hover:bg-gray-50 border border-transparent min-w-0"
+      className="w-full px-2 py-1 text-xs text-left rounded-lg transition-colors hover:bg-gray-100/50 border border-transparent min-w-0"
     >
       {!value ? (
         <span className="text-gray-400 italic">Add comment...</span>
       ) : (
-        <span 
+        <span
           className="break-words overflow-wrap-anywhere word-break-break-word text-gray-700"
           dangerouslySetInnerHTML={{ __html: processCommentLinks(value) }}
           onClick={(e) => {

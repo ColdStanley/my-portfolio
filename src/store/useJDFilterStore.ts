@@ -23,7 +23,7 @@ interface JDFilterStore {
 
 export const useJDFilterStore = create<JDFilterStore>((set, get) => ({
   filters: {
-    stage: '',
+    stage: 'Raw JD',
     role: '',
     firm: '',
     time: '',

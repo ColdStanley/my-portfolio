@@ -13,9 +13,10 @@ interface JD {
 interface CoverLetterButtonV2Props {
   jd: JD
   className?: string
+  buttonText?: string
 }
 
-export default function CoverLetterButtonV2({ jd, className = '' }: CoverLetterButtonV2Props) {
+export default function CoverLetterButtonV2({ jd, className = '', buttonText = 'Cover Letter' }: CoverLetterButtonV2Props) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [showTooltip, setShowTooltip] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
@@ -198,10 +199,10 @@ Based on the above information, generate a professional cover letter for this po
       <button
         onClick={handleClick}
         disabled={!canGenerate || isGenerating}
-        className="w-full h-10 px-3 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+        className={`w-full h-8 px-2 text-xs font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${className}`.trim()}
         title={canGenerate ? "Generate Cover Letter PDF V2" : "Generate Resume first to unlock Cover Letter"}
       >
-        {isGenerating ? 'Loading...' : 'Cover'}
+        {isGenerating ? 'Loading...' : buttonText}
       </button>
 
       {/* Tooltip Portal - Cover Letter Generator */}

@@ -15,6 +15,10 @@ interface LangChainButtonV2Props {
   jd: JD
   className?: string
   onPDFUploaded?: () => void
+  autoMode?: boolean
+  buttonText?: string
+  isManualMode?: boolean
+  onMenuClick?: () => void
 }
 
 const DOCK_POSITION_STORAGE_KEY = 'resumeProgressDockPosition'
@@ -31,10 +35,12 @@ interface TaskEntry {
   activeStage: StageKey
 }
 
-export default function LangChainButtonV2({ jd, className = '', onPDFUploaded }: LangChainButtonV2Props) {
+export default function LangChainButtonV2({ jd, className = '', onPDFUploaded, autoMode = false, buttonText = 'LangChain', isManualMode = false, onMenuClick }: LangChainButtonV2Props) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [countdown, setCountdown] = useState(180)
   const [showPanel, setShowPanel] = useState(false)
+  const [showModeMenu, setShowModeMenu] = useState(false)
+  const [generationMode, setGenerationMode] = useState<'manual' | 'auto'>('manual')
   const [activeStage, setActiveStage] = useState<StageKey>('classifier')
   const [stageOutputs, setStageOutputs] = useState<Record<StageKey, StageData>>(() => createInitialStageState())
   const [tasks, setTasks] = useState<TaskEntry[]>([])
@@ -454,7 +460,10 @@ const runPostGenerationSteps = async (
     }
   }, [isDockDragging])
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (mode: 'manual' | 'auto') => {
+    setShowModeMenu(false)
+    setGenerationMode(mode)
+
     // Check if personal info exists
     const personalInfo = localStorage.getItem('jd2cv-v2-personal-info')
     if (!personalInfo) {
@@ -479,28 +488,33 @@ const runPostGenerationSteps = async (
 
     setIsGenerating(true)
 
-    // Reset panel state
-    const initialStages = resetStageOutputs()
-    const taskId = `${Date.now()}`
-    const newTask: TaskEntry = {
-      id: taskId,
-      label: buildTaskLabel(jd),
-      status: 'running',
-      startedAt: Date.now(),
-      updatedAt: Date.now(),
-      stageOutputs: cloneStageState(initialStages),
-      activeStage: 'classifier'
-    }
+    // Only create tasks and show UI in manual mode
+    if (mode === 'manual') {
+      const initialStages = resetStageOutputs()
+      const taskId = `${Date.now()}`
+      const newTask: TaskEntry = {
+        id: taskId,
+        label: buildTaskLabel(jd),
+        status: 'running',
+        startedAt: Date.now(),
+        updatedAt: Date.now(),
+        stageOutputs: cloneStageState(initialStages),
+        activeStage: 'classifier'
+      }
 
-    setCurrentTaskId(taskId)
-    setTasks(prev => {
-      const filtered = prev.filter(task => task.id !== taskId)
-      const nextTasks = [newTask, ...filtered]
-      return nextTasks.slice(0, 5)
-    })
-    setActiveStage('classifier')
-    setShowPanel(true)
-    setIsDockOpen(true)
+      setCurrentTaskId(taskId)
+      setTasks(prev => {
+        const filtered = prev.filter(task => task.id !== taskId)
+        const nextTasks = [newTask, ...filtered]
+        return nextTasks.slice(0, 5)
+      })
+      setActiveStage('classifier')
+      setShowPanel(true)
+      setIsDockOpen(true)
+    } else {
+      // Auto mode: reset stage outputs but don't create tasks or show UI
+      resetStageOutputs()
+    }
 
     let workflowFinished = false
 
@@ -509,9 +523,15 @@ const runPostGenerationSteps = async (
         jd,
         personalInfo: parsedPersonalInfo,
         requestId: `${Date.now()}`
-      }, handleStreamEvent)
+      }, mode === 'manual' ? handleStreamEvent : undefined)
       workflowFinished = true
-      openManualReview(streamResult, parsedPersonalInfo)
+
+      if (mode === 'manual') {
+        openManualReview(streamResult, parsedPersonalInfo)
+      } else {
+        // Auto mode: directly generate PDF without review
+        await runPostGenerationSteps(streamResult, { jd, onPDFUploaded })
+      }
       return
     } catch (error) {
       console.error('Error generating CV with AI service:', error)
@@ -519,9 +539,16 @@ const runPostGenerationSteps = async (
       if (!workflowFinished) {
         try {
           const fallbackResult = await generateViaRest({ jd, personalInfo: parsedPersonalInfo })
-          applyStepSummaries(fallbackResult.steps)
+          if (mode === 'manual') {
+            applyStepSummaries(fallbackResult.steps)
+          }
           workflowFinished = true
-          openManualReview(fallbackResult, parsedPersonalInfo)
+
+          if (mode === 'manual') {
+            openManualReview(fallbackResult, parsedPersonalInfo)
+          } else {
+            await runPostGenerationSteps(fallbackResult, { jd, onPDFUploaded })
+          }
           return
         } catch (fallbackError) {
           console.error('Fallback generation error:', fallbackError)
@@ -620,21 +647,54 @@ const runPostGenerationSteps = async (
     }
   }
 
+  // If isManualMode, render as menu item
+  if (isManualMode) {
+    return (
+      <button
+        onClick={() => {
+          handleGenerate('manual')
+          onMenuClick?.()
+        }}
+        className={className || "w-full px-3 py-2 text-sm text-left text-gray-700 hover:bg-gray-50 transition-colors"}
+      >
+        LC Manual
+      </button>
+    )
+  }
+
   return (
     <>
       <div className={`relative ${className}`.trim()}>
         <button
-          onClick={handleGenerate}
+          onClick={() => autoMode ? handleGenerate('auto') : setShowModeMenu(!showModeMenu)}
           disabled={isGenerating}
-          className="w-full h-10 px-3 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-          title="Create a Complete Resume with AI"
+          className="w-full h-8 px-2 text-xs font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+          title={autoMode ? "Create Resume (Auto)" : "Create a Complete Resume with AI"}
         >
-          {isGenerating ? `${countdown}s` : 'LangChain'}
+          {isGenerating ? `${countdown}s` : buttonText}
         </button>
+
+        {/* Mode Selection Menu - only show if not autoMode */}
+        {!autoMode && showModeMenu && (
+          <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
+            <button
+              onClick={() => handleGenerate('manual')}
+              className="w-full px-3 py-2 text-sm text-left text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-100"
+            >
+              Manual
+            </button>
+            <button
+              onClick={() => handleGenerate('auto')}
+              className="w-full px-3 py-2 text-sm text-left text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Auto
+            </button>
+          </div>
+        )}
       </div>
       {portalReady && portalRef.current && createPortal(
         <>
-          {tasks.length > 0 && (
+          {tasks.length > 0 && generationMode === 'manual' && (
             <div
               ref={dockRef}
               className="fixed z-[95]"
@@ -694,7 +754,7 @@ const runPostGenerationSteps = async (
             </div>
           )}
 
-          {showPanel && currentTaskId && (
+          {showPanel && currentTaskId && generationMode === 'manual' && (
             <div
               ref={panelRef}
               className="fixed z-[96] w-[520px] rounded-2xl border border-gray-100 bg-white/95 shadow-2xl backdrop-blur origin-top-left animate-panelFadeIn transition-all duration-300 ease-out"

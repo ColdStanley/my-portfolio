@@ -14,6 +14,10 @@ import PersonalInfoTooltipV2 from './PersonalInfoTooltipV2'
 import CoverLetterButtonV2 from './CoverLetterButtonV2'
 import { extractBullets, generateModuleTitle } from '@/shared/utils'
 
+interface CardMenuState {
+  [key: string]: boolean
+}
+
 interface JDPageProps {
   user: { id: string }
   globalLoading?: boolean
@@ -33,10 +37,28 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
 
   // Global Personal Info state
   const [showPersonalInfoTooltip, setShowPersonalInfoTooltip] = useState(false)
-  
-  
+
+  // Card menu state (for 3-dot menu)
+  const [cardMenus, setCardMenus] = useState<CardMenuState>({})
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      // Check if click is outside any menu
+      if (!target.closest('.card-menu-container')) {
+        setCardMenus({})
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
+
   // Workspace store for Select functionality
-  
+
   // Global filter store
   const { filters, sortOrder, handleFilterChange, handleSortChange, clearFilters } = useJDFilterStore()
 
@@ -631,140 +653,124 @@ export default function JDPage({ user, globalLoading = false }: JDPageProps) {
         }
         
         return (
-          <div className="grid grid-cols-1 gap-4 transition-all duration-300 ease-in-out">
+          <div className="grid grid-cols-3 gap-3 transition-all duration-300 ease-in-out">
             {filteredJDs.map((jd) => {
             return (
-              <div key={jd.id} id={`jd-card-${jd.id}`} className={`jd-card bg-white/90 backdrop-blur-md rounded-xl shadow-xl overflow-hidden transition-all duration-300 ease-in-out ${
+              <div key={jd.id} id={`jd-card-${jd.id}`} className={`jd-card bg-white/90 backdrop-blur-md rounded-lg shadow-lg overflow-hidden transition-all duration-300 ease-in-out ${
                 deletingJDs.has(jd.id) ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'
               }`}>
-                {/* New 2-Block Layout */}
-                <div className="p-6 relative">
-                  {/* Block 1: Title & Company + 6 Buttons */}
-                  <div className="flex items-start gap-4">
-                    {/* Left 50%: Title & Company */}
-                    <div className="w-1/2">
-                      <div className="flex flex-col gap-2">
-                        {/* Title */}
-                        <input
-                          type="text"
-                          value={jd.title}
-                          onChange={(e) => {
-                            const newJds = jds.map(j => j.id === jd.id ? {...j, title: e.target.value} : j)
-                            setJds(newJds)
-                          }}
-                          onBlur={(e) => handleUpdateField(jd.id, 'title', e.target.value)}
-                          placeholder="Job title..."
-                          className="w-full h-10 px-3 text-lg font-bold text-gray-900 bg-transparent border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent hover:border-gray-200 transition-colors"
-                        />
-                        {/* Company */}
-                        <input
-                          type="text"
-                          value={jd.company}
-                          onChange={(e) => {
-                            const newJds = jds.map(j => j.id === jd.id ? {...j, company: e.target.value} : j)
-                            setJds(newJds)
-                          }}
-                          onBlur={(e) => handleUpdateField(jd.id, 'company', e.target.value)}
-                          placeholder="Company name..."
-                          className="w-full h-8 px-3 text-sm font-medium text-gray-600 bg-transparent border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent hover:border-gray-200 transition-colors"
-                        />
-                      </div>
-                    </div>
+                {/* New Vertical Layout */}
+                <div className="p-4 relative">
+                  {/* 3-dot menu button (top-right, vertically centered with title) */}
+                  <div className="card-menu-container">
+                    <button
+                      onClick={() => setCardMenus(prev => ({ ...prev, [jd.id]: !prev[jd.id] }))}
+                      className="absolute top-[18px] right-3 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                      title="More options"
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                      </svg>
+                    </button>
 
-                    {/* Right 50%: 6 Buttons (3x2 Grid) */}
-                    <div className="w-1/2">
-                      <div className="flex flex-col gap-2">
-                        {/* Row 1: AI Buttons */}
-                        <div className="grid grid-cols-3 gap-2">
-                          <LangChainButtonV2 jd={jd} />
-                          <LightningButtonV2 jd={jd} />
-                          <CoverLetterButtonV2 jd={jd} />
-                        </div>
-                        {/* Row 2: Management Buttons */}
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            onClick={() => setViewingJD(jd)}
-                            className="w-full h-8 px-3 text-sm font-medium bg-white text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-colors"
-                            title="View JD"
-                          >
-                            View
-                          </button>
-                          <button
-                            onClick={() => handleDeleteJD(jd.id)}
-                            className="w-full h-8 px-3 text-sm font-medium bg-white text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-colors"
-                            title="Delete JD"
-                          >
-                            Delete
-                          </button>
-                        </div>
+                    {/* Dropdown menu */}
+                    {cardMenus[jd.id] && (
+                      <div className="absolute top-11 right-3 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden w-28 animate-dropdown">
+                      <button
+                        onClick={() => {
+                          setViewingJD(jd)
+                          setCardMenus(prev => ({ ...prev, [jd.id]: false }))
+                        }}
+                        className="w-full px-3 py-1.5 text-xs text-left text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-100"
+                      >
+                        View
+                      </button>
+                      <button
+                        onClick={() => {
+                          handleDeleteJD(jd.id)
+                          setCardMenus(prev => ({ ...prev, [jd.id]: false }))
+                        }}
+                        className="w-full px-3 py-1.5 text-xs text-left text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-100"
+                      >
+                        Delete
+                      </button>
+                      <LangChainButtonV2 jd={jd} className="!w-full !h-auto !bg-transparent !text-gray-700 hover:!bg-gray-50 !text-left !px-3 !py-1.5 !rounded-none !font-normal !text-xs" onMenuClick={() => setCardMenus(prev => ({ ...prev, [jd.id]: false }))} isManualMode />
                       </div>
-                    </div>
+                    )}
                   </div>
 
-                  {/* Block 2: Comment & PDF + Stage & Created */}
-                  <div className="flex items-start gap-4 mt-4">
-                    {/* Left 70%: Comment & PDF */}
-                    <div className="w-[70%]">
-                      <div className="flex flex-col gap-2">
-                        {/* Comment Row */}
-                        <div className="flex items-center min-h-[36px]">
-                          <span className="w-20 text-xs text-gray-500 font-medium flex-shrink-0">Comment:</span>
-                          <div className="flex-1 bg-gray-50/80 rounded-lg px-3 py-2 min-h-[36px] flex items-center">
-                            <div className="break-words overflow-wrap-anywhere word-break-break-word w-full">
-                              <CommentInlineEdit
-                                value={jd.comment || ''}
-                                onSave={(value) => handleUpdateField(jd.id, 'comment', value)}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                        {/* PDF Row (conditional) */}
-                        {jd.cv_pdf_url && (
-                          <div className="flex items-center h-9">
-                            <span className="w-20 text-xs text-gray-500 font-medium flex-shrink-0">PDF:</span>
-                            <div className="flex-1">
-                              <PDFSection jd={jd} onUpdate={handleUpdateField} />
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                  <div className="flex flex-col gap-2">
+                    {/* Title - reduced width to avoid overlap with menu button */}
+                    <input
+                      type="text"
+                      value={jd.title}
+                      onChange={(e) => {
+                        const newJds = jds.map(j => j.id === jd.id ? {...j, title: e.target.value} : j)
+                        setJds(newJds)
+                      }}
+                      onBlur={(e) => handleUpdateField(jd.id, 'title', e.target.value)}
+                      placeholder="Job title..."
+                      className="w-[calc(100%-32px)] px-2 py-1 text-sm font-bold text-gray-900 bg-transparent border border-transparent rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-transparent hover:border-gray-200 transition-colors"
+                    />
+
+                    {/* Company */}
+                    <input
+                      type="text"
+                      value={jd.company}
+                      onChange={(e) => {
+                        const newJds = jds.map(j => j.id === jd.id ? {...j, company: e.target.value} : j)
+                        setJds(newJds)
+                      }}
+                      onBlur={(e) => handleUpdateField(jd.id, 'company', e.target.value)}
+                      placeholder="Company name..."
+                      className="w-full px-2 py-1 text-xs text-gray-600 bg-transparent border border-transparent rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-transparent hover:border-gray-200 transition-colors"
+                    />
+
+                    {/* Comment */}
+                    <CommentInlineEdit
+                      value={jd.comment || ''}
+                      onSave={(value) => handleUpdateField(jd.id, 'comment', value)}
+                    />
+
+                    {/* PDF - Always show */}
+                    <div className="bg-gray-50/80 rounded-lg px-2 py-1.5 min-h-[28px]">
+                      <PDFSection jd={jd} onUpdate={handleUpdateField} />
                     </div>
 
-                    {/* Right 30%: Stage & Created */}
-                    <div className="w-[30%]">
-                      <div className="flex flex-col gap-2">
-                        {/* Stage Row */}
-                        <div className="flex items-center h-9">
-                          <span className="w-16 text-xs text-gray-500 font-medium flex-shrink-0">Stage:</span>
-                          <select
-                            value={jd.application_stage || ''}
-                            onChange={(e) => {
-                              handleUpdateField(jd.id, 'application_stage', e.target.value)
-                              if (e.target.value) {
-                                const card = e.target.closest('.jd-card')
-                                if (card) {
-                                  card.classList.add('bg-green-50', 'border-green-300')
-                                  setTimeout(() => {
-                                    card.classList.remove('bg-green-50', 'border-green-300')
-                                  }, 800)
-                                }
-                              }
-                            }}
-                            className="flex-1 h-9 px-3 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-500 cursor-pointer transition-colors"
-                          >
-                            <option value="">Not Set</option>
-                            {stageOptions.map(stage => (
-                              <option key={stage} value={stage}>{stage}</option>
-                            ))}
-                          </select>
-                        </div>
-                        {/* Created Row */}
-                        <div className="flex items-center h-9">
-                          <span className="w-16 text-xs text-gray-500 font-medium flex-shrink-0">Created:</span>
-                          <span className="flex-1 text-xs text-gray-600 truncate">
-                            {formatDate(jd.created_at)}
-                          </span>
-                        </div>
+                    {/* 3 Buttons: LC, CL, n8n */}
+                    <div className="grid grid-cols-3 gap-2 mt-1">
+                      <LangChainButtonV2 jd={jd} autoMode buttonText="LC" />
+                      <CoverLetterButtonV2 jd={jd} buttonText="CL" />
+                      <LightningButtonV2 jd={jd} buttonText="n8n" />
+                    </div>
+
+                    {/* Stage & Created - same row */}
+                    <div className="flex gap-2">
+                      {/* Stage - 50% */}
+                      <select
+                        value={jd.application_stage || 'Raw JD'}
+                        onChange={(e) => {
+                          handleUpdateField(jd.id, 'application_stage', e.target.value)
+                          if (e.target.value) {
+                            const card = e.target.closest('.jd-card')
+                            if (card) {
+                              card.classList.add('bg-green-50', 'border-green-300')
+                              setTimeout(() => {
+                                card.classList.remove('bg-green-50', 'border-green-300')
+                              }, 800)
+                            }
+                          }
+                        }}
+                        className="w-1/2 h-7 px-2 text-xs border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-500 cursor-pointer transition-colors"
+                      >
+                        {stageOptions.map(stage => (
+                          <option key={stage} value={stage}>{stage}</option>
+                        ))}
+                      </select>
+
+                      {/* Created - 50% */}
+                      <div className="w-1/2 h-7 px-2 text-xs text-gray-500 flex items-center justify-end">
+                        {formatDate(jd.created_at)}
                       </div>
                     </div>
                   </div>

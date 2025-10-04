@@ -13,9 +13,10 @@ interface LightningButtonV2Props {
   jd: JD
   className?: string
   onPDFUploaded?: () => void
+  buttonText?: string
 }
 
-export default function LightningButtonV2({ jd, className = '', onPDFUploaded }: LightningButtonV2Props) {
+export default function LightningButtonV2({ jd, className = '', onPDFUploaded, buttonText = 'Lightning' }: LightningButtonV2Props) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [countdown, setCountdown] = useState(120)
   
@@ -211,14 +212,14 @@ export default function LightningButtonV2({ jd, className = '', onPDFUploaded }:
   }
 
   return (
-    <div className="relative">
+    <div className={`relative ${className}`.trim()}>
       <button
         onClick={handleGenerate}
         disabled={isGenerating}
-        className="w-full h-10 px-3 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full h-8 px-2 text-xs font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
         title="Generate Resume PDF V2"
       >
-        {isGenerating ? `${countdown}s` : 'Lightning'}
+        {isGenerating ? `${countdown}s` : buttonText}
       </button>
 
     </div>

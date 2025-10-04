@@ -17,7 +17,7 @@ import { motion } from 'framer-motion'
 export default function JD2CV() {
   const [activeTab, setActiveTab] = useState(0)
   const { selectedJD } = useWorkspaceStore()
-  
+
   // 自动滚动到选中的JD
   const scrollToSelectedJD = () => {
     setTimeout(() => {
