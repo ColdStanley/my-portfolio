@@ -107,6 +107,7 @@ async function syncJobDataToSupabase(jobData) {
       title: jobData.title,
       company: jobData.company,
       full_job_description: jobData.full_job_description?.replace(/\r\n/g, '\n').replace(/\r/g, '\n') || '',
+      jd_link: jobData.jd_link || '',
       comment: jobData.comment || ''
     };
 

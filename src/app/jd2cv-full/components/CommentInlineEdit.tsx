@@ -22,6 +22,7 @@ export default function CommentInlineEdit({ value, onSave }: CommentInlineEditPr
   const [editValue, setEditValue] = useState(value || '')
   const [isLoading, setIsLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setEditValue(value || '')
@@ -33,6 +34,27 @@ export default function CommentInlineEdit({ value, onSave }: CommentInlineEditPr
       inputRef.current.select()
     }
   }, [isEditing])
+
+  // Attach click handlers to links in the rendered HTML
+  useEffect(() => {
+    if (!isEditing && contentRef.current) {
+      const links = contentRef.current.querySelectorAll('a')
+      links.forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.stopPropagation()
+          // Force open in new tab
+          window.open(link.href, '_blank', 'noopener,noreferrer')
+          e.preventDefault()
+        })
+      })
+
+      return () => {
+        links.forEach(link => {
+          link.removeEventListener('click', () => {})
+        })
+      }
+    }
+  }, [isEditing, value])
 
   const handleSave = async () => {
     if (editValue === (value || '')) {
@@ -89,10 +111,26 @@ export default function CommentInlineEdit({ value, onSave }: CommentInlineEditPr
     )
   }
 
+  const handleClick = (e: React.MouseEvent) => {
+    // Check if the click target is a link or inside a link
+    const target = e.target as HTMLElement
+    const link = target.closest('a')
+
+    if (link) {
+      // Allow the link to work normally
+      e.stopPropagation()
+      return
+    }
+
+    // Otherwise, enter edit mode
+    setIsEditing(true)
+  }
+
   return (
-    <button
-      onClick={() => setIsEditing(true)}
-      className="w-full px-2 py-1 text-xs text-left rounded-lg transition-colors hover:bg-gray-100/50 border border-transparent min-w-0"
+    <div
+      ref={contentRef}
+      onClick={handleClick}
+      className="w-full px-2 py-1 text-xs text-left rounded-lg transition-colors hover:bg-gray-100/50 border border-transparent min-w-0 cursor-pointer"
     >
       {!value ? (
         <span className="text-gray-400 italic">Add comment...</span>
@@ -100,14 +138,8 @@ export default function CommentInlineEdit({ value, onSave }: CommentInlineEditPr
         <span
           className="break-words overflow-wrap-anywhere word-break-break-word text-gray-700"
           dangerouslySetInnerHTML={{ __html: processCommentLinks(value) }}
-          onClick={(e) => {
-            // Allow link clicks to work, prevent edit mode
-            if ((e.target as HTMLElement).tagName === 'A') {
-              e.stopPropagation()
-            }
-          }}
         />
       )}
-    </button>
+    </div>
   )
 }

@@ -13,7 +13,7 @@ const LINKEDIN_SELECTORS = {
   COMPANY_NAME: '.job-details-jobs-unified-top-card__company-name a',
   JOB_DESCRIPTION: '.jobs-description__content .jobs-description-content__text--stretch',
   SAVE_BUTTON: '.jobs-save-button',
-  EASY_APPLY_BUTTON: '.jobs-apply-button--top-card'
+  EASY_APPLY_BUTTON: '#jobs-apply-button-id'
 };
 
 /**
@@ -73,15 +73,21 @@ function extractLinkedInJobData() {
       return null;
     }
 
-    // Detect Easy Apply and format comment
-    const isEasyApply = !!document.querySelector(LINKEDIN_SELECTORS.EASY_APPLY_BUTTON);
+    // Detect Easy Apply and get LinkedIn URL
+    // Check aria-label to differentiate between "Easy Apply" and "Apply on company website"
+    const applyButton = document.querySelector(LINKEDIN_SELECTORS.EASY_APPLY_BUTTON);
+    const isEasyApply = applyButton && (
+      applyButton.getAttribute('aria-label')?.includes('Easy Apply') ||
+      applyButton.textContent.trim() === 'Easy Apply'
+    );
     const url = window.location.href;
 
     const jobData = {
       title: jobTitle,
       company: companyName,
       full_job_description: jobDescription,
-      comment: isEasyApply ? `EA - ${url}` : url
+      jd_link: url,
+      comment: isEasyApply ? 'Easy Apply' : ''
     };
 
     console.log('✅ LinkedIn job data extracted:', {
@@ -89,7 +95,8 @@ function extractLinkedInJobData() {
       company: jobData.company,
       descriptionLength: jobData.full_job_description.length,
       isEasyApply: isEasyApply,
-      linkedinUrl: jobData.comment
+      linkedinUrl: jobData.jd_link,
+      comment: jobData.comment
     });
 
     return jobData;

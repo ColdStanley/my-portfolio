@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
         title: jdData.title,
         company: jdData.company,
         full_job_description: jdData.full_job_description || '',
+        jd_link: jdData.jd_link || null,
         comment: jdData.comment || null
       }])
       .select()
@@ -138,6 +139,7 @@ export async function PUT(request: NextRequest) {
         application_stage: jdData.application_stage || '',
         role_group: jdData.role_group || '',
         firm_type: jdData.firm_type || '',
+        jd_link: jdData.jd_link || '',
         comment: jdData.comment || '',
         cv_pdf_url: jdData.cv_pdf_url || '',
         cv_pdf_filename: jdData.cv_pdf_filename || '',
