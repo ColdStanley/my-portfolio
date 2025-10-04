@@ -186,7 +186,7 @@ export default function ArticleFillGame() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.8 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-x-4 bottom-4 z-50 md:hidden rounded-lg border p-4 shadow-lg"
+            className="fixed inset-x-4 top-[180px] z-50 md:hidden rounded-lg border p-4 shadow-lg"
             style={{
               borderColor: theme.neutralDark,
               backgroundColor: theme.surface,

@@ -136,7 +136,65 @@ export default function WordTranslationMatchGame() {
 
       {/* 游戏区域 - 移动端上下布局 / 桌面端左右布局 */}
       <div className="flex flex-1 flex-col items-stretch justify-center gap-6 md:flex-row">
-        {/* 翻译卡片：移动端上方 / 桌面端右侧 (50%) */}
+        {/* 输入卡片：移动端上方 / 桌面端左侧 (50%) */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentIndex}
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 50 }}
+            transition={{ duration: 0.3 }}
+            className="relative flex w-full flex-col justify-center gap-4 rounded-lg border p-6 md:order-1 md:w-1/2"
+            style={{
+              borderColor: theme.neutralDark,
+              backgroundColor: theme.surface,
+            }}
+          >
+            <p className="text-center text-sm font-medium" style={{ color: theme.textSecondary }}>
+              Type the word:
+            </p>
+            <input
+              type="text"
+              value={userAnswer}
+              onChange={(e) => setUserAnswer(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type here"
+              autoFocus
+              className="w-full rounded border px-3 py-2 text-center text-sm outline-none transition-all duration-200"
+              style={{
+                borderColor: theme.neutralDark,
+                backgroundColor: 'white',
+                color: theme.primary,
+              }}
+            />
+            <button
+              onClick={handleSubmit}
+              disabled={!userAnswer.trim()}
+              className="flex h-10 items-center justify-center rounded-lg transition-all duration-200 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+              style={{
+                backgroundColor: theme.primary,
+                color: 'white',
+              }}
+            >
+              Submit
+            </button>
+
+            {/* 粒子爆炸效果 */}
+            {showConfetti && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center">
+                <ConfettiExplosion
+                  force={0.6}
+                  duration={2500}
+                  particleCount={50}
+                  width={400}
+                  colors={['#F4D35E', '#111111', '#FFFFFF']}
+                />
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+
+        {/* 翻译卡片：移动端下方 / 桌面端右侧 (50%) */}
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
@@ -180,64 +238,6 @@ export default function WordTranslationMatchGame() {
                 {currentPair?.translation}
               </ReactMarkdown>
             </div>
-
-            {/* 粒子爆炸效果 */}
-            {showConfetti && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center">
-                <ConfettiExplosion
-                  force={0.6}
-                  duration={2500}
-                  particleCount={50}
-                  width={400}
-                  colors={['#F4D35E', '#111111', '#FFFFFF']}
-                />
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
-
-        {/* 输入卡片：移动端下方 / 桌面端左侧 (50%) */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentIndex}
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 50 }}
-            transition={{ duration: 0.3 }}
-            className="relative flex w-full flex-col justify-center gap-4 rounded-lg border p-6 md:order-1 md:w-1/2"
-            style={{
-              borderColor: theme.neutralDark,
-              backgroundColor: theme.surface,
-            }}
-          >
-            <p className="text-center text-sm font-medium" style={{ color: theme.textSecondary }}>
-              Type the word:
-            </p>
-            <input
-              type="text"
-              value={userAnswer}
-              onChange={(e) => setUserAnswer(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Type here"
-              autoFocus
-              className="w-full rounded border px-3 py-2 text-center text-sm outline-none transition-all duration-200"
-              style={{
-                borderColor: theme.neutralDark,
-                backgroundColor: 'white',
-                color: theme.primary,
-              }}
-            />
-            <button
-              onClick={handleSubmit}
-              disabled={!userAnswer.trim()}
-              className="flex h-10 items-center justify-center rounded-lg transition-all duration-200 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
-              style={{
-                backgroundColor: theme.primary,
-                color: 'white',
-              }}
-            >
-              Submit
-            </button>
 
             {/* 粒子爆炸效果 */}
             {showConfetti && (

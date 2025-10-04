@@ -198,9 +198,9 @@ export default function FillBlankGame() {
         )}
       </AnimatePresence>
 
-      {/* 游戏区域 - 移动端上下布局 / 桌面端左右布局 */}
-      <div className="flex flex-1 flex-col items-center justify-center gap-6 md:flex-row md:gap-12">
-        {/* 喇叭卡片：移动端上方 / 桌面端左侧 */}
+      {/* 游戏区域 - 左右布局 */}
+      <div className="flex flex-1 items-center justify-center gap-6 md:gap-12">
+        {/* 喇叭卡片：左侧 */}
         <AnimatePresence mode="wait">
           <motion.div
             key={currentWord}
@@ -236,7 +236,7 @@ export default function FillBlankGame() {
           </motion.div>
         </AnimatePresence>
 
-        {/* 填空卡片：移动端下方 / 桌面端右侧 */}
+        {/* 填空卡片：右侧 */}
         <AnimatePresence mode="wait">
           <motion.div
             key={currentWord}
