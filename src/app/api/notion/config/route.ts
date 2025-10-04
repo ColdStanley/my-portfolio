@@ -73,11 +73,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Standardize city and name to match URL format (lowercase, no spaces)
+    const standardizedCity = city.toLowerCase().replace(/\s+/g, '')
+    const standardizedName = name.toLowerCase().replace(/\s+/g, '')
+
     const { data, error } = await supabase
       .from('notion_configs')
       .upsert({
-        city,
-        name,
+        city: standardizedCity,
+        name: standardizedName,
         api_key: apiKey,
         database_id: databaseId,
         theme: theme || 'pink',
@@ -90,7 +94,7 @@ export async function POST(request: NextRequest) {
       throw error
     }
 
-    const key = `${city.toLowerCase()}-${name.toLowerCase().replace(/\s+/g, '')}`
+    const key = `${standardizedCity}-${standardizedName}`
 
     return NextResponse.json({
       success: true,
