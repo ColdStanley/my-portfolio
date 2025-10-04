@@ -104,7 +104,7 @@ export default function ArticleHistoryModal() {
         {/* Modal */}
         <motion.div
           {...ANIMATIONS.fadeIn}
-          className="relative z-10 w-[600px] max-h-[70vh] rounded-lg border bg-white shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
+          className="relative z-10 w-[600px] max-w-[95vw] max-h-[80vh] rounded-xl border bg-white shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
           style={{ borderColor: theme.neutralDark }}
         >
           {/* Header */}
@@ -126,7 +126,7 @@ export default function ArticleHistoryModal() {
           </div>
 
           {/* Content */}
-          <div className="overflow-y-auto p-6" style={{ maxHeight: 'calc(70vh - 80px)' }}>
+          <div className="overflow-y-auto p-6" style={{ maxHeight: 'calc(80vh - 80px)' }}>
             {isLoading ? (
               <div className="py-12 text-center">
                 <p style={{ color: theme.textSecondary }}>Loading...</p>

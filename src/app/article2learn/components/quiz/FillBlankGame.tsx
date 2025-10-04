@@ -198,9 +198,9 @@ export default function FillBlankGame() {
         )}
       </AnimatePresence>
 
-      {/* 游戏区域 - 左右各一张卡片 */}
-      <div className="flex flex-1 items-center justify-center gap-12">
-        {/* 左侧：小喇叭卡片 */}
+      {/* 游戏区域 - 移动端上下布局 / 桌面端左右布局 */}
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 md:flex-row md:gap-12">
+        {/* 喇叭卡片：移动端上方 / 桌面端左侧 */}
         <AnimatePresence mode="wait">
           <motion.div
             key={currentWord}
@@ -208,7 +208,7 @@ export default function FillBlankGame() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 50 }}
             transition={{ duration: 0.3 }}
-            className="relative flex h-48 w-48 cursor-pointer items-center justify-center rounded-lg border p-6 transition-all duration-200 hover:shadow-lg"
+            className="relative flex h-40 w-40 cursor-pointer items-center justify-center rounded-lg border p-6 transition-all duration-200 hover:shadow-lg md:h-48 md:w-48"
             style={{
               borderColor: theme.neutralDark,
               backgroundColor: theme.surface,
@@ -236,7 +236,7 @@ export default function FillBlankGame() {
           </motion.div>
         </AnimatePresence>
 
-        {/* 右侧：填空卡片 */}
+        {/* 填空卡片：移动端下方 / 桌面端右侧 */}
         <AnimatePresence mode="wait">
           <motion.div
             key={currentWord}
@@ -244,7 +244,7 @@ export default function FillBlankGame() {
             animate={isError ? { x: [-10, 10, -10, 10, 0] } : { opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -50 }}
             transition={{ duration: isError ? 0.4 : 0.3 }}
-            className="relative flex h-48 w-48 flex-col items-center justify-center gap-4 rounded-lg border p-6 transition-all duration-200"
+            className="relative flex h-40 w-40 flex-col items-center justify-center gap-4 rounded-lg border p-6 transition-all duration-200 md:h-48 md:w-48"
             style={{
               borderColor: theme.neutralDark,
               backgroundColor: theme.surface,

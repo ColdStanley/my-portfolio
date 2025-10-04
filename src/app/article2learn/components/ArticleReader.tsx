@@ -156,8 +156,8 @@ export default function ArticleReader() {
 
   return (
     <motion.div {...ANIMATIONS.contentSwitch} className="flex gap-6 px-6 py-12">
-      {/* 左侧文章区域 70% */}
-      <div className="w-[70%]">
+      {/* 左侧文章区域 70% (桌面) / 100% (移动) */}
+      <div className="w-full md:w-[70%]">
         <div className="rounded-lg border bg-white p-8 shadow-md" style={{ borderColor: theme.neutralDark }}>
           <h1
             className="mb-6 text-2xl font-semibold"
@@ -215,8 +215,8 @@ export default function ArticleReader() {
         )}
       </div>
 
-      {/* 右侧 Popover 区域 30% */}
-      <div className="w-[30%]">
+      {/* 右侧 Popover 区域 30% (仅桌面) */}
+      <div className="hidden md:block md:w-[30%]">
         <AnimatePresence mode="wait">
           {showHistoryPopover && (
             <motion.div

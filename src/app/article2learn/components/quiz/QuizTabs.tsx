@@ -14,10 +14,10 @@ export default function QuizTabs() {
     <div className="flex h-full flex-col">
       {/* 二级 Tab 导航 */}
       <div className="border-b bg-white px-6" style={{ borderColor: theme.neutralDark }}>
-        <div className="flex gap-2">
+        <div className="flex gap-2 overflow-x-auto">
           <button
             onClick={() => setActiveQuizTab('match')}
-            className={`rounded-t-lg border-b-2 px-4 py-3 text-sm font-medium transition-all duration-300 ease-out ${
+            className={`flex-shrink-0 rounded-t-lg border-b-2 px-4 py-3 text-sm font-medium transition-all duration-300 ease-out ${
               activeQuizTab === 'match' ? 'shadow-[0_-2px_8px_rgba(0,0,0,0.04)]' : 'hover:bg-neutral-50/50'
             }`}
             style={{
@@ -31,7 +31,7 @@ export default function QuizTabs() {
 
           <button
             onClick={() => setActiveQuizTab('fillblank')}
-            className={`rounded-t-lg border-b-2 px-4 py-3 text-sm font-medium transition-all duration-300 ease-out ${
+            className={`flex-shrink-0 rounded-t-lg border-b-2 px-4 py-3 text-sm font-medium transition-all duration-300 ease-out ${
               activeQuizTab === 'fillblank' ? 'shadow-[0_-2px_8px_rgba(0,0,0,0.04)]' : 'hover:bg-neutral-50/50'
             }`}
             style={{
@@ -45,7 +45,7 @@ export default function QuizTabs() {
 
           <button
             onClick={() => setActiveQuizTab('articlefill')}
-            className={`rounded-t-lg border-b-2 px-4 py-3 text-sm font-medium transition-all duration-300 ease-out ${
+            className={`flex-shrink-0 rounded-t-lg border-b-2 px-4 py-3 text-sm font-medium transition-all duration-300 ease-out ${
               activeQuizTab === 'articlefill' ? 'shadow-[0_-2px_8px_rgba(0,0,0,0.04)]' : 'hover:bg-neutral-50/50'
             }`}
             style={{
@@ -59,7 +59,7 @@ export default function QuizTabs() {
 
           <button
             onClick={() => setActiveQuizTab('wordtranslation')}
-            className={`rounded-t-lg border-b-2 px-4 py-3 text-sm font-medium transition-all duration-300 ease-out ${
+            className={`flex-shrink-0 rounded-t-lg border-b-2 px-4 py-3 text-sm font-medium transition-all duration-300 ease-out ${
               activeQuizTab === 'wordtranslation' ? 'shadow-[0_-2px_8px_rgba(0,0,0,0.04)]' : 'hover:bg-neutral-50/50'
             }`}
             style={{

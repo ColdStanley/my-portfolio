@@ -21,6 +21,7 @@ export default function ArticleFillGame() {
   const [errorBlanks, setErrorBlanks] = useState<Set<number>>(new Set())
   const [errorTooltip, setErrorTooltip] = useState<string | null>(null)
   const [errorWord, setErrorWord] = useState<string | null>(null)
+  const [activeBlankIndex, setActiveBlankIndex] = useState<number | null>(null)
 
   // 获取被查询单词列表（去重）
   const queriedWords = useMemo(() => {
@@ -104,6 +105,7 @@ export default function ArticleFillGame() {
         newSet.delete(index)
         return newSet
       })
+      setActiveBlankIndex(null) // 关闭移动端弹窗
     } else {
       // 错误：音效 + 抖动 + 显示提示 + 清空
       playErrorSound()
@@ -175,7 +177,124 @@ export default function ArticleFillGame() {
   }, [fragments])
 
   return (
-    <div className="relative flex h-full gap-6 p-6">
+    <div className="relative flex h-full flex-col gap-6 p-6 md:flex-row">
+      {/* 移动端内联答题弹窗 */}
+      <AnimatePresence>
+        {activeBlankIndex !== null && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.8 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-x-4 bottom-4 z-50 md:hidden rounded-lg border p-4 shadow-lg"
+            style={{
+              borderColor: theme.neutralDark,
+              backgroundColor: theme.surface,
+            }}
+          >
+            {(() => {
+              const blank = blanks.find((b) => b.index === activeBlankIndex)
+              if (!blank) return null
+
+              const isCorrect = correctBlanks.has(blank.index)
+              const isError = errorBlanks.has(blank.index)
+              const userAnswer = answers.get(blank.index) || ''
+
+              return (
+                <motion.div
+                  animate={isError ? { x: [-5, 5, -5, 5, 0] } : {}}
+                  transition={{ duration: 0.4 }}
+                  className="space-y-3"
+                >
+                  {/* 关闭按钮 */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold" style={{ color: theme.textSecondary }}>
+                        {getCircledNumber(blank.index)}
+                      </span>
+                      <SpeakerButton
+                        text={blank.word}
+                        language={currentArticle.article_language}
+                        size="sm"
+                      />
+                    </div>
+                    <button
+                      onClick={() => setActiveBlankIndex(null)}
+                      className="h-6 w-6 rounded border text-xs transition-all duration-200 hover:brightness-95"
+                      style={{
+                        borderColor: theme.neutralDark,
+                        backgroundColor: theme.neutralLight,
+                        color: theme.textPrimary,
+                      }}
+                      aria-label="Close"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* 输入框和提交按钮 */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={userAnswer}
+                      onChange={(e) => handleInputChange(blank.index, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(blank.index, blank.word, e)}
+                      disabled={isCorrect}
+                      placeholder="Type here"
+                      autoFocus
+                      className="flex-1 rounded border px-3 py-2 text-sm outline-none"
+                      style={{
+                        borderColor: theme.neutralDark,
+                        backgroundColor: isCorrect ? 'transparent' : 'white',
+                        color: theme.primary,
+                      }}
+                    />
+                    {!isCorrect && (
+                      <button
+                        onClick={() => handleSubmit(blank.index, blank.word)}
+                        disabled={!userAnswer.trim()}
+                        className="flex h-10 w-10 items-center justify-center rounded-full transition-all duration-200 hover:scale-110 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                        style={{
+                          backgroundColor: theme.primary,
+                        }}
+                        aria-label="Submit"
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 12 12"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M1 6L4.5 9.5L11 1.5"
+                            stroke="white"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                    {isCorrect && (
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 0.3 }}
+                        className="text-lg font-bold"
+                        style={{ color: theme.primary }}
+                      >
+                        ✓
+                      </motion.span>
+                    )}
+                  </div>
+                </motion.div>
+              )
+            })()}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* 错误提示气泡 - 右下角 */}
       <AnimatePresence>
         {errorTooltip && errorWord && (
@@ -229,8 +348,8 @@ export default function ArticleFillGame() {
         )}
       </AnimatePresence>
 
-      {/* 左侧：文章阅读区 (70%) */}
-      <div className="w-[70%] overflow-auto">
+      {/* 文章阅读区：移动端全宽 / 桌面端 70% */}
+      <div className="w-full overflow-auto md:w-[70%]">
         <div className="rounded-lg border bg-white p-8 shadow-md" style={{ borderColor: theme.neutralDark }}>
           <h1 className="mb-6 text-2xl font-semibold" style={{ color: theme.primary }}>
             {currentArticle.title}
@@ -269,11 +388,12 @@ export default function ArticleFillGame() {
                 )
               }
 
-              // 未填写/错误：显示序号 + 横线
+              // 未填写/错误：显示序号 + 横线（移动端可点击）
               return (
                 <span
                   key={idx}
-                  className="relative mx-1 inline-block border-b-2 px-2 py-0.5"
+                  onClick={() => setActiveBlankIndex(blankIndex)}
+                  className="relative mx-1 inline-block cursor-pointer border-b-2 px-2 py-0.5 md:cursor-default"
                   style={{
                     borderColor: theme.neutralDark,
                     backgroundColor: 'transparent',
@@ -289,8 +409,8 @@ export default function ArticleFillGame() {
         </div>
       </div>
 
-      {/* 右侧：答题卡区域 (30%) */}
-      <div className="w-[30%] overflow-auto">
+      {/* 答题卡区域：移动端隐藏 / 桌面端 30% */}
+      <div className="hidden w-[30%] overflow-auto md:block">
         <div className="sticky top-0 rounded-lg border bg-white shadow-md" style={{ borderColor: theme.neutralDark }}>
           {/* 进度统计 */}
           <div className="border-b p-4" style={{ borderColor: theme.neutralDark }}>

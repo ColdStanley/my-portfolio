@@ -166,12 +166,12 @@ export default function MatchGame() {
       </div>
 
       {/* 游戏区域 */}
-      <div className="flex flex-1 gap-6">
-        {/* 左侧：小喇叭卡片 (50%) */}
-        <div className="flex w-1/2 items-center justify-center">
+      <div className="flex flex-1 flex-col gap-6 md:flex-row">
+        {/* 喇叭区域：移动端上方 / 桌面端左侧 (50%) */}
+        <div className="flex w-full items-center justify-center md:w-1/2">
           <div
-            className={`grid w-full gap-4 ${
-              currentWords.length <= 4 ? 'grid-cols-4' : 'grid-cols-4 grid-rows-2'
+            className={`grid w-full gap-4 grid-cols-2 ${
+              currentWords.length <= 4 ? 'md:grid-cols-4' : 'md:grid-cols-4 md:grid-rows-2'
             }`}
             style={{ perspective: '1000px' }}
           >
@@ -224,11 +224,11 @@ export default function MatchGame() {
           </div>
         </div>
 
-        {/* 右侧：单词卡片 (50%) */}
-        <div className="flex w-1/2 items-center justify-center">
+        {/* 单词卡片区域：移动端下方 / 桌面端右侧 (50%) */}
+        <div className="flex w-full items-center justify-center md:w-1/2">
           <div
-            className={`grid w-full gap-4 ${
-              shuffledWords.length <= 4 ? 'grid-cols-4' : 'grid-cols-4 grid-rows-2'
+            className={`grid w-full gap-4 grid-cols-2 ${
+              shuffledWords.length <= 4 ? 'md:grid-cols-4' : 'md:grid-cols-4 md:grid-rows-2'
             }`}
             style={{ perspective: '1000px' }}
           >
