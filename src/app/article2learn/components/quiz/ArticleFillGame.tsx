@@ -2,9 +2,11 @@
 
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import ReactMarkdown from 'react-markdown'
 import { theme } from '@/styles/theme.config'
 import { useArticleStore } from '../../store/useArticleStore'
 import SpeakerButton from '../SpeakerButton'
+import { playCorrectSound, playErrorSound } from '../../utils/soundEffects'
 
 // 数字转圆圈序号（①②③...）
 const getCircledNumber = (num: number): string => {
@@ -18,6 +20,7 @@ export default function ArticleFillGame() {
   const [correctBlanks, setCorrectBlanks] = useState<Set<number>>(new Set())
   const [errorBlanks, setErrorBlanks] = useState<Set<number>>(new Set())
   const [errorTooltip, setErrorTooltip] = useState<string | null>(null)
+  const [errorWord, setErrorWord] = useState<string | null>(null)
 
   // 获取被查询单词列表（去重）
   const queriedWords = useMemo(() => {
@@ -93,7 +96,8 @@ export default function ArticleFillGame() {
     const userAnswer = answers.get(index)?.trim()
 
     if (userAnswer === correctWord) {
-      // 100% 完全匹配（包括大小写）
+      // 100% 完全匹配（包括大小写）+ 音效
+      playCorrectSound()
       setCorrectBlanks((prev) => new Set(prev).add(index))
       setErrorBlanks((prev) => {
         const newSet = new Set(prev)
@@ -101,7 +105,8 @@ export default function ArticleFillGame() {
         return newSet
       })
     } else {
-      // 错误：抖动 + 显示提示 + 清空
+      // 错误：音效 + 抖动 + 显示提示 + 清空
+      playErrorSound()
       setErrorBlanks((prev) => new Set(prev).add(index))
 
       // 获取该单词的 AI 回复
@@ -111,6 +116,7 @@ export default function ArticleFillGame() {
           q.article_language === currentArticle?.article_language &&
           q.mother_tongue === currentArticle?.mother_tongue
       )
+      setErrorWord(correctWord)
       setErrorTooltip(query?.ai_response || '')
 
       setTimeout(() => {
@@ -129,6 +135,7 @@ export default function ArticleFillGame() {
       // 3秒后隐藏提示
       setTimeout(() => {
         setErrorTooltip(null)
+        setErrorWord(null)
       }, 3000)
     }
   }
@@ -171,7 +178,7 @@ export default function ArticleFillGame() {
     <div className="relative flex h-full gap-6 p-6">
       {/* 错误提示气泡 - 右下角 */}
       <AnimatePresence>
-        {errorTooltip && (
+        {errorTooltip && errorWord && (
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -183,9 +190,41 @@ export default function ArticleFillGame() {
               backgroundColor: theme.surface,
             }}
           >
-            <p className="text-sm" style={{ color: theme.textPrimary }}>
-              {errorTooltip}
-            </p>
+            {/* 单词标题 */}
+            <div className="mb-3 border-b pb-2" style={{ borderColor: theme.neutralDark }}>
+              <p className="text-sm font-semibold" style={{ color: theme.primary }}>
+                {errorWord}
+              </p>
+            </div>
+
+            {/* AI 回复 */}
+            <div className="prose prose-sm max-w-none">
+              <ReactMarkdown
+                components={{
+                  p: ({ children }) => (
+                    <p style={{ color: theme.textPrimary }} className="mb-2 text-sm leading-relaxed">
+                      {children}
+                    </p>
+                  ),
+                  strong: ({ children }) => (
+                    <strong style={{ color: theme.primary }}>{children}</strong>
+                  ),
+                  code: ({ children }) => (
+                    <code
+                      style={{
+                        backgroundColor: theme.neutralLight,
+                        color: theme.primary,
+                      }}
+                      className="rounded px-1 py-0.5"
+                    >
+                      {children}
+                    </code>
+                  ),
+                }}
+              >
+                {errorTooltip}
+              </ReactMarkdown>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -209,14 +248,35 @@ export default function ArticleFillGame() {
               // fragment.type === 'blank'
               const blankIndex = fragment.index!
               const isCorrect = correctBlanks.has(blankIndex)
+              const correctWord = fragment.word!
 
+              if (isCorrect) {
+                // 正确：显示用户输入的答案（原单词）+ 淡入动画
+                return (
+                  <motion.span
+                    key={idx}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="mx-1 inline-block rounded px-1 font-semibold"
+                    style={{
+                      color: theme.primary,
+                      backgroundColor: 'rgba(244, 211, 94, 0.2)',
+                    }}
+                  >
+                    {correctWord}
+                  </motion.span>
+                )
+              }
+
+              // 未填写/错误：显示序号 + 横线
               return (
                 <span
                   key={idx}
                   className="relative mx-1 inline-block border-b-2 px-2 py-0.5"
                   style={{
-                    borderColor: isCorrect ? theme.primary : theme.neutralDark,
-                    backgroundColor: isCorrect ? 'rgba(244, 211, 94, 0.1)' : 'transparent',
+                    borderColor: theme.neutralDark,
+                    backgroundColor: 'transparent',
                   }}
                 >
                   <span className="text-xs font-semibold" style={{ color: theme.textSecondary }}>

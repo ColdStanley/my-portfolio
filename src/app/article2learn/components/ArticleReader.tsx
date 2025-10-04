@@ -47,11 +47,23 @@ export default function ArticleReader() {
 
   const handleTextSelection = useCallback(() => {
     const selection = window.getSelection()
-    const text = selection?.toString().trim()
+    if (!selection || selection.rangeCount === 0) {
+      setShowTooltip(false)
+      return
+    }
+
+    const range = selection.getRangeAt(0)
+    const container = range.cloneContents()
+
+    // 移除所有角标元素（<sup>）
+    const badges = container.querySelectorAll('sup')
+    badges.forEach((badge) => badge.remove())
+
+    // 提取纯文本
+    const text = container.textContent?.trim() || ''
 
     if (text && text.length > 0) {
-      const range = selection?.getRangeAt(0)
-      const rect = range?.getBoundingClientRect()
+      const rect = range.getBoundingClientRect()
 
       if (rect) {
         setSelectedText(text)

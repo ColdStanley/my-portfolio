@@ -3,9 +3,11 @@
 import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ConfettiExplosion from 'react-confetti-explosion'
+import ReactMarkdown from 'react-markdown'
 import { theme } from '@/styles/theme.config'
 import { useArticleStore } from '../../store/useArticleStore'
 import SpeakerButton from '../SpeakerButton'
+import { playCorrectSound, playErrorSound } from '../../utils/soundEffects'
 
 export default function FillBlankGame() {
   const { currentArticle, queries } = useArticleStore()
@@ -15,6 +17,7 @@ export default function FillBlankGame() {
   const [isError, setIsError] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
   const [errorTooltip, setErrorTooltip] = useState<string | null>(null)
+  const [errorWord, setErrorWord] = useState<string | null>(null)
 
   // 过滤并去重单词（遵循 History 逻辑）
   const allWords = useMemo(() => {
@@ -55,7 +58,8 @@ export default function FillBlankGame() {
     const correctAnswer = currentWord.toLowerCase()
 
     if (trimmedAnswer === correctAnswer) {
-      // 正确：触发爆炸效果
+      // 正确：触发爆炸效果 + 音效
+      playCorrectSound()
       setShowConfetti(true)
 
       // 延迟后进入下一题
@@ -67,8 +71,10 @@ export default function FillBlankGame() {
         }
       }, 1500)
     } else {
-      // 错误：抖动 + 显示提示 + 清空输入
+      // 错误：音效 + 抖动 + 显示提示 + 清空输入
+      playErrorSound()
       setIsError(true)
+      setErrorWord(currentWord)
       setErrorTooltip(getCurrentWordTranslation())
 
       setTimeout(() => {
@@ -79,6 +85,7 @@ export default function FillBlankGame() {
       // 3秒后隐藏提示
       setTimeout(() => {
         setErrorTooltip(null)
+        setErrorWord(null)
       }, 3000)
     }
   }
@@ -140,7 +147,7 @@ export default function FillBlankGame() {
 
       {/* 错误提示气泡 - 右下角 */}
       <AnimatePresence>
-        {errorTooltip && (
+        {errorTooltip && errorWord && (
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -152,9 +159,41 @@ export default function FillBlankGame() {
               backgroundColor: theme.surface,
             }}
           >
-            <p className="text-sm" style={{ color: theme.textPrimary }}>
-              {errorTooltip}
-            </p>
+            {/* 单词标题 */}
+            <div className="mb-3 border-b pb-2" style={{ borderColor: theme.neutralDark }}>
+              <p className="text-sm font-semibold" style={{ color: theme.primary }}>
+                {errorWord}
+              </p>
+            </div>
+
+            {/* AI 回复 */}
+            <div className="prose prose-sm max-w-none">
+              <ReactMarkdown
+                components={{
+                  p: ({ children }) => (
+                    <p style={{ color: theme.textPrimary }} className="mb-2 text-sm leading-relaxed">
+                      {children}
+                    </p>
+                  ),
+                  strong: ({ children }) => (
+                    <strong style={{ color: theme.primary }}>{children}</strong>
+                  ),
+                  code: ({ children }) => (
+                    <code
+                      style={{
+                        backgroundColor: theme.neutralLight,
+                        color: theme.primary,
+                      }}
+                      className="rounded px-1 py-0.5"
+                    >
+                      {children}
+                    </code>
+                  ),
+                }}
+              >
+                {errorTooltip}
+              </ReactMarkdown>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

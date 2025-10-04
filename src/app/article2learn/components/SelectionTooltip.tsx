@@ -106,7 +106,7 @@ export default function SelectionTooltip({
       <motion.div
         key="selection-tooltip"
         {...ANIMATIONS.fadeIn}
-        className="fixed z-50 flex flex-col gap-2 rounded-lg border bg-white p-3 shadow-lg"
+        className="fixed z-50 rounded-lg border bg-white p-3 shadow-lg"
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
         style={{
@@ -148,22 +148,25 @@ export default function SelectionTooltip({
             No prompts available for selected languages
           </div>
         ) : (
-          <>
-            {filteredPrompts.map((prompt) => (
-              <button
-                key={prompt.promptType}
-                onClick={() => handlePromptClick(prompt)}
-                className="h-9 w-full rounded-lg px-4 text-xs font-medium text-white transition-all duration-200 hover:brightness-110"
-                style={{ backgroundColor: theme.primary }}
-              >
-                {prompt.name}
-              </button>
-            ))}
+          <div className="flex flex-col gap-2">
+            {/* Prompt 按钮区域 - 2列网格 */}
+            <div className="grid grid-cols-2 gap-2">
+              {filteredPrompts.map((prompt) => (
+                <button
+                  key={prompt.promptType}
+                  onClick={() => handlePromptClick(prompt)}
+                  className="h-7 rounded-lg px-2.5 text-xs font-medium text-white transition-all duration-200 hover:brightness-110"
+                  style={{ backgroundColor: theme.primary }}
+                >
+                  {prompt.name}
+                </button>
+              ))}
+            </div>
 
-            {/* Close button */}
+            {/* Close button - 独立一行 */}
             <button
               onClick={onClose}
-              className="h-9 w-full rounded-lg border text-xs font-medium transition-all duration-200 hover:brightness-95"
+              className="h-7 w-full rounded-lg border text-xs font-medium transition-all duration-200 hover:brightness-95"
               style={{
                 borderColor: theme.neutralDark,
                 backgroundColor: theme.neutralLight,
@@ -173,7 +176,7 @@ export default function SelectionTooltip({
             >
               Close
             </button>
-          </>
+          </div>
         )}
       </motion.div>
     </AnimatePresence>,

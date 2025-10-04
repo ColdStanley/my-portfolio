@@ -3,9 +3,11 @@
 import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ConfettiExplosion from 'react-confetti-explosion'
+import ReactMarkdown from 'react-markdown'
 import { theme } from '@/styles/theme.config'
 import { useArticleStore } from '../../store/useArticleStore'
 import SpeakerButton from '../SpeakerButton'
+import { playCorrectSound, playErrorSound } from '../../utils/soundEffects'
 
 export default function MatchGame() {
   const { currentArticle, queries } = useArticleStore()
@@ -16,6 +18,7 @@ export default function MatchGame() {
   const [justMatchedWords, setJustMatchedWords] = useState<Set<string>>(new Set())
   const [showError, setShowError] = useState(false)
   const [errorWord, setErrorWord] = useState<string | null>(null)
+  const [errorTooltip, setErrorTooltip] = useState<string | null>(null)
 
   // 过滤并去重单词（遵循 History 逻辑）
   const allWords = useMemo(() => {
@@ -68,7 +71,8 @@ export default function MatchGame() {
     if (!selectedSpeaker || matchedWords.has(word)) return
 
     if (selectedSpeaker === word) {
-      // 正确匹配：触发爆炸效果
+      // 正确匹配：触发爆炸效果 + 音效
+      playCorrectSound()
       setJustMatchedWords((prev) => new Set(prev).add(word))
 
       // 延迟 600ms 后真正标记为匹配（等待动画完成）
@@ -82,12 +86,24 @@ export default function MatchGame() {
         setSelectedSpeaker(null)
       }, 600)
     } else {
-      // 错误
+      // 错误：音效 + 视觉反馈 + 获取 AI 回复
+      playErrorSound()
       setShowError(true)
       setErrorWord(word)
+
+      // 获取该单词的 AI 回复
+      const query = queries.find(
+        (q) =>
+          q.selected_text === selectedSpeaker &&
+          q.article_language === currentArticle?.article_language &&
+          q.mother_tongue === currentArticle?.mother_tongue
+      )
+      setErrorTooltip(query?.ai_response || '')
+
       setTimeout(() => {
         setShowError(false)
         setErrorWord(null)
+        setErrorTooltip(null)
       }, 3000)
     }
   }
@@ -269,19 +285,53 @@ export default function MatchGame() {
 
       {/* 错误提示 */}
       <AnimatePresence>
-        {showError && (
+        {showError && errorTooltip && errorWord && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 rounded-lg border px-6 py-3 shadow-lg"
+            initial={{ opacity: 0, y: 20, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.8 }}
+            transition={{ duration: 0.3 }}
+            className="fixed bottom-6 right-6 z-50 max-w-md rounded-lg border p-4 shadow-lg"
             style={{
-              borderColor: '#EF4444',
-              backgroundColor: '#FEE2E2',
-              color: '#EF4444',
+              borderColor: theme.neutralDark,
+              backgroundColor: theme.surface,
             }}
           >
-            <p className="text-sm font-medium">❌ Incorrect match, please try again</p>
+            {/* 单词标题 */}
+            <div className="mb-3 border-b pb-2" style={{ borderColor: theme.neutralDark }}>
+              <p className="text-sm font-semibold" style={{ color: theme.primary }}>
+                {errorWord}
+              </p>
+            </div>
+
+            {/* AI 回复 */}
+            <div className="prose prose-sm max-w-none">
+              <ReactMarkdown
+                components={{
+                  p: ({ children }) => (
+                    <p style={{ color: theme.textPrimary }} className="mb-2 text-sm leading-relaxed">
+                      {children}
+                    </p>
+                  ),
+                  strong: ({ children }) => (
+                    <strong style={{ color: theme.primary }}>{children}</strong>
+                  ),
+                  code: ({ children }) => (
+                    <code
+                      style={{
+                        backgroundColor: theme.neutralLight,
+                        color: theme.primary,
+                      }}
+                      className="rounded px-1 py-0.5"
+                    >
+                      {children}
+                    </code>
+                  ),
+                }}
+              >
+                {errorTooltip}
+              </ReactMarkdown>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

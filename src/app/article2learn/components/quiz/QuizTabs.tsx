@@ -5,9 +5,10 @@ import { theme } from '@/styles/theme.config'
 import MatchGame from './MatchGame'
 import FillBlankGame from './FillBlankGame'
 import ArticleFillGame from './ArticleFillGame'
+import WordTranslationMatchGame from './WordTranslationMatchGame'
 
 export default function QuizTabs() {
-  const [activeQuizTab, setActiveQuizTab] = useState<'match' | 'fillblank' | 'articlefill'>('match')
+  const [activeQuizTab, setActiveQuizTab] = useState<'match' | 'fillblank' | 'articlefill' | 'wordtranslation'>('match')
 
   return (
     <div className="flex h-full flex-col">
@@ -55,6 +56,20 @@ export default function QuizTabs() {
           >
             Article Fill
           </button>
+
+          <button
+            onClick={() => setActiveQuizTab('wordtranslation')}
+            className={`rounded-t-lg border-b-2 px-4 py-3 text-sm font-medium transition-all duration-300 ease-out ${
+              activeQuizTab === 'wordtranslation' ? 'shadow-[0_-2px_8px_rgba(0,0,0,0.04)]' : 'hover:bg-neutral-50/50'
+            }`}
+            style={{
+              borderColor: activeQuizTab === 'wordtranslation' ? theme.primary : 'transparent',
+              color: activeQuizTab === 'wordtranslation' ? theme.primary : theme.textSecondary,
+              backgroundColor: activeQuizTab === 'wordtranslation' ? 'rgb(249, 250, 251)' : 'transparent',
+            }}
+          >
+            Word-Translation Match
+          </button>
         </div>
       </div>
 
@@ -63,6 +78,7 @@ export default function QuizTabs() {
         {activeQuizTab === 'match' && <MatchGame />}
         {activeQuizTab === 'fillblank' && <FillBlankGame />}
         {activeQuizTab === 'articlefill' && <ArticleFillGame />}
+        {activeQuizTab === 'wordtranslation' && <WordTranslationMatchGame />}
       </div>
     </div>
   )
