@@ -21,7 +21,8 @@ export default function AddJDPopover({
     company: '',
     full_job_description: '',
     application_stage: 'Raw JD',
-    comment: ''
+    comment: '',
+    jd_link: ''
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -35,7 +36,8 @@ export default function AddJDPopover({
         company: '',
         full_job_description: '',
         application_stage: 'Raw JD',
-        comment: ''
+        comment: '',
+        jd_link: ''
       })
       setError(null)
     }
@@ -121,7 +123,7 @@ export default function AddJDPopover({
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-500 transition-all duration-200"
                   placeholder="e.g. Senior Software Engineer"
                   required
                 />
@@ -134,7 +136,7 @@ export default function AddJDPopover({
                   type="text"
                   value={formData.company}
                   onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-500 transition-all duration-200"
                   placeholder="e.g. Tech Corp"
                   required
                 />
@@ -149,7 +151,7 @@ export default function AddJDPopover({
               value={formData.full_job_description}
               onChange={(e) => setFormData(prev => ({ ...prev, full_job_description: e.target.value }))}
               rows={8}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-y"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-500 transition-all duration-200 resize-y"
               placeholder="Paste the full job description here..."
             />
           </div>
@@ -164,7 +166,7 @@ export default function AddJDPopover({
                   <select
                     value={formData.application_stage}
                     onChange={(e) => setFormData(prev => ({ ...prev, application_stage: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 appearance-none cursor-pointer"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-500 transition-all duration-200 appearance-none cursor-pointer"
                   >
                     {stageOptions.map(stage => (
                       <option key={stage} value={stage}>{stage}</option>
@@ -178,12 +180,22 @@ export default function AddJDPopover({
                 </div>
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">URL</label>
+                <input
+                  type="url"
+                  value={formData.jd_link}
+                  onChange={(e) => setFormData(prev => ({ ...prev, jd_link: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-500 transition-all duration-200"
+                  placeholder="https://..."
+                />
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Comment</label>
                 <textarea
                   value={formData.comment}
                   onChange={(e) => setFormData(prev => ({ ...prev, comment: e.target.value }))}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-y"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-500 transition-all duration-200 resize-y"
                   placeholder="Additional notes..."
                 />
               </div>
@@ -213,7 +225,7 @@ export default function AddJDPopover({
             <button
               type="submit"
               disabled={!isValid || isLoading}
-              className="w-32 px-6 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300 text-white rounded-lg font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-2"
+              className="w-32 px-6 py-2 bg-[#111111] hover:brightness-105 hover:shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium whitespace-nowrap transition-all duration-200 inline-flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b border-white"></div>

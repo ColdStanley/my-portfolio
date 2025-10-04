@@ -18,6 +18,7 @@ export interface JDRecord {
   role_group?: string
   firm_type?: string
   comment?: string
+  jd_link?: string
 
   // CV related
   cv_pdf_url?: string
@@ -33,6 +34,7 @@ export interface CreateJDRequest {
   role_group?: string
   firm_type?: string
   comment?: string
+  jd_link?: string
 }
 
 export interface UpdateJDRequest extends Partial<CreateJDRequest> {
