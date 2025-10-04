@@ -235,8 +235,9 @@ export default function UserWebsitePage() {
   // 动态更新浏览器标题
   useEffect(() => {
     console.log('Title update effect triggered, userConfig:', userConfig)
-    if (userConfig?.name) {
-      const formattedName = capitalizeWords(userConfig.name)
+    const displayName = userConfig?.displayName || userConfig?.name
+    if (displayName) {
+      const formattedName = capitalizeWords(displayName)
       const newTitle = `${formattedName}'s Portfolio`
       console.log('Setting document title to:', newTitle)
 
@@ -265,7 +266,7 @@ export default function UserWebsitePage() {
         titleElement.textContent = "Stanley's Portfolio"
       }
     }
-  }, [userConfig?.name])
+  }, [userConfig?.displayName, userConfig?.name])
 
   // Keyboard navigation for presentation mode
   useEffect(() => {
@@ -455,8 +456,8 @@ export default function UserWebsitePage() {
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className={`text-2xl font-bold bg-gradient-to-r ${getThemeClasses(currentTheme, 'nameGradient')} bg-clip-text text-transparent capitalize tracking-wide hover:scale-105 transition-all duration-300 cursor-default font-serif animate-pulse`}>{userConfig?.name}</h1>
-              <p className="text-sm text-gray-500">{userConfig?.city}</p>
+              <h1 className={`text-2xl font-bold bg-gradient-to-r ${getThemeClasses(currentTheme, 'nameGradient')} bg-clip-text text-transparent capitalize tracking-wide hover:scale-105 transition-all duration-300 cursor-default font-serif animate-pulse`}>{userConfig?.displayName || userConfig?.name}</h1>
+              <p className="text-sm text-gray-500">{userConfig?.displayCity || userConfig?.city}</p>
             </div>
 
             <div className="flex items-center gap-4">

@@ -41,6 +41,8 @@ export async function GET(request: NextRequest) {
     const config = {
       city: data.city,
       name: data.name,
+      displayCity: data.display_city,
+      displayName: data.display_name,
       apiKey: data.api_key,
       databaseId: data.database_id,
       theme: data.theme,
@@ -82,6 +84,8 @@ export async function POST(request: NextRequest) {
       .upsert({
         city: standardizedCity,
         name: standardizedName,
+        display_city: city,
+        display_name: name,
         api_key: apiKey,
         database_id: databaseId,
         theme: theme || 'pink',
